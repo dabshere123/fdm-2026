@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Fête de Marquette 2026 — Operations</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#0d0d0d"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="FDM Ops"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#0d0d0d;font-family:'DM Sans',sans-serif;}
+    #root{min-height:100vh;}
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+
+// ─── SHARED ───────────────────────────────────────────────────────────────────
+function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/></div>);}
+
+// ─── LAUNCHER ─────────────────────────────────────────────────────────────────
+export default function FDMv1(){
+  const [mode,setMode]=useState(null);
+  const [showBuild,setShowBuild]=useState(false);
+
+  if(mode==="hub")       return <HubModule       onBack={()=>setMode(null)}/>;
+  if(mode==="field")     return <FieldModule     onBack={()=>setMode(null)}/>;
+  if(mode==="register")  return <RegisterModule  onBack={()=>setMode(null)}/>;
+  if(mode==="wizard")    return <WizardModule    onBack={()=>setMode(null)}/>;
+  if(mode==="equipment") return <EquipmentModule onBack={()=>setMode(null)}/>;
+
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:480,padding:"32px 20px 48px"}}>
+
+        {/* HEADER */}
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:60,marginBottom:8}}>🎪</div>
+          <div style={{fontSize:27,fontWeight:900,color:"#fff",letterSpacing:"-0.02em"}}>Fête de Marquette</div>
+          <div style={{fontSize:12,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:800,marginTop:4}}>2026 Operations System</div>
+          <div style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:10,padding:"5px 14px",borderRadius:20,background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.3)"}}>
+            <div style={{width:7,height:7,borderRadius:"50%",background:"#10b981"}}/>
+            <span style={{fontSize:12,color:"#10b981",fontWeight:700}}>Version 1.0</span>
+          </div>
+        </div>
+
+        {/* MODULES */}
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {[
+            {id:"hub",     emoji:"⚡", label:"Operations Hub",     sub:"Admin · Med Unit 1 & 2 · Full command center",   color:"#f59e0b", bc:"rgba(245,158,11,0.45)",  bg:"rgba(245,158,11,0.08)"},
+            {id:"field",   emoji:"📍", label:"Worker App",         sub:"All field staff · 18 roles · Request system",    color:"#a78bfa", bc:"rgba(167,139,250,0.45)", bg:"rgba(167,139,250,0.08)"},
+            {id:"register",emoji:"📝", label:"Staff Registration", sub:"QR code form · Shift scheduling · GroupMe",      color:"#34d399", bc:"rgba(52,211,153,0.45)",  bg:"rgba(52,211,153,0.08)"},
+            {id:"wizard",  emoji:"🛠️", label:"Setup Wizard",       sub:"Pre-event configuration · 9 steps",              color:"#60a5fa", bc:"rgba(96,165,250,0.45)",  bg:"rgba(96,165,250,0.08)"},
+          ].map(m=>(
+            <button key={m.id} style={{display:"flex",alignItems:"center",gap:16,padding:"18px 20px",borderRadius:14,border:`2px solid ${m.bc}`,background:m.bg,cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setMode(m.id)}>
+              <div style={{fontSize:34,minWidth:44,textAlign:"center",flexShrink:0}}>{m.emoji}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>{m.label}</div>
+                <div style={{fontSize:12,color:"#64748b",marginTop:3,lineHeight:1.5}}>{m.sub}</div>
+              </div>
+              <div style={{fontSize:20,color:m.bc,flexShrink:0}}>→</div>
+            </button>
+          ))}
+
+          {/* EQUIPMENT TRACKER */}
+          <button style={{display:"flex",alignItems:"center",gap:16,padding:"18px 20px",borderRadius:14,border:"2px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.07)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setMode("equipment")}>
+            <div style={{fontSize:34,minWidth:44,textAlign:"center",flexShrink:0}}>📻</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>Equipment Tracker</div>
+              <div style={{fontSize:12,color:"#64748b",marginTop:3,lineHeight:1.5}}>Radios · Credit card readers · Bundles · Check in/out</div>
+            </div>
+            <div style={{fontSize:20,color:"rgba(16,185,129,0.6)",flexShrink:0}}>→</div>
+          </button>
+        </div>
+
+        {/* EVENT SCHEDULE */}
+        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.06)",padding:"14px 16px",marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:800,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>📅 Event Schedule</div>
+          {[
+            ["Thu, July 9",  "4:00 PM – 11:00 PM"],
+            ["Fri, July 10", "4:00 PM – 11:00 PM"],
+            ["Sat, July 11", "12:00 PM – 11:00 PM"],
+            ["Sun, July 12", "10:00 AM – 9:00 PM"],
+          ].map(([d,h],i,arr)=>(
+            <div key={d} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:i<arr.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}>
+              <span style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{d}</span>
+              <span style={{fontSize:12,color:"#64748b"}}>{h}</span>
+            </div>
+          ))}
+          <div style={{fontSize:11,color:"#334155",marginTop:10,lineHeight:1.6}}>
+            Nightly export: 11:30 PM · Staff auto-delete: hourly + midnight
+          </div>
+        </div>
+
+        {/* GO LIVE CHECKLIST */}
+        <button style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",color:"#f59e0b",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setShowBuild(p=>!p)}>
+          <span>📋 What's needed to go live</span>
+          <span>{showBuild?"▲":"▼"}</span>
+        </button>
+
+        {showBuild&&(
+          <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.06)",padding:"16px",display:"flex",flexDirection:"column",gap:14,marginBottom:14}}>
+
+            {[
+              {
+                color:"#ef4444", dot:"🔴", title:"Required Before Event",
+                items:[
+                  ["Deploy backend to Netlify","fdm-backend/ folder → netlify.com → free hosting"],
+                  ["Twilio account","twilio.com → Account SID + Auth Token + phone number (~$1/mo)"],
+                  ["GroupMe setup","Create 9 channels → get Group IDs from dev.groupme.com"],
+                  ["Google Apps Script","Deploy gear tracker → paste URL in Hub → Settings"],
+                  ["Create nightly export sheet","New Google Sheet → paste URL in Setup Wizard"],
+                  ["Run Setup Wizard","Complete all 9 steps → download config file"],
+                  ["Change PINs","Admin + Med 1 + Med 2 — default 0000, change before event"],
+                  ["Add MPD officer numbers","Phone + shift end time in Setup Wizard → Step 7"],
+                  ["Test SMS + voice","Send a test broadcast after Twilio configured"],
+                  ["Generate QR codes","One per role → qr-code-generator.com → print"],
+                ]
+              },
+              {
+                color:"#f59e0b", dot:"🟡", title:"Before Pre-Festival Meeting",
+                items:[
+                  ["Print registration QR codes","Staff scan → fills out form → hits your pending queue"],
+                  ["Get everyone on GroupMe","Share GroupMe invite links before the meeting"],
+                  ["Open staff registration","Send registration URL → staff register themselves"],
+                  ["Approve registrations","Hub → pending queue → approve → add to GroupMe channels"],
+                  ["Add MPD officers to system","Setup Wizard → Step 7 → names + phones + shift times"],
+                ]
+              },
+              {
+                color:"#10b981", dot:"🟢", title:"Day of Event Checklist",
+                items:[
+                  ["All staff logged into Worker App","Each location has their bookmark loaded"],
+                  ["Med 1 + Med 2 logged into Hub","Both showing Ready status"],
+                  ["Weather loading on Admin home","Shows current conditions + alerts"],
+                  ["Equipment tracker showing Available","All radios + readers checked in"],
+                  ["Send welcome broadcast","Test that all channels receive it"],
+                  ["Verify MPD officer numbers active","Settings → check shift times are correct"],
+                  ["Confirm all GroupMe channels active","Send a test message to each"],
+                ]
+              },
+            ].map(section=>(
+              <div key={section.title}>
+                <div style={{fontSize:11,fontWeight:800,color:section.color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{section.dot} {section.title}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {section.items.map(([t,d])=>(
+                    <div key={t} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <div style={{width:7,height:7,borderRadius:"50%",background:section.color,flexShrink:0,marginTop:5}}/>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{t}</div>
+                        <div style={{fontSize:11,color:"#64748b",lineHeight:1.5,marginTop:1}}>{d}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div style={{background:"rgba(245,158,11,0.06)",borderRadius:10,border:"1px solid rgba(245,158,11,0.2)",padding:"12px 14px",marginTop:4}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:4}}>⏱ Estimated Setup Time</div>
+              <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
+                With Netlify + Twilio accounts already created: <strong style={{color:"#f1f5f9"}}>2–3 hours</strong><br/>
+                Starting from scratch (accounts + config): <strong style={{color:"#f1f5f9"}}>3–4 hours</strong><br/>
+                Pre-festival meeting prep: <strong style={{color:"#f1f5f9"}}>1 hour</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div style={{textAlign:"center",fontSize:11,color:"#1e293b",marginTop:8,lineHeight:1.8}}>
+          Fête de Marquette 2026 · Operations System v1.0<br/>
+          Built for Devin — Operations Command
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MODULE WRAPPERS ──────────────────────────────────────────────────────────
+function HubModule({onBack}){
+  const [role,setRole]=useState(null);
+  if(!role) return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:480}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 16px 8px"}}>
+          <div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Fête de Marquette</div><div style={{fontSize:10,color:"#475569",textTransform:"uppercase",letterSpacing:"0.06em"}}>2026 Operations Hub</div></div>
+          <button style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:"#94a3b8",padding:"8px 14px",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600}} onClick={onBack}>← Back</button>
+        </div>
+        <div style={{padding:"8px 16px 4px",fontSize:13,color:"#64748b",fontWeight:600}}>Select your role to enter:</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8,padding:"8px 16px 24px"}}>
+          {[
+            ["ADMIN","⚡","Full command access — all sections","rgba(245,158,11,0.12)","rgba(245,158,11,0.5)","Demo PIN: 0000"],
+            ["Med 1","🩺","Medical Unit 1 — patient care + dispatch","rgba(126,34,206,0.12)","rgba(147,51,234,0.5)","Demo PIN: 0000"],
+            ["Med 2","🩺","Medical Unit 2 — patient care + dispatch","rgba(126,34,206,0.12)","rgba(147,51,234,0.5)","Demo PIN: 0000"],
+          ].map(([r,em,desc,bg,bc,pin])=>(
+            <button key={r} style={{display:"flex",alignItems:"center",gap:14,padding:"16px",borderRadius:12,border:`2px solid ${bc}`,background:bg,cursor:"pointer",textAlign:"left"}} onClick={()=>setRole(r)}>
+              <span style={{fontSize:26,minWidth:34,textAlign:"center"}}>{em}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>{r}</div>
+                <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{desc}</div>
+              </div>
+              <div style={{fontSize:11,color:"#475569",fontWeight:600,whiteSpace:"nowrap"}}>{pin}</div>
+            </button>
+          ))}
+        </div>
+        <div style={{margin:"0 16px",background:"rgba(255,255,255,0.03)",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",padding:"12px 14px"}}>
+          <div style={{fontSize:12,color:"#64748b",lineHeight:1.7}}>
+            <strong style={{color:"#f1f5f9"}}>Admin:</strong> Full hub — command, safety, broadcast, resources, log<br/>
+            <strong style={{color:"#f1f5f9"}}>Med units:</strong> Current call (big box) + self-assign + walk-in tab + 911
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  return <HubApp onBack={()=>setRole(null)} initialRole={role}/>;
+}
+
+function FieldModule({onBack}){return<PlaceholderModule onBack={onBack} emoji="📍" label="Worker App" file="fdm-field-preview.jsx"/>;}
+
+function RegisterModule({onBack}){return<PlaceholderModule onBack={onBack} emoji="📝" label="Staff Registration" file="fdm-register-sim.jsx"/>;}
+
+function WizardModule({onBack}){return<PlaceholderModule onBack={onBack} emoji="🛠️" label="Setup Wizard" file="fdm-setup-wizard.jsx"/>;}
+
+
+
+
+
+function PlaceholderModule({onBack,emoji,label,file}){
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif",padding:"32px 20px",textAlign:"center"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:16,maxWidth:400}}>
+        <div style={{fontSize:72}}>{emoji}</div>
+        <div style={{fontSize:22,fontWeight:900,color:"#fff"}}>{label}</div>
+        <div style={{fontSize:14,color:"#94a3b8",lineHeight:1.7,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+          This module is available as a separate preview file:<br/>
+          <strong style={{color:"#f59e0b"}}>{file}</strong>
+        </div>
+        <div style={{fontSize:13,color:"#64748b",lineHeight:1.6}}>
+          In production all modules run as a single deployed app. This demo splits them to stay within preview size limits.
+        </div>
+        <button style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",color:"#f1f5f9",padding:"12px 24px",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:700}} onClick={onBack}>← Back to Launcher</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HUB ─────
+function HubAppV1({onBack}){
+  return <HubApp onBack={onBack||(() => {})}/>;
+}
+
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const ALL_LOCS=["Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe","Sun Left","Sun Right","Cabaret","Financial 1","Greeter Head Ingersoll Left","Greeter Head Ingersoll Right","Greeter Head Few","Moon Stage Manager","Lagniappe Manager","Lafayette Manager","Sun Stage Manager","Cabaret Manager","Med 1","Med 2","Hospitality","Medical Tent","Merch Tent","Sun Stage Vendors","Moon Stage Vendors","Lafayette Vendors"];
+
+const ALERT_COLORS={
+  medical:   {bg:"rgba(190,24,93,0.15)",  border:"rgba(219,39,119,0.6)",  full:"rgba(157,23,77,0.97)",  full2:"rgba(190,24,93,0.95)",  label:"MEDICAL ALERT",     icon:"🩺"},
+  walk_in:   {bg:"rgba(190,24,93,0.15)",  border:"rgba(219,39,119,0.6)",  full:"rgba(157,23,77,0.97)",  full2:"rgba(190,24,93,0.95)",  label:"WALK-IN PATIENT",   icon:"🚶"},
+  fire:      {bg:"rgba(153,27,27,0.15)",  border:"rgba(220,38,38,0.6)",   full:"rgba(153,27,27,0.97)",  full2:"rgba(185,28,28,0.95)",  label:"FIRE / LIFE SAFETY",icon:"🔥"},
+  security:  {bg:"rgba(29,78,216,0.15)",  border:"rgba(59,130,246,0.6)",  full:"rgba(29,78,216,0.97)",  full2:"rgba(37,99,235,0.95)",  label:"SECURITY ALERT",    icon:"🛡️"},
+  supplies:  {bg:"rgba(92,40,4,0.20)",    border:"rgba(146,64,14,0.6)",   full:"rgba(69,26,3,0.97)",    full2:"rgba(92,40,4,0.95)",    label:"SUPPLIES REQUEST",  icon:"📦"},
+  maintenance:{bg:"rgba(20,83,45,0.20)",  border:"rgba(22,101,52,0.6)",   full:"rgba(20,83,45,0.97)",   full2:"rgba(21,128,61,0.95)",  label:"MAINTENANCE",       icon:"🔧"},
+  lost_child:{bg:"rgba(202,138,4,0.15)",  border:"rgba(234,179,8,0.6)",   full:"rgba(202,138,4,0.90)",  full2:"rgba(234,179,8,0.95)",  label:"LOST CHILD",        icon:"🧒"},
+};
+
+const BROADCAST_ALERTS=[
+  {id:"weather_imminent",label:"⛈️ Inclement Weather Imminent",color:"#dc2626",fields:[{key:"storm_arrival",label:"Estimated Storm Arrival",ph:"e.g. 8:15 PM"},{key:"shutdown_time",label:"Time of Shutdown",ph:"e.g. 7:45 PM"}]},
+  {id:"event_delayed",label:"⏰ Event Delayed",color:"#f59e0b",fields:[{key:"duration",label:"Estimated Delay",ph:"e.g. 30 minutes"},{key:"reason",label:"Reason for Delay",ph:"e.g. Stage equipment issue"},{key:"notes",label:"Additional Info",ph:"Optional"}]},
+  {id:"event_postponed",label:"🔄 Event Postponed",color:"#f97316",fields:[{key:"postpone_time",label:"Time of Postponement",ph:"e.g. 7:30 PM"},{key:"reason",label:"Reason",ph:"e.g. Inclement weather"},{key:"new_time",label:"New Start Time",ph:"e.g. 8:30 PM or TBD"},{key:"notes",label:"Additional Info",ph:"Optional"}]},
+  {id:"event_resuming",label:"🔁 Event Resuming",color:"#10b981",fields:[{key:"resume_time",label:"Reopening At",ph:"e.g. 8:45 PM"},{key:"notes",label:"Additional Info",ph:"Optional"}]},
+  {id:"event_cancelled_staff",label:"❌ Cancelled — Staff",color:"#dc2626",fields:[{key:"notes",label:"Additional Info",ph:"Optional"}]},
+  {id:"event_cancelled_vendors",label:"❌ Cancelled — Vendors",color:"#7c3aed",fields:[{key:"notes",label:"Additional Info",ph:"Optional"}]},
+  {id:"all_clear",label:"☀️ All Clear",color:"#059669",fields:[{key:"notes",label:"Additional Info",ph:"Optional"}]},
+  {id:"custom",label:"✏️ Custom Message",color:"#475569",fields:[
+    {key:"channel",label:"Send To",type:"select",options:[{value:"all_staff",label:"All Staff"},{value:"vendors",label:"All Vendors"},{value:"stage_mgrs",label:"Managers Only"},{value:"all",label:"All Staff + Vendors"}]},
+    {key:"message",label:"Message",ph:"Type your message..."}
+  ]},
+];
+
+const EMS_STAGING=[
+  {id:"1",label:"#1 — First Aid Tent · Ingersoll & Wilson"},
+  {id:"2",label:"#2 — Main & Ingersoll"},
+  {id:"3",label:"#3 — Brearly & Willy St"},
+];
+
+const RESOURCE_TYPES=[
+  {id:"mpd",label:"MPD Officers",emoji:"👮",desc:"Request additional police presence"},
+  {id:"mfd",label:"MFD / Fire",emoji:"🚒",desc:"Request fire department response"},
+  {id:"ems",label:"Additional EMS",emoji:"🚑",desc:"Request additional medical units"},
+  {id:"staff",label:"Additional Staff",emoji:"👥",desc:"Request additional event staff"},
+  {id:"maintenance",label:"Maintenance Crew",emoji:"🔧",desc:"Request maintenance personnel"},
+  {id:"restock",label:"Restock Team",emoji:"📦",desc:"Request restock team dispatch"},
+  {id:"other",label:"Other Resource",emoji:"📋",desc:"Request any other resource"},
+];
+
+const RESTOCK_ITEMS=[
+  {id:"ice",label:"Ice",emoji:"🧊"},
+  {id:"beer_cups",label:"Beer Cup Sleeves",emoji:"🍺"},
+  {id:"wine_cups",label:"Wine Cup Sleeves",emoji:"🍷"},
+  {id:"paper_towels",label:"Paper Towels",emoji:"🧻"},
+  {id:"bar_towels",label:"BAR TOWELS",emoji:""},
+  {id:"water",label:"Bottled Water (24-pack)",emoji:"💧"},
+  {id:"other",label:"Other",emoji:"➕"},
+];
+
+const QUANTITIES=["1","2","3","4","5","6","7","8","9","10+"];
+
+function now(){return new Date().toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});}
+function tShort(){return new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
+// Bg defined in launcher
+// BB defined in launcher
+// Fld defined in launcher
+
+// ─── MAIN SWITCHER ─────────────────────────────────────────────────────────────
+function Preview_unused(){
+  const onBack=()=>{};
+}
+
+// ─── HUB APP ──────────────────────────────────────────────────────────────────
+function HubApp({onBack,initialRole}){
+  const [role,setRole]=useState(initialRole||null);
+  const [view,setView]=useState("home");
+  const [tick,setTick]=useState(0);
+  const [lostChildBlink,setLostChildBlink]=useState(false);
+  const blinkRef=useRef(null);
+  const [escalated,setEscalated]=useState({});
+  const ESCALATION_MS={medical:30000,walk_in:30000,fire:30000,security:30000,supplies:60000,maintenance:60000};
+
+  const [calls,setCalls]=useState([
+    {id:1,type:"medical",location:"Moon Stage 1",problem:"Patron unresponsive near bar",details:"Male, 40s, sitting on ground",requestedBy:"Moon Stage 1",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:"4:33 PM"},{status:"acknowledged",ts:"4:34 PM",unit:"Med 1"}],unit:"Med 1",firedAt:Date.now()-300000},
+    {id:7,type:"medical",location:"Lagniappe Bar",problem:"Person down, possible heat exhaustion",details:"Female, 30s",requestedBy:"Lagniappe",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:35 PM"}],unit:null,firedAt:Date.now()-60000},
+    {id:2,type:"security",location:"Lafayette Bar",problem:"Altercation between two patrons",details:"Near east entrance",requestedBy:"Lafayette",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:28 PM"}],unit:null,firedAt:Date.now()-120000},
+    {id:3,type:"fire",location:"Sun Stage Vendor Area",problem:"Cooking flame too close to tent fabric",details:"Vendor unaware",requestedBy:"Sun Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:20 PM"}],unit:null,firedAt:Date.now()-180000},
+    {id:4,type:"supplies",subtype:"restock",location:"Sun Left",problem:"Ice — 3 bags",requestedBy:"Sun Left",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:15 PM"}],unit:null,firedAt:Date.now()-240000,quantityRequested:"3 bags"},
+    {id:5,type:"maintenance",location:"Cabaret Stage",problem:"Generator tripped, no power to bar",requestedBy:"Cabaret Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:10 PM"}],unit:null,firedAt:Date.now()-300000},
+    {id:6,type:"lost_child",location:"Moon Stage Area",problem:"Girl, approx 6 · Brown pigtails · Red shirt · Blue shorts\nLast seen: 4:05 PM near Moon Stage 1 bar\nAssembly Point: Medical Tent\nParent: Sarah Johnson · 608-555-1234",requestedBy:"Moon Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:08 PM"}],unit:null,firedAt:Date.now()-400000},
+  ]);
+  const [completed,setCompleted]=useState([
+    {id:99,type:"medical",location:"Lagniappe",problem:"Heat exhaustion",status:"cleared",clearedBy:"Med 1",clearedAt:"2:35 PM",history:[{status:"new_call",ts:"2:10 PM"},{status:"acknowledged",ts:"2:11 PM",unit:"Med 1"},{status:"on_scene",ts:"2:14 PM",unit:"Med 1"},{status:"cleared",ts:"2:35 PM",unit:"Med 1"}]},
+    {id:98,type:"security",location:"Moon Stage 2",problem:"Unruly patron",status:"cleared",clearedBy:"Admin",clearedAt:"3:15 PM",history:[{status:"new_call",ts:"3:05 PM"},{status:"cleared",ts:"3:15 PM",unit:"Admin"}]},
+  ]);
+  const [medSt,setMedSt]=useState({med1:{status:"available",since:null},med2:{status:"on_scene",since:"4:14 PM"}});
+  const [broadcastAlerts,setBroadcastAlerts]=useState([
+    {id:10,label:"⛈️ Inclement Weather Imminent",msg:"⛈️ INCLEMENT WEATHER IMMINENT\nEstimated Arrival: 45 min\nShutdown: 7:45 PM",requiresAck:true,firedAt:Date.now()-120000,date:now(),acks:{"Moon Stage 1":"4:33 PM","Med 1":"4:33 PM","Med 2":"4:33 PM"},escalated:false},
+  ]);
+  const [nineOneOne,set911]=useState({active:false,info:{},by:null,at:null});
+  const [emsForm,setEmsForm]=useState({staging:"",eta:"",nature:"",notes:""});
+  const [emsDispatched,setEmsDispatched]=useState(false);
+  const [alertView,setAlertView]=useState(null);
+  const [alertFields,setAlertFields]=useState({});
+  const [editedMsg,setEditedMsg]=useState("");
+  const [callFilter,setCallFilter]=useState(null);
+  const [callFilterTitle,setCallFilterTitle]=useState("");
+  const [callTab,setCallTab]=useState("active");
+  const [resourceView,setResourceView]=useState(false);
+  const [resourceType,setResourceType]=useState(null);
+  const [resourceFields,setResourceFields]=useState({});
+  const [activityLog,setActivityLog]=useState([
+    {id:1,ts:"4:35 PM",date:now(),type:"medical",label:"Medical Request — Lagniappe Bar",msg:"Person down, heat exhaustion"},
+    {id:2,ts:"4:28 PM",date:now(),type:"security",label:"Security Request — Lafayette Bar",msg:"Altercation, two patrons"},
+    {id:3,ts:"4:20 PM",date:now(),type:"fire",label:"Fire/Life Safety — Sun Stage Vendors",msg:"Cooking flame near tent"},
+  ]);
+
+  const isAdmin=role==="ADMIN", isMed=["Med 1","Med 2"].includes(role);
+  const medCalls=calls.filter(c=>c.type==="medical"||c.type==="walk_in");
+  const fireCalls=calls.filter(c=>c.type==="fire");
+  const secCalls=calls.filter(c=>c.type==="security");
+  const suppCalls=calls.filter(c=>c.type==="supplies");
+  const maintCalls=calls.filter(c=>c.type==="maintenance");
+  const lostChildCalls=calls.filter(c=>c.type==="lost_child");
+  const myActive=isMed?calls.filter(c=>c.unit===role):[];
+  const unassigned=isMed?calls.filter(c=>(c.type==="medical"||c.type==="walk_in")&&!c.unit&&c.status==="new_call"):[];
+
+  // Tick for countdown
+  useEffect(()=>{const id=setInterval(()=>setTick(p=>p+1),1000);return()=>clearInterval(id);},[]);
+
+  // Lost child blink
+  useEffect(()=>{
+    const hasLC=lostChildCalls.some(c=>!c.acknowledged);
+    if(hasLC){blinkRef.current=setInterval(()=>setLostChildBlink(p=>!p),800);}
+    else{clearInterval(blinkRef.current);setLostChildBlink(false);}
+    return()=>clearInterval(blinkRef.current);
+  },[lostChildCalls.length]);
+
+  const ackCall=(id,by)=>{
+    setCalls(p=>p.map(c=>c.id!==id?c:{...c,acknowledged:true,status:"acknowledged",history:[...c.history,{status:"acknowledged",ts:tShort(),unit:by}]}));
+    setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"ack",label:`Acknowledged by ${by}`,msg:calls.find(c=>c.id===id)?.problem||""},...p]);
+  };
+  const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
+  const clearCall=(id,by)=>{
+    const c=calls.find(x=>x.id===id);if(!c)return;
+    setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
+    setCalls(p=>p.filter(x=>x.id!==id));
+    setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"clear",label:`Cleared by ${by}`,msg:c.problem||""},...p]);
+  };
+
+  // FULL SCREEN ALERT
+  if(view==="home"){
+    const PRIORITY=["lost_child","medical","walk_in","fire","security","supplies","maintenance"];
+    let alertCall=null;
+    for(const t of PRIORITY){alertCall=calls.find(c=>c.type===t&&!c.acknowledged);if(alertCall)break;}
+    if(alertCall&&(isAdmin||isMed)){
+      const ac=ALERT_COLORS[alertCall.type]||ALERT_COLORS.medical;
+      const bg=lostChildBlink?ac.full2:ac.full;
+      const isLC=alertCall.type==="lost_child";
+      const limit=ESCALATION_MS[alertCall.type]||60000;
+      const elapsed=Math.min(Date.now()-alertCall.firedAt,limit);
+      const pct=Math.round((elapsed/limit)*100);
+      const remaining=Math.max(0,Math.round((limit-elapsed)/1000));
+      return(<div style={{...S.root,background:bg,transition:"background 0.4s"}}>
+        <div style={S.persistAlert}>
+          <div style={{fontSize:72}}>{ac.icon}</div>
+          <div style={{fontSize:26,fontWeight:900,color:"#fff",letterSpacing:"0.06em",textAlign:"center"}}>{ac.label}</div>
+          <div style={{fontSize:16,fontWeight:700,color:"rgba(255,255,255,0.95)"}}>📍 {alertCall.location}</div>
+          <div style={{fontSize:15,color:"rgba(255,255,255,0.88)",background:"rgba(0,0,0,0.25)",borderRadius:12,padding:"14px 16px",width:"100%",boxSizing:"border-box",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{alertCall.problem}{alertCall.details?`\n${alertCall.details}`:""}</div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,0.55)"}}>From: {alertCall.requestedBy} · {alertCall.history[0]?.ts}</div>
+          <div style={{width:"100%"}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(255,255,255,0.6)",marginBottom:4}}>
+              <span>Auto-escalate in</span><span style={{color:remaining<10?"#fca5a5":"rgba(255,255,255,0.8)",fontWeight:700}}>{escalated[alertCall.id]?"⚠️ RESENT":remaining>0?`${remaining}s`:"⚠️ RESENT"}</span>
+            </div>
+            <div style={{height:4,background:"rgba(255,255,255,0.2)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",background:pct>66?"#ef4444":pct>33?"#f97316":"#10b981",borderRadius:2,width:`${pct}%`,transition:"width 1s"}}/></div>
+          </div>
+          {calls.filter(c=>!c.acknowledged).length>1&&<div style={{fontSize:13,color:"rgba(255,255,255,0.7)",background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"6px 14px"}}>+{calls.filter(c=>!c.acknowledged).length-1} more pending</div>}
+          {(alertCall.type==="medical"||alertCall.type==="walk_in")&&isMed&&(
+            <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
+              <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",fontWeight:600,textAlign:"center"}}>Who is responding?</div>
+              <div style={{display:"flex",gap:8}}>
+                <button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:12,padding:"14px",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",background:"rgba(5,150,105,0.5)"}} onClick={()=>ackCall(alertCall.id,role)}>✅ {role}</button>
+                <button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:12,padding:"14px",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",background:"rgba(5,150,105,0.5)"}} onClick={()=>ackCall(alertCall.id,"Both")}>✅ Both</button>
+              </div>
+            </div>
+          )}
+          {isLC?(
+            <><button style={{...S.bigAckBtn,background:"rgba(0,0,0,0.3)"}} onClick={()=>ackCall(alertCall.id,role||"Admin")}>✅ ACKNOWLEDGED — Searching</button>
+            <button style={{...S.bigAckBtn,background:"rgba(16,185,129,0.5)",border:"2px solid rgba(16,185,129,0.8)"}} onClick={()=>clearCall(alertCall.id,role||"Admin")}>🧒 CHILD LOCATED — Close</button></>
+          ):(
+            <button style={S.bigAckBtn} onClick={()=>ackCall(alertCall.id,role||"Admin")}>✅ ACKNOWLEDGE</button>
+          )}
+        </div>
+      </div>);
+    }
+  }
+
+  if(!role) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={{textAlign:"center",padding:"28px 16px 12px"}}>
+        <div style={{fontSize:48}}>⚡</div>
+        <div style={{fontSize:18,fontWeight:900,color:"#fff",marginTop:4}}>Operations Hub</div>
+        <div style={{fontSize:11,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>Fête de Marquette 2026</div>
+      </div>
+      <div style={{padding:"0 16px 6px",fontSize:12,color:"#64748b",fontWeight:600}}>Select your role:</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 16px 20px"}}>
+        {[["ADMIN","⚡","Command / Admin · Full access","rgba(245,158,11,0.1)","#f59e0b"],["Med 1","🩺","Medical Unit 1","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"],["Med 2","🩺","Medical Unit 2","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"]].map(([r,em,tp,bg,bc])=>(
+          <button key={r} style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:`2px solid ${bc}`,background:bg,cursor:"pointer",textAlign:"left"}} onClick={()=>setRole(r)}>
+            <span style={{fontSize:24,minWidth:32}}>{em}</span><div><div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{r}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{tp}</div></div>
+          </button>
+        ))}
+      </div>
+      <div style={{margin:"0 16px",borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:16}}>
+        <div style={{fontSize:11,color:"#475569",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Demo: default PIN is 0000</div>
+        <div style={{fontSize:11,color:"#334155",lineHeight:1.7}}>
+          Admin → full hub · Med 1/2 → medical unit view
+        </div>
+      </div>
+      <div style={{padding:"16px",marginTop:"auto"}}>
+        <button style={{...S.backBtn,width:"100%",textAlign:"center",padding:"10px",fontSize:13}} onClick={onBack}>← Back to Launcher</button>
+      </div>
+    </div></div>
+  );
+
+  // RESOURCE REQUEST VIEW
+  if(resourceView) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><BB onClick={()=>{setResourceView(false);setResourceType(null);setResourceFields({});}}/><span style={S.panelTitle}>Request Resources</span></div>
+      <div style={S.cWrap}>
+        {!resourceType?(<>
+          <label style={S.lbl}>What resource do you need?</label>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {RESOURCE_TYPES.map(t=>(
+              <button key={t.id} style={{display:"flex",alignItems:"center",gap:14,padding:"16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.12)",background:"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left"}} onClick={()=>setResourceType(t.id)}>
+                <span style={{fontSize:26,minWidth:34}}>{t.emoji}</span>
+                <div><div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{t.label}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{t.desc}</div></div>
+              </button>
+            ))}
+          </div>
+        </>):(<>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:22}}>{RESOURCE_TYPES.find(t=>t.id===resourceType)?.emoji}</span>
+            <span style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>{RESOURCE_TYPES.find(t=>t.id===resourceType)?.label}</span>
+            <button style={{marginLeft:"auto",background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer"}} onClick={()=>setResourceType(null)}>Change</button>
+          </div>
+          <Fld label="Location / Where needed" value={resourceFields.location||""} onChange={e=>setResourceFields(p=>({...p,location:e.target.value}))} ph="e.g. Moon Stage 1 area" required/>
+          <Fld label="What's needed" value={resourceFields.reason||""} onChange={e=>setResourceFields(p=>({...p,reason:e.target.value}))} ph="e.g. 2 additional officers for crowd control" required/>
+          <Fld label="Urgency" value={resourceFields.urgency||""} onChange={e=>setResourceFields(p=>({...p,urgency:e.target.value}))} ph="e.g. Immediate, within 15 minutes"/>
+          <Fld label="Additional Info" value={resourceFields.notes||""} onChange={e=>setResourceFields(p=>({...p,notes:e.target.value}))} ph="Optional" multi/>
+          <button style={{...S.sendBtn,opacity:(!resourceFields.location||!resourceFields.reason)?0.5:1}} disabled={!resourceFields.location||!resourceFields.reason} onClick={()=>{
+            setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"resource",label:`Resource Request: ${RESOURCE_TYPES.find(t=>t.id===resourceType)?.label}`,msg:`${resourceFields.reason} — ${resourceFields.location}`},...p]);
+            setResourceView(false);setResourceType(null);setResourceFields({});
+          }}>📋 SUBMIT RESOURCE REQUEST</button>
+        </>)}
+      </div>
+    </div></div>
+  );
+
+  // BROADCAST VIEW
+  if(view==="alert") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><BB onClick={()=>{setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");}}/><span style={S.panelTitle}>Broadcast Alert</span></div>
+      {!alertView?(
+        <div style={S.cWrap}>
+          {BROADCAST_ALERTS.map(t=>(
+            <button key={t.id} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${t.color}44`,background:`${t.color}11`,cursor:"pointer",textAlign:"left"}} onClick={()=>{setAlertView(t.id);setAlertFields({});}}>
+              <span style={{fontSize:14,fontWeight:600,color:"#f1f5f9",flex:1}}>{t.label}</span>
+              <span style={{fontSize:11,color:"#a855f7"}}>📞 Voice + SMS</span>
+            </button>
+          ))}
+        </div>
+      ):(()=>{
+        const t=BROADCAST_ALERTS.find(x=>x.id===alertView);
+        const preview=`${t?.label} — Fête de Marquette 2026\n${now()}\n${Object.entries(alertFields).filter(([k])=>k!=="channel"&&k!=="message").map(([k,v])=>`${k}: ${v}`).join("\n")}${alertFields.message?`\n${alertFields.message}`:""}`;
+        return(<div style={S.cWrap}>
+          <BB onClick={()=>setAlertView(null)}/>
+          <div style={{display:"inline-flex",alignSelf:"flex-start",padding:"4px 12px",borderRadius:20,fontSize:13,fontWeight:600,color:"#fff",background:t?.color,marginTop:8}}>{t?.label}</div>
+          <div style={{fontSize:12,color:"#a855f7",background:"rgba(168,85,247,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(168,85,247,0.2)",fontWeight:600}}>📞 Voice call + SMS fires to all teams</div>
+          {t?.fields?.map(f=>f.type==="select"?(
+            <div key={f.key} style={{display:"flex",flexDirection:"column",gap:6}}><label style={S.lbl}>{f.label}</label>
+            <select style={S.sel} value={alertFields[f.key]||""} onChange={e=>setAlertFields(p=>({...p,[f.key]:e.target.value}))}>
+              {(f.options||[]).map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+            </select></div>
+          ):(
+            <Fld key={f.key} label={f.label} value={alertFields[f.key]||""} onChange={e=>setAlertFields(p=>({...p,[f.key]:e.target.value}))} ph={f.ph} multi={f.key==="notes"||f.key==="message"}/>
+          ))}
+          <label style={S.lbl}>Message — Edit as needed</label>
+          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||preview} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg(preview);}}/>
+          {editedMsg&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
+          <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
+          <button style={S.sendBtn} onClick={()=>{setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:editedMsg||preview,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:editedMsg||preview},...p]);setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");}}>🚀 SEND NOW</button>
+        </div>);
+      })()}
+    </div></div>
+  );
+
+  // CALL QUEUE VIEW
+  if(view==="callqueue"){
+    const qCalls=callFilter?calls.filter(c=>callFilter.includes(c.type)):calls;
+    const unacked=qCalls.filter(c=>!c.acknowledged);
+    const acked=qCalls.filter(c=>c.acknowledged);
+    const compQ=callFilter?completed.filter(c=>callFilter.includes(c.type)):completed;
+    const ac=callFilter?ALERT_COLORS[callFilter[0]]||{}:{};
+    return(<div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>{callFilterTitle}</span></div>
+      <div style={S.tabRow}>
+        <button style={{...S.tab,borderBottom:callTab==="active"?"2px solid #f59e0b":"2px solid transparent",color:callTab==="active"?"#f59e0b":"#64748b"}} onClick={()=>setCallTab("active")}>Active ({qCalls.length})</button>
+        <button style={{...S.tab,borderBottom:callTab==="completed"?"2px solid #10b981":"2px solid transparent",color:callTab==="completed"?"#10b981":"#64748b"}} onClick={()=>setCallTab("completed")}>Completed ({compQ.length})</button>
+      </div>
+      <div style={S.callQ}>
+        {callTab==="active"&&<>
+          {/* UNACKED TILES */}
+          {unacked.length>0&&<div style={{display:"flex",flexDirection:"column",gap:2,marginBottom:8}}>
+            {unacked.map(c=>{
+              const limit=ESCALATION_MS[c.type]||60000;
+              const elapsed=Math.min(Date.now()-c.firedAt,limit);
+              const pct=Math.round((elapsed/limit)*100);
+              const remaining=Math.max(0,Math.round((limit-elapsed)/1000));
+              const isEsc=escalated[c.id];
+              const color=ALERT_COLORS[c.type]||ALERT_COLORS.medical;
+              return(<div key={c.id} style={{background:color.full,padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{fontSize:16,fontWeight:900,color:"#fff"}}>{color.icon} {color.label} — NEW</div>
+                  <span style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>{c.history[0]?.ts}</span>
+                </div>
+                <div style={{fontSize:16,fontWeight:700,color:"rgba(255,255,255,0.95)"}}>📍 {c.location}</div>
+                <div style={{fontSize:15,color:"rgba(255,255,255,0.85)",lineHeight:1.4}}>{c.problem}</div>
+                {c.details&&<div style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>{c.details}</div>}
+                {c.requestedBy&&<div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>From: {c.requestedBy}</div>}
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{flex:1,height:4,background:"rgba(255,255,255,0.2)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",background:isEsc?"#ef4444":pct>66?"#f97316":"#10b981",borderRadius:2,width:`${pct}%`,transition:"width 1s"}}/></div>
+                  <span style={{fontSize:11,color:isEsc?"#fca5a5":"rgba(255,255,255,0.7)",fontWeight:700,whiteSpace:"nowrap"}}>{isEsc?"⚠️ RESENT":remaining>0?`${remaining}s`:"⚠️"}</span>
+                </div>
+                <button style={{border:"2px solid rgba(255,255,255,0.6)",borderRadius:10,padding:"14px",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",background:"rgba(0,0,0,0.3)"}} onClick={()=>ackCall(c.id,"Admin")}>✅ ACKNOWLEDGE</button>
+              </div>);
+            })}
+          </div>}
+          {/* ACKED LIST — always open */}
+          {acked.length>0&&<>
+            {unacked.length>0&&<div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:"0.08em",padding:"4px 0 8px"}}>── Acknowledged</div>}
+            {acked.map(c=>{
+              const color=ALERT_COLORS[c.type]||ALERT_COLORS.medical;
+              const statuses={acknowledged:{label:"ACKNOWLEDGED",color:"#10b981"},dispatched:{label:"DISPATCHED",color:"#6366f1"},on_scene:{label:"ON SCENE",color:"#ef4444"},delivered:{label:"DELIVERED",color:"#10b981"},cleared:{label:"CLEARED",color:"#10b981"}};
+              const st=statuses[c.status]||{label:c.status,color:"#475569"};
+              return(<div key={c.id} style={{borderRadius:12,border:`2px solid ${color.border}`,padding:"14px",display:"flex",flexDirection:"column",gap:10,background:color.bg}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{display:"inline-flex",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:800,color:"#fff",background:st.color}}>{st.label}</div>
+                  <span style={{fontSize:11,color:"#64748b"}}>{c.history[0]?.ts}</span>
+                </div>
+                <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>📍 {c.location}</div>
+                <div style={{fontSize:14,color:"#e2e8f0",lineHeight:1.4}}>{c.problem}</div>
+                {c.unit&&<div style={{fontSize:12,color:"#10b981",fontWeight:600}}>👤 {c.unit}</div>}
+                {/* HISTORY */}
+                <div style={{display:"flex",flexDirection:"column",gap:3,background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px"}}>
+                  {c.history.map((h,i)=><div key={i} style={{display:"flex",gap:8,fontSize:12}}><span style={{color:"#64748b",minWidth:50}}>{h.ts}</span><span style={{color:"#cbd5e1"}}>{h.status}{h.unit?` · ${h.unit}`:""}</span></div>)}
+                </div>
+                {/* ASSIGN UNIT — ADMIN ONLY, always visible */}
+                {isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Assign Unit</label>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {(c.type==="medical"||c.type==="walk_in"?["Med 1","Med 2","Both","Admin"]:["Admin","Med 1","Med 2","Maintenance","Restock"]).map(u=>(
+                      <button key={u} style={{...S.actBtn,background:c.unit===u?"#10b981":"rgba(99,102,241,0.3)",fontSize:12,padding:"8px 12px",border:c.unit===u?"1px solid #10b981":"1px solid rgba(99,102,241,0.4)"}}
+                        onClick={()=>updCall(c.id,"dispatched",u)}>{c.unit===u?"✅ ":""}{u}</button>
+                    ))}
+                  </div>
+                </div>}
+                {/* ACTION BUTTONS — always visible, no click needed */}
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                  {(c.type==="medical"||c.type==="walk_in")&&c.status!=="on_scene"&&<button style={{...S.actBtn,background:"#6366f1",flex:1}} onClick={()=>updCall(c.id,"dispatched","Med 1")}>📡 Dispatch</button>}
+                  {c.status!=="on_scene"&&<button style={{...S.actBtn,background:"#ef4444",flex:1}} onClick={()=>updCall(c.id,"on_scene",c.unit||"Admin")}>🔴 On Scene</button>}
+                  {c.type==="supplies"&&c.status==="acknowledged"&&<button style={{...S.actBtn,background:"#10b981",flex:1}} onClick={()=>updCall(c.id,"delivered","Admin")}>✅ Delivered</button>}
+                  <button style={{...S.actBtn,background:"rgba(100,100,100,0.4)",flex:1}} onClick={()=>clearCall(c.id,"Admin")}>✅ Clear</button>
+                </div>
+              </div>);
+            })}
+          </>}
+          {qCalls.length===0&&<div style={S.empty}>No active calls</div>}
+        </>}
+        {callTab==="completed"&&<>
+          {compQ.length===0&&<div style={S.empty}>No completed calls</div>}
+          {compQ.map(c=>(
+            <div key={c.id} style={{...S.callCard,borderColor:"#10b981",opacity:0.85}}>
+              <div style={{display:"inline-flex",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:800,color:"#fff",background:"#10b981",alignSelf:"flex-start"}}>✅ COMPLETED</div>
+              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9",marginTop:4}}>📍 {c.location}</div>
+              <div style={{fontSize:13,color:"#cbd5e1"}}>{c.problem}</div>
+              {c.clearedBy&&<div style={{fontSize:12,color:"#64748b"}}>Cleared by: {c.clearedBy} · {c.clearedAt}</div>}
+              <div style={{display:"flex",flexDirection:"column",gap:3,background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px"}}>
+                {c.history.map((h,i)=><div key={i} style={{display:"flex",gap:8,fontSize:12}}><span style={{color:"#64748b",minWidth:50}}>{h.ts}</span><span style={{color:"#cbd5e1"}}>{h.status}{h.unit?` · ${h.unit}`:""}</span></div>)}
+              </div>
+            </div>
+          ))}
+        </>}
+      </div>
+    </div></div>);
+  }
+
+  // 911 VIEW
+  if(view==="911") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={{background:"#ef4444",color:"#fff",fontSize:14,fontWeight:900,textAlign:"center",padding:"10px",letterSpacing:"0.05em"}}>🚨 911 ACTIVE — EMS EN ROUTE</div>
+      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>911 Incident</span></div>
+      <div style={S.cWrap}>
+        {[["location","Location","e.g. Near Moon Stage 1"],["nature","Nature of Call","e.g. Unresponsive adult"],["patients","Patients","e.g. 1"],["age_sex","Age / Sex","e.g. 40s Male"],["conscious","Conscious / Breathing","e.g. Unconscious, breathing"],["interventions","Interventions","e.g. CPR in progress"],["entry","Entry Point","e.g. Main Gate"],["meeting","Who's Meeting EMS","e.g. Med 1 at gate"]].map(([k,l,p])=><Fld key={k} label={l} value={nineOneOne.info?.[k]||""} onChange={e=>set911(prev=>({...prev,info:{...prev.info,[k]:e.target.value}}))} ph={p}/>)}
+        <label style={S.lbl}>🏥 MFD Staging Location</label>
+        <select style={S.sel} value={emsForm.staging} onChange={e=>setEmsForm(p=>({...p,staging:e.target.value}))}>
+          <option value="">Select...</option>
+          {EMS_STAGING.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+        </select>
+        <Fld label="⏱️ EMS ETA" value={emsForm.eta} onChange={e=>setEmsForm(p=>({...p,eta:e.target.value}))} ph="e.g. 8 minutes"/>
+        {!emsDispatched?<button style={{...S.sendBtn,background:"linear-gradient(135deg,#dc2626,#991b1b)",opacity:(!emsForm.staging||!emsForm.eta)?0.5:1}} disabled={!emsForm.staging||!emsForm.eta} onClick={()=>setEmsDispatched(true)}>🚑 SEND EMS DISPATCH ALERT</button>:<div style={{background:"rgba(16,185,129,0.1)",border:"1px solid #10b981",borderRadius:10,padding:"12px",fontSize:13,color:"#10b981",fontWeight:700}}>✅ EMS Dispatch Alert Sent · {EMS_STAGING.find(s=>s.id===emsForm.staging)?.label} · ETA: {emsForm.eta}</div>}
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{set911({active:false,info:{},by:null,at:null});setEmsDispatched(false);setEmsForm({staging:"",eta:"",nature:"",notes:""});setView("home");}}>✅ CLOSE INCIDENT</button>
+      </div>
+    </div></div>
+  );
+
+  // ACKS VIEW
+  if(view==="acks") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>Acknowledgments</span></div>
+      <div style={S.callQ}>
+        {broadcastAlerts.filter(a=>a.requiresAck).map((a,i)=>{
+          const tot=ALL_LOCS.length,conf=Object.keys(a.acks||{}).length,pct=Math.round(conf/tot*100);
+          return(<div key={i} style={{background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",padding:"14px",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{a.label}</div><div style={{fontSize:11,color:"#64748b"}}>{a.date}</div></div>
+              <button style={{background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)",color:"#fca5a5",fontSize:11,borderRadius:6,padding:"4px 8px",cursor:"pointer"}} onClick={()=>setBroadcastAlerts(p=>p.filter((_,j)=>j!==i))}>✕</button>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <div style={{flex:1,height:6,background:"rgba(255,255,255,0.08)",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",background:"linear-gradient(90deg,#10b981,#059669)",borderRadius:3,width:`${pct}%`,transition:"width 0.4s"}}/></div>
+              <span style={{fontSize:12,color:"#94a3b8"}}>{conf}/{tot}</span>
+            </div>
+            {ALL_LOCS.map(loc=>{const t=a.acks?.[loc];return(<div key={loc} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 10px",borderRadius:8,border:`1px solid ${t?"#10b981":"rgba(239,68,68,0.2)"}`,background:t?"rgba(16,185,129,0.06)":"rgba(239,68,68,0.03)",marginBottom:3}}>
+              <span style={{width:8,height:8,borderRadius:"50%",background:t?"#10b981":"#ef4444",display:"inline-block",flexShrink:0}}/>
+              <span style={{flex:1,fontSize:12,color:"#cbd5e1"}}>{loc}</span>
+              {t?<span style={{fontSize:11,color:"#10b981",fontWeight:600}}>{t}</span>:<button style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"none",color:"#94a3b8",borderRadius:4,padding:"2px 6px",cursor:"pointer"}} onClick={()=>setBroadcastAlerts(prev=>prev.map((al,j)=>j!==i?al:{...al,acks:{...al.acks,[loc]:"Override"}}))}>Override</button>}
+            </div>);})}
+          </div>);
+        })}
+        {broadcastAlerts.filter(a=>a.requiresAck).length===0&&<div style={S.empty}>No active alerts</div>}
+      </div>
+    </div></div>
+  );
+
+  // LOG VIEW
+  if(view==="log") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>Activity Log</span></div>
+      <div style={S.callQ}>
+        {activityLog.map((e,i)=>(
+          <div key={i} style={{background:"rgba(255,255,255,0.03)",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",padding:"10px 12px",marginBottom:4}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+              <span style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{e.label}</span>
+              <span style={{fontSize:11,color:"#f59e0b",fontWeight:600}}>{e.ts}</span>
+            </div>
+            <div style={{fontSize:12,color:"#64748b"}}>{e.date}</div>
+            {e.msg&&<div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>{e.msg}</div>}
+          </div>
+        ))}
+        {activityLog.length===0&&<div style={S.empty}>No activity yet</div>}
+      </div>
+    </div></div>
+  );
+
+  // MED HOME
+  if(isMed) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 16px 8px"}}>
+        <div><div style={{fontSize:18,fontWeight:900,color:"#fff"}}>Fête de Marquette</div><div style={{fontSize:10,color:"#475569",textTransform:"uppercase",letterSpacing:"0.06em"}}>2026 Operations</div></div>
+        <div style={{display:"flex",gap:6}}>
+          <button style={{...S.backBtn,padding:"8px 10px",fontSize:12}} onClick={()=>setRole(null)}>↩ Role</button>
+          <button style={{...S.backBtn,padding:"8px 10px",fontSize:12}} onClick={onBack}>← Apps</button>
+        </div>
+      </div>
+      <div style={{fontSize:13,color:"#ec4899",fontWeight:700,padding:"0 16px 8px"}}>🔴 {role} — Medical Unit</div>
+      {nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"rgba(239,68,68,0.2)",border:"2px solid #ef4444",borderRadius:10,padding:"10px",fontSize:13,color:"#fff",fontWeight:800,cursor:"pointer",textAlign:"center"}} onClick={()=>setView("911")}>🚨 911 ACTIVE — Tap to update</button>}
+      <MedHome role={role} calls={calls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView}/>
+    </div></div>
+  );
+
+  // ADMIN HOME
+  const pendingAcks=broadcastAlerts.filter(a=>a.requiresAck).reduce((s,a)=>s+ALL_LOCS.filter(l=>!a.acks?.[l]).length,0);
+  return(<div style={S.root}><Bg/><div style={S.panel}>
+    {/* HEADER */}
+    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",padding:"20px 16px 4px"}}>
+      <div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Fête de Marquette</div><div style={{fontSize:10,color:"#475569",textTransform:"uppercase",letterSpacing:"0.06em"}}>2026 Operations Hub</div></div>
+      <div style={{display:"flex",gap:6}}>
+        <button style={{...S.backBtn,padding:"8px 10px",fontSize:12}} onClick={()=>setRole(null)}>↩ Role</button>
+        <button style={{...S.backBtn,padding:"8px 10px",fontSize:12}} onClick={onBack}>← Apps</button>
+      </div>
+    </div>
+    <div style={{fontSize:12,color:"#f59e0b",fontWeight:700,padding:"0 16px 10px"}}>⚡ Command / Admin</div>
+    {nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"rgba(239,68,68,0.2)",border:"2px solid #ef4444",borderRadius:10,padding:"10px",fontSize:13,color:"#fff",fontWeight:800,cursor:"pointer",textAlign:"center"}} onClick={()=>setView("911")}>🚨 911 ACTIVE — Tap to update</button>}
+
+    <div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 16px 24px"}}>
+
+      {/* SECTION 1: COMMAND */}
+      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
+        <div style={S.sectionHdr}>📡 Command</div>
+        <div style={{display:"flex",gap:8,padding:"10px"}}>
+          <button style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.25),rgba(120,0,0,0.1))",cursor:"pointer",boxShadow:"0 0 10px rgba(200,0,0,0.2)"}} onClick={()=>{set911({active:true,by:"Admin",at:now(),info:{}});setView("911");}}>
+            <span style={{fontSize:24}}>🚨</span><span style={{fontSize:12,fontWeight:800,color:"#fff",textAlign:"center"}}>🚨 Activate 911 🚨</span>
+          </button>
+          <button style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"16px 8px",borderRadius:12,border:`2px solid ${lostChildCalls.length>0?"rgba(234,179,8,0.7)":"rgba(245,158,11,0.3)"}`,background:lostChildCalls.length>0?"linear-gradient(135deg,rgba(234,179,8,0.2),rgba(202,138,4,0.1))":"rgba(255,255,255,0.03)",cursor:"pointer",position:"relative"}} onClick={()=>{setCallFilter(["lost_child"]);setCallFilterTitle("Lost Child");setCallTab("active");setView("callqueue");}}>
+            <span style={{fontSize:24}}>🧒</span><span style={{fontSize:12,fontWeight:800,color:lostChildCalls.length>0?"#fcd34d":"#94a3b8",textAlign:"center"}}>Lost Child{lostChildCalls.length>0?` (${lostChildCalls.length})`:"" }</span>
+            {lostChildCalls.length>0&&<div style={{position:"absolute",top:8,right:8,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center"}}>{lostChildCalls.length}</div>}
+          </button>
+          <button style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer",position:"relative"}} onClick={()=>setResourceView(true)}>
+            <span style={{fontSize:24}}>📋</span><span style={{fontSize:12,fontWeight:800,color:"#a78bfa",textAlign:"center"}}>Request Resources</span>
+          </button>
+        </div>
+      </div>
+
+      {/* SECTION 2: SAFETY + BROADCAST side by side */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        {/* SAFETY */}
+        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+          <div style={S.sectionHdr}>🚨 Safety</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
+            {[
+              {types:["medical","walk_in"],label:"Medical",icon:"🩺",color:ALERT_COLORS.medical,calls:medCalls,title:"Medical Calls"},
+              {types:["medical"],label:"Dispatch",icon:"📡",color:{bg:"rgba(249,115,22,0.1)",border:"rgba(249,115,22,0.4)"},calls:[],title:"Medical Dispatch",onClick:()=>{}},
+              {types:["fire"],label:"Fire/Life",icon:"🔥",color:ALERT_COLORS.fire,calls:fireCalls,title:"Fire / Life Safety"},
+              {types:["security"],label:"Security",icon:"🛡️",color:ALERT_COLORS.security,calls:secCalls,title:"Security"},
+            ].map(({types,label,icon,color,calls:tc,title,onClick})=>(
+              <button key={label} style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:`1px solid ${color.border||"rgba(255,255,255,0.1)"}`,background:color.bg||"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",position:"relative"}}
+                onClick={onClick||(() =>{setCallFilter(types);setCallFilterTitle(title);setCallTab("active");setView("callqueue");})}>
+                <span style={{fontSize:18}}>{icon}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>{label}</div>
+                  <div style={{fontSize:10,color:"#64748b"}}>{tc.length>0?`${tc.length} active`:"Clear"}</div>
+                </div>
+                {tc.filter(c=>!c.acknowledged).length>0&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{tc.filter(c=>!c.acknowledged).length}</div>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* BROADCAST */}
+        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(124,58,237,0.3)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+          <div style={{...S.sectionHdr,background:"rgba(124,58,237,0.15)"}}>📢 Broadcast</div>
+          <div style={{display:"flex",flexDirection:"column",gap:4,padding:"8px"}}>
+            {BROADCAST_ALERTS.map(t=>(
+              <button key={t.id} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",borderRadius:8,border:`1px solid ${t.color}33`,background:`${t.color}11`,cursor:"pointer",textAlign:"left"}} onClick={()=>{setAlertView(t.id);setAlertFields({});setView("alert");}}>
+                <span style={{fontSize:11,fontWeight:600,color:"#f1f5f9",flex:1,lineHeight:1.3}}>{t.label}</span>
+              </button>
+            ))}
+            <button style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.03)",cursor:"pointer"}} onClick={()=>setView("acks")}>
+              <span style={{fontSize:11,fontWeight:600,color:"#f59e0b",flex:1}}>✅ Acknowledgments {pendingAcks>0&&`(${pendingAcks} pending)`}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 3: SUPPLIES & MAINTENANCE */}
+      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
+        <div style={S.sectionHdr}>📦🔧 Supplies & Maintenance</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"8px"}}>
+          <button style={{display:"flex",alignItems:"center",gap:8,padding:"12px",borderRadius:10,border:`1px solid ${ALERT_COLORS.supplies.border}`,background:ALERT_COLORS.supplies.bg,cursor:"pointer"}} onClick={()=>{setCallFilter(["supplies"]);setCallFilterTitle("Supplies & Restock");setCallTab("active");setView("callqueue");}}>
+            <span style={{fontSize:20}}>📦</span>
+            <div><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Supplies</div><div style={{fontSize:10,color:"#64748b"}}>{suppCalls.length>0?`${suppCalls.length} active`:"Clear"}</div></div>
+            {suppCalls.filter(c=>!c.acknowledged).length>0&&<div style={{marginLeft:"auto",background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{suppCalls.filter(c=>!c.acknowledged).length}</div>}
+          </button>
+          <button style={{display:"flex",alignItems:"center",gap:8,padding:"12px",borderRadius:10,border:`1px solid ${ALERT_COLORS.maintenance.border}`,background:ALERT_COLORS.maintenance.bg,cursor:"pointer"}} onClick={()=>{setCallFilter(["maintenance"]);setCallFilterTitle("Maintenance");setCallTab("active");setView("callqueue");}}>
+            <span style={{fontSize:20}}>🔧</span>
+            <div><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Maintenance</div><div style={{fontSize:10,color:"#64748b"}}>{maintCalls.length>0?`${maintCalls.length} active`:"Clear"}</div></div>
+            {maintCalls.filter(c=>!c.acknowledged).length>0&&<div style={{marginLeft:"auto",background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{maintCalls.filter(c=>!c.acknowledged).length}</div>}
+          </button>
+        </div>
+      </div>
+
+      {/* SECTION 4: ACTIVITY LOG */}
+      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
+        <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("log")}>
+          <span>📋 Activity Log</span>
+          <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>{activityLog.length} entries →</span>
+        </div>
+        <div style={{padding:"8px"}}>
+          {activityLog.slice(0,3).map((e,i)=>(
+            <div key={i} style={{display:"flex",gap:8,padding:"6px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+              <span style={{fontSize:11,color:"#f59e0b",fontWeight:600,minWidth:48,flexShrink:0}}>{e.ts}</span>
+              <span style={{fontSize:11,color:"#94a3b8",lineHeight:1.3}}>{e.label}</span>
+            </div>
+          ))}
+          <button style={{width:"100%",padding:"8px",background:"none",border:"none",color:"#6366f1",fontSize:12,cursor:"pointer",marginTop:4}} onClick={()=>setView("log")}>View full log →</button>
+        </div>
+      </div>
+
+    </div>
+  </div></div>);
+}
+
+// ─── MED HOME ─────────────────────────────────────────────────────────────────
+// ─── MPD SCRIPTS ──────────────────────────────────────────────────────────────
+const MPD_VOICE_SCRIPT=(location,situation)=>
+  `Attention Madison Police Officers — you are requested to respond to ${location} for ${situation}. Please respond promptly. This call has been initiated by Fête de Marquette Operations. Thank you.`;
+
+const MPD_STANDDOWN_VOICE=()=>
+  `Per Fête de Marquette Operations — stand down. No response needed. Thank you!`;
+
+// ─── SECURITY ACK PANEL ───────────────────────────────────────────────────────
+function SecurityAckPanel({alertCall,role,ackCall,tick}){
+  const [mpdCancelled,setMpdCancelled]=useState(false);
+  const [mpdFired,setMpdFired]=useState(false);
+  const COUNTDOWN=30;
+  const elapsed=Math.min(Math.round((Date.now()-alertCall.firedAt)/1000),COUNTDOWN);
+  const remaining=Math.max(0,COUNTDOWN-elapsed);
+  useEffect(()=>{if(remaining===0&&!mpdCancelled&&!mpdFired)setMpdFired(true);},[remaining]);
+  return(<div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:380,alignItems:"center"}}>
+    <button style={{background:"rgba(16,185,129,0.35)",border:"3px solid rgba(16,185,129,0.8)",borderRadius:14,padding:"20px",color:"#fff",fontSize:18,fontWeight:900,cursor:"pointer",width:"100%"}} onClick={()=>ackCall(alertCall.id,role||"Admin")}>✅ ACKNOWLEDGE</button>
+    {!mpdFired&&!mpdCancelled&&(<div style={{width:"100%",background:"rgba(0,0,0,0.3)",borderRadius:12,padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.9)"}}>👮 MPD auto-notify in</span>
+        <span style={{fontSize:22,fontWeight:900,color:remaining<=5?"#fca5a5":"#f59e0b"}}>{remaining}s</span>
+      </div>
+      <div style={{height:4,background:"rgba(255,255,255,0.15)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",background:remaining<=5?"#ef4444":"#f59e0b",borderRadius:2,width:`${(remaining/COUNTDOWN)*100}%`,transition:"width 1s"}}/></div>
+      <button style={{padding:"10px",borderRadius:10,border:"2px solid rgba(239,68,68,0.6)",background:"rgba(239,68,68,0.15)",color:"#fca5a5",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={()=>setMpdCancelled(true)}>❌ Cancel MPD Notification</button>
+    </div>)}
+    {mpdFired&&!mpdCancelled&&(<div style={{width:"100%",background:"rgba(29,78,216,0.2)",borderRadius:12,padding:"12px 16px",display:"flex",flexDirection:"column",gap:8,border:"1px solid rgba(59,130,246,0.4)"}}>
+      <div style={{fontSize:13,fontWeight:800,color:"#93c5fd"}}>👮 MPD Notified — SMS + Voice Call Sent</div>
+      <div style={{fontSize:12,color:"rgba(255,255,255,0.6)",fontStyle:"italic",lineHeight:1.6}}>"{MPD_VOICE_SCRIPT(alertCall.location,alertCall.problem)}"</div>
+      <button style={{padding:"10px",borderRadius:10,border:"2px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.12)",color:"#6ee7b7",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>setMpdCancelled(true)}>✅ Stand Down MPD — Send All Clear</button>
+    </div>)}
+    {mpdCancelled&&(<div style={{width:"100%",background:"rgba(16,185,129,0.1)",borderRadius:12,padding:"12px 16px",border:"1px solid rgba(16,185,129,0.3)"}}>
+      {mpdFired?(<><div style={{fontSize:13,fontWeight:800,color:"#10b981",marginBottom:6}}>✅ Stand Down Sent to MPD</div><div style={{fontSize:12,color:"rgba(255,255,255,0.6)",fontStyle:"italic",lineHeight:1.6}}>"{MPD_STANDDOWN_VOICE(alertCall.location)}"</div></>):(
+      <div style={{fontSize:13,fontWeight:800,color:"#10b981"}}>✅ MPD Notification Cancelled — Handling internally</div>)}
+    </div>)}
+  </div>);
+}
+
+function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView}){
+  const [tab,setTab]=useState("calls");
+  const [wiComplaint,setWiComplaint]=useState("");
+  const [wiDetails,setWiDetails]=useState("");
+  const walkIns=calls.filter(c=>c.type==="walk_in"&&c.unit===role);
+  const allActive=[...myActive];
+
+  const doWalkIn=()=>{
+    if(!wiComplaint)return;
+    const c={id:Date.now(),type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role,status:"on_scene",acknowledged:true,history:[{status:"walk_in",ts:new Date().toLocaleTimeString()},{status:"on_scene",ts:new Date().toLocaleTimeString(),unit:role}],unit:role,firedAt:Date.now()};
+    setCalls(p=>[c,...p]);
+    setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:new Date().toLocaleTimeString()}}));
+    setWiComplaint("");setWiDetails("");setTab("calls");
+  };
+
+  return(<div style={{display:"flex",flexDirection:"column",gap:0}}>
+    {/* ACTIVE CALL — top, always open */}
+    {allActive.length>0&&<div style={{padding:"0 16px 10px"}}>
+      {allActive.map(c=>{
+        const isAcked=c.acknowledged||c.status==="acknowledged";
+        const isOnScene=c.status==="on_scene";
+        const tc=ALERT_COLORS[c.type]||ALERT_COLORS.medical;
+        return(<div key={c.id} style={{borderRadius:16,border:`2px solid ${tc.border}`,padding:"18px",display:"flex",flexDirection:"column",gap:12,background:tc.bg}}>
+          <div style={{fontSize:12,fontWeight:800,color:"#ec4899",letterSpacing:"0.08em",textTransform:"uppercase"}}>{tc.icon} Current Call — {role}</div>
+          <div style={{fontSize:19,fontWeight:800,color:"#f1f5f9"}}>📍 {c.location}</div>
+          <div style={{fontSize:16,color:"#e2e8f0",lineHeight:1.5}}>{c.problem}</div>
+          {c.details&&<div style={{fontSize:13,color:"#94a3b8"}}>{c.details}</div>}
+          <div style={{fontSize:11,color:"#64748b"}}>From: {c.requestedBy} · {c.history[0]?.ts}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <button style={{padding:"14px",borderRadius:12,border:isAcked?"none":"2px solid #10b981",cursor:"pointer",fontSize:14,fontWeight:800,background:isAcked?"#059669":"rgba(16,185,129,0.2)",color:"#fff"}}
+              onClick={()=>setCalls(p=>p.map(x=>x.id===c.id?{...x,acknowledged:true,status:"acknowledged",history:[...x.history,{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}]}:x))}>
+              ✅ {isAcked?"Acknowledged":"Acknowledge"}
+            </button>
+            <button style={{padding:"14px",borderRadius:12,border:isOnScene?"none":"2px solid #ef4444",cursor:"pointer",fontSize:14,fontWeight:800,background:isOnScene?"#dc2626":"rgba(239,68,68,0.2)",color:"#fff"}}
+              onClick={()=>setCalls(p=>p.map(x=>x.id===c.id?{...x,status:"on_scene",history:[...x.history,{status:"on_scene",ts:new Date().toLocaleTimeString(),unit:role}]}:x))}>
+              🔴 On Scene
+            </button>
+            <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.4)",cursor:"pointer",fontSize:14,fontWeight:800,background:"rgba(16,185,129,0.15)",color:"#6ee7b7"}}
+              onClick={()=>{setCalls(p=>p.filter(x=>x.id!==c.id));setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));}}>
+              ✅ Clear
+            </button>
+            <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.5)",cursor:"pointer",fontSize:14,fontWeight:800,background:"rgba(16,185,129,0.3)",color:"#fff"}}
+              onClick={()=>{setCalls(p=>p.filter(x=>x.id!==c.id));setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));}}>
+              🟢 Ready
+            </button>
+          </div>
+        </div>);
+      })}
+    </div>}
+
+    {/* TABS */}
+    <div style={{display:"flex",margin:"0 16px 8px",background:"rgba(255,255,255,0.04)",borderRadius:12,padding:4,gap:4}}>
+      <button style={{flex:1,padding:"10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="calls"?"rgba(219,39,119,0.4)":"none",color:tab==="calls"?"#fff":"#64748b"}} onClick={()=>setTab("calls")}>🚨 Safety {unassigned.length>0&&`(${unassigned.length})`}</button>
+      <button style={{flex:1,padding:"10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="walkin"?"rgba(249,115,22,0.4)":"none",color:tab==="walkin"?"#fff":"#64748b"}} onClick={()=>setTab("walkin")}>🚶 Walk-In {walkIns.length>0&&`(${walkIns.length})`}</button>
+    </div>
+
+    {tab==="calls"&&<div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 16px"}}>
+      {unassigned.map(c=>(
+        <div key={c.id} style={{borderRadius:12,border:"2px solid #ef4444",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8,background:"rgba(239,68,68,0.1)"}}>
+          <div style={{fontSize:13,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em"}}>🆕 INCOMING — UNASSIGNED</div>
+          <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>📍 {c.location}</div>
+          <div style={{fontSize:14,color:"#cbd5e1",lineHeight:1.4}}>{c.problem}</div>
+          <div style={{fontSize:11,color:"#64748b"}}>From: {c.requestedBy} · {c.history[0]?.ts}</div>
+          <button style={{background:"linear-gradient(135deg,#059669,#047857)",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}
+            onClick={()=>setCalls(p=>p.map(x=>x.id===c.id?{...x,acknowledged:true,unit:role,status:"acknowledged",history:[...x.history,{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}]}:x))}>
+            ✅ ASSIGN TO ME — {role}
+          </button>
+        </div>
+      ))}
+      {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"24px 0",fontSize:14}}>No active calls — standing by</div>}
+      <button style={{display:"flex",alignItems:"center",gap:10,padding:"14px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.2),rgba(120,0,0,0.08))",cursor:"pointer",boxShadow:"0 0 8px rgba(200,0,0,0.15)"}} onClick={()=>set911({active:true,by:role,at:new Date().toLocaleString(),info:{}})}>
+        <span style={{fontSize:20}}>🚨</span><span style={{fontSize:14,fontWeight:800,color:"#fff"}}>🚨 Activate 911 🚨</span>
+      </button>
+      <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer"}} onClick={()=>setResourceView(true)}>
+        <span style={{fontSize:18}}>📋</span><span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>Request Resources</span>
+      </button>
+    </div>}
+
+    {tab==="walkin"&&<div style={{display:"flex",flexDirection:"column",gap:12,padding:"0 16px"}}>
+      <div style={{fontSize:13,color:"#94a3b8",background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px 12px",lineHeight:1.5}}>Log a walk-in patient at the Medical Tent.</div>
+      <Fld label="Chief Complaint *" value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)} ph="e.g. Chest pain, heat exhaustion, laceration" large/>
+      <Fld label="Any Other Details" value={wiDetails} onChange={e=>setWiDetails(e.target.value)} ph="e.g. Conscious, approx 50s male" multi/>
+      <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={doWalkIn}>🚶 LOG WALK-IN PATIENT</button>
+      {walkIns.length>0&&<>
+        <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",padding:"8px 0 4px",borderTop:"1px solid rgba(255,255,255,0.06)"}}>Active Walk-Ins</div>
+        {walkIns.map(c=>(
+          <div key={c.id} style={{borderRadius:10,border:"1px solid rgba(249,115,22,0.4)",padding:"12px",background:"rgba(249,115,22,0.06)"}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{c.problem}</div>
+            {c.details&&<div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>{c.details}</div>}
+          </div>
+        ))}
+      </>}
+    </div>}
+  </div>);
+}
+
+const S={
+  root:{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif",overflowX:"hidden"},
+  panel:{position:"relative",zIndex:1,width:"100%",maxWidth:480,minHeight:"100vh",display:"flex",flexDirection:"column"},
+  sectionHdr:{fontSize:11,fontWeight:800,color:"#f59e0b",letterSpacing:"0.1em",textTransform:"uppercase",padding:"10px 14px 6px",background:"rgba(245,158,11,0.06)",borderBottom:"1px solid rgba(245,158,11,0.15)"},
+  panelHd:{display:"flex",alignItems:"center",gap:10,padding:"16px 16px 8px"},
+  backBtn:{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"#f1f5f9",padding:"10px 18px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:600},
+  panelTitle:{flex:1,fontSize:17,fontWeight:700,color:"#f1f5f9"},
+  cWrap:{display:"flex",flexDirection:"column",gap:14,padding:"8px 16px 32px"},
+  lbl:{fontSize:11,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",fontWeight:700},
+  inp:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box",outline:"none",fontFamily:"inherit"},
+  sel:{background:"#1e293b",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box"},
+  ta:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box",resize:"vertical",fontFamily:"inherit"},
+  sendBtn:{background:"linear-gradient(135deg,#7c3aed,#4f46e5)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer"},
+  bigAckBtn:{background:"rgba(0,0,0,0.3)",border:"2px solid rgba(255,255,255,0.7)",borderRadius:14,padding:"18px",color:"#fff",fontSize:18,fontWeight:900,cursor:"pointer",width:"100%",maxWidth:380},
+  tabRow:{display:"flex",padding:"0 16px",borderBottom:"1px solid rgba(255,255,255,0.06)",marginBottom:4},
+  tab:{flex:1,padding:"10px",background:"none",border:"none",cursor:"pointer",fontSize:13,fontWeight:600},
+  callQ:{display:"flex",flexDirection:"column",gap:8,padding:"8px 16px 32px",overflowY:"auto"},
+  callCard:{borderRadius:12,border:"2px solid",padding:"12px",display:"flex",flexDirection:"column",gap:8,background:"rgba(255,255,255,0.02)"},
+  actBtn:{border:"none",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"},
+  persistAlert:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",gap:16,padding:"32px 24px",textAlign:"center",position:"relative",zIndex:1,width:"100%",maxWidth:480,boxSizing:"border-box"},
+  empty:{textAlign:"center",color:"#475569",padding:"48px 0",fontSize:14},
+};
+
+
+
+
+// ─── EQUIPMENT MODULE (loads separate file) ───────────────────────────────────
+function EquipmentModule({onBack}){
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif",padding:"32px 20px",textAlign:"center"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:16,maxWidth:400}}>
+        <div style={{fontSize:72}}>📻</div>
+        <div style={{fontSize:22,fontWeight:900,color:"#fff"}}>Equipment Tracker</div>
+        <div style={{fontSize:14,color:"#94a3b8",lineHeight:1.7,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+          The Equipment Tracker is available as a separate preview:<br/>
+          <strong style={{color:"#10b981"}}>fdm-equipment-tracker.jsx</strong><br/><br/>
+          In production it loads here as a full module. The preview keeps it separate to stay within size limits.
+        </div>
+        <button style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",color:"#f1f5f9",padding:"12px 24px",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:700}} onClick={onBack}>← Back to Launcher</button>
+      </div>
+    </div>
+  );
+}
+
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App/>);
+  </script>
+</body>
+</html>

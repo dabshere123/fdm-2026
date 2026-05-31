@@ -3,6 +3,16 @@
   functions = "netlify/functions"
 
 [[headers]]
-  for = "/*.html"
+  for = "/*"
   [headers.values]
     Content-Type = "text/html; charset=UTF-8"
+
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 200
+
+[[redirects]]
+  from = "/privacy-policy"
+  to = "/privacy-policy.html"
+  status = 200

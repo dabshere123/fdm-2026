@@ -1,0 +1,8 @@
+{
+  "name": "fdm-backend",
+  "version": "1.0.0",
+  "description": "Fête de Marquette 2026 — Operations Backend",
+  "dependencies": {
+    "twilio": "^4.0.0"
+  }
+}

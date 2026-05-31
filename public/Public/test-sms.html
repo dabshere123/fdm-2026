@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FDM SMS Test</title>
+  <style>
+    body{font-family:sans-serif;background:#0d0d0d;color:#f1f5f9;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;box-sizing:border-box;}
+    h1{font-size:22px;font-weight:800;margin-bottom:8px;color:#10b981;}
+    p{font-size:14px;color:#64748b;margin-bottom:24px;text-align:center;}
+    button{background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;padding:16px 32px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;width:100%;max-width:320px;}
+    #status{margin-top:16px;font-size:14px;text-align:center;font-weight:600;}
+  </style>
+</head>
+<body>
+  <h1>📱 FDM SMS Test</h1>
+  <p>Tap the button to send a test SMS to (608) 904-8750</p>
+  <button onclick="sendTest()">Send Test SMS</button>
+  <div id="status"></div>
+  <script>
+    async function sendTest() {
+      const status = document.getElementById('status');
+      status.textContent = '⏳ Sending...';
+      status.style.color = '#f59e0b';
+      try {
+        const res = await fetch('/.netlify/functions/send-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: '+16089048750',
+            message: 'Hi Devin! This is a test message from Fête de Marquette Operations. If you received this, the SMS system is working! 🎉'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          status.textContent = '✅ SMS sent! Check your phone.';
+          status.style.color = '#10b981';
+        } else {
+          status.textContent = '❌ Error: ' + (data.error || 'Unknown error');
+          status.style.color = '#ef4444';
+        }
+      } catch (err) {
+        status.textContent = '❌ Error: ' + err.message;
+        status.style.color = '#ef4444';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -167,6 +167,22 @@ const SOUNDS = {
 
 const playAlert = (type) => { const fn = SOUNDS[type]; if(fn) fn(); };
 
+// ─── GROUPME ──────────────────────────────────────────────────────────────────
+const GROUPME_CHANNELS = {
+  all_staff:"all_staff", admin:"admin", medical:"medical",
+  bar_stage:"bar_stage", financial:"financial", restock:"restock", maintenance:"maintenance"
+};
+
+const sendGroupMe = async (message, channels) => {
+  try {
+    await fetch('/.netlify/functions/send-groupme', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ message, channels })
+    });
+  } catch(e) { console.log('GroupMe error:', e.message); }
+};
+
 // ─── HUB APP ──────────────────────────────────────────────────────────────────
 function HubApp({onBack}){
   const [role,setRole]=useState(null);
@@ -268,6 +284,12 @@ function HubApp({onBack}){
   const ackCall=(id,by)=>{ playAlert("ack");
     const call=calls.find(c=>c.id===id);
     if(call) addAckedBanner({...call,unit:by});
+    // Send GroupMe notification to relevant channel
+    if(call){
+      const channelMap={medical:"medical",walk_in:"medical",fire:"medical",security:"admin",supplies:"restock",maintenance:"maintenance",lost_child:"admin"};
+      const ch=channelMap[call.type]||"admin";
+      sendGroupMe(`🚨 FDM Ops Alert — ${call.type.toUpperCase()}\n📍 ${call.location}\n${call.problem||""}\nUnit: ${by}`, [ch,"admin"]);
+    }
     setCalls(p=>p.map(c=>c.id!==id?c:{...c,acknowledged:true,status:"acknowledged",history:[...c.history,{status:"acknowledged",ts:tShort(),unit:by}]}));
     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"ack",label:`Acknowledged by ${by}`,msg:calls.find(c=>c.id===id)?.problem||""},...p]);
   };
@@ -442,7 +464,15 @@ function HubApp({onBack}){
           <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]"));}}/>
           {editedMsg&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
-          <button style={S.sendBtn} onClick={()=>{setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:editedMsg||preview,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:editedMsg||preview},...p]);playAlert("broadcast");setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");}}>🚀 SEND NOW</button>
+          <button style={S.sendBtn} onClick={()=>{
+  const msg=editedMsg||preview;
+  setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
+  setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg},...p]);
+  // Send to GroupMe — all staff + admin for all broadcasts
+  sendGroupMe(`🎪 FDM 2026 — ${t.label}\n\n${msg}`, ["all_staff","admin"]);
+  playAlert("broadcast");
+  setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
+}}>🚀 SEND NOW</button>
         </div>);
       })()}
     </div></div>
@@ -1195,42 +1225,4 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
       <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={doWalkIn}>🚶 LOG WALK-IN PATIENT</button>
       {walkIns.length>0&&<>
         <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",padding:"8px 0 4px",borderTop:"1px solid rgba(255,255,255,0.06)"}}>Active Walk-Ins</div>
-        {walkIns.map(c=>(
-          <div key={c.id} style={{borderRadius:10,border:"1px solid rgba(249,115,22,0.4)",padding:"12px",background:"rgba(249,115,22,0.06)"}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{c.problem}</div>
-            {c.details&&<div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>{c.details}</div>}
-          </div>
-        ))}
-      </>}
-    </div>}
-  </div>);
-}
-
-const S={
-  root:{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif",overflowX:"hidden"},
-  panel:{position:"relative",zIndex:1,width:"100%",maxWidth:768,minHeight:"100vh",display:"flex",flexDirection:"column"},
-  sectionHdr:{fontSize:17,fontWeight:900,color:"#f59e0b",letterSpacing:"0.06em",textTransform:"uppercase",padding:"12px 14px 8px",background:"rgba(245,158,11,0.06)",borderBottom:"1px solid rgba(245,158,11,0.15)"},
-  panelHd:{display:"flex",alignItems:"center",gap:10,padding:"16px 16px 8px"},
-  backBtn:{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"#f1f5f9",padding:"10px 18px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:600},
-  panelTitle:{flex:1,fontSize:17,fontWeight:700,color:"#f1f5f9"},
-  cWrap:{display:"flex",flexDirection:"column",gap:14,padding:"8px 16px 32px"},
-  lbl:{fontSize:11,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",fontWeight:700},
-  inp:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box",outline:"none",fontFamily:"inherit"},
-  sel:{background:"#1e293b",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box"},
-  ta:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box",resize:"vertical",fontFamily:"inherit"},
-  sendBtn:{background:"linear-gradient(135deg,#7c3aed,#4f46e5)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer"},
-  bigAckBtn:{background:"rgba(0,0,0,0.3)",border:"2px solid rgba(255,255,255,0.7)",borderRadius:14,padding:"18px",color:"#fff",fontSize:18,fontWeight:900,cursor:"pointer",width:"100%",maxWidth:380},
-  tabRow:{display:"flex",padding:"0 20px",borderBottom:"1px solid rgba(255,255,255,0.06)",marginBottom:4},
-  tab:{flex:1,padding:"10px",background:"none",border:"none",cursor:"pointer",fontSize:13,fontWeight:600},
-  callQ:{display:"flex",flexDirection:"column",gap:8,padding:"8px 16px 32px",overflowY:"auto"},
-  callCard:{borderRadius:12,border:"2px solid",padding:"12px",display:"flex",flexDirection:"column",gap:8,background:"rgba(255,255,255,0.02)"},
-  actBtn:{border:"none",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"},
-  persistAlert:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",gap:16,padding:"32px 24px",textAlign:"center",position:"relative",zIndex:1,width:"100%",maxWidth:768,boxSizing:"border-box"},
-  empty:{textAlign:"center",color:"#475569",padding:"48px 0",fontSize:14},
-};
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<HubApp onBack={()=>window.location.href='/'}/>);
-  </script>
-</body>
-</html>
+     

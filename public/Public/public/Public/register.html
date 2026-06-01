@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Fête de Marquette 2026 — FDM Staff Registration</title>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+
+const EVENT_DAYS = [
+  {id:"thu", label:"Thursday, July 9",   date:"2026-07-09", hours:"4:00 PM – 11:00 PM",  defaultStart:"4:00 PM",  defaultEnd:"11:00 PM"},
+  {id:"fri", label:"Friday, July 10",    date:"2026-07-10", hours:"4:00 PM – 11:00 PM",  defaultStart:"4:00 PM",  defaultEnd:"11:00 PM"},
+  {id:"sat", label:"Saturday, July 11",  date:"2026-07-11", hours:"12:00 PM – 11:00 PM", defaultStart:"12:00 PM", defaultEnd:"11:00 PM"},
+  {id:"sun", label:"Sunday, July 12",    date:"2026-07-12", hours:"10:00 AM – 9:00 PM",  defaultStart:"10:00 AM", defaultEnd:"9:00 PM"},
+];
+
+const ROLES = [
+  // Bar Managers — run bar operations at each stage
+  "Bar Manager — Moon Stage 1",
+  "Bar Manager — Moon Stage 2",
+  "Bar Manager — Lafayette",
+  "Bar Manager — Lagniappe",
+  "Bar Manager — Sun Left",
+  "Bar Manager — Sun Right",
+  "Bar Manager — Cabaret",
+  // Stage Managers — run stage operations
+  "Stage Manager — Moon Stage",
+  "Stage Manager — Lafayette",
+  "Stage Manager — Lagniappe",
+  "Stage Manager — Sun Stage",
+  "Stage Manager — Cabaret",
+  // Other roles
+  "Tent Manager","Merch Tent Manager",
+  "Greeter Supervisor","Greeter — Few","Greeter — Ingersoll Left","Greeter — Ingersoll Right",
+  "Med Unit 1","Med Unit 2","Admin 1","Admin 2",
+  "Financial 1","Financial 2","Financial 3","Financial 4",
+  "Marketing","MISC","Vendor","Other",
+];
+
+const LOCATIONS = [
+  "Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe",
+  "Sun Left","Sun Right","Cabaret",
+  "Moon Stage Manager","Lagniappe Manager","Lafayette Manager",
+  "Sun Stage Manager","Cabaret Manager",
+  "Greeter — Few","Greeter — Ingersoll Left","Greeter — Ingersoll Right",
+  "Med Unit 1","Med Unit 2","Admin","Financial","Marketing",
+  "Merch Tent","Hospitality","Sun Stage Vendors","Moon Stage Vendors",
+  "Lafayette Vendors","Other",
+];
+
+const TIMES = ["6:00 AM","6:30 AM","7:00 AM","7:30 AM","8:00 AM","8:30 AM","9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","12:00 PM","12:30 PM","1:00 PM","1:30 PM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM","5:00 PM","5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM"];
+
+// ─── APPROVAL CODES ──────────────────────────────────────────────────────────
+// Admin sets these before the event — hand out at pre-event meeting
+const VALID_APPROVAL_CODES = ["FDM2026", "FETE26", "MARQUETTE"];
+
+// Demo registered staff
+const DEMO_REGISTERED = [
+  {id:1, name:"Maria Johnson",   role:"Bar Manager",       location:"Moon Stage 1",  phone:"(608) 555-1234", groupme:"@maria_j",    shifts:["Thu 4:00 PM–11:00 PM","Fri 4:00 PM–11:00 PM","Sat 12:00 PM–11:00 PM"], status:"approved", ts:"Tue May 26 · 2:14 PM"},
+  {id:2, name:"James Rivera",    role:"Stage Manager",     location:"Sun Stage Manager", phone:"(608) 555-2345", groupme:"—",        shifts:["Thu 4:00 PM–11:00 PM","Fri 4:00 PM–11:00 PM"], status:"pending",  ts:"Tue May 26 · 2:31 PM"},
+  {id:3, name:"Aisha Williams",  role:"Med Unit 1",        location:"Med Unit 1",    phone:"(608) 555-3456", groupme:"@aisha_w",    shifts:["Sat 12:00 PM–11:00 PM","Sun 10:00 AM–9:00 PM"], status:"approved", ts:"Tue May 26 · 2:45 PM"},
+  {id:4, name:"Tyler Brooks",    role:"Greeter — Few",     location:"Greeter — Few", phone:"(608) 555-4567", groupme:"—",           shifts:["Fri 4:00 PM–11:00 PM"], status:"pending",  ts:"Tue May 26 · 3:02 PM"},
+  {id:5, name:"Sofia Martinez",  role:"Financial 1",       location:"Financial",     phone:"(608) 555-5678", groupme:"@sofiamtz",   shifts:["Thu 4:00 PM–11:00 PM","Fri 4:00 PM–11:00 PM","Sat 12:00 PM–11:00 PM","Sun 10:00 AM–9:00 PM"], status:"pending",  ts:"Tue May 26 · 3:18 PM"},
+  {id:6, name:"DeShawn Carter",  role:"Bar Manager",       location:"Lafayette",     phone:"(608) 555-6789", groupme:"@dc_lafay",   shifts:["Sat 12:00 PM–11:00 PM","Sun 10:00 AM–9:00 PM"], status:"approved", ts:"Tue May 26 · 3:29 PM"},
+];
+
+function Bg(){
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)"}}>
+      <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/>
+    </div>
+  );
+}
+
+export default function RegisterSim(){
+  const [view, setView] = useState("switcher"); // switcher | register | admin
+  const [registered, setRegistered] = useState(DEMO_REGISTERED);
+  const [adminTab, setAdminTab] = useState("pending");
+  const [justApproved, setJustApproved] = useState(null);
+  const [smsPreview, setSmsPreview] = useState(null);
+
+  const WORKER_APP_SMS = (name) =>
+`Hi ${name}! You're approved for Fête de Marquette 2026 Operations. 🎉
+
+Your worker app: fdm2026.netlify.app/field
+
+📱 Add to home screen:
+  iPhone: Tap Share → Add to Home Screen
+  Android: Tap ⋮ → Add to Home Screen
+
+Sign in with your name & phone number. Your role and location load automatically.
+
+HOW THE APP WORKS:
+• Use the request buttons to alert operations — EMS, Security, Restock, Maintenance and more
+• When operations sends you a message, tap ACKNOWLEDGED to confirm you received it
+• If you have assigned equipment, use the Equipment section to check out and return your radio and/or credit card reader
+
+See you at the fest! 🎶
+— Fête de Marquette Operations`;
+  const [manualAdd, setManualAdd] = useState(false);
+  const [manualForm, setManualForm] = useState({name:"",role:"",location:"",phone:"",groupme:"",onGroupme:null,shifts:{thu:{selected:false,start:"",end:""},fri:{selected:false,start:"",end:""},sat:{selected:false,start:"",end:""},sun:{selected:false,start:"",end:""}}});
+  const manualCanSubmit = manualForm.name && manualForm.role && manualForm.location && manualForm.phone.replace(/\D/g,"").length>=10 && Object.values(manualForm.shifts).some(v=>v.selected);
+
+  // Registration form state
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [location, setLocation] = useState("");
+  const [locationCustom, setLocationCustom] = useState("");
+  const [phone, setPhone] = useState("");
+  const [onGroupme, setOnGroupme] = useState(null);
+  const [approvalCode, setApprovalCode] = useState("");
+  const [codeError, setCodeError] = useState(false);
+  const [groupme, setGroupme] = useState("");
+  const [workShifts, setWorkShifts] = useState({
+    thu:{selected:false,start:"",end:""},
+    fri:{selected:false,start:"",end:""},
+    sat:{selected:false,start:"",end:""},
+    sun:{selected:false,start:"",end:""},
+  });
+  const [submitted, setSubmitted] = useState(false);
+
+  const finalLocation = location==="Other" ? locationCustom : location;
+  const selectedDays = Object.entries(workShifts).filter(([,v])=>v.selected);
+  const canSubmit = name && role && finalLocation && phone.replace(/\D/g,"").length>=10 && selectedDays.length>0 && selectedDays.every(([,v])=>v.start&&v.end);
+
+  const formatPhone=(val)=>{
+    const d=val.replace(/\D/g,"").slice(0,10);
+    if(d.length<=3)return d;
+    if(d.length<=6)return `(${d.slice(0,3)}) ${d.slice(3)}`;
+    return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  };
+
+  const handleSubmit=()=>{
+    const shifts=Object.entries(workShifts).filter(([,v])=>v.selected).map(([id,v])=>{
+      const day=EVENT_DAYS.find(d=>d.id===id);
+      return `${day?.label.split(",")[0]} ${v.start}–${v.end}`;
+    });
+    const codeValid=VALID_APPROVAL_CODES.map(c=>c.toUpperCase()).includes(approvalCode.toUpperCase().trim());
+    const newReg={
+      id:Date.now(),name,role,location:finalLocation,phone,
+      groupme:onGroupme==="yes"&&groupme?"@"+groupme:"—",
+      shifts,status:codeValid?"approved":"pending",
+      autoApproved:codeValid,
+      ts:new Date().toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}),
+    };
+    setRegistered(p=>[...p,newReg]);
+    if(codeValid) setSmsPreview({name,phone,msg:WORKER_APP_SMS(name)});
+    setSubmitted(true);
+  };
+
+  const approve=(id)=>{
+    const person=registered.find(r=>r.id===id);
+    setRegistered(p=>p.map(r=>r.id===id?{...r,status:"approved"}:r));
+    setJustApproved(id);
+    setSmsPreview({name:person?.name,phone:person?.phone,msg:WORKER_APP_SMS(person?.name||"there")});
+    setTimeout(()=>setJustApproved(null),2000);
+  };
+
+  const remove=(id)=>setRegistered(p=>p.filter(r=>r.id!==id));
+
+  const submitManual=()=>{
+    const shifts=Object.entries(manualForm.shifts).filter(([,v])=>v.selected).map(([id,v])=>{
+      const day=EVENT_DAYS.find(d=>d.id===id);
+      return `${day?.label.split(",")[0]}: ${v.start||"TBD"}–${v.end||"TBD"}`;
+    });
+    setRegistered(p=>[...p,{
+      id:Date.now(),name:manualForm.name,role:manualForm.role,
+      location:manualForm.location,phone:formatPhone(manualForm.phone),
+      groupme:manualForm.onGroupme==="yes"&&manualForm.groupme?"@"+manualForm.groupme:"—",
+      shifts,status:"approved",
+      ts:new Date().toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" · Added by Admin",
+    }]);
+    setManualAdd(false);
+    setManualForm({name:"",role:"",location:"",phone:"",groupme:"",onGroupme:null,shifts:{thu:{selected:false,start:"",end:""},fri:{selected:false,start:"",end:""},sat:{selected:false,start:"",end:""},sun:{selected:false,start:"",end:""}}});
+    setAdminTab("approved");
+  };
+
+  const pending=registered.filter(r=>r.status==="pending");
+  const approved=registered.filter(r=>r.status==="approved");
+
+  // SWITCHER
+  if(view==="switcher") return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif",padding:"32px 20px"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:440,display:"flex",flexDirection:"column",alignItems:"center",gap:14,textAlign:"center"}}>
+        <div style={{fontSize:60}}>🎪</div>
+        <div style={{fontSize:26,fontWeight:900,color:"#fff"}}>Fête de Marquette 2026</div>
+        <div style={{fontSize:12,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Registration System Demo</div>
+        <div style={{fontSize:13,color:"#64748b",lineHeight:1.7,marginBottom:8}}>
+          This demo shows the full registration flow — both the worker-facing form and the admin approval queue.
+        </div>
+        <button style={{...S.btn,background:"linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))",border:"2px solid rgba(245,158,11,0.5)",width:"100%"}} onClick={()=>setView("register")}>
+          <span style={{fontSize:28}}>📝</span>
+          <div style={{textAlign:"left"}}><div style={{fontSize:18,fontWeight:800,color:"#f1f5f9"}}>Worker Registration Form</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>What staff see when they scan the QR code</div></div>
+        </button>
+        <button style={{...S.btn,background:"linear-gradient(135deg,rgba(124,58,237,0.2),rgba(124,58,237,0.08))",border:"2px solid rgba(124,58,237,0.5)",width:"100%"}} onClick={()=>setView("admin")}>
+          <span style={{fontSize:28}}>⚡</span>
+          <div style={{textAlign:"left"}}><div style={{fontSize:18,fontWeight:800,color:"#f1f5f9"}}>Admin Approval Queue</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{pending.length} pending · {approved.length} approved</div></div>
+        </button>
+        <div style={{fontSize:11,color:"#334155",marginTop:8}}>Register as a worker, then switch to Admin to approve yourself.</div>
+      </div>
+    </div>
+  );
+
+  // ADMIN VIEW
+  if(view==="admin") return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 20px 8px"}}>
+          <div>
+            <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Fête de Marquette 2026</div>
+            <div style={{fontSize:11,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700}}>Staff Registration Queue</div>
+          </div>
+          <button style={S.backBtn} onClick={()=>setView("switcher")}>← Back</button>
+        </div>
+
+        {/* TABS */}
+        <div style={{display:"flex",margin:"0 20px 12px",background:"rgba(255,255,255,0.04)",borderRadius:12,padding:4,gap:4}}>
+          <button style={{flex:1,padding:"10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:adminTab==="pending"?"rgba(245,158,11,0.4)":"none",color:adminTab==="pending"?"#fff":"#64748b"}} onClick={()=>setAdminTab("pending")}>
+            ⏳ Pending ({pending.length})
+          </button>
+          <button style={{flex:1,padding:"10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:adminTab==="approved"?"rgba(16,185,129,0.4)":"none",color:adminTab==="approved"?"#fff":"#64748b"}} onClick={()=>setAdminTab("approved")}>
+            ✅ Approved ({approved.length})
+          </button>
+        </div>
+
+        {/* MANUAL ADD BUTTON */}
+        {!manualAdd&&<div style={{padding:"0 16px 12px"}}>
+          <button style={{width:"100%",padding:"12px",borderRadius:12,border:"2px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.08)",color:"#f59e0b",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={()=>setManualAdd(true)}>
+            ➕ Add Staff Manually
+          </button>
+        </div>}
+
+        {/* MANUAL ADD FORM */}
+        {manualAdd&&<div style={{margin:"0 20px 16px",borderRadius:14,border:"2px solid rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.06)",padding:"14px",display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#f59e0b"}}>➕ Add Staff Member</div>
+            <button style={{background:"none",border:"none",color:"#64748b",fontSize:14,cursor:"pointer"}} onClick={()=>setManualAdd(false)}>✕ Cancel</button>
+          </div>
+          <div style={{fontSize:12,color:"#94a3b8",background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 10px"}}>Added directly to Approved — no pending review needed.</div>
+          
+          <F label="Full Name *" value={manualForm.name} onChange={e=>setManualForm(p=>({...p,name:e.target.value}))} ph="e.g. John Smith"/>
+          
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={S.lbl}>Role *</label>
+            <select style={{...S.sel,padding:"10px",fontSize:14}} value={manualForm.role} onChange={e=>setManualForm(p=>({...p,role:e.target.value}))}>
+              <option value="">Select role...</option>
+              {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={S.lbl}>Location *</label>
+            <select style={{...S.sel,padding:"10px",fontSize:14}} value={manualForm.location} onChange={e=>setManualForm(p=>({...p,location:e.target.value}))}>
+              <option value="">Select location...</option>
+              {LOCATIONS.map(l=><option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+
+          <F label="Phone Number *" value={manualForm.phone} onChange={e=>setManualForm(p=>({...p,phone:formatPhone(e.target.value)}))} ph="(608) 555-1234" type="tel"/>
+
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <label style={S.lbl}>Working Days</label>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {EVENT_DAYS.map(day=>{
+                const shift=manualForm.shifts[day.id];
+                const sel=shift.selected;
+                return(<div key={day.id} style={{borderRadius:10,border:`1px solid ${sel?"#f59e0b":"rgba(255,255,255,0.08)"}`,background:sel?"rgba(245,158,11,0.05)":"rgba(255,255,255,0.02)",overflow:"hidden"}}>
+                  <button style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",width:"100%",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}
+                    onClick={()=>setManualForm(p=>({...p,shifts:{...p.shifts,[day.id]:{...p.shifts[day.id],selected:!sel}}}))}>
+                    <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?"#f59e0b":"rgba(255,255,255,0.2)"}`,background:sel?"#f59e0b":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      {sel&&<span style={{fontSize:11,color:"#1a1a00",fontWeight:900}}>✓</span>}
+                    </div>
+                    <div style={{fontSize:13,fontWeight:600,color:sel?"#fde047":"#94a3b8"}}>{day.label}</div>
+                  </button>
+                  {sel&&<div style={{display:"flex",gap:6,padding:"0 12px 10px"}}>
+                    <select style={{...S.sel,padding:"8px",fontSize:13,flex:1}} value={shift.start} onChange={e=>setManualForm(p=>({...p,shifts:{...p.shifts,[day.id]:{...p.shifts[day.id],start:e.target.value}}}))}> 
+                      <option value="">Start...</option>
+                      {TIMES.map(t=><option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <select style={{...S.sel,padding:"8px",fontSize:13,flex:1}} value={shift.end} onChange={e=>setManualForm(p=>({...p,shifts:{...p.shifts,[day.id]:{...p.shifts[day.id],end:e.target.value}}}))}> 
+                      <option value="">End...</option>
+                      {TIMES.map(t=><option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>}
+                </div>);
+              })}
+            </div>
+          </div>
+
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={S.lbl}>On GroupMe?</label>
+            <div style={{display:"flex",gap:6}}>
+              {[["yes","Yes"],["no","No"]].map(([v,l])=>(
+                <button key={v} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${manualForm.onGroupme===v?"#f59e0b":"rgba(255,255,255,0.12)"}`,background:manualForm.onGroupme===v?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.04)",color:manualForm.onGroupme===v?"#f59e0b":"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setManualForm(p=>({...p,onGroupme:v}))}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            {manualForm.onGroupme==="yes"&&<div style={{position:"relative"}}>
+              <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#64748b",fontSize:14,fontWeight:700}}>@</span>
+              <input style={{...S.inp,paddingLeft:26,fontSize:13}} placeholder="username" value={manualForm.groupme} onChange={e=>setManualForm(p=>({...p,groupme:e.target.value.replace("@","")}))}/>
+            </div>}
+          </div>
+
+          <button style={{padding:"14px",borderRadius:12,border:"none",background:manualCanSubmit?"linear-gradient(135deg,#10b981,#059669)":"rgba(255,255,255,0.06)",color:manualCanSubmit?"#fff":"#475569",fontSize:15,fontWeight:800,cursor:manualCanSubmit?"pointer":"default"}} disabled={!manualCanSubmit} onClick={submitManual}>
+            ✅ Add to Approved Staff
+          </button>
+        </div>}
+
+        <div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 16px 32px"}}>
+          {adminTab==="pending"&&<>
+            {pending.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"40px 0",fontSize:14}}>No pending registrations</div>}
+            {pending.map(r=>(
+              <div key={r.id} style={{borderRadius:14,border:"2px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.05)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:18,fontWeight:800,color:"#f1f5f9"}}>{r.name}</div>
+                    <div style={{fontSize:13,color:"#f59e0b",fontWeight:600}}>{r.role}</div>
+                  </div>
+                  <div style={{fontSize:11,color:"#64748b",textAlign:"right"}}>{r.ts}</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                  {[["📍 Location",r.location],["📱 Phone",r.phone],["💬 GroupMe",r.groupme]].map(([k,v])=>(
+                    <div key={k} style={{display:"flex",gap:8,fontSize:13}}>
+                      <span style={{color:"#64748b",minWidth:90}}>{k}</span>
+                      <span style={{color:"#e2e8f0",fontWeight:600}}>{v}</span>
+                    </div>
+                  ))}
+                  <div style={{display:"flex",gap:8,fontSize:13,alignItems:"flex-start"}}>
+                    <span style={{color:"#64748b",minWidth:90}}>📅 Shifts</span>
+                    <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                      {r.shifts.map((s,i)=><span key={i} style={{color:"#e2e8f0",fontWeight:600}}>{s}</span>)}
+                    </div>
+                  </div>
+                </div>
+                {r.groupme!=="—"&&(
+                  <div style={{fontSize:12,color:"#a855f7",background:"rgba(168,85,247,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(168,85,247,0.2)"}}>
+                    💬 Add <strong>{r.groupme}</strong> to their GroupMe channel
+                  </div>
+                )}
+                <div style={{display:"flex",gap:8}}>
+                  <button style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}
+                    onClick={()=>approve(r.id)}>
+                    {justApproved===r.id?"✅ Approved!":"✅ Approve"}
+                  </button>
+                  <button style={{padding:"12px 16px",borderRadius:10,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:14,fontWeight:700,cursor:"pointer"}}
+                    onClick={()=>remove(r.id)}>
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>}
+
+          {adminTab==="approved"&&<>
+            {approved.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"40px 0",fontSize:14}}>No approved staff yet</div>}
+            {approved.map(r=>(
+              <div key={r.id} style={{borderRadius:14,border:"1px solid rgba(16,185,129,0.3)",background:"rgba(16,185,129,0.04)",padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>{r.name}</div>
+                    <div style={{fontSize:12,color:"#10b981",fontWeight:600}}>{r.role} · {r.location}</div>
+                  </div>
+                  <div style={{display:"inline-flex",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:800,color:"#fff",background:"#10b981"}}>✅ ACTIVE</div>
+                </div>
+                <div style={{display:"flex",gap:16,fontSize:12}}>
+                  <span style={{color:"#94a3b8"}}>📱 {r.phone}</span>
+                  <span style={{color:"#94a3b8"}}>💬 {r.groupme}</span>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                  {r.shifts.map((s,i)=><span key={i} style={{fontSize:12,color:"#64748b"}}>📅 {s}</span>)}
+                </div>
+                <button style={{alignSelf:"flex-start",padding:"6px 12px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.06)",color:"#fca5a5",fontSize:12,fontWeight:600,cursor:"pointer"}}
+                  onClick={()=>remove(r.id)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </>}
+        </div>
+      </div>
+
+        {/* SMS PREVIEW MODAL */}
+        {smsPreview&&(
+          <div style={{position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.88)",display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 24px"}} onClick={()=>setSmsPreview(null)}>
+            <div style={{width:"100%",maxWidth:768,background:"#1a1a2e",borderRadius:"20px 20px 0 0",padding:"20px 20px 28px",display:"flex",flexDirection:"column",gap:12}} onClick={e=>e.stopPropagation()}>
+              <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.15)",alignSelf:"center",marginBottom:4}}/>
+              <div style={{fontSize:18,fontWeight:800,color:"#f1f5f9"}}>📱 Approval SMS Sent</div>
+              <div style={{fontSize:13,color:"#64748b"}}>To: {smsPreview.name} · {smsPreview.phone}</div>
+              <div style={{background:"rgba(0,0,0,0.35)",borderRadius:12,padding:"14px",maxHeight:340,overflowY:"auto"}}>
+                <div style={{fontSize:13,color:"#e2e8f0",lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"monospace"}}>{smsPreview.msg}</div>
+              </div>
+              <div style={{fontSize:11,color:"#475569",textAlign:"center",fontStyle:"italic"}}>In production this fires automatically via Twilio on approval</div>
+              <div style={{display:"flex",gap:8}}>
+                <button style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={()=>setSmsPreview(null)}>✅ Got it</button>
+                <button style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{try{navigator.clipboard.writeText(smsPreview.msg);}catch(e){}setSmsPreview(null);}}>📋 Copy SMS</button>
+              </div>
+            </div>
+          </div>
+        )}
+    </div>
+  );
+
+  // REGISTRATION FORM
+  if(submitted) return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif",padding:"32px 20px",textAlign:"center"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:16,maxWidth:400,width:"100%"}}>
+        <div style={{fontSize:80}}>🎪</div>
+        <div style={{fontSize:28,fontWeight:900,color:"#10b981"}}>You're Registered!</div>
+        <div style={{fontSize:17,color:"#f1f5f9",fontWeight:700}}>{name}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
+          {[
+            ["Role", role],
+            ["Location", finalLocation],
+            ["Phone", phone],
+            ["Shifts", Object.entries(workShifts).filter(([,v])=>v.selected).map(([id,v])=>`${EVENT_DAYS.find(d=>d.id===id)?.label.split(",")[0]}: ${v.start}–${v.end}`).join(" · ")],
+            onGroupme==="yes"&&groupme?["GroupMe","@"+groupme]:null,
+          ].filter(Boolean).map(([k,v])=>(
+            <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",gap:8}}>
+              <span style={{fontSize:13,color:"#64748b",fontWeight:600,flexShrink:0}}>{k}</span>
+              <span style={{fontSize:15,color:"#f1f5f9",fontWeight:700,textAlign:"right"}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        {(()=>{
+          const codeValid=VALID_APPROVAL_CODES.map(c=>c.toUpperCase()).includes(approvalCode.toUpperCase().trim());
+          return codeValid?(
+            <div style={{fontSize:14,color:"#10b981",lineHeight:1.7,background:"rgba(16,185,129,0.08)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(16,185,129,0.3)",fontWeight:600}}>
+              ✅ You are approved! Your app link and worker guide have been sent to {phone} via SMS. Add it to your home screen and you are ready to go.
+            </div>
+          ):(
+            <div style={{fontSize:14,color:"#94a3b8",lineHeight:1.7,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+              ⏳ Your registration is pending review. You will receive your app link via SMS once approved. Keep your phone handy!
+            </div>
+          );
+        })()}
+        <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
+          <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.08)",color:"#f59e0b",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setView("admin")}>
+            View Admin Queue →
+          </button>
+          <button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(99,102,241,0.4)",background:"rgba(99,102,241,0.08)",color:"#a5b4fc",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setSubmitted(false)}>
+            ✏️ Edit My Registration
+          </button>
+          <button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.03)",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{setSubmitted(false);setName("");setRole("");setLocation("");setPhone("");setOnGroupme(null);setGroupme("");setWorkShifts({thu:{selected:false,start:"",end:""},fri:{selected:false,start:"",end:""},sat:{selected:false,start:"",end:""},sun:{selected:false,start:"",end:""}});}}>
+            Register a Different Person
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d1a",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+        {/* HEADER */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"24px 20px 4px"}}>
+          <div>
+            <div style={{fontSize:22,fontWeight:900,color:"#fff"}}>Fête de Marquette</div>
+            <div style={{fontSize:12,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginTop:2}}>2026 Staff Registration</div>
+          </div>
+          <button style={S.backBtn} onClick={()=>setView("switcher")}>← Back</button>
+        </div>
+        <div style={{fontSize:13,color:"#64748b",padding:"4px 16px 16px",lineHeight:1.6}}>Fill in your info below to register for event day communications.</div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:16,padding:"0 16px 40px"}}>
+
+          {/* NAME */}
+          <F label="Your Full Name" value={name} onChange={e=>setName(e.target.value)} ph="e.g. Maria Johnson" required/>
+
+          {/* ROLE */}
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={S.lbl}>Your Role <span style={{color:"#ef4444"}}>*</span></label>
+            <select style={{...S.sel,fontSize:16,padding:"14px",fontWeight:600,color:role?"#f1f5f9":"#475569"}} value={role} onChange={e=>setRole(e.target.value)}>
+              <option value="">Select your role...</option>
+              {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          {/* LOCATION */}
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={S.lbl}>Your Location <span style={{color:"#ef4444"}}>*</span></label>
+            <select style={{...S.sel,fontSize:16,padding:"14px",fontWeight:600,color:location?"#f1f5f9":"#475569"}} value={location} onChange={e=>setLocation(e.target.value)}>
+              <option value="">Select your location...</option>
+              {LOCATIONS.map(l=><option key={l} value={l}>{l}</option>)}
+            </select>
+            {location==="Other"&&<input style={{...S.inp,marginTop:6}} placeholder="Describe your location..." value={locationCustom} onChange={e=>setLocationCustom(e.target.value)}/>}
+          </div>
+
+          {/* PHONE */}
+          <F label="Cell Phone Number" value={phone} onChange={e=>setPhone(formatPhone(e.target.value))} ph="(608) 555-1234" required type="tel"/>
+
+          {/* WORKING DAYS + TIMES — custom text fields */}
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <label style={S.lbl}>Days & Times You Are Working <span style={{color:"#ef4444"}}>*</span></label>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {EVENT_DAYS.map(day=>{
+                const shift=workShifts[day.id];
+                const sel=shift.selected;
+                return(
+                  <div key={day.id} style={{borderRadius:12,border:`2px solid ${sel?"#f59e0b":"rgba(255,255,255,0.1)"}`,background:sel?"rgba(245,158,11,0.06)":"rgba(255,255,255,0.02)",overflow:"hidden"}}>
+                    <button style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",width:"100%",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}
+                      onClick={()=>setWorkShifts(p=>({...p,[day.id]:{...p[day.id],selected:!p[day.id].selected,start:!p[day.id].selected?day.defaultStart:p[day.id].start,end:!p[day.id].selected?day.defaultEnd:p[day.id].end}}))}>
+                      <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${sel?"#f59e0b":"rgba(255,255,255,0.2)"}`,background:sel?"#f59e0b":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        {sel&&<span style={{fontSize:13,color:"#1a1a00",fontWeight:900}}>✓</span>}
+                      </div>
+                      <div>
+                        <div style={{fontSize:15,fontWeight:700,color:sel?"#fde047":"#f1f5f9"}}>{day.label}</div>
+
+                      </div>
+                    </button>
+                    <div style={{display:"flex",gap:8,padding:"0 16px 14px",opacity:sel?1:0.35,pointerEvents:sel?"auto":"none"}}>
+                      <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
+                        <label style={{fontSize:11,color:sel?"#64748b":"#334155",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Start Time</label>
+                        <select style={{...S.sel,padding:"10px",fontSize:14,opacity:1}} value={shift.start} onChange={e=>setWorkShifts(p=>({...p,[day.id]:{...p[day.id],start:e.target.value}}))}>
+                          <option value="">Select...</option>
+                          {TIMES.map(t=><option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
+                        <label style={{fontSize:11,color:sel?"#64748b":"#334155",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>End Time</label>
+                        <select style={{...S.sel,padding:"10px",fontSize:14,opacity:1}} value={shift.end} onChange={e=>setWorkShifts(p=>({...p,[day.id]:{...p[day.id],end:e.target.value}}))}>
+                          <option value="">Select...</option>
+                          {TIMES.map(t=><option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{fontSize:12,color:"#475569",lineHeight:1.5}}>You will be automatically removed from the system at the end of your last shift.</div>
+          </div>
+
+          {/* GROUPME */}
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <label style={S.lbl}>Are you on GroupMe?</label>
+            <div style={{display:"flex",gap:8}}>
+              {[["yes","✅ Yes"],["no","❌ No"]].map(([val,lbl])=>(
+                <button key={val} style={{flex:1,padding:"12px",borderRadius:10,border:`2px solid ${onGroupme===val?"#f59e0b":"rgba(255,255,255,0.12)"}`,background:onGroupme===val?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.04)",color:onGroupme===val?"#f59e0b":"#94a3b8",fontSize:15,fontWeight:700,cursor:"pointer"}} onClick={()=>setOnGroupme(val)}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            {onGroupme==="yes"&&(
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                <label style={S.lbl}>GroupMe Username</label>
+                <div style={{position:"relative"}}>
+                  <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:"#64748b",fontSize:16,fontWeight:700}}>@</span>
+                  <input style={{...S.inp,paddingLeft:30}} placeholder="your_username" value={groupme} onChange={e=>setGroupme(e.target.value.replace("@",""))}/>
+                </div>
+                <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>Open GroupMe → tap your profile photo → your username is listed below your name. Operations will add you to the right channels before the event starts.</div>
+              </div>
+            )}
+            {onGroupme==="no"&&(
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{background:"rgba(245,158,11,0.08)",border:"2px solid rgba(245,158,11,0.3)",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{fontSize:15,fontWeight:800,color:"#f59e0b"}}>📱 GroupMe is our official communication app</div>
+                  <div style={{fontSize:13,color:"#e2e8f0",lineHeight:1.7}}>
+                    All event-wide announcements, weather alerts, and important updates go out through GroupMe — it's the best way to stay in the loop during Fête de Marquette.
+                  </div>
+                  <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>
+                    It's <strong style={{color:"#f1f5f9"}}>completely free</strong>, takes about 2 minutes to set up, and you'll use it throughout the event.
+                  </div>
+                  <a href="https://groupme.com" target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"13px",borderRadius:10,background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#1a1a00",fontSize:15,fontWeight:900,textDecoration:"none",marginTop:2}}>
+                    📲 Join GroupMe — it's free!
+                  </a>
+                  <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>
+                    Once you've joined, come back and enter your username above — we'll add you to the right channels right away.
+                  </div>
+                </div>
+                <div style={{fontSize:12,color:"#475569",background:"rgba(255,255,255,0.03)",borderRadius:8,padding:"10px 12px",lineHeight:1.5}}>
+                  Don't have a smartphone? No worries — you'll still receive all critical alerts via text message.
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* APPROVAL CODE */}
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={S.lbl}>Approval Code <span style={{color:"#475569",fontWeight:400,textTransform:"none",fontSize:10,letterSpacing:0}}>(skip the review queue)</span></label>
+            <input style={{...S.inp,borderColor:approvalCode&&VALID_APPROVAL_CODES.map(c=>c.toUpperCase()).includes(approvalCode.toUpperCase().trim())?"rgba(16,185,129,0.6)":"rgba(255,255,255,0.1)"}} placeholder="Enter code if you have one" value={approvalCode} onChange={e=>{setApprovalCode(e.target.value);}}/>
+            {approvalCode&&VALID_APPROVAL_CODES.map(c=>c.toUpperCase()).includes(approvalCode.toUpperCase().trim())&&<div style={{fontSize:12,color:"#10b981",fontWeight:700}}>✅ Valid — you'll be approved instantly and receive your app link</div>}
+            {approvalCode&&!VALID_APPROVAL_CODES.map(c=>c.toUpperCase()).includes(approvalCode.toUpperCase().trim())&&<div style={{fontSize:12,color:"#f59e0b",fontWeight:600}}>⏳ Code not recognized — registration will go to the pending queue</div>}
+          </div>
+
+          {/* SUBMIT */}
+          <button
+            style={{background:canSubmit?"linear-gradient(135deg,#f59e0b,#d97706)":"rgba(255,255,255,0.06)",border:canSubmit?"none":"1px solid rgba(255,255,255,0.12)",borderRadius:14,padding:"18px",color:canSubmit?"#1a1a00":"#475569",fontSize:17,fontWeight:900,cursor:canSubmit?"pointer":"default",transition:"all 0.2s",marginTop:4}}
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+          >
+            {canSubmit?"🎪 REGISTER FOR FÊTE 2026":"Fill in all fields above to register"}
+          </button>
+          <div style={{fontSize:12,color:"#334155",textAlign:"center",lineHeight:1.6}}>Your information is used only for Fête de Marquette event operations.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function F({label,value,onChange,ph,required,type="text"}){
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      <label style={S.lbl}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>
+      <input type={type} style={S.inp} placeholder={ph} value={value} onChange={onChange}/>
+    </div>
+  );
+}
+
+const S={
+  btn:{display:"flex",alignItems:"center",gap:14,padding:"18px",borderRadius:14,cursor:"pointer",textAlign:"left"},
+  backBtn:{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",color:"#f1f5f9",padding:"8px 14px",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600},
+  lbl:{fontSize:11,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",fontWeight:700},
+  inp:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,width:"100%",boxSizing:"border-box",outline:"none",fontFamily:"inherit",fontWeight:500},
+  sel:{background:"#1e293b",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,width:"100%",boxSizing:"border-box",fontFamily:"inherit"},
+};
+
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<RegApp/>);
+  </script>
+</body>
+</html>

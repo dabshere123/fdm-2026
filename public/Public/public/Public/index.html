@@ -19,14 +19,15 @@
     .emoji{font-size:64px;line-height:1;margin-bottom:12px;}
     h1{font-size:28px;font-weight:900;color:#fff;margin-bottom:4px;}
     .subtitle{font-size:13px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;}
-    .card{display:flex;align-items:center;gap:16px;padding:20px;border-radius:16px;text-decoration:none;width:100%;cursor:pointer;transition:transform 0.15s;}
+    .card{display:flex;align-items:center;gap:16px;padding:20px;border-radius:16px;text-decoration:none;width:100%;transition:transform 0.15s;}
     .card:active{transform:scale(0.98);}
     .card-icon{font-size:36px;min-width:48px;text-align:center;flex-shrink:0;}
     .card-text{flex:1;}
     .card-title{font-size:18px;font-weight:800;color:#f1f5f9;margin-bottom:3px;}
     .card-desc{font-size:13px;color:#64748b;line-height:1.4;}
     .arrow{font-size:20px;color:rgba(255,255,255,0.3);flex-shrink:0;}
-    .divider{width:100%;height:1px;background:rgba(255,255,255,0.06);margin:8px 0;}
+    .divider{width:100%;height:1px;background:rgba(255,255,255,0.06);margin:4px 0;}
+    .section-label{font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;align-self:flex-start;margin-top:4px;}
     .footer{font-size:12px;color:#334155;text-align:center;margin-top:24px;line-height:1.6;}
   </style>
 </head>
@@ -40,15 +41,19 @@
       <div class="subtitle">Fête de Marquette 2026</div>
     </div>
 
-    <a class="card" href="/field.html" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border:2px solid rgba(245,158,11,0.4);">
-      <div class="card-icon">🏥</div>
+    <div class="section-label">Operations</div>
+
+    <!-- HUB -->
+    <a class="card" href="/hub.html" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border:2px solid rgba(239,68,68,0.5);">
+      <div class="card-icon">⚡</div>
       <div class="card-text">
         <div class="card-title">Operations Hub</div>
-        <div class="card-desc">Admin · Med 1 · Med 2 — PIN protected</div>
+        <div class="card-desc">Admin · Med 1 · Med 2 — PIN protected command center</div>
       </div>
       <div class="arrow">→</div>
     </a>
 
+    <!-- WORKER APP -->
     <a class="card" href="/field.html" style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05));border:2px solid rgba(99,102,241,0.4);">
       <div class="card-icon">📱</div>
       <div class="card-text">
@@ -58,6 +63,10 @@
       <div class="arrow">→</div>
     </a>
 
+    <div class="divider"></div>
+    <div class="section-label">Setup</div>
+
+    <!-- REGISTRATION -->
     <a class="card" href="/register.html" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border:2px solid rgba(16,185,129,0.4);">
       <div class="card-icon">📝</div>
       <div class="card-text">
@@ -67,8 +76,7 @@
       <div class="arrow">→</div>
     </a>
 
-    <div class="divider"></div>
-
+    <!-- EQUIPMENT TRACKER -->
     <a class="card" href="/equipment-tracker.html" style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03));border:1px solid rgba(16,185,129,0.25);">
       <div class="card-icon">📻</div>
       <div class="card-text">

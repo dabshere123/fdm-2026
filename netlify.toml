@@ -32,3 +32,8 @@
   from = "/equipment"
   to = "/equipment-tracker.html"
   status = 200
+
+[[redirects]]
+  from = "/hub"
+  to = "/hub.html"
+  status = 200

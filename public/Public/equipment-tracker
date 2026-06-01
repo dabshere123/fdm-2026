@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Fête de Marquette 2026 — FDM Equipment Tracker</title>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+
+// ─── DEMO DATA ─────────────────────────────────────────────────────────────────
+const INIT_EQUIPMENT = [
+  {id:"r1", type:"radio",  label:"Radio #1",  emoji:"📻", status:"available", checkedOutBy:null, location:null, time:null, bundleId:null, alerts:[]},
+  {id:"r2", type:"radio",  label:"Radio #2",  emoji:"📻", status:"available", checkedOutBy:null, location:null, time:null, bundleId:null, alerts:[]},
+  {id:"r3", type:"radio",  label:"Radio #3",  emoji:"📻", status:"out",       checkedOutBy:"Maria Johnson",  location:"Moon Stage 1", time:"4:08 PM", bundleId:"b1"},
+  {id:"r4", type:"radio",  label:"Radio #4",  emoji:"📻", status:"available", checkedOutBy:null, location:null, time:null, bundleId:null, alerts:[]},
+  {id:"r5", type:"radio",  label:"Radio #5",  emoji:"📻", status:"out",       checkedOutBy:"DeShawn Carter", location:"Lafayette",    time:"4:11 PM", bundleId:"b2"},
+  {id:"r6", type:"radio",  label:"Radio #6",  emoji:"📻", status:"available", checkedOutBy:null, location:null, time:null, bundleId:null, alerts:[]},
+  {id:"r7", type:"radio",  label:"Radio #7",  emoji:"📻", status:"out",       checkedOutBy:"James Rivera",   location:"Sun Stage",    time:"4:22 PM", bundleId:null, alerts:[]},
+  {id:"c1", type:"reader", label:"Reader #1", emoji:"💳", status:"out",       checkedOutBy:"Maria Johnson",  location:"Moon Stage 1", time:"4:08 PM", bundleId:"b1"},
+  {id:"c2", type:"reader", label:"Reader #2", emoji:"💳", status:"out",       checkedOutBy:"DeShawn Carter", location:"Lafayette",    time:"4:11 PM", bundleId:"b2"},
+  {id:"c3", type:"reader", label:"Reader #3", emoji:"💳", status:"available", checkedOutBy:null, location:null, time:null, bundleId:null, alerts:[]},
+  {id:"c4", type:"reader", label:"Reader #4", emoji:"💳", status:"available", checkedOutBy:null, location:null, time:null, bundleId:null, alerts:[]},
+  {id:"c5", type:"reader", label:"Reader #5", emoji:"💳", status:"available", checkedOutBy:null, location:null, time:null, bundleId:null, alerts:[]},
+];
+
+const INIT_BUNDLES = [
+  {id:"b1", name:"Moon Stage 1 Bundle",  itemIds:["r3","c1"], location:"Moon Stage 1", qrCode:"FDM-B1"},
+  {id:"b2", name:"Lafayette Bundle",      itemIds:["r5","c2"], location:"Lafayette",    qrCode:"FDM-B2"},
+  {id:"b3", name:"Lagniappe Bundle",      itemIds:["r4","c3"], location:"Lagniappe",    qrCode:"FDM-B3"},
+];
+
+// Location → bundle auto-mapping (Option A)
+const LOCATION_BUNDLE_MAP = {
+  "Moon Stage 1": "b1",
+  "Lafayette":    "b2",
+  "Lagniappe":    "b3",
+};
+
+// ─── NOTIFICATION SCRIPTS ─────────────────────────────────────────────────────
+const NOTIF_SCRIPTS = {
+  preEvent_broadcast:{
+    sms:(name)=>`Hi team! This is Fête de Marquette Operations. A friendly reminder to stop by the festival office to pick up your radio and/or credit card reader before your shift begins. See you out there!`,
+    voice:()=>`Hi team! This is Fête de Marquette Operations. A friendly reminder to stop by the festival office to pick up your radio and/or credit card reader before your shift begins. See you out there!`,
+  },
+  preEvent_followup:{
+    sms:(name)=>`Hi ${name}, this is Fête de Marquette Operations. It looks like your equipment hasn't been picked up yet. Please stop by the festival office as soon as possible to grab your radio and/or credit card reader(s). Thanks!`,
+    voice:(name)=>`Hi ${name}, this is Fête de Marquette Operations. It looks like your equipment hasn't been picked up yet. Please stop by the festival office as soon as possible to grab your radio and/or credit card reader(s). Thanks!`,
+  },
+  postEvent_broadcast:{
+    sms:()=>`Hi team! Fête de Marquette is wrapping up for the night. Please return your radio and/or credit card reader to the festival office within the next 30 minutes. Thank you for a great night!`,
+    voice:()=>`Hi team! Fête de Marquette is wrapping up for the night. Please return your radio and/or credit card reader to the festival office within the next 30 minutes. Thank you for a great night!`,
+  },
+  postEvent_followup:{
+    sms:(name)=>`Hi ${name}, this is Fête de Marquette Operations. We still have your equipment on record. Please return your radio and/or credit card reader to the festival office as soon as possible. Thank you!`,
+    voice:(name)=>`Hi ${name}, this is Fête de Marquette Operations. We still have your equipment on record. Please return your radio and/or credit card reader to the festival office as soon as possible. Thank you!`,
+  },
+};
+
+// Demo assigned staff (in production comes from registration)
+const ASSIGNED_STAFF = [
+  {id:"s1", name:"Maria Johnson",  phone:"(608) 555-0201", bundleId:"b1", location:"Moon Stage 1"},
+  {id:"s2", name:"DeShawn Carter", phone:"(608) 555-0202", bundleId:"b2", location:"Lafayette"},
+  {id:"s3", name:"Aisha Williams", phone:"(608) 555-0203", bundleId:"b3", location:"Lagniappe"},
+];
+
+const INIT_LOG = [
+  {id:1, ts:"4:08 PM", type:"bundle_out", label:"Moon Stage 1 Bundle — OUT", detail:"Maria Johnson · Radio #3 + Reader #1"},
+  {id:2, ts:"4:11 PM", type:"bundle_out", label:"Lafayette Bundle — OUT",    detail:"DeShawn Carter · Radio #5 + Reader #2"},
+  {id:3, ts:"4:22 PM", type:"item_out",   label:"Radio #7 — Individual OUT", detail:"James Rivera · Sun Stage"},
+];
+
+const LOCATIONS = [
+  "Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe","Sun Left","Sun Right","Cabaret",
+  "Med Unit 1","Med Unit 2","Operations","Financial","Merch Tent","Hospitality",
+  "Greeter — Few","Greeter — Ingersoll Left","Greeter — Ingersoll Right","Other",
+];
+
+const ADMIN_PIN = "8510";
+
+function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #0a1a0d 0%, #0d0d0d 60%)"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/></div>);}
+
+function EquipmentTracker(){
+  const [equipment, setEquipment] = useState(INIT_EQUIPMENT);
+  const [bundles,   setBundles]   = useState(INIT_BUNDLES);
+  const [log,       setLog]       = useState(INIT_LOG);
+  const [view,      setView]      = useState("dashboard");
+  const [isAdmin,   setIsAdmin]   = useState(false);
+  const [pin,       setPin]       = useState("");
+  const [pinErr,    setPinErr]    = useState(false);
+  const [toast,     setToast]     = useState(null);
+  const [filter,    setFilter]    = useState("all");
+  const [itemAlert, setItemAlert] = useState(null);
+  const [customReminder, setCustomReminder] = useState({name:"", phone:"", msg:""});
+  const [simStep,   setSimStep]   = useState(null);
+  const [notifLog,  setNotifLog]  = useState([]);
+  const [schedule,  setSchedule]  = useState({preEventTime:"15:30",preEventFollowupMins:30,postEventTime:"23:00",postEventFollowupMins:30});
+  const [assignedStaff, setAssignedStaff] = useState(()=>{
+    // Option A: auto-assign from registration based on location
+    return ASSIGNED_STAFF.map(s=>({
+      ...s,
+      bundleId: s.bundleId || LOCATION_BUNDLE_MAP[s.location] || null,
+      autoAssigned: !s.bundleId && !!LOCATION_BUNDLE_MAP[s.location],
+    }));
+  });
+  const [qrView, setQrView] = useState(null); // bundle or item being QR-generated
+  const [assignModal, setAssignModal] = useState(null); // bundleId being manually assigned
+
+  // checkout state
+  const [coMode,    setCoMode]    = useState(null); // "bundle" | "item"
+  const [coBundle,  setCoBundle]  = useState(null);
+  const [coItem,    setCoItem]    = useState(null);
+  const [coName,    setCoName]    = useState("");
+  const [coLoc,     setCoLoc]     = useState("");
+
+  // admin bundle builder
+  const [editBundle, setEditBundle] = useState(null); // null | {id,name,itemIds,location} | "new"
+
+  const now = () => new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  const addLog = (entry) => setLog(p=>[{id:Date.now(),...entry,ts:now()},...p]);
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(null),3500); };
+
+  const outCount   = equipment.filter(e=>e.status==="out").length;
+  const availCount = equipment.filter(e=>e.status==="available").length;
+
+  const bundleItems = (b) => b.itemIds.map(id=>equipment.find(e=>e.id===id)).filter(Boolean);
+  const bundleOut   = (b) => b.itemIds.some(id=>equipment.find(e=>e.id===id)?.status==="out");
+  const bundleAvail = (b) => b.itemIds.every(id=>equipment.find(e=>e.id===id)?.status==="available");
+
+  // ── CHECKOUT ─────────────────────────────────────────────────────────────────
+  const doCheckout = () => {
+    const ts = now();
+    if(coMode==="bundle" && coBundle && coName){
+      const b = bundles.find(x=>x.id===coBundle);
+      if(!b) return;
+      setEquipment(p=>p.map(e=>b.itemIds.includes(e.id)?{...e,status:"out",checkedOutBy:coName,location:b.location,time:ts,bundleId:b.id}:e));
+      const items = bundleItems(b).map(e=>e.label).join(" + ");
+      addLog({type:"bundle_out",label:`${b.name} — OUT`,detail:`${coName} · ${items}`});
+      showToast(`📦 ${b.name} checked out to ${coName}`);
+    } else if(coMode==="item" && coItem && coName && coLoc){
+      setEquipment(p=>p.map(e=>e.id===coItem?{...e,status:"out",checkedOutBy:coName,location:coLoc,time:ts,bundleId:null}:e));
+      const item = equipment.find(e=>e.id===coItem);
+      addLog({type:"item_out",label:`${item?.label} — Individual OUT`,detail:`${coName} · ${coLoc}`});
+      showToast(`${item?.emoji} ${item?.label} checked out to ${coName}`);
+    }
+    setCoMode(null);setCoBundle(null);setCoItem(null);setCoName("");setCoLoc("");
+    setView("dashboard");
+  };
+
+  // ── RETURN ────────────────────────────────────────────────────────────────────
+  const doReturn = (item) => {
+    const ts = now();
+    if(item.bundleId){
+      const b = bundles.find(x=>x.id===item.bundleId);
+      if(b){
+        setEquipment(p=>p.map(e=>b.itemIds.includes(e.id)?{...e,status:"available",checkedOutBy:null,location:null,time:null,bundleId:null}:e));
+        const items = bundleItems(b).map(e=>e.label).join(" + ");
+        addLog({type:"bundle_in",label:`${b.name} — RETURNED`,detail:`${item.checkedOutBy} · ${items}`});
+        showToast(`📦 ${b.name} returned`);
+        return;
+      }
+    }
+    setEquipment(p=>p.map(e=>e.id===item.id?{...e,status:"available",checkedOutBy:null,location:null,time:null,bundleId:null}:e));
+    addLog({type:"item_in",label:`${item.label} — Returned`,detail:item.checkedOutBy||""});
+    showToast(`${item.emoji} ${item.label} returned`);
+  };
+
+  const doReturnBundle = (b) => {
+    const first = bundleItems(b).find(e=>e.status==="out");
+    if(first) doReturn(first);
+  };
+
+  // ── ADMIN PIN ─────────────────────────────────────────────────────────────────
+  const tryPin = (d) => {
+    const n = pin+d;
+    if(n.length<=4) setPin(n);
+    if(n.length===4){
+      if(n===ADMIN_PIN){setIsAdmin(true);setPinErr(false);setPin("");setView("admin");}
+      else{setPinErr(true);setTimeout(()=>{setPinErr(false);setPin("");},800);}
+    }
+  };
+
+  const resetAll = () => {
+    setEquipment(p=>p.map(e=>({...e,status:"available",checkedOutBy:null,location:null,time:null,bundleId:null})));
+    addLog({type:"reset",label:"All Equipment Reset",detail:"Admin"});
+    showToast("🔄 All equipment reset to Available");
+  };
+
+  // ── FILTERED LIST ─────────────────────────────────────────────────────────────
+  const filtered = filter==="all" ? equipment
+    : filter==="radio"  ? equipment.filter(e=>e.type==="radio")
+    : filter==="reader" ? equipment.filter(e=>e.type==="reader")
+    : filter==="out"    ? equipment.filter(e=>e.status==="out")
+    : equipment.filter(e=>e.status==="available");
+
+  // ── VIEWS ─────────────────────────────────────────────────────────────────────
+
+  if(view==="notifications") return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"20px 20px 8px"}}>
+          <button style={S.backBtn} onClick={()=>setView("dashboard")}>← Back</button>
+          <span style={{fontSize:17,fontWeight:700,color:"#f1f5f9"}}>🔔 Notification Schedule</span>
+        </div>
+        <div style={{padding:"8px 20px 32px",display:"flex",flexDirection:"column",gap:14}}>
+
+          {/* PRE-EVENT */}
+          <div style={{borderRadius:14,border:"1px solid rgba(16,185,129,0.3)",background:"rgba(16,185,129,0.05)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#10b981",textTransform:"uppercase",letterSpacing:"0.06em"}}>⏰ Pre-Event</div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={S.lbl}>Broadcast Reminder Time (daily)</label>
+              <input type="time" style={{...S.inp,fontSize:16}} value={schedule.preEventTime} onChange={e=>setSchedule(p=>({...p,preEventTime:e.target.value}))}/>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>SMS fires to all staff with assigned bundles at this time each event day</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={S.lbl}>Individual Follow-up (mins before event)</label>
+              <div style={{display:"flex",gap:6}}>
+                {[15,30,45,60].map(m=>(
+                  <button key={m} style={{flex:1,padding:"10px 0",borderRadius:8,border:`1px solid ${schedule.preEventFollowupMins===m?"#10b981":"rgba(255,255,255,0.1)"}`,background:schedule.preEventFollowupMins===m?"rgba(16,185,129,0.15)":"rgba(255,255,255,0.03)",color:schedule.preEventFollowupMins===m?"#10b981":"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setSchedule(p=>({...p,preEventFollowupMins:m}))}>{m}m</button>
+                ))}
+              </div>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>If bundle not picked up → individual SMS + voice fires</div>
+            </div>
+            <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{fontSize:11,color:"#10b981",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>📱 Broadcast SMS</div>
+              <div style={{fontSize:12,color:"#e2e8f0",lineHeight:1.7}}>{NOTIF_SCRIPTS.preEvent_broadcast.sms()}</div>
+              <div style={{fontSize:11,color:"#10b981",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>📱 Follow-up SMS</div>
+              <div style={{fontSize:12,color:"#e2e8f0",lineHeight:1.7}}>{NOTIF_SCRIPTS.preEvent_followup.sms("[Name]")}</div>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});setNotifLog(p=>[{id:Date.now(),ts,type:"pre_broadcast",msg:`📢 Pre-event broadcast → ${ASSIGNED_STAFF.length} staff`},...p]);showToast("📢 Pre-event broadcast simulated");}}>📤 Sim Broadcast</button>
+              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{const unPicked=ASSIGNED_STAFF.filter(s=>{const b=INIT_BUNDLES.find(x=>x.id===s.bundleId);return b&&equipment.filter(e=>b.itemIds.includes(e.id)&&e.status==="available").length===b.itemIds.length;});const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});setNotifLog(p=>[{id:Date.now(),ts,type:"pre_followup",msg:`📞 Follow-up → ${unPicked.length} unpicked: ${unPicked.map(s=>s.name).join(", ")||"None"}`},...p]);showToast(`📞 Follow-up sent to ${unPicked.length} staff`);}}>📞 Sim Follow-up</button>
+            </div>
+          </div>
+
+          {/* POST-EVENT */}
+          <div style={{borderRadius:14,border:"1px solid rgba(96,165,250,0.3)",background:"rgba(96,165,250,0.05)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#60a5fa",textTransform:"uppercase",letterSpacing:"0.06em"}}>🌙 Post-Event</div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={S.lbl}>Event Close Time (30-min timer auto-starts)</label>
+              <input type="time" style={{...S.inp,fontSize:16}} value={schedule.postEventTime} onChange={e=>setSchedule(p=>({...p,postEventTime:e.target.value}))}/>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Broadcast fires at close. 30-min follow-up runs automatically.</div>
+            </div>
+            <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{fontSize:11,color:"#60a5fa",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>📱 Broadcast SMS</div>
+              <div style={{fontSize:12,color:"#e2e8f0",lineHeight:1.7}}>{NOTIF_SCRIPTS.postEvent_broadcast.sms()}</div>
+              <div style={{fontSize:11,color:"#60a5fa",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>📱 30-Min Follow-up SMS</div>
+              <div style={{fontSize:12,color:"#e2e8f0",lineHeight:1.7}}>{NOTIF_SCRIPTS.postEvent_followup.sms("[Name]")}</div>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(96,165,250,0.4)",background:"rgba(96,165,250,0.1)",color:"#93c5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{const outStaff=equipment.filter(e=>e.status==="out").map(e=>e.checkedOutBy).filter((v,i,a)=>v&&a.indexOf(v)===i);const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});setNotifLog(p=>[{id:Date.now(),ts,type:"post_broadcast",msg:`📢 Post-event broadcast → ${outStaff.length} staff with equipment out`},...p]);showToast("📢 Post-event broadcast simulated");}}>📤 Sim Broadcast</button>
+              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(96,165,250,0.4)",background:"rgba(96,165,250,0.1)",color:"#93c5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{const stillOut=equipment.filter(e=>e.status==="out").map(e=>e.checkedOutBy).filter((v,i,a)=>v&&a.indexOf(v)===i);const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});setNotifLog(p=>[{id:Date.now(),ts,type:"post_followup",msg:`📞 30-min follow-up → ${stillOut.length} staff still out: ${stillOut.join(", ")||"None"}`},...p]);showToast(`📞 30-min follow-up sent to ${stillOut.length} staff`);}}>📞 Sim 30-Min</button>
+            </div>
+          </div>
+
+          {/* CUSTOM INDIVIDUAL REMINDER */}
+          <div style={{borderRadius:14,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.04)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.06em"}}>✉️ Custom Individual Reminder</div>
+            <div style={{fontSize:11,color:"#64748b"}}>Send a one-off SMS + voice call to any person</div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={S.lbl}>Name</label>
+              <input style={S.inp} placeholder="e.g. Maria Johnson" value={customReminder.name} onChange={e=>setCustomReminder(p=>({...p,name:e.target.value}))}/>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={S.lbl}>Phone Number</label>
+              <input style={S.inp} placeholder="e.g. (608) 555-0201" value={customReminder.phone} onChange={e=>setCustomReminder(p=>({...p,phone:e.target.value}))}/>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={S.lbl}>Message</label>
+              <textarea style={{...S.inp,minHeight:80,resize:"vertical",lineHeight:1.5}} placeholder="Type your message..." value={customReminder.msg} onChange={e=>setCustomReminder(p=>({...p,msg:e.target.value}))}/>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={S.lbl}>Quick Templates</label>
+              {["Pick up your equipment","Return your equipment"].map((lb,i)=>(
+                <button key={lb} style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.2)",background:"rgba(245,158,11,0.06)",color:"#f59e0b",fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}} onClick={()=>{
+                  const n=customReminder.name||"[Name]";
+                  setCustomReminder(p=>({...p,msg:[`Hi ${n}, this is Fête de Marquette Operations. Please stop by the festival office as soon as possible to grab your radio and/or credit card reader(s). Thanks!`,`Hi ${n}, this is Fête de Marquette Operations. We still have your equipment on record. Please return your radio and/or credit card reader to the festival office as soon as possible. Thank you!`][i]}));
+                }}>{lb}</button>
+              ))}
+            </div>
+            <button style={{padding:"12px",borderRadius:10,border:"none",background:(!customReminder.name||!customReminder.phone||!customReminder.msg)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#d97706,#b45309)",color:(!customReminder.name||!customReminder.phone||!customReminder.msg)?"#475569":"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}
+              disabled={!customReminder.name||!customReminder.phone||!customReminder.msg}
+              onClick={()=>{
+                const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+                setNotifLog(p=>[{id:Date.now(),ts,type:"custom",msg:`📱 Custom → ${customReminder.name} (${customReminder.phone}): "${customReminder.msg.slice(0,50)}..."`},...p]);
+                showToast(`📱 Reminder sent to ${customReminder.name}`);
+                setCustomReminder(p=>({...p,name:"",phone:"",msg:""}));
+              }}>📱 Send SMS + Voice Call</button>
+          </div>
+
+          {/* ASSIGNED STAFF */}
+          <div style={{borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.02)",padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#f1f5f9"}}>👥 Assigned Staff ({ASSIGNED_STAFF.length})</div>
+            <div style={{fontSize:11,color:"#64748b",marginBottom:2}}>In production — pulled from registration system</div>
+            {ASSIGNED_STAFF.map(s=>{
+              const b=INIT_BUNDLES.find(x=>x.id===s.bundleId);
+              const items=b?b.itemIds.map(id=>equipment.find(e=>e.id===id)).filter(Boolean):[];
+              const pickedUp=items.some(e=>e.status==="out"&&e.checkedOutBy===s.name);
+              return(
+                <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,border:`1px solid ${pickedUp?"rgba(16,185,129,0.3)":"rgba(255,255,255,0.08)"}`,background:pickedUp?"rgba(16,185,129,0.05)":"rgba(255,255,255,0.02)"}}>
+                  <span style={{fontSize:16}}>{pickedUp?"✅":"⏳"}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{s.name}</div>
+                    <div style={{fontSize:11,color:"#64748b"}}>{s.phone} · {s.location}</div>
+                    <div style={{fontSize:11,color:pickedUp?"#10b981":"#f59e0b",fontWeight:600,marginTop:1}}>{pickedUp?"✅ Picked up":"⏳ Not picked up yet"}</div>
+                  </div>
+                  {b&&<span style={{fontSize:11,color:"#64748b"}}>📦 {b.name}</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* NOTIFICATION LOG */}
+          {notifLog.length>0&&(
+            <div style={{borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.02)",padding:"14px",display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{fontSize:13,fontWeight:800,color:"#f1f5f9"}}>📋 Notification Log</div>
+              {notifLog.map(n=>(
+                <div key={n.id} style={{fontSize:12,color:"#94a3b8",padding:"8px 10px",borderRadius:8,background:"rgba(255,255,255,0.03)",lineHeight:1.5}}>
+                  <span style={{color:"#f59e0b",fontWeight:700}}>{n.ts}</span> — {n.msg}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── QR CODE GENERATOR ────────────────────────────────────────────────────────
+  if(view==="qr") return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"20px 20px 8px"}}>
+          <button style={S.backBtn} onClick={()=>setView("admin")}>← Back</button>
+          <span style={{fontSize:17,fontWeight:700,color:"#f1f5f9"}}>🔲 QR Code Generator</span>
+        </div>
+        <div style={{padding:"8px 20px 32px",display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Print and attach these QR codes to each bundle bag and individual item. Staff scan them from the field app to check out or return equipment.</div>
+
+          {/* BUNDLE QR CODES */}
+          <div style={{fontSize:12,fontWeight:800,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em"}}>📦 Bundle QR Codes</div>
+          {bundles.map(b=>(
+            <div key={b.id} style={{borderRadius:12,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.05)",padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>📦 {b.name}</div>
+              <div style={{fontSize:11,color:"#64748b"}}>📍 {b.location} · {bundleItems(b).map(e=>e.label).join(" + ")}</div>
+              <div style={{background:"#fff",borderRadius:8,padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+                {/* QR placeholder — in production renders real QR */}
+                <div style={{width:120,height:120,background:"#f1f5f9",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",border:"2px dashed #cbd5e1",position:"relative"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gridTemplateRows:"repeat(8,1fr)",width:96,height:96,gap:0}}>
+                    {Array.from({length:64}).map((_,i)=>(
+                      <div key={i} style={{background:Math.random()>0.5?"#0F172A":"transparent"}}/>
+                    ))}
+                  </div>
+                </div>
+                <div style={{fontSize:13,fontWeight:800,color:"#0F172A",letterSpacing:"0.1em"}}>{b.qrCode||`FDM-${b.id.toUpperCase()}`}</div>
+                <div style={{fontSize:11,color:"#64748b",textAlign:"center"}}>{b.name}</div>
+              </div>
+              <div style={{fontSize:11,color:"#94a3b8",textAlign:"center",fontStyle:"italic"}}>In production — tap to download printable QR sheet</div>
+            </div>
+          ))}
+
+          {/* INDIVIDUAL ITEM QR CODES */}
+          <div style={{fontSize:12,fontWeight:800,color:"#60a5fa",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:8}}>📱 Individual Item QR Codes</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {equipment.map(e=>(
+              <div key={e.id} style={{borderRadius:10,border:"1px solid rgba(96,165,250,0.25)",background:"rgba(96,165,250,0.04)",padding:"12px",display:"flex",alignItems:"center",gap:12}}>
+                <span style={{fontSize:22}}>{e.emoji}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{e.label}</div>
+                  <div style={{fontSize:11,color:"#64748b",fontFamily:"monospace"}}>FDM-{e.id.toUpperCase()}</div>
+                </div>
+                <div style={{width:48,height:48,background:"#fff",borderRadius:6,padding:4,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gridTemplateRows:"repeat(5,1fr)",width:40,height:40,gap:0}}>
+                    {Array.from({length:25}).map((_,i)=>(
+                      <div key={i} style={{background:Math.random()>0.5?"#0F172A":"transparent"}}/>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:"#64748b",textAlign:"center",fontStyle:"italic",marginTop:4}}>In production — tap Print All to generate a full printable sheet</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if(view==="pin") return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif",padding:"24px"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:16,maxWidth:300,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:44}}>🔐</div>
+        <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>Admin PIN</div>
+        <div style={{display:"flex",gap:14,justifyContent:"center",padding:"14px 24px",borderRadius:14,border:`2px solid ${pinErr?"#ef4444":"rgba(255,255,255,0.12)"}`,background:"rgba(255,255,255,0.04)",transition:"border-color 0.2s"}}>
+          {[0,1,2,3].map(i=><div key={i} style={{width:16,height:16,borderRadius:"50%",background:i<pin.length?(pinErr?"#ef4444":"#10b981"):"rgba(255,255,255,0.2)",transition:"background 0.15s"}}/>)}
+        </div>
+        {pinErr&&<div style={{fontSize:13,color:"#ef4444",fontWeight:600}}>Incorrect PIN</div>}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,width:"100%",maxWidth:240}}>
+          {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((d,i)=>(
+            <button key={i} style={{padding:"16px 0",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.06)",color:"#f1f5f9",fontSize:20,fontWeight:600,cursor:d?"pointer":"default",opacity:d?1:0}} onClick={()=>{if(d==="⌫")setPin(p=>p.slice(0,-1));else if(d)tryPin(d);}}>{d}</button>
+          ))}
+        </div>
+        <button style={S.backBtn} onClick={()=>{setView("dashboard");setPin("");}}>← Cancel</button>
+      </div>
+    </div>
+  );
+
+  if(view==="checkout") return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"20px 20px 8px"}}>
+          <button style={S.backBtn} onClick={()=>{setView("dashboard");setCoMode(null);setCoBundle(null);setCoItem(null);setCoName("");setCoLoc("");}}>← Back</button>
+          <span style={{fontSize:17,fontWeight:700,color:"#f1f5f9"}}>📤 Check Out</span>
+        </div>
+        <div style={{padding:"8px 20px 32px",display:"flex",flexDirection:"column",gap:14}}>
+
+          {/* MODE SELECTOR */}
+          {!coMode&&<>
+            <label style={S.lbl}>What are you checking out?</label>
+            <button style={{...S.modeBtn,borderColor:"rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.08)"}} onClick={()=>setCoMode("bundle")}>
+              <span style={{fontSize:28}}>📦</span>
+              <div><div style={{fontSize:18,fontWeight:800,color:"#f1f5f9"}}>Bundle</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>Multiple items checked out together</div></div>
+            </button>
+            <button style={{...S.modeBtn,borderColor:"rgba(96,165,250,0.5)",background:"rgba(96,165,250,0.08)"}} onClick={()=>setCoMode("item")}>
+              <span style={{fontSize:28}}>📱</span>
+              <div><div style={{fontSize:18,fontWeight:800,color:"#f1f5f9"}}>Individual Item</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>Single radio or reader</div></div>
+            </button>
+          </>}
+
+          {/* BUNDLE CHECKOUT */}
+          {coMode==="bundle"&&<>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:"#f59e0b"}}>📦 Bundle</span>
+              <button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer"}} onClick={()=>{setCoMode(null);setCoBundle(null);}}>Change</button>
+            </div>
+            <label style={S.lbl}>Select Bundle</label>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {bundles.filter(b=>bundleAvail(b)).map(b=>(
+                <button key={b.id} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${coBundle===b.id?"#f59e0b":"rgba(255,255,255,0.1)"}`,background:coBundle===b.id?"rgba(245,158,11,0.1)":"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left"}} onClick={()=>setCoBundle(b.id)}>
+                  <span style={{fontSize:22,minWidth:28}}>📦</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>{b.name}</div>
+                    <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{bundleItems(b).map(e=>`${e.emoji} ${e.label}`).join(" + ")}</div>
+                    <div style={{fontSize:11,color:"#10b981",marginTop:2}}>✅ All items available</div>
+                  </div>
+                  {coBundle===b.id&&<span style={{color:"#f59e0b",fontSize:18}}>✓</span>}
+                </button>
+              ))}
+              {bundles.filter(b=>bundleAvail(b)).length===0&&<div style={{textAlign:"center",color:"#475569",padding:"20px",fontSize:13}}>No bundles available — all items are out</div>}
+            </div>
+            {coBundle&&<>
+              <label style={S.lbl}>Checked Out To (Name) *</label>
+              <input style={S.inp} placeholder="e.g. Maria Johnson" value={coName} onChange={e=>setCoName(e.target.value)}/>
+              <div style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#f59e0b"}}>
+                📍 Location auto-set from bundle: <strong>{bundles.find(b=>b.id===coBundle)?.location}</strong>
+              </div>
+              <button style={{...S.submitBtn,opacity:!coName?0.5:1}} disabled={!coName} onClick={doCheckout}>📦 Check Out Bundle</button>
+            </>}
+          </>}
+
+          {/* INDIVIDUAL CHECKOUT */}
+          {coMode==="item"&&<>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:"#60a5fa"}}>📱 Individual Item</span>
+              <button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer"}} onClick={()=>{setCoMode(null);setCoItem(null);}}>Change</button>
+            </div>
+            <label style={S.lbl}>Select Item</label>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {equipment.filter(e=>e.status==="available").map(e=>(
+                <button key={e.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px",borderRadius:10,border:`2px solid ${coItem===e.id?"#60a5fa":"rgba(255,255,255,0.1)"}`,background:coItem===e.id?"rgba(96,165,250,0.1)":"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left"}} onClick={()=>setCoItem(e.id)}>
+                  <span style={{fontSize:20}}>{e.emoji}</span>
+                  <span style={{fontSize:14,fontWeight:600,color:"#f1f5f9",flex:1}}>{e.label}</span>
+                  {coItem===e.id&&<span style={{color:"#60a5fa",fontSize:16}}>✓</span>}
+                </button>
+              ))}
+              {equipment.filter(e=>e.status==="available").length===0&&<div style={{textAlign:"center",color:"#475569",padding:"20px",fontSize:13}}>No items available</div>}
+            </div>
+            {coItem&&<>
+              <label style={S.lbl}>Name *</label>
+              <input style={S.inp} placeholder="e.g. James Rivera" value={coName} onChange={e=>setCoName(e.target.value)}/>
+              <label style={S.lbl}>Location *</label>
+              <select style={S.sel} value={coLoc} onChange={e=>setCoLoc(e.target.value)}>
+                <option value="">Select location...</option>
+                {LOCATIONS.map(l=>{
+                  const taken=equipment.some(e=>e.status==="out"&&e.location===l);
+                  return <option key={l} value={l} style={{color:taken?"#f87171":"#f1f5f9",fontWeight:taken?700:400}}>{taken?`⚠️ ${l} (in use)`:l}</option>;
+                })}
+              </select>
+              <div style={{background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#93c5fd",fontWeight:600}}>
+                ⚠️ This is an individual checkout — not part of a bundle. Log it as such.
+              </div>
+              <button style={{...S.submitBtn,background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",opacity:(!coName||!coLoc)?0.5:1}} disabled={!coName||!coLoc} onClick={doCheckout}>📱 Check Out Individual Item</button>
+            </>}
+          </>}
+        </div>
+      </div>
+    </div>
+  );
+
+  if(view==="return") return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"20px 20px 8px"}}>
+          <button style={S.backBtn} onClick={()=>setView("dashboard")}>← Back</button>
+          <span style={{fontSize:17,fontWeight:700,color:"#f1f5f9"}}>📥 Return Equipment</span>
+        </div>
+        <div style={{padding:"8px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
+
+          {/* BUNDLES OUT */}
+          {bundles.filter(b=>bundleOut(b)).map(b=>{
+            const items=bundleItems(b);
+            const outItems=items.filter(e=>e.status==="out");
+            const first=outItems[0];
+            return(<div key={b.id} style={{borderRadius:12,border:"2px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.06)",padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{fontSize:13,fontWeight:800,color:"#f59e0b"}}>📦 {b.name}</div>
+              <div style={{fontSize:12,color:"#94a3b8"}}>{first?.checkedOutBy} · {first?.location} · {first?.time}</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {items.map(e=><span key={e.id} style={{fontSize:12,padding:"3px 8px",borderRadius:6,background:e.status==="out"?"rgba(239,68,68,0.15)":"rgba(16,185,129,0.15)",color:e.status==="out"?"#fca5a5":"#6ee7b7",fontWeight:600}}>{e.emoji} {e.label}</span>)}
+              </div>
+              <button style={{padding:"10px",borderRadius:10,border:"2px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={()=>doReturnBundle(b)}>
+                📥 Return Entire Bundle
+              </button>
+            </div>);
+          })}
+
+          {/* INDIVIDUAL ITEMS OUT (not in a bundle) */}
+          {(() => {
+            const indivOut = equipment.filter(e=>e.status==="out"&&!e.bundleId);
+            if(indivOut.length===0) return null;
+            return(<>
+              <div style={{fontSize:11,fontWeight:800,color:"#60a5fa",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:8}}>📱 Individual Items Out</div>
+              {indivOut.map(e=>(
+                <div key={e.id} style={{borderRadius:12,border:"1px solid rgba(96,165,250,0.3)",background:"rgba(96,165,250,0.05)",padding:"14px",display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{fontSize:22}}>{e.emoji}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>{e.label}</div>
+                    <div style={{fontSize:12,color:"#94a3b8"}}>{e.checkedOutBy} · {e.location} · {e.time}</div>
+                  </div>
+                  <button style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.08)",color:"#6ee7b7",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>doReturn(e)}>Return</button>
+                </div>
+              ))}
+            </>);
+          })()}
+
+          {equipment.filter(e=>e.status==="out").length===0&&(
+            <div style={{textAlign:"center",color:"#475569",padding:"40px",fontSize:14}}>All equipment has been returned ✅</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if(view==="admin"&&isAdmin) return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 20px 8px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <button style={S.backBtn} onClick={()=>setView("dashboard")}>← Back</button>
+            <span style={{fontSize:17,fontWeight:700,color:"#f1f5f9"}}>⚙️ Admin</span>
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <button style={{...S.backBtn,fontSize:12}} onClick={()=>setView("qr")}>🔲 QR Codes</button>
+            <button style={{...S.backBtn,borderColor:"rgba(239,68,68,0.4)",color:"#fca5a5"}} onClick={()=>{setIsAdmin(false);setView("dashboard");}}>Lock</button>
+          </div>
+        </div>
+
+        <div style={{padding:"8px 20px 32px",display:"flex",flexDirection:"column",gap:14}}>
+
+          {/* RESET */}
+          <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={resetAll}>
+            🔄 Reset All Equipment to Available
+          </button>
+
+          {/* BUNDLE MANAGER */}
+          <div style={{fontSize:12,fontWeight:800,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",paddingTop:4}}>📦 Bundle Manager</div>
+          {bundles.map(b=>(
+            <div key={b.id} style={{borderRadius:12,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.05)",padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>📦 {b.name}</div>
+                <div style={{display:"flex",gap:6}}>
+                  <button style={{padding:"4px 10px",borderRadius:8,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.08)",color:"#f59e0b",fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={()=>setEditBundle({...b})}>Edit</button>
+                  <button style={{padding:"4px 10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.06)",color:"#fca5a5",fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={()=>setBundles(p=>p.filter(x=>x.id!==b.id))}>Delete</button>
+                </div>
+              </div>
+              <div style={{fontSize:12,color:"#64748b"}}>📍 {b.location}</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {bundleItems(b).map(e=><span key={e.id} style={{fontSize:12,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.06)",color:"#94a3b8"}}>{e.emoji} {e.label}</span>)}
+              </div>
+              {/* ASSIGNED STAFF */}
+              {(()=>{
+                const assigned=assignedStaff.filter(s=>s.bundleId===b.id);
+                return(<>
+                  {assigned.length>0&&(
+                    <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                      {assigned.map(s=>(
+                        <div key={s.id} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,padding:"3px 8px",borderRadius:6,background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.3)",color:"#6ee7b7"}}>
+                          👤 {s.name}
+                          <button style={{background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:11,padding:0,marginLeft:2}} onClick={()=>setAssignedStaff(p=>p.map(x=>x.id===s.id?{...x,bundleId:null}:x))}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button style={{padding:"6px 10px",borderRadius:8,border:"1px solid rgba(16,185,129,0.3)",background:"rgba(16,185,129,0.08)",color:"#6ee7b7",fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}} onClick={()=>setAssignModal(assignModal===b.id?null:b.id)}>
+                    👤 {assigned.length>0?"Manage Staff":"Assign Staff"}
+                  </button>
+                  {assignModal===b.id&&(
+                    <div style={{background:"rgba(0,0,0,0.2)",borderRadius:10,padding:"10px",display:"flex",flexDirection:"column",gap:6}}>
+                      <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Assign Staff — {b.name}</div>
+                      <div style={{fontSize:11,color:"#475569",marginBottom:4}}>Auto-assigned from registration by location. Tap to manually assign or remove.</div>
+                      {assignedStaff.filter(s=>!s.bundleId||s.bundleId===b.id).map(s=>{
+                        const isAssigned=s.bundleId===b.id;
+                        return(
+                          <button key={s.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:`1px solid ${isAssigned?"rgba(16,185,129,0.5)":"rgba(255,255,255,0.08)"}`,background:isAssigned?"rgba(16,185,129,0.08)":"rgba(255,255,255,0.02)",cursor:"pointer",textAlign:"left"}} onClick={()=>setAssignedStaff(p=>p.map(x=>x.id===s.id?{...x,bundleId:isAssigned?null:b.id}:x))}>
+                            <span style={{fontSize:16}}>{isAssigned?"✅":"⬜"}</span>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>{s.name}</div>
+                              <div style={{fontSize:11,color:"#64748b"}}>{s.location} · {s.phone}</div>
+                            </div>
+                            {isAssigned&&<span style={{fontSize:11,color:"#10b981",fontWeight:600}}>Assigned</span>}
+                          </button>
+                        );
+                      })}
+                      {/* ADD NEW STAFF MANUALLY */}
+                      <button style={{padding:"8px",borderRadius:8,border:"1px dashed rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.02)",color:"#64748b",fontSize:12,cursor:"pointer"}} onClick={()=>{
+                        const name=prompt("Staff member name:");
+                        const phone=prompt("Phone number:");
+                        if(name&&phone){
+                          const newStaff={id:`s${Date.now()}`,name,phone,bundleId:b.id,location:b.location};
+                          setAssignedStaff(p=>[...p,newStaff]);
+                        }
+                      }}>➕ Add Staff Manually</button>
+                      <button style={{padding:"6px",borderRadius:8,border:"none",background:"rgba(255,255,255,0.04)",color:"#64748b",fontSize:11,cursor:"pointer"}} onClick={()=>setAssignModal(null)}>Done</button>
+                    </div>
+                  )}
+                </>);
+              })()}
+            </div>
+          ))}
+
+          {!editBundle?(
+            <button style={{padding:"12px",borderRadius:12,border:"2px dashed rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.04)",color:"#f59e0b",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setEditBundle({id:null,name:"",itemIds:[],location:""})}>
+              ➕ Create New Bundle
+            </button>
+          ):(
+            <BundleEditor
+              bundle={editBundle}
+              equipment={equipment}
+              allLocations={LOCATIONS}
+              onChange={setEditBundle}
+              onSave={(b)=>{
+                if(b.id) setBundles(p=>p.map(x=>x.id===b.id?b:x));
+                else setBundles(p=>[...p,{...b,id:`b${Date.now()}`}]);
+                setEditBundle(null);
+                showToast(b.id?"Bundle updated":"Bundle created");
+              }}
+              onCancel={()=>setEditBundle(null)}
+            />
+          )}
+
+          {/* EQUIPMENT LIST */}
+          <div style={{fontSize:12,fontWeight:800,color:"#60a5fa",textTransform:"uppercase",letterSpacing:"0.08em",paddingTop:4}}>📋 All Equipment</div>
+          {equipment.map(e=>(
+            <div key={e.id} style={{borderRadius:10,border:`1px solid ${e.status==="out"?"rgba(239,68,68,0.3)":"rgba(16,185,129,0.25)"}`,background:e.status==="out"?"rgba(239,68,68,0.04)":"rgba(16,185,129,0.04)",padding:"12px",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20}}>{e.emoji}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{e.label}</div>
+                {e.status==="out"?<div style={{fontSize:11,color:"#94a3b8"}}>{e.checkedOutBy} · {e.location} · {e.time}{e.bundleId?" · 📦 Bundle":""}</div>:<div style={{fontSize:11,color:"#10b981",fontWeight:600}}>✅ Available</div>}
+              </div>
+              {e.status==="out"&&<button style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(16,185,129,0.3)",background:"rgba(16,185,129,0.08)",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>doReturn(e)}>Return</button>}
+            </div>
+          ))}
+
+          {/* ADD EQUIPMENT */}
+          <div style={{fontSize:12,fontWeight:800,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.08em",paddingTop:4}}>➕ Add Equipment</div>
+          <AddItemForm onAdd={item=>setEquipment(p=>[...p,{...item,id:`e${Date.now()}`,status:"available",checkedOutBy:null,location:null,time:null,bundleId:null}])}/>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── DASHBOARD ─────────────────────────────────────────────────────────────────
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",background:"#0d0d0d",fontFamily:"'DM Sans',sans-serif"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:768}}>
+
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",padding:"24px 20px 8px"}}>
+          <div>
+            <div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Equipment Tracker</div>
+            <div style={{fontSize:11,color:"#10b981",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginTop:2}}>Fête de Marquette 2026</div>
+          </div>
+          <div style={{display:"flex",gap:6}}>
+          <button style={{...S.backBtn,fontSize:12}} onClick={()=>setView("notifications")}>🔔 Alerts</button>
+          <button style={{...S.backBtn,fontSize:12}} onClick={()=>setView("pin")}>⚙️ Admin</button>
+        </div>
+        </div>
+
+        {/* TOAST */}
+        {toast&&<div style={{margin:"0 20px 8px",background:"rgba(16,185,129,0.15)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#10b981",fontWeight:700}}>✅ {toast}</div>}
+
+        {/* STATUS */}
+        <div style={{display:"flex",gap:8,padding:"0 16px 12px"}}>
+          {[[outCount,"Out","#f87171","rgba(239,68,68,0.3)"],[availCount,"Available","#6ee7b7","rgba(16,185,129,0.3)"],[equipment.length,"Total","#f1f5f9","rgba(255,255,255,0.15)"]].map(([n,lb,c,bc])=>(
+            <div key={lb} style={{flex:1,background:`${bc.replace("0.3","0.08")}`,border:`1px solid ${bc}`,borderRadius:12,padding:"12px",textAlign:"center"}}>
+              <div style={{fontSize:26,fontWeight:900,color:c}}>{n}</div>
+              <div style={{fontSize:11,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700,marginTop:2}}>{lb}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ACTIONS */}
+        <div style={{display:"flex",gap:8,padding:"0 16px 16px"}}>
+          <button style={{flex:1,padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:15,fontWeight:800,cursor:"pointer"}} onClick={()=>setView("checkout")}>📤 Check Out</button>
+          <button style={{flex:1,padding:"14px",borderRadius:12,border:"2px solid rgba(96,165,250,0.5)",background:"rgba(96,165,250,0.1)",color:"#93c5fd",fontSize:15,fontWeight:800,cursor:"pointer"}} onClick={()=>setView("return")}>📥 Return</button>
+        </div>
+
+        {/* BUNDLES STATUS */}
+        <div style={{padding:"0 16px 8px"}}>
+          <div style={{fontSize:11,fontWeight:800,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>📦 Bundles</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {bundles.map(b=>{
+              const items=bundleItems(b);
+              const allOut=items.every(e=>e.status==="out");
+              const allIn=items.every(e=>e.status==="available");
+              const partial=!allOut&&!allIn;
+              const first=items.find(e=>e.status==="out");
+              return(
+                <div key={b.id} style={{borderRadius:10,border:`1px solid ${allOut?"rgba(239,68,68,0.35)":allIn?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.35)"}`,background:allOut?"rgba(239,68,68,0.04)":allIn?"rgba(16,185,129,0.04)":"rgba(245,158,11,0.04)",padding:"12px",display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:20}}>📦</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{b.name}</div>
+                    <div style={{fontSize:11,color:"#64748b",marginTop:1}}>{items.map(e=>e.emoji).join(" ")}</div>
+                    {allOut&&first&&<div style={{fontSize:11,color:"#f87171",marginTop:2,fontWeight:600}}>🔴 Out — {first.checkedOutBy}</div>}
+                {allOut&&<div style={{fontSize:11,color:"#f87171",fontWeight:600,marginTop:1}}>Tap to alert →</div>}
+                    {allIn&&<div style={{fontSize:11,color:"#10b981",marginTop:2,fontWeight:600}}>✅ Available</div>}
+                    {partial&&<div style={{fontSize:11,color:"#f59e0b",marginTop:2,fontWeight:600}}>⚠️ Partial return</div>}
+                  </div>
+                  {allOut&&<button style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(16,185,129,0.35)",background:"rgba(16,185,129,0.08)",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>doReturnBundle(b)}>Return</button>}
+                  {allIn&&<span style={{fontSize:11,color:"#10b981",fontWeight:700}}>✅</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* FILTER + ITEM LIST */}
+        <div style={{display:"flex",gap:4,padding:"12px 16px 8px",overflowX:"auto"}}>
+          {[["all","All"],["radio","📻 Radios"],["reader","💳 Readers"],["out","🔴 Out"],["available","✅ Available"]].map(([id,lb])=>(
+            <button key={id} style={{padding:"9px 16px",borderRadius:22,border:`2px solid ${filter===id?"#10b981":"rgba(255,255,255,0.1)"}`,background:filter===id?"rgba(16,185,129,0.15)":"rgba(255,255,255,0.04)",color:filter===id?"#10b981":"#64748b",fontSize:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilter(id)}>{lb}</button>
+          ))}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,padding:"0 16px 32px"}}>
+          {filtered.map(e=>(
+            <div key={e.id} style={{borderRadius:12,border:`1px solid ${e.status==="out"?"rgba(239,68,68,0.3)":"rgba(16,185,129,0.25)"}`,background:e.status==="out"?"rgba(239,68,68,0.04)":"rgba(16,185,129,0.04)",overflow:"hidden"}}>
+            <div style={{padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:e.status==="out"?"pointer":"default"}}
+              onClick={()=>{ if(e.status==="out") setItemAlert(e); }}>
+              <span style={{fontSize:26}}>{e.emoji}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>{e.label}</div>
+                {e.status==="out"?(
+                  <div style={{display:"flex",flexDirection:"column",gap:2,marginTop:3}}>
+                    <div style={{fontSize:14,color:"#f87171",fontWeight:600}}>🔴 {e.checkedOutBy}</div>
+                    <div style={{fontSize:13,color:"#94a3b8"}}>📍 {e.location} · {e.time}{e.bundleId?<span style={{color:"#f59e0b"}}> · 📦</span>:""}</div>
+                  </div>
+                ):(
+                  <div style={{fontSize:13,color:"#10b981",fontWeight:600,marginTop:3}}>✅ Available</div>
+                )}
+              </div>
+
+              {e.status==="out"&&<div style={{fontSize:11,fontWeight:700,flexShrink:0,padding:"4px 8px",borderRadius:6,border:`1px solid ${(e.alerts||[]).length>0?"rgba(16,185,129,0.5)":"rgba(239,68,68,0.4)"}`,background:(e.alerts||[]).length>0?"rgba(16,185,129,0.12)":"rgba(239,68,68,0.08)",color:(e.alerts||[]).length>0?"#6ee7b7":"#fca5a5"}}>{(e.alerts||[]).length>0?`✅ ${e.alerts.length} sent`:"🔴 No alert"}</div>}
+            </div>
+            {(e.alerts||[]).length>0&&(
+              <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:3,paddingLeft:38}}>
+                {(e.alerts||[]).slice().reverse().map(a=>(
+                  <div key={a.id} style={{fontSize:11,color:"#94a3b8",display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{color:"#f59e0b",fontWeight:700,flexShrink:0}}>{a.ts}</span>
+                    <span>{a.msg}</span>
+                    <span style={{color:"#64748b"}}>→ {a.sentTo}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            </div>
+          ))}
+
+          {/* ITEM ALERT MODAL */}
+          {itemAlert&&(
+            <div style={{position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 24px"}} onClick={()=>setItemAlert(null)}>
+              <div style={{width:"100%",maxWidth:768,background:"#1a1a1a",borderRadius:"20px 20px 0 0",padding:"20px 20px 24px",display:"flex",flexDirection:"column",gap:12}} onClick={e=>e.stopPropagation()}>
+                <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.15)",alignSelf:"center",marginBottom:4}}/>
+                <div style={{fontSize:19,fontWeight:800,color:"#f1f5f9"}}>📱 Alert — {itemAlert.label}</div>
+                <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"14px",display:"flex",flexDirection:"column",gap:6}}>
+                  <div style={{fontSize:17,fontWeight:700,color:"#f1f5f9"}}>{itemAlert.checkedOutBy}</div>
+                  <div style={{fontSize:14,color:"#94a3b8"}}>📍 {itemAlert.location}</div>
+                  <div style={{fontSize:13,color:"#64748b"}}>Checked out {itemAlert.time}{itemAlert.bundleId?" · 📦 Bundle":""}</div>
+                </div>
+
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <label style={S.lbl}>Quick Alert</label>
+                  {[
+                    {id:"pickup", label:"📦 Please pick up your equipment",msg:`Hi ${itemAlert.checkedOutBy}, this is Fête de Marquette Operations. Please stop by the festival office as soon as possible to grab your radio and/or credit card reader(s). Thanks!`},
+                    {id:"return", label:"📥 Please return your equipment",msg:`Hi ${itemAlert.checkedOutBy}, this is Fête de Marquette Operations. We still have your equipment on record. Please return your ${itemAlert.label} to the festival office as soon as possible. Thank you!`},
+                    {id:"checkin",label:"📻 Equipment needs to be checked in",msg:`Hi ${itemAlert.checkedOutBy}, this is Fête de Marquette Operations. Your radio and/or credit card reader needs to be checked in. Please return it to the festival office as soon as possible. Thanks!`},
+                  ].map(t=>{
+                    const alreadySent=(itemAlert.alerts||[]).some(a=>a.msg===t.label);
+                    return(
+                      <button key={t.id} style={{padding:"14px",borderRadius:10,border:`2px solid ${alreadySent?"rgba(16,185,129,0.6)":"rgba(239,68,68,0.35)"}`,background:alreadySent?"rgba(16,185,129,0.12)":"rgba(239,68,68,0.07)",color:alreadySent?"#6ee7b7":"#fca5a5",fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}} onClick={()=>{
+                        if(alreadySent) return;
+                        const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+                        const alertEntry={id:Date.now(),ts,msg:t.label,sentTo:itemAlert.checkedOutBy};
+                        setEquipment(p=>p.map(e=>e.id===itemAlert.id?{...e,alerts:[...(e.alerts||[]),alertEntry]}:e));
+                        setItemAlert(p=>p?{...p,alerts:[...(p.alerts||[]),alertEntry]}:p);
+                        setNotifLog(p=>[{id:Date.now(),ts,type:"item_alert",msg:`📱 Alert sent to ${itemAlert.checkedOutBy} re: ${itemAlert.label} — "${t.msg.slice(0,50)}..."`},...p]);
+                        showToast(`📱 Alert sent to ${itemAlert.checkedOutBy}`);
+                      }}>
+                        <span style={{flex:1}}>{t.label}</span>
+                        {alreadySent&&<span style={{fontSize:12,fontWeight:800,flexShrink:0}}>✅ Sent</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button style={{padding:"12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>setItemAlert(null)}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BundleEditor({bundle,equipment,allLocations,onChange,onSave,onCancel}){
+  return(
+    <div style={{borderRadius:12,border:"2px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.06)",padding:"14px",display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{fontSize:14,fontWeight:700,color:"#f59e0b"}}>{bundle.id?"✏️ Edit Bundle":"➕ New Bundle"}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        <label style={S.lbl}>Bundle Name</label>
+        <input style={S.inp} placeholder="e.g. Moon Stage 1 Bundle" value={bundle.name} onChange={e=>onChange(p=>({...p,name:e.target.value}))}/>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        <label style={S.lbl}>Location</label>
+        <select style={S.sel} value={bundle.location||""} onChange={e=>onChange(p=>({...p,location:e.target.value}))}>
+          <option value="">Select location...</option>
+          {allLocations.map(l=><option key={l} value={l}>{l}</option>)}
+        </select>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        <label style={S.lbl}>Items in this Bundle</label>
+        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+          {equipment.map(e=>{
+            const sel=bundle.itemIds.includes(e.id);
+            return(
+              <button key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:8,border:`1px solid ${sel?"#f59e0b":"rgba(255,255,255,0.08)"}`,background:sel?"rgba(245,158,11,0.08)":"rgba(255,255,255,0.02)",cursor:"pointer",textAlign:"left"}} onClick={()=>onChange(p=>({...p,itemIds:sel?p.itemIds.filter(id=>id!==e.id):[...p.itemIds,e.id]}))}>
+                <span style={{fontSize:16}}>{sel?"✅":"⬜"}</span>
+                <span style={{fontSize:15,color:"#f1f5f9"}}>{e.emoji} {e.label}</span>
+                {e.status==="out"&&<span style={{fontSize:11,color:"#f87171",marginLeft:"auto"}}>Out</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:"#f59e0b",color:"#1a1a00",fontSize:14,fontWeight:800,cursor:"pointer",opacity:(!bundle.name||!bundle.location||bundle.itemIds.length===0)?0.5:1}} disabled={!bundle.name||!bundle.location||bundle.itemIds.length===0} onClick={()=>onSave(bundle)}>
+          {bundle.id?"Save Changes":"Create Bundle"}
+        </button>
+        <button style={{padding:"12px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#64748b",fontSize:14,fontWeight:600,cursor:"pointer"}} onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function AddItemForm({onAdd}){
+  const [form,setForm]=useState({type:"radio",label:""});
+  return(
+    <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
+      <select style={{...S.sel,flex:"0 0 110px",padding:"10px",fontSize:13}} value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>
+        <option value="radio">📻 Radio</option>
+        <option value="reader">💳 Reader</option>
+      </select>
+      <input style={{...S.inp,flex:1,padding:"10px",fontSize:13}} placeholder="Label e.g. Radio #8" value={form.label} onChange={e=>setForm(p=>({...p,label:e.target.value}))}/>
+      <button style={{padding:"10px 14px",borderRadius:10,border:"none",background:"#10b981",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:!form.label?0.5:1}} disabled={!form.label} onClick={()=>{onAdd({type:form.type,label:form.label,emoji:form.type==="radio"?"📻":"💳"});setForm({type:"radio",label:""});}}>Add</button>
+    </div>
+  );
+}
+
+const S={
+  backBtn:{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:"#94a3b8",padding:"8px 14px",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600},
+  lbl:{fontSize:11,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",fontWeight:700},
+  inp:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box",outline:"none",fontFamily:"inherit"},
+  sel:{background:"#1a1a1a",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box"},
+  submitBtn:{background:"linear-gradient(135deg,#10b981,#059669)",border:"none",borderRadius:12,padding:"16px",color:"#fff",fontSize:18,fontWeight:800,cursor:"pointer",width:"100%"},
+  modeBtn:{display:"flex",alignItems:"center",gap:16,padding:"18px",borderRadius:14,border:"2px solid",cursor:"pointer",textAlign:"left"},
+};
+
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<EquipmentTracker/>);
+  </script>
+</body>
+</html>

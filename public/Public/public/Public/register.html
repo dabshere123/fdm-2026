@@ -59,7 +59,7 @@
       <!-- ROLE -->
       <div class="field">
         <label>Your Role *</label>
-        <select id="frole">
+        <select id="frole" onchange="checkOtherRole()">
           <option value="">Select your role...</option>
           <optgroup label="Bar Managers">
             <option>Bar Manager — Moon Stage 1</option>
@@ -102,7 +102,7 @@
       <!-- LOCATION -->
       <div class="field">
         <label>Your Location *</label>
-        <select id="flocation">
+        <select id="flocation" onchange="checkOtherLocation()">
           <option value="">Select your location...</option>
           <option>Moon Stage 1</option><option>Moon Stage 2</option>
           <option>Lafayette</option><option>Lagniappe</option>
@@ -113,6 +113,9 @@
           <option>Greeter — Few</option><option>Greeter — Ingersoll Left</option><option>Greeter — Ingersoll Right</option>
           <option>Other</option>
         </select>
+        <div id="location-other" style="display:none;margin-top:8px;">
+          <input type="text" id="flocation-other" placeholder="Please describe your location..." style="width:100%;"/>
+        </div>
       </div>
 
       <!-- PHONE -->
@@ -226,6 +229,17 @@
   </div>
 
   <script>
+    function checkOtherRole() {
+      const roleRaw = document.getElementById('frole').value;
+      const role = roleRaw === 'Other' ? (document.getElementById('frole-other').value.trim() || 'Other') : roleRaw;
+      document.getElementById('role-other').style.display = role === 'Other' ? 'block' : 'none';
+      checkForm();
+    }
+    function checkOtherLocation() {
+      const loc = document.getElementById('flocation').value;
+      document.getElementById('location-other').style.display = loc === 'Other' ? 'block' : 'none';
+      checkForm();
+    }
     const TIMES = ["6:00 AM","6:30 AM","7:00 AM","7:30 AM","8:00 AM","8:30 AM","9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","12:00 PM","12:30 PM","1:00 PM","1:30 PM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM","5:00 PM","5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM"];
     const DEFAULTS = {thu:{start:"4:00 PM",end:"11:00 PM"},fri:{start:"4:00 PM",end:"11:00 PM"},sat:{start:"12:00 PM",end:"11:00 PM"},sun:{start:"10:00 AM",end:"9:00 PM"}};
     const CODES = ["FDM2026","FETE26","MARQUETTE"];
@@ -324,7 +338,8 @@
 
       const name = document.getElementById('fname').value.trim();
       const role = document.getElementById('frole').value;
-      const location = document.getElementById('flocation').value;
+      const locationRaw = document.getElementById('flocation').value;
+      const location = locationRaw === 'Other' ? (document.getElementById('flocation-other').value.trim() || 'Other') : locationRaw;
       const phone = document.getElementById('fphone').value;
       const code = document.getElementById('fcode').value.toUpperCase().trim();
       const groupme = document.getElementById('fgroupme')?.value || '';

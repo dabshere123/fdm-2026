@@ -59,7 +59,7 @@
       <!-- ROLE -->
       <div class="field">
         <label>Your Role *</label>
-        <select id="frole" onchange="checkOtherRole()"
+        <select id="frole" onchange="checkOtherRole()">
           <option value="">Select your role...</option>
           <optgroup label="Bar Managers">
             <option>Bar Manager — Moon Stage 1</option>
@@ -97,6 +97,9 @@
             <option>Other</option>
           </optgroup>
         </select>
+        <div id="role-other" style="display:none;margin-top:8px;">
+          <input type="text" id="frole-other" placeholder="Please describe your role..." style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px;color:#f1f5f9;font-size:15px;width:100%;font-family:inherit;outline:none;"/>
+        </div>
       </div>
 
       <!-- LOCATION -->
@@ -318,7 +321,8 @@
 
     function checkForm() {
       const name = document.getElementById('fname').value.trim();
-      const role = document.getElementById('frole').value;
+      const roleVal = document.getElementById('frole').value;
+      const role = roleVal === 'Other' ? (document.getElementById('frole-other')?.value.trim() || '') : roleVal;
       const loc = document.getElementById('flocation').value;
       const phone = document.getElementById('fphone').value.replace(/\D/g,'');
       const anyDay = days.some(d => selected[d]);

@@ -317,28 +317,54 @@
       btn.textContent = ok ? '🎪 REGISTER FOR FÊTE 2026' : 'Fill in all fields above to register';
     }
 
-    function submitForm() {
+    async function submitForm() {
+      const btn = document.getElementById('submitBtn');
+      btn.textContent = '⏳ Submitting...';
+      btn.disabled = true;
+
       const name = document.getElementById('fname').value.trim();
-      const code = document.getElementById('fcode').value.toUpperCase().trim();
-      const approved = CODES.includes(code);
+      const role = document.getElementById('frole').value;
+      const location = document.getElementById('flocation').value;
       const phone = document.getElementById('fphone').value;
+      const code = document.getElementById('fcode').value.toUpperCase().trim();
+      const groupme = document.getElementById('fgroupme')?.value || '';
 
-      document.getElementById('formWrap').classList.add('hide');
-      const s = document.getElementById('successDiv');
-      s.classList.add('show');
-      document.getElementById('successName').textContent = name;
+      const workedDays = days.filter(d => selected[d]).map(d => {
+        const dayNames = {thu:'Thursday Jul 9',fri:'Friday Jul 10',sat:'Saturday Jul 11',sun:'Sunday Jul 12'};
+        const start = document.getElementById(`start-${d}`).value;
+        const end = document.getElementById(`end-${d}`).value;
+        return `${dayNames[d]}: ${start} - ${end}`;
+      });
 
-      const statusDiv = document.getElementById('successStatus');
-      if (approved) {
-        statusDiv.style.background = 'rgba(16,185,129,0.08)';
-        statusDiv.style.border = '1px solid rgba(16,185,129,0.3)';
-        statusDiv.style.color = '#10b981';
-        statusDiv.textContent = `✅ You are approved! Your app link and worker guide have been sent to ${phone} via SMS. Add it to your home screen and you are ready to go.`;
-      } else {
-        statusDiv.style.background = 'rgba(255,255,255,0.04)';
-        statusDiv.style.border = '1px solid rgba(255,255,255,0.08)';
-        statusDiv.style.color = '#94a3b8';
-        statusDiv.textContent = '⏳ Your registration is pending review. You will receive your app link via SMS once approved. Keep your phone handy!';
+      try {
+        const res = await fetch('/.netlify/functions/register-staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, role, location, phone, days: workedDays, groupme, code })
+        });
+        const data = await res.json();
+
+        document.getElementById('formWrap').classList.add('hide');
+        const s = document.getElementById('successDiv');
+        s.classList.add('show');
+        document.getElementById('successName').textContent = name;
+
+        const statusDiv = document.getElementById('successStatus');
+        if (data.approved) {
+          statusDiv.style.background = 'rgba(16,185,129,0.08)';
+          statusDiv.style.border = '1px solid rgba(16,185,129,0.3)';
+          statusDiv.style.color = '#10b981';
+          statusDiv.innerHTML = `✅ You are approved!<br><br>Username: <strong>${data.username}</strong><br>Password: <strong>1234</strong><br><br>Your worker app link and login have been sent to ${phone} via SMS.`;
+        } else {
+          statusDiv.style.background = 'rgba(255,255,255,0.04)';
+          statusDiv.style.border = '1px solid rgba(255,255,255,0.08)';
+          statusDiv.style.color = '#94a3b8';
+          statusDiv.textContent = '⏳ Your registration is pending review. You will receive your app link and login via SMS once approved. Keep your phone handy!';
+        }
+      } catch(err) {
+        btn.textContent = '🎪 REGISTER FOR FÊTE 2026';
+        btn.disabled = false;
+        alert('Something went wrong. Please try again.');
       }
     }
 

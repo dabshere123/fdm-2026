@@ -15,6 +15,6 @@ function build(src,out,comp,title){
   console.log('Built',out,Math.round(html.length/1024)+'kb');
 }
 build('fdm-hub-preview-5.jsx','hub.html','HubApp','FDM Operations Hub');
-build('fdm-field-preview-3.jsx','field.html','FieldApp','FDM Worker App'); Worker App');
+build('fdm-field-preview-3.jsx','field.html','FieldApp','FDM Worker App');
 build('src/equipment.jsx','equipment-tracker.html','EquipmentTracker','FDM Equipment Tracker');
 console.log('Done!');

@@ -22,7 +22,8 @@ const CANCEL_REASONS=["Weather","Safety Concern","Unforeseen Circumstances","Oth
 
 const BROADCAST_ALERTS=[
   {id:"weather_imminent",label:"⛈️ Inclement Weather Imminent",color:"#dc2626",
-   defaultMsg:"Attention all staff — a strong thunderstorm with deadly lightning and strong winds is approaching the festival grounds. Please begin storm procedures immediately and stand by for further instructions.",
+   requiresWeatherType:true,
+   defaultMsg:"ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Please begin storm procedures and secure all items. Food, beverage, and merchandise sales are postponed until further notice. Additional information will be sent out once available.",
    fields:[]},
   {id:"event_delayed",label:"⏰ Event Delayed",color:"#f59e0b",
    defaultMsg:"Attention all staff and vendors — Fête de Marquette has been delayed. Further information will be provided via the festival app and messaging.",
@@ -194,6 +195,135 @@ function HubApp({onBack}){
   const [nineOneOne,set911]=useState({active:false,info:{},by:null,at:null});
   const [emsForm,setEmsForm]=useState({staging:"",eta:"",nature:"",notes:""});
   const [emsDispatched,setEmsDispatched]=useState(false);
+  // LOST & FOUND
+  const [lfItems,setLfItems]=useState([]);
+  const [lfLoading,setLfLoading]=useState(false);
+  const [lfClaimView,setLfClaimView]=useState(null);
+  const [lfClaimBy,setLfClaimBy]=useState("");
+  const [lfClaimID,setLfClaimID]=useState("");
+  const [lfClaimPhone,setLfClaimPhone]=useState("");
+
+  const fetchLostFound=async()=>{
+    setLfLoading(true);
+    try{
+      const r=await fetch("/.netlify/functions/get-lost-found");
+      const d=await r.json();
+      if(d.success) setLfItems(d.items||[]);
+    }catch(e){console.log(e);}
+    setLfLoading(false);
+  };
+
+  // DEMO/LIVE MODE
+  const [liveMode,setLiveMode]=useState(false);
+  const [liveCalls,setLiveCalls]=useState([]);
+
+  // Poll Airtable every 5 seconds in Live Mode
+  useEffect(()=>{
+    if(!liveMode) return;
+    const poll=async()=>{
+      try{
+        const r=await fetch("/.netlify/functions/get-calls");
+        const d=await r.json();
+        if(d.success){
+          // Convert Airtable records to Hub call format
+          const converted=(d.calls||[]).map(c=>({
+            id:c.id,
+            type:c.type,
+            location:c.location,
+            problem:c.problem,
+            details:c.details,
+            requestedBy:c.requestedBy,
+            phone:c.phone,
+            acknowledged:c.status==="Acknowledged"||c.status==="Cleared",
+            status:c.status.toLowerCase(),
+            unit:c.unit,
+            history:[{status:"new",ts:new Date(c.timestamp).toLocaleTimeString()}],
+            nineOneOne:c.nineOneOne,
+          }));
+          setLiveCalls(converted);
+          // Check for 911 from med unit
+          const nineOneOneCalls=converted.filter(c=>c.nineOneOne&&c.status==="pending");
+          if(nineOneOneCalls.length>0&&!nineOneOne?.active){
+            const c=nineOneOneCalls[0];
+            set911({active:true,by:c.requestedBy,at:new Date(c.history[0]?.ts).toLocaleTimeString(),info:{location:c.location,nature:c.problem}});
+            playAlert("fire");
+          }
+        }
+      } catch(e){ console.log("poll error:",e); }
+    };
+    poll();
+    const interval=setInterval(poll,5000);
+    return()=>clearInterval(interval);
+  },[liveMode]);
+  // AUTO-LOGIN FROM URL PARAM (med1/med2 from field app)
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const urlRole=params.get("role");
+    if(urlRole==="med1"){setRole("Med 1");setLoggedIn(true);}
+    else if(urlRole==="med2"){setRole("Med 2");setLoggedIn(true);}
+  },[]);
+
+  // NWS Weather Alert System
+  const [nwsAlerts,setNwsAlerts]=useState([]);
+  const [weatherAlertBanner,setWeatherAlertBanner]=useState(null);
+  const [weatherDismissed,setWeatherDismissed]=useState([]);
+  const [currentWeather,setCurrentWeather]=useState(null);
+  const [radarVisible,setRadarVisible]=useState(false);
+
+  // NWS Alert fetch — Dane County WI zone WIZ064
+  const fetchNWSAlerts=async()=>{
+    try{
+      const r=await fetch('https://api.weather.gov/alerts/active?zone=WIZ064');
+      const d=await r.json();
+      const severe=(d.features||[]).filter(f=>{
+        const ev=f.properties?.event||"";
+        return ["Tornado Warning","Tornado Watch","Severe Thunderstorm Warning","Severe Thunderstorm Watch",
+          "Flash Flood Warning","Flash Flood Watch","Special Weather Statement","Winter Storm Warning",
+          "Blizzard Warning","High Wind Warning","Wind Advisory"].some(x=>ev.includes(x));
+      });
+      setNwsAlerts(severe);
+      // Show banner for new alerts not yet dismissed
+      if(severe.length>0){
+        const top=severe[0];
+        const id=top.properties?.id;
+        if(!weatherDismissed.includes(id)){
+          setWeatherAlertBanner({
+            id,
+            event:top.properties?.event,
+            headline:top.properties?.headline,
+            description:top.properties?.description?.slice(0,300),
+            expires:top.properties?.expires,
+          });
+        }
+      } else {
+        setWeatherAlertBanner(null);
+      }
+    } catch(e){ console.log('NWS fetch error:',e.message); }
+  };
+
+  // Current conditions — Madison WI (NWS station KMSN)
+  const fetchWeather=async()=>{
+    try{
+      const r=await fetch('https://api.weather.gov/stations/KMSN/observations/latest');
+      const d=await r.json();
+      const p=d.properties;
+      setCurrentWeather({
+        temp:p.temperature?.value!=null?Math.round(p.temperature.value*9/5+32):null,
+        desc:p.textDescription,
+        wind:p.windSpeed?.value!=null?Math.round(p.windSpeed.value*0.621371):null,
+        windDir:p.windDirection?.value!=null?Math.round(p.windDirection.value):null,
+        humidity:p.relativeHumidity?.value!=null?Math.round(p.relativeHumidity.value):null,
+      });
+    } catch(e){ console.log('Weather fetch error:',e.message); }
+  };
+
+  useEffect(()=>{
+    fetchNWSAlerts();
+    fetchWeather();
+    const alertInterval=setInterval(fetchNWSAlerts,5*60*1000);
+    const weatherInterval=setInterval(fetchWeather,10*60*1000);
+    return()=>{clearInterval(alertInterval);clearInterval(weatherInterval);};
+  },[]);
   const [emsAcked,setEmsAcked]=useState(false);
   const [emsAlertDismissed,setEmsAlertDismissed]=useState(false);
   // Track acknowledged calls to show persistent banner — keyed by call id
@@ -239,15 +369,17 @@ function HubApp({onBack}){
     {id:3,ts:"4:20 PM",date:now(),type:"fire",label:"Fire/Life Safety — Sun Stage Vendors",msg:"Cooking flame near tent"},
   ]);
 
-  const isAdmin=role==="ADMIN", isMed=["Med 1","Med 2"].includes(role);
-  const medCalls=calls.filter(c=>c.type==="medical"||c.type==="walk_in");
-  const fireCalls=calls.filter(c=>c.type==="fire");
-  const secCalls=calls.filter(c=>c.type==="security");
-  const suppCalls=calls.filter(c=>c.type==="supplies");
-  const maintCalls=calls.filter(c=>c.type==="maintenance");
-  const lostChildCalls=calls.filter(c=>c.type==="lost_child");
+  const isAdmin=role==="Admin"||role==="ADMIN", isMed=["Med 1","Med 2"].includes(role);
+  const NAV_TABS=isAdmin?[{id:"home",label:"Home",icon:"🏠"},{id:"callqueue",label:"Calls",icon:"📋"},{id:"lostfound",label:"L&F",icon:"📦"},{id:"activity",label:"Log",icon:"📝"}]:[{id:"home",label:"Home",icon:"🏠"},{id:"lostfound",label:"L&F",icon:"📦"}];
+  const activeCalls=liveMode?liveCalls:calls;
+  const medCalls=activeCalls.filter(c=>c.type==="medical"||c.type==="walk_in");
+  const fireCalls=activeCalls.filter(c=>c.type==="fire");
+  const secCalls=activeCalls.filter(c=>c.type==="security");
+  const suppCalls=activeCalls.filter(c=>c.type==="supplies");
+  const maintCalls=activeCalls.filter(c=>c.type==="maintenance");
+  const lostChildCalls=activeCalls.filter(c=>c.type==="lost_child");
   const myActive=isMed?calls.filter(c=>c.unit===role):[];
-  const unassigned=isMed?calls.filter(c=>(c.type==="medical"||c.type==="walk_in")&&!c.unit&&c.status==="new_call"):[];
+  const unassigned=isMed?activeCalls.filter(c=>(c.type==="medical"||c.type==="walk_in")&&!c.unit&&c.status==="new_call"):[];
 
   // Tick for countdown
   useEffect(()=>{const id=setInterval(()=>setTick(p=>p+1),1000);return()=>clearInterval(id);},[]);
@@ -263,19 +395,85 @@ function HubApp({onBack}){
   },[lostChildCalls.length]);
 
   const ackCall=(id,by)=>{ playAlert("ack");
+    if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Acknowledged",unit:by})}).catch(e=>console.log(e)); }
     const call=calls.find(c=>c.id===id);
     if(call) addAckedBanner({...call,unit:by});
     // Send GroupMe notification to relevant channel
     if(call){
       const channelMap={medical:"medical",walk_in:"medical",fire:"medical",security:"admin",supplies:"restock",maintenance:"maintenance",lost_child:"admin"};
       const ch=channelMap[call.type]||"admin";
-      sendGroupMe(`🚨 FDM Ops Alert — ${call.type.toUpperCase()}\n📍 ${call.location}\n${call.problem||""}\nUnit: ${by}`, [ch,"admin"]);
+      const ts=`${new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})} · ${tShort()}`;
+      let msg="";
+      if(call.type==="medical"||call.type==="walk_in"){
+        msg=[
+          `🩺 MEDICAL ALERT 🩺`,
+          ``,
+          `LOCATION: ${call.location}`,
+          `WHAT'S THE PROBLEM: ${call.problem||""}`,
+          call.details?`DESCRIPTION: ${call.details}`:"",
+          `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
+          `DATE/TIME: ${ts}`,
+        ].filter(Boolean).join("\n");
+      } else if(call.type==="fire"){
+        msg=[
+          `🔥 LIFE SAFETY ALERT 🔥`,
+          ``,
+          `LOCATION: ${call.location}`,
+          `WHAT'S THE PROBLEM: ${call.problem||""}`,
+          call.details?`DESCRIPTION: ${call.details}`:"",
+          `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
+          `DATE/TIME: ${ts}`,
+        ].filter(Boolean).join("\n");
+      } else if(call.type==="security"){
+        msg=[
+          `👮 SECURITY 👮`,
+          ``,
+          `LOCATION: ${call.location}`,
+          `WHAT'S THE PROBLEM: ${call.problem||""}`,
+          call.details?`DESCRIPTION: ${call.details}`:"",
+          `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
+          `DATE/TIME: ${ts}`,
+        ].filter(Boolean).join("\n");
+      } else if(call.type==="supplies"){
+        msg=[
+          `📦 RESTOCK REQUEST 📦`,
+          ``,
+          `LOCATION: ${call.location}`,
+          `WHAT'S NEEDED: ${call.problem||""}`,
+          call.details?`AMOUNT: ${call.details}`:"",
+          `REQUESTING PARTY: ${call.requestedBy||"Staff"}`,
+          `DATE/TIME: ${ts}`,
+        ].filter(Boolean).join("\n");
+      } else if(call.type==="maintenance"){
+        msg=[
+          `🔧 MAINTENANCE 🔧`,
+          ``,
+          `LOCATION: ${call.location}`,
+          `WHAT'S THE PROBLEM: ${call.problem||""}`,
+          `REQUESTING PARTY: ${call.requestedBy||"Staff"}`,
+          `DATE/TIME: ${ts}`,
+        ].filter(Boolean).join("\n");
+      } else if(call.type==="lost_child"){
+        msg=[
+          `🧒 LOST CHILD 🧒`,
+          ``,
+          `LOCATION: ${call.location}`,
+          `DESCRIPTION: ${call.problem||""}`,
+          call.details?`${call.details}`:"",
+          `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
+          `DATE/TIME: ${ts}`,
+        ].filter(Boolean).join("\n");
+      } else {
+        msg=`🚨 FDM ALERT\nLOCATION: ${call.location}\n${call.problem||""}\nDATE/TIME: ${ts}`;
+      }
+      if(msg) sendGroupMe(msg, [ch,"admin"]);
     }
     setCalls(p=>p.map(c=>c.id!==id?c:{...c,acknowledged:true,status:"acknowledged",history:[...c.history,{status:"acknowledged",ts:tShort(),unit:by}]}));
     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"ack",label:`Acknowledged by ${by}`,msg:calls.find(c=>c.id===id)?.problem||""},...p]);
   };
   const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
   const clearCall=(id,by)=>{ playAlert("clear"); removeAckedBanner(id);
+    if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Cleared",unit:by})}).catch(e=>console.log(e)); }
     const c=calls.find(x=>x.id===id);if(!c)return;
     setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
     setCalls(p=>p.filter(x=>x.id!==id));
@@ -411,7 +609,7 @@ function HubApp({onBack}){
       ):(()=>{
         const t=BROADCAST_ALERTS.find(x=>x.id===alertView);
         const selectedReason=alertFields._reason||"";
-        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]");
+        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).join(", "):"[select weather type above]");
         const preview=editedMsg||msgBase;
         return(<div style={S.cWrap}>
           <BB onClick={()=>setAlertView(null)}/>
@@ -426,6 +624,88 @@ function HubApp({onBack}){
             <Fld key={f.key} label={f.label} value={alertFields[f.key]||""} onChange={e=>setAlertFields(p=>({...p,[f.key]:e.target.value}))} ph={f.ph} multi={f.key==="notes"||f.key==="message"}/>
           ))}
           <label style={S.lbl}>Message — Edit as needed</label>
+          {/* DATE/TIME OF BROADCAST */}
+          <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"12px 14px",marginBottom:4}}>
+            <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Date & Time of Broadcast</div>
+            <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>{new Date().toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</div>
+          </div>
+
+          {/* GROUPME CHANNEL SELECTOR */}
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Send to GroupMe Channels</label>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {[
+                {id:"all_staff",label:"All Staff"},
+                {id:"admin",label:"Admin"},
+                {id:"medical",label:"Medical"},
+                {id:"bar_stage",label:"Bar/Stage"},
+                {id:"financial",label:"Financial"},
+                {id:"restock",label:"Restock"},
+                {id:"maintenance",label:"Maintenance"},
+              ].map(ch=>{
+                const sel=(alertFields._gmChannels||["all_staff","admin"]).includes(ch.id);
+                return(
+                  <button key={ch.id} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${sel?"rgba(99,102,241,0.6)":"rgba(255,255,255,0.1)"}`,background:sel?"rgba(99,102,241,0.15)":"rgba(255,255,255,0.03)",color:sel?"#a78bfa":"#64748b",fontSize:13,fontWeight:sel?700:400,cursor:"pointer"}}
+                    onClick={()=>{
+                      const cur=alertFields._gmChannels||["all_staff","admin"];
+                      const next=sel?cur.filter(x=>x!==ch.id):[...cur,ch.id];
+                      setAlertFields(p=>({...p,_gmChannels:next}));
+                    }}>
+                    {sel?"✓ ":""}{ch.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SEND VIA SMS */}
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Send via SMS</label>
+            <div style={{display:"flex",gap:8}}>
+              {[{id:"sms_all",label:"Admin Only"}].map(opt=>{
+                const sel=alertFields._smsChannels?.includes(opt.id);
+                return(
+                  <button key={opt.id} style={{flex:1,padding:"10px 14px",borderRadius:8,border:`1px solid ${sel?"rgba(16,185,129,0.6)":"rgba(255,255,255,0.1)"}`,background:sel?"rgba(16,185,129,0.12)":"rgba(255,255,255,0.03)",color:sel?"#10b981":"#64748b",fontSize:13,fontWeight:sel?700:400,cursor:"pointer"}}
+                    onClick={()=>setAlertFields(p=>({...p,_smsChannels:sel?[]:[opt.id]}))}>
+                    {sel?"✓ ":""}{opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* WEATHER TYPE — for weather_imminent */}
+          {t.requiresWeatherType&&(
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Type of Weather *</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {["Thunderstorm","High Winds","Tornado Warning","Flash Flood","Lightning","Severe Storm"].map(w=>{
+                  const selected=(alertFields._weatherTypes||[]);
+                  const sel=selected.includes(w);
+                  return(
+                    <button key={w} style={{padding:"10px 14px",borderRadius:8,border:`1px solid ${sel?"rgba(239,68,68,0.6)":"rgba(255,255,255,0.1)"}`,background:sel?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.03)",color:sel?"#ef4444":"#64748b",fontSize:14,fontWeight:sel?700:400,cursor:"pointer"}}
+                      onClick={()=>{
+                        const cur=alertFields._weatherTypes||[];
+                        const next=sel?cur.filter(x=>x!==w):[...cur,w];
+                        setAlertFields(p=>({...p,_weatherTypes:next}));
+                        setEditedMsg("");
+                      }}>
+                      {sel?"✓ ":""}{w}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ESTIMATED ARRIVAL (for weather/delays) */}
+          {(t.id==="weather_imminent"||t.id==="event_delayed")&&(
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Estimated Arrival / Delay</label>
+              <input style={{...S.inp,fontSize:14}} placeholder="e.g. 8:15 PM · 20 minutes" value={alertFields._eta||""} onChange={e=>{setAlertFields(p=>({...p,_eta:e.target.value}));setEditedMsg("");}}/>
+            </div>
+          )}
+
           {/* REASON PICKER — for postponed/cancelled */}
           {t?.requiresReason&&(
             <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:4}}>
@@ -442,15 +722,22 @@ function HubApp({onBack}){
               </div>
             </div>
           )}
-          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]"));}}/>
+          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).join(", "):"[select weather type above]")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]"));}}/>
           {editedMsg&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{
   const msg=editedMsg||preview;
   setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
   setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg},...p]);
-  // Send to GroupMe — all staff + admin for all broadcasts
-  sendGroupMe(`🎪 FDM 2026 — ${t.label}\n\n${msg}`, ["all_staff","admin"]);
+  // GroupMe
+  sendGroupMe(`FDM 2026 — ${t.label}\n\n${msg}`, alertFields._gmChannels||["all_staff","admin"]);
+  // SMS + Voice to Admin only
+  if(alertFields._smsChannels?.includes("sms_all")){
+    fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:msg,recipients:[{name:"Admin",phone:"+16082289692"}],
+        includeVoice:true,voiceScript:msg.replace(/[*#]/g,"")})
+    }).catch(e=>console.log("SMS broadcast error:",e));
+  }
   playAlert("broadcast");
   setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
 }}>🚀 SEND NOW</button>
@@ -864,6 +1151,63 @@ Reply YES to acknowledge.`
         </div>
       )}
 
+      {/* LIVE/DEMO MODE INDICATOR */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:liveMode?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)",border:`1px solid ${liveMode?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.3)"}`,borderRadius:10,padding:"10px 14px"}}>
+        <div style={{fontSize:13,fontWeight:700,color:liveMode?"#10b981":"#f59e0b"}}>{liveMode?"⚡ LIVE MODE — Real calls from staff":"🎭 DEMO MODE — Showing sample data"}</div>
+        <button style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px",color:"#64748b",fontSize:11,cursor:"pointer",fontWeight:600}} onClick={()=>setLiveMode(p=>!p)}>Switch</button>
+      </div>
+
+      {/* NWS WEATHER ALERT BANNER */}
+      {weatherAlertBanner&&isAdmin&&(
+        <div style={{borderRadius:14,border:"3px solid #ef4444",background:"linear-gradient(135deg,rgba(239,68,68,0.18),rgba(37,99,235,0.12))",padding:"16px",display:"flex",flexDirection:"column",gap:10,boxShadow:"0 0 24px rgba(239,68,68,0.35),0 0 48px rgba(37,99,235,0.15)",animation:"pulse 2s infinite"}}>
+          <style>{`@keyframes pulse{0%,100%{box-shadow:0 0 24px rgba(239,68,68,0.35),0 0 48px rgba(37,99,235,0.15);}50%{box-shadow:0 0 40px rgba(239,68,68,0.6),0 0 80px rgba(37,99,235,0.3);}}`}</style>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:24}}>🚨</span>
+              <div>
+                <div style={{fontSize:15,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em",textTransform:"uppercase",lineHeight:1.2}}>NWS WEATHER ALERT</div>
+                <div style={{fontSize:13,fontWeight:800,color:"#93c5fd"}}>{weatherAlertBanner.event}</div>
+              </div>
+            </div>
+            <button style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,color:"#64748b",fontSize:12,cursor:"pointer",fontWeight:600,padding:"4px 10px"}} onClick={()=>{setWeatherDismissed(p=>[...p,weatherAlertBanner.id]);setWeatherAlertBanner(null);}}>Dismiss</button>
+          </div>
+          {weatherAlertBanner.headline&&<div style={{fontSize:14,fontWeight:700,color:"#fca5a5",lineHeight:1.5,borderLeft:"3px solid #ef4444",paddingLeft:10}}>{weatherAlertBanner.headline}</div>}
+          {weatherAlertBanner.description&&<div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{weatherAlertBanner.description}...</div>}
+          <button style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#dc2626,#1d4ed8)",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",letterSpacing:"0.04em"}}
+            onClick={()=>{setAlertView("weather_imminent");setView("alert");setAlertFields({_weatherAlert:weatherAlertBanner});}}>
+            🚨 SEND WEATHER ALERT NOW
+          </button>
+        </div>
+      )}
+
+      {/* CURRENT WEATHER WIDGET */}
+      {currentWeather&&isAdmin&&(
+        <div style={{borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",padding:"12px 16px",display:"flex",alignItems:"center",gap:16}}>
+          <div style={{fontSize:32,fontWeight:900,color:"#f1f5f9"}}>{currentWeather.temp!=null?`${currentWeather.temp}°F`:"--"}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{currentWeather.desc||"Madison, WI"}</div>
+            <div style={{fontSize:12,color:"#64748b"}}>
+              {currentWeather.wind!=null?`Wind: ${currentWeather.wind} mph · `:""}
+              {currentWeather.humidity!=null?`Humidity: ${currentWeather.humidity}%`:""}
+            </div>
+          </div>
+          <button style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={()=>setRadarVisible(p=>!p)}>
+            {radarVisible?"Hide":"Radar"}
+          </button>
+        </div>
+      )}
+
+      {/* LIVE RADAR */}
+      {radarVisible&&isAdmin&&(
+        <div style={{borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <iframe
+            src="https://radar.weather.gov/station/KMKX/standard"
+            style={{width:"100%",height:300,border:"none"}}
+            title="NWS Radar"
+          />
+        </div>
+      )}
+
       {/* SECTION 1: COMMAND */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
         <div style={{...S.sectionHdr,fontSize:16,fontWeight:900}}>📡 Command</div>
@@ -1064,7 +1408,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [tab,setTab]=useState("calls");
   const [wiComplaint,setWiComplaint]=useState("");
   const [wiDetails,setWiDetails]=useState("");
-  const walkIns=calls.filter(c=>c.type==="walk_in"&&c.unit===role);
+  const walkIns=activeCalls.filter(c=>c.type==="walk_in"&&c.unit===role);
   const allActive=[...myActive];
 
   const doWalkIn=()=>{

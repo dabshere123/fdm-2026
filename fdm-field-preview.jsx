@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)",overflow:"hidden"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/></div>);}
 function BB({onClick,label="← Back"}){return(<button style={S.backBtn} onClick={onClick}>{label}</button>);}
@@ -34,10 +34,15 @@ const LOCATION_BUNDLE_MAP_FIELD = {
 
 export default function FieldApp(){const onBack=()=>{};
   const [loggedIn,setLoggedIn]=useState(false);
-  const [loginUser,setLoginUser]=useState("");
-  const [loginPass,setLoginPass]=useState("");
-  const [loginLoading,setLoginLoading]=useState(false);
-  const [loginError,setLoginError]=useState("");
+  const [overnightRecordId,setOvernightRecordId]=useState(null);
+  const [overnightCheckedIn,setOvernightCheckedIn]=useState(false);
+  const [overnightIncidents,setOvernightIncidents]=useState([]);
+  const [overnightNarrative,setOvernightNarrative]=useState("");
+  const [overnightNotes,setOvernightNotes]=useState("");
+  const [overnightSubmitted,setOvernightSubmitted]=useState(false);
+  const [staffList,setStaffList]=useState([]);
+  const [staffLoading,setStaffLoading]=useState(true);
+  const [staffSearch,setStaffSearch]=useState("");
   const [roleType,setRoleType]=useState("bar_manager");
   const [name,setName]=useState("Moon Stage 1");
   const [staffName,setStaffName]=useState("");
@@ -60,70 +65,103 @@ export default function FieldApp(){const onBack=()=>{};
   const [alertBlink,setAlertBlink]=useState(false);
   const blinkRef=useRef(null);
 
-  // LOGIN SCREEN
+  const ROLE_TYPES={
+    bar_manager:    {label:"Bar Manager",           requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    stage_manager:  {label:"Stage Manager",          requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    tent_manager:   {label:"Tent Manager",           requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    merch_manager:  {label:"Merch Tent Manager",     requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    greeter_sup:    {label:"Greeter Supervisor",     requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    greeter_few:    {label:"Greeter — Few",          requests:["lost_child","emergency","security"],simplified:true},
+    greeter_ing_l:  {label:"Greeter — Ingersoll Left", requests:["lost_child","emergency","security"],simplified:true},
+    greeter_ing_r:  {label:"Greeter — Ingersoll Right",requests:["lost_child","emergency","security"],simplified:true},
+    med1:           {label:"Med Unit 1",             requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    med2:           {label:"Med Unit 2",             requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    admin1:         {label:"Admin 1",                requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    admin2:         {label:"Admin 2",                requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    financial1:     {label:"Financial 1",            requests:["lost_child","emergency","security","lost_found","general"]},
+    financial2:     {label:"Financial 2",            requests:["lost_child","emergency","security","lost_found","general"]},
+    financial3:     {label:"Financial 3",            requests:["lost_child","emergency","security","lost_found","general"]},
+    financial4:     {label:"Financial 4",            requests:["lost_child","emergency","security","lost_found","general"]},
+    marketing:      {label:"Marketing",              requests:["lost_child","emergency","security","lost_found","general"]},
+    misc:           {label:"MISC",                   requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+  };
+
+  // FETCH STAFF LIST ON LOAD
+  useEffect(()=>{
+    fetch("/.netlify/functions/get-staff-list")
+      .then(r=>r.json())
+      .then(d=>{setStaffList(d.staff||[]);setStaffLoading(false);})
+      .catch(()=>setStaffLoading(false));
+  },[]);
+
+  // NAME PICKER SCREEN
   if(!loggedIn) return(
     <div style={{minHeight:"100vh",background:"#0d0d1a",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'DM Sans',sans-serif",position:"relative"}}>
       <Bg/>
       <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,padding:"40px 24px"}}>
-        <div style={{textAlign:"center",marginBottom:32}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{fontSize:56,marginBottom:12}}>📱</div>
           <div style={{fontSize:24,fontWeight:900,color:"#f1f5f9",marginBottom:4}}>Worker App</div>
           <div style={{fontSize:13,color:"#f59e0b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em"}}>Fête de Marquette 2026</div>
         </div>
-        {loginError&&<div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:10,padding:"12px 16px",fontSize:14,color:"#ef4444",fontWeight:600,textAlign:"center",marginBottom:12}}>{loginError}</div>}
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <Fld label="Username" value={loginUser} onChange={e=>setLoginUser(e.target.value)} ph="e.g. MJohnson"/>
-          <Fld label="Password" value={loginPass} onChange={e=>setLoginPass(e.target.value)} ph="Your password"/>
-          <button style={{padding:"16px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#1a1a00",fontSize:17,fontWeight:900,cursor:"pointer",opacity:(!loginUser||!loginPass||loginLoading)?0.5:1,marginTop:8}}
-            disabled={!loginUser||!loginPass||loginLoading}
-            onClick={async()=>{
-              setLoginLoading(true);setLoginError("");
-              try{
-                const res=await fetch("/.netlify/functions/get-staff",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:loginUser.trim(),password:loginPass.trim()})});
-                const data=await res.json();
-                if(data.success){
-                  setStaffName(data.staff.name);
-                  setRoleType(Object.keys(ROLE_TYPES).find(k=>ROLE_TYPES[k].label.toLowerCase()===data.staff.role.toLowerCase())||"bar_manager");
-                  setName(data.staff.location||"Moon Stage 1");
-                  setLoggedIn(true);
-                } else {
-                  setLoginError("Invalid username or password. Please check and try again.");
-                }
-              } catch(e){
-                setLoginError("Connection error. Please try again.");
-              }
-              setLoginLoading(false);
-            }}>
-            {loginLoading?"Signing in...":"Sign In"}
-          </button>
-          <div style={{textAlign:"center",fontSize:13,color:"#475569",marginTop:4}}>
-            Not registered? <a href="/register" style={{color:"#f59e0b",fontWeight:700,textDecoration:"none"}}>Register here →</a>
-          </div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{fontSize:15,fontWeight:700,color:"#94a3b8",textAlign:"center",marginBottom:4}}>Tap your name to get started</div>
+          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px 16px",color:"#f1f5f9",fontSize:15,width:"100%",fontFamily:"inherit",outline:"none"}}
+            placeholder="Search your name..." value={staffSearch} onChange={e=>setStaffSearch(e.target.value)}/>
+          {staffLoading
+            ?<div style={{textAlign:"center",color:"#64748b",padding:"20px",fontSize:14}}>Loading staff list...</div>
+            :staffList.length===0
+              ?<div style={{textAlign:"center",padding:"20px",display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{color:"#64748b",fontSize:14}}>No registered staff found yet.</div>
+                <a href="/register" style={{color:"#f59e0b",fontWeight:700,fontSize:14,textDecoration:"none"}}>Register here →</a>
+               </div>
+              :(staffList.filter(s=>s.name.toLowerCase().includes(staffSearch.toLowerCase()))).map(s=>(
+                <button key={s.id} style={{display:"flex",alignItems:"center",gap:14,padding:"16px",borderRadius:14,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",width:"100%"}}
+                  onClick={()=>{
+                    const role=s.role.toLowerCase();
+                    // Route Admin to Hub
+                    if(role.includes("admin")){
+                      window.location.href="/hub";
+                      return;
+                    }
+                    // Route Med units to Hub med view via URL param
+                    if(role.includes("med unit 1")||role.includes("med 1")){
+                      window.location.href="/hub?role=med1";
+                      return;
+                    }
+                    if(role.includes("med unit 2")||role.includes("med 2")){
+                      window.location.href="/hub?role=med2";
+                      return;
+                    }
+                    // Overnight crew gets overnight role
+                    if(role.includes("overnight")||role.includes("cleaning")||role.includes("night crew")){
+                      setStaffName(s.name);
+                      setRoleType("overnight");
+                      setName(s.location||"Festival Grounds");
+                      setLoggedIn(true);
+                      return;
+                    }
+                    setStaffName(s.name);
+                    setRoleType(Object.keys(ROLE_TYPES).find(k=>ROLE_TYPES[k].label.toLowerCase()===s.role.toLowerCase())||"bar_manager");
+                    setName(s.location||"Moon Stage 1");
+                    setLoggedIn(true);
+                  }}>
+                  <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#d97706)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:"#1a1a00",flexShrink:0}}>
+                    {s.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
+                  </div>
+                  <div>
+                    <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>{s.name}</div>
+                    <div style={{fontSize:13,color:"#64748b"}}>{s.role} · {s.location}</div>
+                  </div>
+                </button>
+              ))
+          }
+          <a href="/register" style={{textAlign:"center",fontSize:13,color:"#475569",marginTop:8,textDecoration:"none"}}>Not on the list? <span style={{color:"#f59e0b",fontWeight:700}}>Register here →</span></a>
         </div>
       </div>
     </div>
   );
 
-  const ROLE_TYPES={
-    bar_manager:    {label:"Bar Manager",           requests:["lost_child","emergency","security","supplies","general"]},
-    stage_manager:  {label:"Stage Manager",          requests:["lost_child","emergency","security","supplies","general"]},
-    tent_manager:   {label:"Tent Manager",           requests:["lost_child","emergency","security","supplies","general"]},
-    merch_manager:  {label:"Merch Tent Manager",     requests:["lost_child","emergency","security","supplies","general"]},
-    greeter_sup:    {label:"Greeter Supervisor",     requests:["lost_child","emergency","security","supplies","general"]},
-    greeter_few:    {label:"Greeter — Few",          requests:["lost_child","emergency","security"],simplified:true},
-    greeter_ing_l:  {label:"Greeter — Ingersoll Left", requests:["lost_child","emergency","security"],simplified:true},
-    greeter_ing_r:  {label:"Greeter — Ingersoll Right",requests:["lost_child","emergency","security"],simplified:true},
-    med1:           {label:"Med Unit 1",             requests:["lost_child","emergency","security","supplies","general"]},
-    med2:           {label:"Med Unit 2",             requests:["lost_child","emergency","security","supplies","general"]},
-    admin1:         {label:"Admin 1",                requests:["lost_child","emergency","security","supplies","general"]},
-    admin2:         {label:"Admin 2",                requests:["lost_child","emergency","security","supplies","general"]},
-    financial1:     {label:"Financial 1",            requests:["lost_child","emergency","security","general"]},
-    financial2:     {label:"Financial 2",            requests:["lost_child","emergency","security","general"]},
-    financial3:     {label:"Financial 3",            requests:["lost_child","emergency","security","general"]},
-    financial4:     {label:"Financial 4",            requests:["lost_child","emergency","security","general"]},
-    marketing:      {label:"Marketing",              requests:["lost_child","emergency","security","general"]},
-    misc:           {label:"MISC",                   requests:["lost_child","emergency","security","supplies","general"]},
-  };
   const EMERGENCY_TYPES=[
     {id:"medical",label:"EMS / Medical",emoji:"🩺",color:"#db2777",desc:"Injury, illness, unresponsive, heat exhaustion, fall, trauma"},
     {id:"fire",label:"Fire / Life Safety",emoji:"🔥",color:"#dc2626",desc:"Small fire, smoke, cooking hazard, trip hazard, unsafe condition"},
@@ -133,6 +171,7 @@ export default function FieldApp(){const onBack=()=>{};
     {id:"emergency",label:"Emergency",emoji:"🩺🔥",color:"#db2777",desc:"EMS / Medical or Fire / Life Safety"},
     {id:"security",label:"Security",emoji:"🛡️",color:"#2563eb",desc:"Fight, unruly patron, harassment, threatening behavior"},
     {id:"supplies",label:"Supplies & Maintenance",emoji:"📦🔧",color:"#10b981",desc:"Restock supplies or report a maintenance issue"},
+    {id:"lost_found",label:"Lost & Found",emoji:"📦",color:"#8b5cf6",desc:"Found an item — log it here"},
     {id:"general",label:"General",emoji:"💬",color:"#64748b",desc:"Anything else — operations will respond"},
   ];
 
@@ -154,12 +193,55 @@ export default function FieldApp(){const onBack=()=>{};
     if(reqType==="supplies") return fields.subtype==="maintenance"?(f("location")&&f("problem")):fields.subtype==="restock"?(restockItem&&restockQty&&(restockItem!=="other"||restockOther)):false;
     if(reqType==="lost_child") return f("age")&&f("last_seen")&&f("assembly_point");
     if(reqType==="security"||reqType==="general") return f("location")&&f("problem");
+    if(reqType==="lost_found") return f("lf_description")&&f("lf_location");
     return false;
   };
 
-  const doSubmit=()=>{
-    setRoleLocked(true); // lock role on first submission
+  const doSubmit=async()=>{
+    setRoleLocked(true);
     if(reqType==="lost_child"){setRadioScript(RADIO_SCRIPT_LOST_CHILD(fields));setView("radio");return;}
+    // Handle lost & found separately
+    if(reqType==="lost_found"){
+      try{
+        const res=await fetch("/.netlify/functions/submit-lost-found",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            description:f("lf_description"),
+            location:f("lf_location"),
+            foundBy:staffName||"Staff",
+            narrative:f("lf_narrative")||""
+          })
+        });
+        const data=await res.json();
+        if(data.success){
+          setFields({...fields,_lfNumber:data.itemNumber});
+          setView("lf_confirm");
+          return;
+        }
+      } catch(e){ console.log("L&F error:",e.message); }
+    }
+
+    // Build call data
+    const callData={
+      type: reqType==="emergency"?(fields.subtype||reqType):reqType==="supplies"?(fields.subtype||reqType):reqType,
+      location: f("location")||name,
+      problem: reqType==="supplies"&&fields.subtype==="restock"
+        ?`Restock: ${restockItem==="other"?restockOther:restockItem} x${restockQty}`
+        :f("problem"),
+      details: f("details")||f("injuries")||"",
+      requestedBy: staffName||"Staff",
+      phone: "",
+      nineOneOne: false,
+    };
+    // Submit to Airtable via Netlify function
+    try{
+      await fetch("/.netlify/functions/submit-call",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(callData)
+      });
+    } catch(e){ console.log("submit-call error:",e.message); }
     setDone(true);setReqType(null);setFields({});setRestockItem(null);setRestockQty(null);setRestockOther("");
     setTimeout(()=>{setDone(false);setView("home");},2500);
   };
@@ -168,6 +250,18 @@ export default function FieldApp(){const onBack=()=>{};
     setDemoAlert({label:"Inclement Weather Imminent",msg:"⛈️ INCLEMENT WEATHER IMMINENT — Fête de Marquette 2026\n⏰ Estimated Storm Arrival: 8:00 PM\n🛑 Temporary Shutdown: 7:45 PM\n\nAll staff and vendors — please cease service and close your location immediately.\n— Fête de Marquette Operations",firedAt:Date.now()});
     blinkRef.current=setInterval(()=>setAlertBlink(p=>!p),800);
   };
+
+  if(view==="lf_confirm") return(<div style={S.root}><Bg/><div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,zIndex:10,background:"#0d0d1a",padding:"32px"}}>
+    <div style={{fontSize:72}}>📦</div>
+    <div style={{fontSize:26,fontWeight:900,color:"#8b5cf6"}}>Item Logged!</div>
+    <div style={{background:"rgba(139,92,246,0.12)",border:"2px solid rgba(139,92,246,0.5)",borderRadius:14,padding:"20px 24px",textAlign:"center",width:"100%",maxWidth:360}}>
+      <div style={{fontSize:13,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700}}>Item Number</div>
+      <div style={{fontSize:36,fontWeight:900,color:"#a78bfa"}}>{fields._lfNumber}</div>
+    </div>
+    <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9",textAlign:"center"}}>Please tag this item with the number above and bring it to the Festival Office.</div>
+    <div style={{fontSize:13,color:"#64748b",textAlign:"center"}}>Admin has been notified.</div>
+    <button style={{...S.sendBtn,background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",width:"100%",maxWidth:320,marginTop:8}} onClick={()=>{setView("home");setReqType(null);setFields({});}}>Done</button>
+  </div></div>);
 
   if(done) return(<div style={S.root}><Bg/><div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,zIndex:10,background:"#0d0d1a"}}>
     <div style={{fontSize:80}}>✅</div><div style={{fontSize:26,fontWeight:900,color:"#10b981"}}>Request Sent</div><div style={{fontSize:15,color:"#64748b"}}>Operations has been notified</div>
@@ -202,7 +296,109 @@ export default function FieldApp(){const onBack=()=>{};
 
   if(view==="request"){
     const rtData=REQUEST_TYPES.find(x=>x.id===reqType);
-    return(<div style={S.root}><Bg/><div style={S.panel}>
+    // OVERNIGHT CREW VIEW
+  if(rt?.overnight) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 20px 4px"}}>
+        <div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Fête de Marquette 2026</div><div style={{fontSize:12,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2,fontWeight:700}}>Overnight Crew</div></div>
+      </div>
+      <div style={{padding:"8px 20px",fontSize:15,fontWeight:700,color:"#94a3b8"}}>{staffName||"Crew Member"}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:12,padding:"12px 20px 32px"}}>
+        {!overnightCheckedIn?(
+          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",fontSize:18,padding:"20px"}}
+            onClick={async()=>{
+              try{
+                const res=await fetch("/.netlify/functions/overnight-checkin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({crewMember:staffName,eventDay:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})})});
+                const data=await res.json();
+                if(data.success){setOvernightRecordId(data.id);setOvernightCheckedIn(true);}
+              }catch(e){console.log(e);}
+            }}>
+            🌙 I'M HERE — Check In
+          </button>
+        ):(
+          <>
+            <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:12,padding:"12px 16px",fontSize:14,color:"#10b981",fontWeight:700}}>✅ Checked in — Admin has been notified</div>
+
+            {/* INCIDENT LOG */}
+            <div style={{fontSize:13,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Incident Log</div>
+            {overnightIncidents.map((inc,i)=>(
+              <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px",fontSize:13,color:"#e2e8f0"}}>
+                <div style={{fontWeight:700,color:"#f59e0b"}}>{inc.time}</div>
+                <div>{inc.text}</div>
+              </div>
+            ))}
+            <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",padding:"14px",fontSize:15}}
+              onClick={()=>setView("overnight_incident")}>
+              ➕ Log Incident
+            </button>
+
+            {/* LOST & FOUND */}
+            <button style={{...S.sendBtn,background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",padding:"14px",fontSize:15}}
+              onClick={()=>{setReqType("lost_found");setView("request");}}>
+              📦 Log Lost & Found Item
+            </button>
+
+            {/* NIGHTLY REPORT */}
+            <div style={{fontSize:13,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:8}}>Shift Narrative / Notes</div>
+            <textarea style={{...S.ta,minHeight:100}} placeholder="Overall summary of the night..." value={overnightNarrative} onChange={e=>setOvernightNarrative(e.target.value)}/>
+
+            {!overnightSubmitted?(
+              <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",padding:"16px",fontSize:16,fontWeight:900}}
+                onClick={async()=>{
+                  try{
+                    await fetch("/.netlify/functions/submit-overnight-report",{method:"POST",headers:{"Content-Type":"application/json"},
+                      body:JSON.stringify({id:overnightRecordId,crewMember:staffName,incidents:overnightIncidents.map(i=>`${i.time}: ${i.text}`).join("\n"),narrative:overnightNarrative,notes:overnightNotes,eventDay:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})})});
+                    setOvernightSubmitted(true);
+                  }catch(e){console.log(e);}
+                }}>
+                ☀️ Submit Nightly Report
+              </button>
+            ):(
+              <div style={{background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:12,padding:"16px",textAlign:"center"}}>
+                <div style={{fontSize:24,marginBottom:8}}>☀️</div>
+                <div style={{fontSize:18,fontWeight:900,color:"#10b981"}}>Report Submitted!</div>
+                <div style={{fontSize:13,color:"#64748b",marginTop:4}}>Admin has been notified. Great work tonight!</div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div></div>
+  );
+
+  // OVERNIGHT INCIDENT FORM
+  if(view==="overnight_incident") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>Log Incident</span></div>
+      <div style={S.cWrap}>
+        <Fld label="Time" value={f("oi_time")} onChange={setF("oi_time")} ph={new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} required/>
+        <Fld label="Location" value={f("oi_location")} onChange={setF("oi_location")} ph="e.g. Near Moon Stage" required/>
+        <label style={S.lbl}>Type of Incident</label>
+        <select style={S.sel} value={f("oi_type")||""} onChange={setF("oi_type")}>
+          <option value="">Select...</option>
+          <option>Suspicious Activity</option>
+          <option>Vandalism</option>
+          <option>Trespasser</option>
+          <option>Equipment Issue</option>
+          <option>Weather Damage</option>
+          <option>All Clear Check</option>
+          <option>Other</option>
+        </select>
+        <Fld label="Description" value={f("oi_description")} onChange={setF("oi_description")} ph="What happened?" required multi/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)"}}
+          onClick={()=>{
+            const time=f("oi_time")||new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+            const text=`[${f("oi_type")||"Incident"}] ${f("oi_location")} — ${f("oi_description")}`;
+            setOvernightIncidents(p=>[...p,{time,text}]);
+            setFields({});setView("home");
+          }}>
+          ✅ Save Incident
+        </button>
+      </div>
+    </div></div>
+  );
+
+  return(<div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}><BB onClick={()=>{setView("home");setReqType(null);setFields({});setRestockItem(null);setRestockQty(null);}}/><span style={S.panelTitle}>{rtData?.emoji} {rtData?.label}</span></div>
       <div style={S.cWrap}>
         <div style={{fontSize:14,color:"#f59e0b",fontWeight:700}}>📍 {name}{staffName?` · ${staffName}`:""}</div>
@@ -290,6 +486,13 @@ export default function FieldApp(){const onBack=()=>{};
           <Fld label="Location" value={f("location")} onChange={setF("location")} ph="e.g. Lafayette bar" required large/>
           <Fld label="What do you need?" value={f("problem")} onChange={setF("problem")} ph="Describe what's needed" required/>
           <Fld label="Any Other Details" value={f("details")} onChange={setF("details")} ph="Optional" multi/>
+        </>}
+
+        {reqType==="lost_found"&&<>
+          <div style={{fontSize:14,color:"#8b5cf6",fontWeight:700,background:"rgba(139,92,246,0.08)",border:"1px solid rgba(139,92,246,0.2)",borderRadius:8,padding:"10px 12px"}}>📦 Fill in the details below. An item number will be assigned automatically and you will be told where to bring it.</div>
+          <Fld label="Description of Item *" value={f("lf_description")} onChange={setF("lf_description")} ph="e.g. Black wallet, iPhone with red case, keys" required large/>
+          <Fld label="Where did you find it? *" value={f("lf_location")} onChange={setF("lf_location")} ph="e.g. Under a chair near Lafayette bar" required large/>
+          <Fld label="Narrative / Circumstances" value={f("lf_narrative")} onChange={setF("lf_narrative")} ph="e.g. Found after a group left, no one around" multi/>
         </>}
 
         <button style={{...S.sendBtn,background:`linear-gradient(135deg,${REQUEST_TYPES.find(x=>x.id===reqType)?.color||"#7c3aed"},${REQUEST_TYPES.find(x=>x.id===reqType)?.color||"#4f46e5"}99)`,opacity:!canSubmit()?0.5:1}} onClick={doSubmit} disabled={!canSubmit()}>

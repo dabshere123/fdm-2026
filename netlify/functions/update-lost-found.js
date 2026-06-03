@@ -1,20 +1,22 @@
 // update-lost-found.js
-// Marks a lost & found item as claimed
-// POST body: { id, claimedBy, claimedByID, claimedByPhone }
-
 const AIRTABLE_BASE = 'appUVEp7kO9NeeJh0';
 const AIRTABLE_TABLE = 'LostFound';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 
 exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' }, body: '' };
+  }
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
   }
 
-  const { id, claimedBy, claimedByID, claimedByPhone } = JSON.parse(event.body || '{}');
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch(e) {}
+  const { id, claimedBy, claimedByID, claimedByPhone } = body;
 
   if (!id) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing id' }) };
+    return { statusCode: 400, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Missing id' }) };
   }
 
   try {
@@ -27,15 +29,16 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         fields: {
           Status: 'Claimed',
-          ClaimedBy: claimedBy || '',
-          ClaimedByID: claimedByID || '',
-          ClaimedByPhone: claimedByPhone || '',
-          ClaimedAt: new Date().toISOString(),
+          Claimedby: claimedBy || '',
+          ClaimedbyID: claimedByID || '',
+          ClaimedbyPhone: claimedByPhone || '',
+          ClaimedAt: new Date().toISOString().split('T')[0],
         }
       })
     });
 
     const data = await res.json();
+    console.log('Airtable response:', JSON.stringify(data));
 
     return {
       statusCode: 200,
@@ -43,9 +46,6 @@ exports.handler = async (event) => {
       body: JSON.stringify({ success: true, record: data })
     };
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: err.message }) };
   }
 };

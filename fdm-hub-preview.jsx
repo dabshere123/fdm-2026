@@ -167,7 +167,15 @@ const sendGroupMe = async (message, channels) => {
 
 // ─── HUB APP ──────────────────────────────────────────────────────────────────
 function HubApp({onBack}){
-  const [role,setRole]=useState(null);
+  const [role,setRole]=useState(()=>{
+    if(typeof window!=="undefined"){
+      const p=new URLSearchParams(window.location.search);
+      const r=p.get("role");
+      if(r==="med1") return "Med 1";
+      if(r==="med2") return "Med 2";
+    }
+    return null;
+  });
   const [view,setView]=useState("home");
   const [tick,setTick]=useState(0);
   const [lostChildBlink,setLostChildBlink]=useState(false);
@@ -259,8 +267,8 @@ function HubApp({onBack}){
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
     const urlRole=params.get("role");
-    if(urlRole==="med1"){setRole("Med 1");setLoggedIn(true);}
-    else if(urlRole==="med2"){setRole("Med 2");setLoggedIn(true);}
+    if(urlRole==="med1"){setRole("Med 1");setPin(PINS["Med 1"]||"0000");setLoggedIn(true);}
+    else if(urlRole==="med2"){setRole("Med 2");setPin(PINS["Med 2"]||"0000");setLoggedIn(true);}
   },[]);
 
   // NWS Weather Alert System
@@ -1072,7 +1080,7 @@ Reply YES to acknowledge.`
       </div>
       <div style={{fontSize:13,color:"#ec4899",fontWeight:700,padding:"0 16px 8px"}}>🔴 {role} — Medical Unit</div>
       {nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"rgba(239,68,68,0.2)",border:"2px solid #ef4444",borderRadius:10,padding:"10px",fontSize:13,color:"#fff",fontWeight:800,cursor:"pointer",textAlign:"center"}} onClick={()=>setView("911")}>🚨 911 ACTIVE — Tap to update</button>}
-      <MedHome role={role} calls={calls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne}/>
+      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne}/>
     </div></div>
   );
 
@@ -1408,7 +1416,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [tab,setTab]=useState("calls");
   const [wiComplaint,setWiComplaint]=useState("");
   const [wiDetails,setWiDetails]=useState("");
-  const walkIns=activeCalls.filter(c=>c.type==="walk_in"&&c.unit===role);
+  const walkIns=(calls||[]).filter(c=>c.type==="walk_in"&&c.unit===role);
   const allActive=[...myActive];
 
   const doWalkIn=()=>{

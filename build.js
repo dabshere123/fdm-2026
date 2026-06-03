@@ -14,7 +14,7 @@ function build(src,out,comp,title){
   fs.writeFileSync(`${OUT}/${out}`,html);
   console.log('Built',out,Math.round(html.length/1024)+'kb');
 }
-build('fdm-hub-preview.jsx','hub.html','HubApp','FDM Operations Hub');
+build('fdm-hub-preview (2).jsx','hub.html','HubApp','FDM Operations Hub');
 build('fdm-field-preview.jsx','field.html','FieldApp','FDM Worker App');
 build('src/equipment.jsx','equipment-tracker.html','EquipmentTracker','FDM Equipment Tracker');
 console.log('Done!');

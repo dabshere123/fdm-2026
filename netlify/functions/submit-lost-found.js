@@ -3,7 +3,7 @@ const AIRTABLE_BASE = 'appUVEp7kO9NeeJh0';
 const AIRTABLE_TABLE = 'LostFound';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const ADMIN_PHONE = '+16082289692';
-
+ 
 function generateItemNumber() {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -12,7 +12,7 @@ function generateItemNumber() {
   const seq = Math.floor(Math.random() * 900) + 100;
   return `${month}${day}${year}-${seq}`;
 }
-
+ 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' }, body: '' };
@@ -20,21 +20,20 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
   }
-
+ 
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch(e) {}
   const { description, location, foundBy, narrative } = body;
-
+ 
   if (!description || !location) {
     return { statusCode: 400, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Missing description or location' }) };
   }
-
+ 
   const itemNumber = generateItemNumber();
   const now = new Date();
   const eventDay = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  // Airtable date format: YYYY-MM-DD
   const foundAtDate = now.toISOString().split('T')[0];
-
+ 
   try {
     const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
       method: 'POST',
@@ -55,14 +54,18 @@ exports.handler = async (event) => {
         }
       })
     });
-
+ 
     const data = await res.json();
-    
+    console.log('Airtable response:', JSON.stringify(data));
+ 
     if (!res.ok) {
-      console.error('Airtable error:', JSON.stringify(data));
-      return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: data }) };
+      return { 
+        statusCode: 500, 
+        headers: { 'Access-Control-Allow-Origin': '*' }, 
+        body: JSON.stringify({ error: data.error || 'Airtable error', details: data }) 
+      };
     }
-
+ 
     // SMS alert to Admin (non-fatal)
     try {
       const twilio = require('twilio');
@@ -75,7 +78,7 @@ exports.handler = async (event) => {
     } catch(smsErr) {
       console.log('SMS error (non-fatal):', smsErr.message);
     }
-
+ 
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },
@@ -83,6 +86,11 @@ exports.handler = async (event) => {
     };
   } catch (err) {
     console.error('Error:', err.message);
-    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: err.message }) };
+    return { 
+      statusCode: 500, 
+      headers: { 'Access-Control-Allow-Origin': '*' }, 
+      body: JSON.stringify({ error: err.message }) 
+    };
   }
 };
+ 

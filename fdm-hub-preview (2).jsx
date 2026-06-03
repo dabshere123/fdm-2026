@@ -167,7 +167,15 @@ const sendGroupMe = async (message, channels) => {
 
 // ─── HUB APP ──────────────────────────────────────────────────────────────────
 function HubApp({onBack}){
-  const [role,setRole]=useState(null);
+  const [role,setRole]=useState(()=>{
+    if(typeof window!=="undefined"){
+      const p=new URLSearchParams(window.location.search);
+      const r=p.get("role");
+      if(r==="med1") return "Med 1";
+      if(r==="med2") return "Med 2";
+    }
+    return null;
+  });
   const [view,setView]=useState("home");
   const [tick,setTick]=useState(0);
   const [lostChildBlink,setLostChildBlink]=useState(false);
@@ -527,7 +535,7 @@ function HubApp({onBack}){
     }
   }
 
-  if(!role) return(
+  if(!role&&!loggedInFromUrl) return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={{textAlign:"center",padding:"28px 16px 12px"}}>
         <div style={{fontSize:48}}>⚡</div>

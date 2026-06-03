@@ -167,10 +167,19 @@ const sendGroupMe = async (message, channels) => {
 
 // ─── HUB APP ──────────────────────────────────────────────────────────────────
 function HubApp({onBack}){
-  const [role,setRole]=useState(null);
+  const [role,setRole]=useState(()=>{
+    if(typeof window!=="undefined"){
+      const p=new URLSearchParams(window.location.search);
+      const r=p.get("role");
+      if(r==="med1") return "Med 1";
+      if(r==="med2") return "Med 2";
+    }
+    return null;
+  });
   const [view,setView]=useState("home");
   const [tick,setTick]=useState(0);
   const [lostChildBlink,setLostChildBlink]=useState(false);
+  const [lcFields,setLcFields]=useState({});
   const blinkRef=useRef(null);
   const [escalated,setEscalated]=useState({});
   const ESCALATION_MS={medical:30000,walk_in:30000,fire:30000,security:30000,supplies:60000,maintenance:60000};
@@ -195,7 +204,16 @@ function HubApp({onBack}){
   const [nineOneOne,set911]=useState({active:false,info:{},by:null,at:null});
   const [emsForm,setEmsForm]=useState({staging:"",eta:"",nature:"",notes:""});
   const [emsDispatched,setEmsDispatched]=useState(false);
+  // INCIDENT REPORT
+  const [incidentView,setIncidentView]=useState(null); // holds call data for report form
+  const [incFields,setIncFields]=useState({});
+
   // LOST & FOUND
+  const [lfAddMode,setLfAddMode]=useState(false);
+  const [lfNewDesc,setLfNewDesc]=useState("");
+  const [lfNewLoc,setLfNewLoc]=useState("");
+  const [lfNewNarrative,setLfNewNarrative]=useState("");
+  const [lfSubmitting,setLfSubmitting]=useState(false);
   const [lfItems,setLfItems]=useState([]);
   const [lfLoading,setLfLoading]=useState(false);
   const [lfClaimView,setLfClaimView]=useState(null);
@@ -259,8 +277,8 @@ function HubApp({onBack}){
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
     const urlRole=params.get("role");
-    if(urlRole==="med1"){setRole("Med 1");setLoggedIn(true);}
-    else if(urlRole==="med2"){setRole("Med 2");setLoggedIn(true);}
+    if(urlRole==="med1"){setRole("Med 1");setPin(PINS["Med 1"]||"0000");setLoggedIn(true);}
+    else if(urlRole==="med2"){setRole("Med 2");setPin(PINS["Med 2"]||"0000");setLoggedIn(true);}
   },[]);
 
   // NWS Weather Alert System
@@ -463,6 +481,13 @@ function HubApp({onBack}){
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
+        // Lost child — SMS + voice + MPD on acknowledge
+        fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({message:msg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Lost child alert. ${call.problem||""}. Location: ${call.location}. All staff please be on alert.`})
+        }).catch(e=>console.log(e));
+        fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({type:"lost_child",officers:mpdOfficers,location:call.location,situation:msg})
+        }).catch(e=>console.log(e));
       } else {
         msg=`🚨 FDM ALERT\nLOCATION: ${call.location}\n${call.problem||""}\nDATE/TIME: ${ts}`;
       }
@@ -474,6 +499,12 @@ function HubApp({onBack}){
   const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
   const clearCall=(id,by)=>{ playAlert("clear"); removeAckedBanner(id);
     if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Cleared",unit:by})}).catch(e=>console.log(e)); }
+    // Trigger incident report for medical/fire/security
+    const call=activeCalls.find(c=>c.id===id)||calls.find(c=>c.id===id);
+    if(call&&["medical","walk_in","fire","security"].includes(call.type)){
+      setIncidentView(call);
+      setIncFields({respondingUnit:by,disposition:"",interventions:"",narrative:"",notes:""});
+    }
     const c=calls.find(x=>x.id===id);if(!c)return;
     setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
     setCalls(p=>p.filter(x=>x.id!==id));
@@ -679,7 +710,7 @@ function HubApp({onBack}){
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Type of Weather *</label>
               <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                {["Thunderstorm","High Winds","Tornado Warning","Flash Flood","Lightning","Severe Storm"].map(w=>{
+                {["Thunderstorm","Rain Storm","High Winds","Severe Thunderstorm","Tornado Watch","Tornado Warning","Torrential Rain / Downpour"].map(w=>{
                   const selected=(alertFields._weatherTypes||[]);
                   const sel=selected.includes(w);
                   return(
@@ -947,6 +978,142 @@ Reply YES to acknowledge.`
   }
 
   // 911 VIEW
+  // ─── LOST CHILD VIEW ─────────────────────────────────────────────────────────
+  if(lcView) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><BB onClick={()=>setLcView(false)}/><span style={S.panelTitle}>🧒 Report Lost Child</span></div>
+      <div style={S.cWrap}>
+        <div style={{fontSize:14,color:"#fcd34d",fontWeight:700,background:"rgba(202,138,4,0.1)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:8,padding:"10px 12px"}}>📋 Gather info from parent/guardian first, then fill in below.</div>
+        <Fld label="Child Age *" value={lcFields?.age||""} onChange={e=>setLcFields(p=>({...p,age:e.target.value}))} ph="e.g. 6" required large/>
+        <Fld label="Gender" value={lcFields?.gender||""} onChange={e=>setLcFields(p=>({...p,gender:e.target.value}))} ph="e.g. Girl, Boy"/>
+        <Fld label="Hair Color / Style" value={lcFields?.hair||""} onChange={e=>setLcFields(p=>({...p,hair:e.target.value}))} ph="e.g. Brown pigtails"/>
+        <Fld label="Top / Shirt" value={lcFields?.top||""} onChange={e=>setLcFields(p=>({...p,top:e.target.value}))} ph="e.g. Red shirt"/>
+        <Fld label="Bottom / Pants" value={lcFields?.bottom||""} onChange={e=>setLcFields(p=>({...p,bottom:e.target.value}))} ph="e.g. Blue shorts"/>
+        <Fld label="Last Seen Location *" value={lcFields?.lastSeen||""} onChange={e=>setLcFields(p=>({...p,lastSeen:e.target.value}))} ph="e.g. Near Moon Stage 1 bar" required large/>
+        <Fld label="Last Seen Time" value={lcFields?.lastSeenTime||""} onChange={e=>setLcFields(p=>({...p,lastSeenTime:e.target.value}))} ph="e.g. 5:30 PM"/>
+        <Fld label="Assembly Point *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. Medical Tent" required large/>
+        <Fld label="Parent / Guardian Name" value={lcFields?.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Sarah Johnson"/>
+        <Fld label="Parent / Guardian Phone" value={lcFields?.parentPhone||""} onChange={e=>setLcFields(p=>({...p,parentPhone:e.target.value}))} ph="(608) 555-1234"/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly)?0.5:1}}
+          disabled={!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly}
+          onClick={()=>{
+            const lcMsg=`🧒 LOST CHILD 🧒\n\nLOCATION: ${lcFields?.lastSeen}\nDESCRIPTION: ${lcFields?.gender||"Child"}, approx ${lcFields?.age}${lcFields?.hair?" · "+lcFields.hair:""}${lcFields?.top?" · "+lcFields.top:""}\nLast seen: ${lcFields?.lastSeenTime||""}\nAssembly Point: ${lcFields?.assembly}\nParent: ${lcFields?.parentName||"Unknown"} · ${lcFields?.parentPhone||""}\nDATE/TIME: ${new Date().toLocaleString()}`;
+            const newCall={id:Date.now(),type:"lost_child",location:lcFields?.lastSeen,problem:`${lcFields?.gender||"Child"}, approx ${lcFields?.age}. ${lcFields?.hair||""} ${lcFields?.top||""} ${lcFields?.bottom||""}. Last seen: ${lcFields?.lastSeenTime} near ${lcFields?.lastSeen}. Assembly: ${lcFields?.assembly}. Parent: ${lcFields?.parentName||"Unknown"} ${lcFields?.parentPhone||""}`,requestedBy:"Admin",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
+            setCalls(p=>[newCall,...p]);
+            sendGroupMe(lcMsg,["all_staff","admin","medical","bar_stage","financial","restock","maintenance"]);
+            fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:lcMsg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Lost child alert at Fete de Marquette. ${lcFields?.gender||"Child"}, approximately ${lcFields?.age} years old. Last seen near ${lcFields?.lastSeen}. Assembly point is ${lcFields?.assembly}. Parent name ${lcFields?.parentName||"unknown"}. All staff please be on alert.`})}).catch(e=>console.log(e));
+            fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"lost_child",officers:mpdOfficers,location:lcFields?.lastSeen,situation:lcMsg})}).catch(e=>console.log(e));
+            playAlert("lost_child");
+            setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lost_child",label:"Lost Child Reported",msg:lcMsg},...p]);
+            setLcView(false);setLcFields({});
+          }}>
+          🧒 REPORT & ALERT ALL STAFF + MPD
+        </button>
+      </div>
+    </div></div>
+  );
+
+  // ─── INCIDENT REPORT VIEW ─────────────────────────────────────────────────────
+  if(incidentView) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>{setIncidentView(null);setIncFields({});}}/>
+        <span style={S.panelTitle}>📋 Incident Report</span>
+      </div>
+      <div style={S.cWrap}>
+        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"12px 14px",display:"flex",flexDirection:"column",gap:4}}>
+          <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Auto-filled from call</div>
+          <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>{incidentView.type?.toUpperCase()} — {incidentView.location}</div>
+          <div style={{fontSize:13,color:"#94a3b8"}}>{incidentView.problem}</div>
+          {incidentView.details&&<div style={{fontSize:12,color:"#64748b"}}>{incidentView.details}</div>}
+          <div style={{fontSize:12,color:"#64748b"}}>Reported by: {incidentView.requestedBy} · Unit: {incFields.respondingUnit}</div>
+        </div>
+        <Fld label="Patient / Person Description" value={incFields.patientDescription||""} onChange={e=>setIncFields(p=>({...p,patientDescription:e.target.value}))} ph="Age, gender, appearance, condition" multi/>
+        <Fld label="Interventions Performed" value={incFields.interventions||""} onChange={e=>setIncFields(p=>({...p,interventions:e.target.value}))} ph="e.g. CPR, AED, oxygen, bandaging, verbal de-escalation" multi/>
+        <label style={S.lbl}>Disposition *</label>
+        <select style={S.sel} value={incFields.disposition||""} onChange={e=>setIncFields(p=>({...p,disposition:e.target.value}))}>
+          <option value="">Select disposition...</option>
+          <option>Treated on Scene</option>
+          <option>Transported — Madison Fire Medics</option>
+          <option>Transported — Private Vehicle</option>
+          <option>Refused Care</option>
+          <option>No Treatment Needed</option>
+          <option>Patron Removed</option>
+          <option>Police Custody</option>
+          <option>Other</option>
+        </select>
+        <Fld label="Narrative" value={incFields.narrative||""} onChange={e=>setIncFields(p=>({...p,narrative:e.target.value}))} ph="Full narrative of what happened, timeline, actions taken" multi/>
+        <Fld label="Additional Notes" value={incFields.notes||""} onChange={e=>setIncFields(p=>({...p,notes:e.target.value}))} ph="Any other relevant info" multi/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",opacity:!incFields.disposition?0.5:1}}
+          disabled={!incFields.disposition}
+          onClick={async()=>{
+            try{
+              const res=await fetch("/.netlify/functions/submit-incident",{method:"POST",headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({callId:incidentView.id,type:incidentView.type,location:incidentView.location,problem:incidentView.problem,patientDescription:incFields.patientDescription||"",requestedBy:incidentView.requestedBy,respondingUnit:incFields.respondingUnit||role,interventions:incFields.interventions||"",disposition:incFields.disposition,narrative:incFields.narrative||"",notes:incFields.notes||"",openedAt:incidentView.timestamp||new Date().toISOString()})});
+              const data=await res.json();
+              if(data.success){
+                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"incident",label:`Incident Report: ${data.incidentNumber}`,msg:`${incidentView.type} — ${incidentView.location}`},...p]);
+              }
+            }catch(e){console.log(e);}
+            setIncidentView(null);setIncFields({});
+          }}>
+          📋 SUBMIT INCIDENT REPORT
+        </button>
+        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#64748b",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});}}>Skip Report</button>
+      </div>
+    </div></div>
+  );
+
+  // ─── LOST & FOUND VIEW ────────────────────────────────────────────────────────
+  if(view==="lostfound") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>setView("home")}/>
+        <span style={S.panelTitle}>📦 Lost & Found</span>
+        <button style={{background:"rgba(139,92,246,0.15)",border:"1px solid rgba(139,92,246,0.4)",borderRadius:8,padding:"6px 12px",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}} onClick={fetchLostFound}>Refresh</button>
+      </div>
+      <div style={S.cWrap}>
+        {lfClaimView?(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>Mark as Claimed — #{lfClaimView.itemNumber}</div>
+            <div style={{fontSize:13,color:"#94a3b8"}}>{lfClaimView.description}</div>
+            <Fld label="Claimed By (Name) *" value={lfClaimBy} onChange={e=>setLfClaimBy(e.target.value)} ph="Full name of person claiming"/>
+            <Fld label="ID Verification" value={lfClaimID} onChange={e=>setLfClaimID(e.target.value)} ph="e.g. DL #123456"/>
+            <Fld label="Phone Number" value={lfClaimPhone} onChange={e=>setLfClaimPhone(e.target.value)} ph="(608) 555-1234"/>
+            <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",opacity:!lfClaimBy?0.5:1}} disabled={!lfClaimBy}
+              onClick={async()=>{
+                await fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:lfClaimView.id,claimedBy:lfClaimBy,claimedByID:lfClaimID,claimedByPhone:lfClaimPhone})});
+                setLfClaimView(null);setLfClaimBy("");setLfClaimID("");setLfClaimPhone("");
+                fetchLostFound();
+              }}>✅ Mark as Claimed</button>
+            <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#94a3b8"}} onClick={()=>setLfClaimView(null)}>Cancel</button>
+          </div>
+        ):(
+          <>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:13,color:"#64748b"}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed</div>
+            </div>
+            {lfLoading&&<div style={{textAlign:"center",color:"#64748b",padding:"20px"}}>Loading...</div>}
+            {!lfLoading&&lfItems.length===0&&<div style={{textAlign:"center",color:"#64748b",padding:"20px"}}>No lost & found items yet.</div>}
+            {lfItems.map(item=>(
+              <div key={item.id} style={{borderRadius:12,border:`1px solid ${item.status==="Claimed"?"rgba(16,185,129,0.3)":"rgba(139,92,246,0.4)"}`,background:item.status==="Claimed"?"rgba(16,185,129,0.05)":"rgba(139,92,246,0.08)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:6}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{fontSize:14,fontWeight:900,color:item.status==="Claimed"?"#10b981":"#a78bfa"}}>#{item.itemNumber}</div>
+                  <div style={{fontSize:11,fontWeight:700,color:item.status==="Claimed"?"#10b981":"#f59e0b",background:item.status==="Claimed"?"rgba(16,185,129,0.1)":"rgba(245,158,11,0.1)",padding:"3px 8px",borderRadius:6}}>{item.status}</div>
+                </div>
+                <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{item.description}</div>
+                <div style={{fontSize:12,color:"#94a3b8"}}>📍 {item.location} · Found by {item.foundBy} · {item.foundAt?new Date(item.foundAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}):""}</div>
+                {item.narrative&&<div style={{fontSize:12,color:"#64748b",fontStyle:"italic"}}>{item.narrative}</div>}
+                {item.status==="Claimed"&&<div style={{fontSize:12,color:"#10b981"}}>Claimed by {item.claimedBy}{item.claimedByID?` (${item.claimedByID})`:""}</div>}
+                {item.status==="Unclaimed"&&<button style={{marginTop:4,padding:"10px",borderRadius:8,border:"1px solid rgba(139,92,246,0.4)",background:"rgba(139,92,246,0.1)",color:"#a78bfa",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfClaimView(item)}>Mark as Claimed</button>}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div></div>
+  );
+
   if(view==="911") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       {/* FULL SCREEN ALERT HEADER */}
@@ -1072,7 +1239,7 @@ Reply YES to acknowledge.`
       </div>
       <div style={{fontSize:13,color:"#ec4899",fontWeight:700,padding:"0 16px 8px"}}>🔴 {role} — Medical Unit</div>
       {nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"rgba(239,68,68,0.2)",border:"2px solid #ef4444",borderRadius:10,padding:"10px",fontSize:13,color:"#fff",fontWeight:800,cursor:"pointer",textAlign:"center"}} onClick={()=>setView("911")}>🚨 911 ACTIVE — Tap to update</button>}
-      <MedHome role={role} calls={calls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne}/>
+      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne}/>
     </div></div>
   );
 
@@ -1333,7 +1500,7 @@ Reply YES to acknowledge.`
 
       {/* SECTION 4: EQUIPMENT TRACKER */}
       <div style={{background:"rgba(16,185,129,0.04)",borderRadius:14,border:"1px solid rgba(16,185,129,0.2)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#10b981"}} onClick={()=>window.open("fdm-equipment-tracker","_blank")}>
+        <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#10b981"}} onClick={()=>window.open("/equipment","_blank")}>
           <span>📻 Equipment Tracker</span>
           <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>Radios · Readers · Bundles →</span>
         </div>
@@ -1352,7 +1519,57 @@ Reply YES to acknowledge.`
         </div>
       </div>
 
-      {/* SECTION 5: ACTIVITY LOG */}
+      {/* SECTION 5: LOST & FOUND */}
+      <div style={{background:"rgba(139,92,246,0.05)",borderRadius:14,border:"1px solid rgba(139,92,246,0.2)",overflow:"hidden"}}>
+        <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(139,92,246,0.15)"}} onClick={()=>{setView("lostfound");fetchLostFound();}}>
+          <span>📦 Lost & Found</span>
+          <span style={{fontSize:11,color:"#a78bfa",fontWeight:400}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed →</span>
+        </div>
+        <div style={{padding:"8px"}}>
+          {lfItems.length===0
+            ?<div style={{fontSize:13,color:"#64748b",padding:"8px 4px"}}>No items logged yet. Workers can log items from the Field App.</div>
+            :lfItems.slice(0,3).map(item=>(
+              <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:item.status==="Claimed"?"#10b981":"#a78bfa",flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>#{item.itemNumber} — {item.description}</div>
+                  <div style={{fontSize:11,color:"#64748b"}}>📍 {item.location} · {item.status}</div>
+                </div>
+              </div>
+            ))
+          }
+          <div style={{display:"flex",gap:8,marginTop:8}}>
+            <button style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.08)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setView("lostfound");fetchLostFound();}}>View All →</button>
+            <button style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid rgba(139,92,246,0.5)",background:"rgba(139,92,246,0.15)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddMode(p=>!p)}>+ Log Item</button>
+          </div>
+          {lfAddMode&&(
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8,padding:"12px",background:"rgba(139,92,246,0.08)",borderRadius:10,border:"1px solid rgba(139,92,246,0.2)"}}>
+              <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Description of item *" value={lfNewDesc} onChange={e=>setLfNewDesc(e.target.value)}/>
+              <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Where found *" value={lfNewLoc} onChange={e=>setLfNewLoc(e.target.value)}/>
+              <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Narrative (optional)" value={lfNewNarrative} onChange={e=>setLfNewNarrative(e.target.value)}/>
+              <button style={{padding:"10px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",opacity:(!lfNewDesc||!lfNewLoc||lfSubmitting)?0.5:1}}
+                disabled={!lfNewDesc||!lfNewLoc||lfSubmitting}
+                onClick={async()=>{
+                  setLfSubmitting(true);
+                  try{
+                    const res=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:lfNewDesc,location:lfNewLoc,foundBy:"Admin",narrative:lfNewNarrative})});
+                    const data=await res.json();
+                    if(data.success){
+                      setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lostfound",label:`L&F #${data.itemNumber}`,msg:lfNewDesc},...p]);
+                      setLfNewDesc("");setLfNewLoc("");setLfNewNarrative("");setLfAddMode(false);
+                      fetchLostFound();
+                    }
+                  }catch(e){console.log(e);}
+                  setLfSubmitting(false);
+                }}>
+                {lfSubmitting?"Saving...":"📦 Save Item"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 6: ACTIVITY LOG */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
         <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("log")}>
           <span>📋 Activity Log</span>
@@ -1408,7 +1625,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [tab,setTab]=useState("calls");
   const [wiComplaint,setWiComplaint]=useState("");
   const [wiDetails,setWiDetails]=useState("");
-  const walkIns=activeCalls.filter(c=>c.type==="walk_in"&&c.unit===role);
+  const walkIns=(calls||[]).filter(c=>c.type==="walk_in"&&c.unit===role);
   const allActive=[...myActive];
 
   const doWalkIn=()=>{

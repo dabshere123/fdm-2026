@@ -59,7 +59,7 @@ exports.handler = async (event) => {
     OpenedAt: openedAtDate,
     ClosedAt: closedAtDate,
     Duration: duration,
-    CallId: String(callId || ''),
+   
   };
 
   console.log('Sending to Airtable:', JSON.stringify(fields).slice(0, 300));

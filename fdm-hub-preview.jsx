@@ -750,8 +750,8 @@ function HubApp({onBack}){
           {/* ESTIMATED ARRIVAL (for weather/delays) */}
           {(t.id==="weather_imminent"||t.id==="event_delayed")&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Estimated Arrival / Delay</label>
-              <input style={{...S.inp,fontSize:14}} placeholder="e.g. 8:15 PM · 20 minutes" value={alertFields._eta||""} onChange={e=>{setAlertFields(p=>({...p,_eta:e.target.value}));setEditedMsg("");}}/>
+              <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Estimated Storm Arrival / Duration</label>
+              <input style={{...S.inp,fontSize:14}} placeholder="e.g. 8:15 PM arrival · 45 min duration" value={alertFields._eta||""} onChange={e=>{setAlertFields(p=>({...p,_eta:e.target.value}));setEditedMsg("");}}/>
             </div>
           )}
 
@@ -803,7 +803,7 @@ function HubApp({onBack}){
     const compQ=callFilter?completed.filter(c=>callFilter.includes(c.type)):completed;
     const ac=callFilter?ALERT_COLORS[callFilter[0]]||{}:{};
     return(<div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>{callFilterTitle}</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>{callFilterTitle}</span></div>
       <div style={S.tabRow}>
         <button style={{...S.tab,borderBottom:callTab==="active"?"2px solid #f59e0b":"2px solid transparent",color:callTab==="active"?"#f59e0b":"#64748b"}} onClick={()=>setCallTab("active")}>Active ({qCalls.length})</button>
         <button style={{...S.tab,borderBottom:callTab==="completed"?"2px solid #10b981":"2px solid transparent",color:callTab==="completed"?"#10b981":"#64748b"}} onClick={()=>setCallTab("completed")}>Completed ({compQ.length})</button>
@@ -999,7 +999,7 @@ Reply YES to acknowledge.`
   // ─── LOST CHILD VIEW ─────────────────────────────────────────────────────────
   if(lcView) return(
     <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><BB onClick={()=>setLcView(false)}/><span style={S.panelTitle}>🧒 Report Lost Child</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>🧒 Report Lost Child</span></div>
       <div style={S.cWrap}>
         <div style={{fontSize:14,color:"#fcd34d",fontWeight:700,background:"rgba(202,138,4,0.1)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:8,padding:"10px 12px"}}>📋 Gather info from parent/guardian first, then fill in below.</div>
         <Fld label="Child Age *" value={lcFields?.age||""} onChange={e=>setLcFields(p=>({...p,age:e.target.value}))} ph="e.g. 6" required large/>
@@ -1010,6 +1010,7 @@ Reply YES to acknowledge.`
         <Fld label="Last Seen Location *" value={lcFields?.lastSeen||""} onChange={e=>setLcFields(p=>({...p,lastSeen:e.target.value}))} ph="e.g. Near Moon Stage 1 bar" required large/>
         <Fld label="Last Seen Time" value={lcFields?.lastSeenTime||""} onChange={e=>setLcFields(p=>({...p,lastSeenTime:e.target.value}))} ph="e.g. 5:30 PM"/>
         <Fld label="Meet Reporting Party / Parent *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. Medical Tent" required large/>
+        <Fld label="Meet Reporting Party (Parent)" value={lcFields?.meetParent||lcFields?.parentName||""} onChange={e=>setLcFields(p=>({...p,meetParent:e.target.value}))} ph="Auto: parent name — or specify location to meet them"/>
         <Fld label="Parent / Guardian Name" value={lcFields?.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Sarah Johnson"/>
         <Fld label="Parent / Guardian Phone" value={lcFields?.parentPhone||""} onChange={e=>setLcFields(p=>({...p,parentPhone:e.target.value}))} ph="(608) 555-1234"/>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly)?0.5:1}}
@@ -1135,7 +1136,7 @@ Reply YES to acknowledge.`
 
   if(view==="acks") return(
     <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>Acknowledgments</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>Acknowledgments</span></div>
       <div style={S.callQ}>
         {broadcastAlerts.filter(a=>a.requiresAck).map((a,i)=>{
           const tot=ALL_LOCS.length,conf=Object.keys(a.acks||{}).length,pct=Math.round(conf/tot*100);
@@ -1163,7 +1164,7 @@ Reply YES to acknowledge.`
   // LOG VIEW
   if(view==="log") return(
     <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>Activity Log</span><span style={{fontSize:12,color:"#475569",marginLeft:"auto"}}>{activityLog.length} entries</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>Activity Log</span><BB onClick={()=>setView("home")}/><span style={{fontSize:12,color:"#475569",marginLeft:"auto"}}>{activityLog.length} entries</span></div>
       <div style={S.callQ}>
         {activityLog.map((e,i)=>{
           const isOpen=expandedLog===i;
@@ -1288,7 +1289,7 @@ Reply YES to acknowledge.`
         <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>911 Active · Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
       </div>
 
-      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>911 Incident Details</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>911 Incident Details</span><BB onClick={()=>setView("home")} label="← Back"/></div>
 
       <div style={S.cWrap}>
         {/* ALL INCIDENT INFO */}
@@ -1556,8 +1557,8 @@ Reply YES to acknowledge.`
       {/* SECTION 2: SAFETY + BROADCAST side by side */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         {/* SAFETY */}
-        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{...S.sectionHdr,fontSize:16,fontWeight:900}}>🚨 Safety</div>
+        <div style={{background:"linear-gradient(160deg,rgba(220,38,38,0.15),rgba(37,99,235,0.15))",borderRadius:14,border:"1px solid rgba(220,38,38,0.3)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+          <div style={{...S.sectionHdr,background:"linear-gradient(135deg,rgba(220,38,38,0.3),rgba(37,99,235,0.3))",fontSize:16,fontWeight:900}}>🚨 Safety</div>
           <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
             {[
               {types:["medical","walk_in"],label:"Medical",icon:"🩺",color:ALERT_COLORS.medical,calls:medCalls,title:"Medical Calls"},
@@ -1578,8 +1579,8 @@ Reply YES to acknowledge.`
         </div>
 
         {/* BROADCAST */}
-        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(124,58,237,0.3)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{...S.sectionHdr,background:"rgba(124,58,237,0.15)",fontSize:13,fontWeight:900}}>📢 Broadcast</div>
+        <div style={{background:"rgba(236,72,153,0.1)",borderRadius:14,border:"1px solid rgba(236,72,153,0.35)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+          <div style={{...S.sectionHdr,background:"rgba(236,72,153,0.25)",fontSize:13,fontWeight:900}}>📢 Broadcast</div>
           <div style={{display:"flex",flexDirection:"column",gap:4,padding:"8px"}}>
             {/* Broadcast buttons — specific row groupings */}
             {[
@@ -1607,8 +1608,8 @@ Reply YES to acknowledge.`
       {/* SECTION 3: SUPPLIES & MAINTENANCE */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         {/* SUPPLIES */}
-        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:`1px solid ${ALERT_COLORS.supplies.border}`,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{...S.sectionHdr,background:ALERT_COLORS.supplies.bg,fontSize:13,fontWeight:900}}>📦 Supplies</div>
+        <div style={{background:"rgba(120,53,15,0.18)",borderRadius:14,border:"1px solid rgba(146,64,14,0.5)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+          <div style={{...S.sectionHdr,background:"rgba(120,53,15,0.35)",fontSize:13,fontWeight:900}}>📦 Supplies</div>
           <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:`1px solid ${ALERT_COLORS.supplies.border}`,background:ALERT_COLORS.supplies.bg,cursor:"pointer",textAlign:"left"}}
               onClick={()=>{setCallFilter(["supplies"]);setCallFilterTitle("Supplies & Restock");setCallTab("active");setView("callqueue");}}>
@@ -1628,8 +1629,8 @@ Reply YES to acknowledge.`
         </div>
 
         {/* MAINTENANCE */}
-        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:`1px solid ${ALERT_COLORS.maintenance.border}`,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{...S.sectionHdr,background:ALERT_COLORS.maintenance.bg,fontSize:13,fontWeight:900}}>🔧 Maintenance</div>
+        <div style={{background:"rgba(16,185,129,0.12)",borderRadius:14,border:"1px solid rgba(22,101,52,0.5)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+          <div style={{...S.sectionHdr,background:"rgba(16,185,129,0.25)",fontSize:13,fontWeight:900}}>🔧 Maintenance</div>
           <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:`1px solid ${ALERT_COLORS.maintenance.border}`,background:ALERT_COLORS.maintenance.bg,cursor:"pointer",textAlign:"left"}}
               onClick={()=>{setCallFilter(["maintenance"]);setCallFilterTitle("Maintenance");setCallTab("active");setView("callqueue");}}>
@@ -1650,8 +1651,8 @@ Reply YES to acknowledge.`
       </div>
 
       {/* SECTION 4: EQUIPMENT TRACKER */}
-      <div style={{background:"rgba(16,185,129,0.04)",borderRadius:14,border:"1px solid rgba(16,185,129,0.2)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,background:"rgba(234,179,8,0.2)",borderBottom:"1px solid rgba(234,179,8,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fcd34d"}} onClick={()=>window.open("/equipment","_blank")}>
+      <div style={{background:"rgba(234,179,8,0.1)",borderRadius:14,border:"1px solid rgba(234,179,8,0.4)",overflow:"hidden"}}>
+        <div style={{...S.sectionHdr,background:"rgba(234,179,8,0.25)",borderBottom:"1px solid rgba(234,179,8,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fcd34d"}} onClick={()=>window.open("/equipment","_blank")}>
           <span>📻 Equipment Tracker</span>
           <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>Radios · Readers · Bundles →</span>
         </div>
@@ -1671,7 +1672,7 @@ Reply YES to acknowledge.`
       </div>
 
       {/* SECTION 5: LOST & FOUND */}
-      <div style={{background:"rgba(249,115,22,0.08)",borderRadius:14,border:"1px solid rgba(249,115,22,0.3)",overflow:"hidden"}}>
+      <div style={{background:"rgba(249,115,22,0.12)",borderRadius:14,border:"1px solid rgba(249,115,22,0.45)",overflow:"hidden"}}>
         <div style={{...S.sectionHdr,background:"rgba(249,115,22,0.2)",borderBottom:"1px solid rgba(249,115,22,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>{setView("lostfound");fetchLostFound();}}>
           <span>📦 Lost & Found</span>
           <span style={{fontSize:11,color:"#a78bfa",fontWeight:400}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed →</span>

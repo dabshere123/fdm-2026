@@ -1115,48 +1115,7 @@ Reply YES to acknowledge.`
     </div></div>
   );
 
-  if(view==="911") return(
-    <div style={S.root}><Bg/><div style={S.panel}>
-      {/* FULL SCREEN ALERT HEADER */}
-      <div style={{background:"linear-gradient(135deg,#dc2626,#991b1b)",padding:"16px",display:"flex",flexDirection:"column",gap:4,textAlign:"center",boxShadow:"0 0 24px rgba(239,68,68,0.4)"}}>
-        <div style={{fontSize:40}}>🚨</div>
-        <div style={{fontSize:20,fontWeight:900,color:"#fff",letterSpacing:"0.04em"}}>EMS INBOUND</div>
-        <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>911 Active · Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
-      </div>
 
-      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>911 Incident Details</span></div>
-
-      <div style={S.cWrap}>
-        {/* ALL INCIDENT INFO */}
-        {[["location","Location","e.g. Near Moon Stage 1"],["nature","Nature of Call","e.g. Unresponsive adult"],["patients","Number of Patients","e.g. 1"],["age_sex","Age / Sex","e.g. 40s Male"],["conscious","Conscious / Breathing","e.g. Unconscious, breathing"],["interventions","Interventions in Progress","e.g. CPR in progress"],["entry","EMS Entry Point","e.g. Main Gate on Willy St"],["meeting","Who's Meeting EMS","e.g. Med 1 at gate"]].map(([k,l,p])=><Fld key={k} label={l} value={nineOneOne.info?.[k]||""} onChange={e=>set911(prev=>({...prev,info:{...prev.info,[k]:e.target.value}}))} ph={p}/>)}
-
-        <label style={S.lbl}>🏥 MFD Staging Location</label>
-        <select style={S.sel} value={emsForm.staging} onChange={e=>setEmsForm(p=>({...p,staging:e.target.value}))}>
-          <option value="">Select...</option>
-          {EMS_STAGING.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
-        </select>
-        <Fld label="⏱️ EMS ETA" value={emsForm.eta} onChange={e=>setEmsForm(p=>({...p,eta:e.target.value}))} ph="e.g. 8 minutes"/>
-
-        {/* SEND DISPATCH ALERT */}
-        {!emsDispatched
-          ?<button style={{...S.sendBtn,background:"linear-gradient(135deg,#dc2626,#991b1b)",opacity:(!emsForm.staging||!emsForm.eta)?0.5:1}} disabled={!emsForm.staging||!emsForm.eta} onClick={()=>setEmsDispatched(true)}>🚑 SEND EMS DISPATCH ALERT</button>
-          :<div style={{background:"rgba(16,185,129,0.1)",border:"1px solid #10b981",borderRadius:10,padding:"12px",fontSize:13,color:"#10b981",fontWeight:700}}>✅ EMS Dispatch Alert Sent · {EMS_STAGING.find(s=>s.id===emsForm.staging)?.label} · ETA: {emsForm.eta}</div>
-        }
-
-        {/* ACKNOWLEDGE BUTTON — marks EMS as inbound, shows banner on home until cleared */}
-        {!emsAcked
-          ?<button style={{...S.sendBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",fontSize:16,fontWeight:900}} onClick={()=>{setEmsAcked(true);setEmsAlertDismissed(false);setView("home");}}>
-            ✅ ACKNOWLEDGE — EMS INBOUND
-          </button>
-          :<div style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.4)",borderRadius:10,padding:"12px",fontSize:13,color:"#f59e0b",fontWeight:700}}>✅ Acknowledged — EMS Inbound banner active on home screen</div>
-        }
-
-        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{set911({active:false,info:{},by:null,at:null});setEmsDispatched(false);setEmsAcked(false);setEmsAlertDismissed(false);setEmsForm({staging:"",eta:"",nature:"",notes:""});setView("home");}}>✅ CLOSE INCIDENT</button>
-      </div>
-    </div></div>
-  );
-
-  // ACKS VIEW
   if(view==="acks") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>Acknowledgments</span></div>
@@ -1229,6 +1188,49 @@ Reply YES to acknowledge.`
   );
 
   // MED HOME
+  if(view==="911") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      {/* FULL SCREEN ALERT HEADER */}
+      <div style={{background:"linear-gradient(135deg,#dc2626,#991b1b)",padding:"16px",display:"flex",flexDirection:"column",gap:4,textAlign:"center",boxShadow:"0 0 24px rgba(239,68,68,0.4)"}}>
+        <div style={{fontSize:40}}>🚨</div>
+        <div style={{fontSize:20,fontWeight:900,color:"#fff",letterSpacing:"0.04em"}}>EMS INBOUND</div>
+        <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>911 Active · Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
+      </div>
+
+      <div style={S.panelHd}><BB onClick={()=>setView("home")}/><span style={S.panelTitle}>911 Incident Details</span></div>
+
+      <div style={S.cWrap}>
+        {/* ALL INCIDENT INFO */}
+        {[["location","Location","e.g. Near Moon Stage 1"],["nature","Nature of Call","e.g. Unresponsive adult"],["patients","Number of Patients","e.g. 1"],["age_sex","Age / Sex","e.g. 40s Male"],["conscious","Conscious / Breathing","e.g. Unconscious, breathing"],["interventions","Interventions in Progress","e.g. CPR in progress"],["entry","EMS Entry Point","e.g. Main Gate on Willy St"],["meeting","Who's Meeting EMS","e.g. Med 1 at gate"]].map(([k,l,p])=><Fld key={k} label={l} value={nineOneOne.info?.[k]||""} onChange={e=>set911(prev=>({...prev,info:{...prev.info,[k]:e.target.value}}))} ph={p}/>)}
+
+        <label style={S.lbl}>🏥 MFD Staging Location</label>
+        <select style={S.sel} value={emsForm.staging} onChange={e=>setEmsForm(p=>({...p,staging:e.target.value}))}>
+          <option value="">Select...</option>
+          {EMS_STAGING.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+        </select>
+        <Fld label="⏱️ EMS ETA" value={emsForm.eta} onChange={e=>setEmsForm(p=>({...p,eta:e.target.value}))} ph="e.g. 8 minutes"/>
+
+        {/* SEND DISPATCH ALERT */}
+        {!emsDispatched
+          ?<button style={{...S.sendBtn,background:"linear-gradient(135deg,#dc2626,#991b1b)",opacity:(!emsForm.staging||!emsForm.eta)?0.5:1}} disabled={!emsForm.staging||!emsForm.eta} onClick={()=>setEmsDispatched(true)}>🚑 SEND EMS DISPATCH ALERT</button>
+          :<div style={{background:"rgba(16,185,129,0.1)",border:"1px solid #10b981",borderRadius:10,padding:"12px",fontSize:13,color:"#10b981",fontWeight:700}}>✅ EMS Dispatch Alert Sent · {EMS_STAGING.find(s=>s.id===emsForm.staging)?.label} · ETA: {emsForm.eta}</div>
+        }
+
+        {/* ACKNOWLEDGE BUTTON — marks EMS as inbound, shows banner on home until cleared */}
+        {!emsAcked
+          ?<button style={{...S.sendBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",fontSize:16,fontWeight:900}} onClick={()=>{setEmsAcked(true);setEmsAlertDismissed(false);setView("home");}}>
+            ✅ ACKNOWLEDGE — EMS INBOUND
+          </button>
+          :<div style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.4)",borderRadius:10,padding:"12px",fontSize:13,color:"#f59e0b",fontWeight:700}}>✅ Acknowledged — EMS Inbound banner active on home screen</div>
+        }
+
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{set911({active:false,info:{},by:null,at:null});setEmsDispatched(false);setEmsAcked(false);setEmsAlertDismissed(false);setEmsForm({staging:"",eta:"",nature:"",notes:""});setView("home");}}>✅ CLOSE INCIDENT</button>
+      </div>
+    </div></div>
+  );
+
+  // ACKS VIEW
+
   if(isMed) return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 16px 8px"}}>

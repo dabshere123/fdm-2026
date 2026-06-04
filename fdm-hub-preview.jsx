@@ -202,6 +202,7 @@ function HubApp({onBack}){
     {id:10,label:"⛈️ Inclement Weather Imminent",msg:"⛈️ INCLEMENT WEATHER IMMINENT\nEstimated Arrival: 45 min\nShutdown: 7:45 PM",requiresAck:true,firedAt:Date.now()-120000,date:now(),acks:{"Moon Stage 1":"4:33 PM","Med 1":"4:33 PM","Med 2":"4:33 PM"},escalated:false},
   ]);
   const [nineOneOne,set911]=useState({active:false,info:{},by:null,at:null});
+  const [nineOneOneHistory,setNineOneOneHistory]=useState([]);
   const [emsForm,setEmsForm]=useState({staging:"",eta:"",nature:"",notes:""});
   const [emsDispatched,setEmsDispatched]=useState(false);
   // INCIDENT REPORT
@@ -1241,14 +1242,41 @@ Reply YES to acknowledge.`
         </div>
       </div>
       <div style={{fontSize:13,color:"#ec4899",fontWeight:700,padding:"0 16px 8px"}}>🔴 {role} — Medical Unit</div>
-      {nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"rgba(239,68,68,0.2)",border:"2px solid #ef4444",borderRadius:10,padding:"10px",fontSize:13,color:"#fff",fontWeight:800,cursor:"pointer",textAlign:"center"}} onClick={()=>setView("911")}>🚨 911 ACTIVE — Tap to update</button>}
-      {!nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"linear-gradient(135deg,rgba(180,0,0,0.4),rgba(120,0,0,0.2))",border:"2px solid rgba(180,0,0,0.8)",borderRadius:10,padding:"14px",fontSize:15,color:"#fff",fontWeight:900,cursor:"pointer",textAlign:"center",boxShadow:"0 0 12px rgba(200,0,0,0.3)"}} onClick={()=>{
-  set911({active:true,by:role,at:now(),info:{}});
-  setView("911");
-  // Notify Admin via GroupMe and SMS
-  sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS has been called. Stand by for further instructions.`,["admin","medical"]);
-  fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 911 ACTIVATED by ${role} at Fete de Marquette. EMS called.`})}).catch(e=>console.log(e));
-}}>🚨 Activate 911</button>}
+      {/* 911 STATUS — Clean single block */}
+      <div style={{margin:"0 16px 8px"}}>
+        {nineOneOne.active?(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,rgba(180,0,0,0.3),rgba(120,0,0,0.15))",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8,boxShadow:"0 0 16px rgba(239,68,68,0.3)"}}>
+              <div style={{fontSize:15,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em",textTransform:"uppercase"}}>🚨 EMS INBOUND — ACTIVE</div>
+              {nineOneOne.info?.location&&<div style={{fontSize:14,fontWeight:700,color:"#fff"}}>📍 {nineOneOne.info.location}</div>}
+              {nineOneOne.info?.nature&&<div style={{fontSize:13,color:"#fca5a5"}}>{nineOneOne.info.nature}</div>}
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
+              <button style={{padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.15)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setView("911")}>Update / View Details →</button>
+            </div>
+            <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.25),rgba(120,0,0,0.1))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",textAlign:"center"}}
+              onClick={()=>{
+                // Archive current incident and start new one
+                setNineOneOneHistory(p=>[...p,{...nineOneOne,closedAt:now()}]);
+                set911({active:true,by:role,at:now(),info:{}});
+                setView("911");
+                sendGroupMe(`🚨 ADDITIONAL 911 INCIDENT by ${role}\nNew EMS activation — separate incident.`,["admin","medical"]);
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 ADDITIONAL 911 INCIDENT by ${role} at Fete de Marquette. New separate incident.`})}).catch(e=>console.log(e));
+              }}>
+              ➕ New Separate 911 Incident
+            </button>
+          </div>
+        ):(
+          <button style={{width:"100%",padding:"18px",borderRadius:12,border:"2px solid rgba(180,0,0,0.8)",background:"linear-gradient(135deg,rgba(180,0,0,0.4),rgba(120,0,0,0.2))",color:"#fff",fontSize:17,fontWeight:900,cursor:"pointer",textAlign:"center",boxShadow:"0 0 14px rgba(200,0,0,0.3)",letterSpacing:"0.04em"}}
+            onClick={()=>{
+              set911({active:true,by:role,at:now(),info:{}});
+              setView("911");
+              sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS has been called. Stand by.`,["admin","medical"]);
+              fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 911 ACTIVATED by ${role} at Fete de Marquette.`})}).catch(e=>console.log(e));
+            }}>
+            🚨 ACTIVATE 911
+          </button>
+        )}
+      </div>
       <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne}/>
     </div></div>
   );
@@ -1762,9 +1790,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         </div>
       ))}
       {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"24px 0",fontSize:14}}>No active calls — standing by</div>}
-      <button style={{display:"flex",alignItems:"center",gap:10,padding:"14px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.2),rgba(120,0,0,0.08))",cursor:"pointer",boxShadow:"0 0 8px rgba(200,0,0,0.15)"}} onClick={()=>{set911({active:true,by:role,at:new Date().toLocaleString(),info:{}});setView("911");}}>
-        <span style={{fontSize:20}}>🚨</span><span style={{fontSize:14,fontWeight:800,color:"#fff"}}>🚨 Activate 911 🚨</span>
-      </button>
+
       <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer"}} onClick={()=>setResourceView(true)}>
         <span style={{fontSize:18}}>📋</span><span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>Request Resources</span>
       </button>

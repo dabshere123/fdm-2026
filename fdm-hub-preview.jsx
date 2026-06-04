@@ -338,6 +338,7 @@ function HubApp({onBack}){
   useEffect(()=>{
     fetchNWSAlerts();
     fetchWeather();
+    fetchLostFound();
     const alertInterval=setInterval(fetchNWSAlerts,5*60*1000);
     const weatherInterval=setInterval(fetchWeather,10*60*1000);
     return()=>{clearInterval(alertInterval);clearInterval(weatherInterval);};
@@ -1239,6 +1240,13 @@ Reply YES to acknowledge.`
       </div>
       <div style={{fontSize:13,color:"#ec4899",fontWeight:700,padding:"0 16px 8px"}}>🔴 {role} — Medical Unit</div>
       {nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"rgba(239,68,68,0.2)",border:"2px solid #ef4444",borderRadius:10,padding:"10px",fontSize:13,color:"#fff",fontWeight:800,cursor:"pointer",textAlign:"center"}} onClick={()=>setView("911")}>🚨 911 ACTIVE — Tap to update</button>}
+      {!nineOneOne.active&&<button style={{margin:"0 16px 8px",background:"linear-gradient(135deg,rgba(180,0,0,0.4),rgba(120,0,0,0.2))",border:"2px solid rgba(180,0,0,0.8)",borderRadius:10,padding:"14px",fontSize:15,color:"#fff",fontWeight:900,cursor:"pointer",textAlign:"center",boxShadow:"0 0 12px rgba(200,0,0,0.3)"}} onClick={()=>{
+  set911({active:true,by:role,at:now(),info:{}});
+  setView("911");
+  // Notify Admin via GroupMe and SMS
+  sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS has been called. Stand by for further instructions.`,["admin","medical"]);
+  fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 911 ACTIVATED by ${role} at Fete de Marquette. EMS called.`})}).catch(e=>console.log(e));
+}}>🚨 Activate 911</button>}
       <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne}/>
     </div></div>
   );
@@ -1558,6 +1566,7 @@ Reply YES to acknowledge.`
                       setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lostfound",label:`L&F #${data.itemNumber}`,msg:lfNewDesc},...p]);
                       setLfNewDesc("");setLfNewLoc("");setLfNewNarrative("");setLfAddMode(false);
                       fetchLostFound();
+                      alert(`✅ Item logged! Item #${data.itemNumber} — Bring to Festival Office`);
                     }
                   }catch(e){console.log(e);}
                   setLfSubmitting(false);

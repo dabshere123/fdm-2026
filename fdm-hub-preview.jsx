@@ -80,7 +80,10 @@ const QUANTITIES=["1","2","3","4","5","6","7","8","9","10+"];
 function now(){return new Date().toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});}
 function tShort(){return new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
 function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)",overflow:"hidden"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/></div>);}
-function BB({onClick,label="← Back"}){return(<button style={S.backBtn} onClick={onClick}>{label}</button>);}
+function BB({onClick,label="← Back"}){return(
+  <button style={{position:"sticky",top:8,zIndex:10,background:"rgba(255,255,255,0.1)",border:"2px solid rgba(255,255,255,0.25)",color:"#f1f5f9",padding:"12px 20px",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:800,backdropFilter:"blur(8px)",boxShadow:"0 2px 12px rgba(0,0,0,0.3)"}} onClick={onClick}>{label}</button>
+);
+}
 function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={S.lbl}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}
 
 // ─── MAIN SWITCHER ─────────────────────────────────────────────────────────────
@@ -191,7 +194,7 @@ function HubApp({onBack}){
     {id:3,type:"fire",location:"Sun Stage Vendor Area",problem:"Cooking flame too close to tent fabric",details:"Vendor unaware",requestedBy:"Sun Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:20 PM"}],unit:null,firedAt:Date.now()-180000},
     {id:4,type:"supplies",subtype:"restock",location:"Sun Left",problem:"Ice — 3 bags",requestedBy:"Sun Left",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:15 PM"}],unit:null,firedAt:Date.now()-240000,quantityRequested:"3 bags"},
     {id:5,type:"maintenance",location:"Cabaret Stage",problem:"Generator tripped, no power to bar",requestedBy:"Cabaret Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:10 PM"}],unit:null,firedAt:Date.now()-300000},
-    {id:6,type:"lost_child",location:"Moon Stage Area",problem:"Girl, approx 6 · Brown pigtails · Red shirt · Blue shorts\nLast seen: 4:05 PM near Moon Stage 1 bar\nAssembly Point: Medical Tent\nParent: Sarah Johnson · 608-555-1234",requestedBy:"Moon Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:08 PM"}],unit:null,firedAt:Date.now()-400000},
+    {id:6,type:"lost_child",location:"Moon Stage Area",problem:"Girl, approx 6 · Brown pigtails · Red shirt · Blue shorts\nLast seen: 4:05 PM near Moon Stage 1 bar\nMeet Reporting Party / Parent: Medical Tent\nParent: Sarah Johnson · 608-555-1234",requestedBy:"Moon Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:08 PM"}],unit:null,firedAt:Date.now()-400000},
   ]);
   const [completed,setCompleted]=useState([
     {id:99,type:"medical",location:"Lagniappe",problem:"Heat exhaustion",status:"cleared",clearedBy:"Med 1",clearedAt:"2:35 PM",history:[{status:"new_call",ts:"2:10 PM"},{status:"acknowledged",ts:"2:11 PM",unit:"Med 1"},{status:"on_scene",ts:"2:14 PM",unit:"Med 1"},{status:"cleared",ts:"2:35 PM",unit:"Med 1"}]},
@@ -205,6 +208,16 @@ function HubApp({onBack}){
   const [nineOneOneHistory,setNineOneOneHistory]=useState([]);
   const [emsForm,setEmsForm]=useState({staging:"",eta:"",nature:"",notes:""});
   const [emsDispatched,setEmsDispatched]=useState(false);
+  // END OF NIGHT
+  const [endOfNightNotes,setEndOfNightNotes]=useState("");
+
+  // ADMIN REQUEST FORM
+  const [adminReqView,setAdminReqView]=useState(false);
+  const [adminReqType,setAdminReqType]=useState("");
+  const [adminReqLoc,setAdminReqLoc]=useState("");
+  const [adminReqProblem,setAdminReqProblem]=useState("");
+  const [adminReqDetails,setAdminReqDetails]=useState("");
+
   // INCIDENT REPORT
   const [incidentView,setIncidentView]=useState(null); // holds call data for report form
   const [incFields,setIncFields]=useState({});
@@ -464,6 +477,9 @@ function HubApp({onBack}){
           `REQUESTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
+        // Supplies go directly to Admin only
+        if(msg) sendGroupMe(msg,["admin"]);
+        msg=null; // prevent double-send below
       } else if(call.type==="maintenance"){
         msg=[
           `🔧 MAINTENANCE 🔧`,
@@ -642,7 +658,7 @@ function HubApp({onBack}){
       ):(()=>{
         const t=BROADCAST_ALERTS.find(x=>x.id===alertView);
         const selectedReason=alertFields._reason||"";
-        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).join(", "):"[select weather type above]");
+        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]");
         const preview=editedMsg||msgBase;
         return(<div style={S.cWrap}>
           <BB onClick={()=>setAlertView(null)}/>
@@ -712,7 +728,7 @@ function HubApp({onBack}){
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Type of Weather *</label>
               <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                {["Thunderstorm","Rain Storm","High Winds","Severe Thunderstorm","Tornado Watch","Tornado Warning","Torrential Rain / Downpour"].map(w=>{
+                {["Thunderstorm","Rain Storm","High Winds","Severe Thunderstorm","Tornado Watch","Tornado Warning","Torrential Rain / Downpour","Custom..."].map(w=>{
                   const selected=(alertFields._weatherTypes||[]);
                   const sel=selected.includes(w);
                   return(
@@ -755,7 +771,7 @@ function HubApp({onBack}){
               </div>
             </div>
           )}
-          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).join(", "):"[select weather type above]")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]"));}}/>
+          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]"));}}/>
           {editedMsg&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{
@@ -993,13 +1009,13 @@ Reply YES to acknowledge.`
         <Fld label="Bottom / Pants" value={lcFields?.bottom||""} onChange={e=>setLcFields(p=>({...p,bottom:e.target.value}))} ph="e.g. Blue shorts"/>
         <Fld label="Last Seen Location *" value={lcFields?.lastSeen||""} onChange={e=>setLcFields(p=>({...p,lastSeen:e.target.value}))} ph="e.g. Near Moon Stage 1 bar" required large/>
         <Fld label="Last Seen Time" value={lcFields?.lastSeenTime||""} onChange={e=>setLcFields(p=>({...p,lastSeenTime:e.target.value}))} ph="e.g. 5:30 PM"/>
-        <Fld label="Assembly Point *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. Medical Tent" required large/>
+        <Fld label="Meet Reporting Party / Parent *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. Medical Tent" required large/>
         <Fld label="Parent / Guardian Name" value={lcFields?.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Sarah Johnson"/>
         <Fld label="Parent / Guardian Phone" value={lcFields?.parentPhone||""} onChange={e=>setLcFields(p=>({...p,parentPhone:e.target.value}))} ph="(608) 555-1234"/>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly)?0.5:1}}
           disabled={!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly}
           onClick={()=>{
-            const lcMsg=`🧒 LOST CHILD 🧒\n\nLOCATION: ${lcFields?.lastSeen}\nDESCRIPTION: ${lcFields?.gender||"Child"}, approx ${lcFields?.age}${lcFields?.hair?" · "+lcFields.hair:""}${lcFields?.top?" · "+lcFields.top:""}\nLast seen: ${lcFields?.lastSeenTime||""}\nAssembly Point: ${lcFields?.assembly}\nParent: ${lcFields?.parentName||"Unknown"} · ${lcFields?.parentPhone||""}\nDATE/TIME: ${new Date().toLocaleString()}`;
+            const lcMsg=`🧒 LOST CHILD 🧒\n\nLOCATION: ${lcFields?.lastSeen}\nDESCRIPTION: ${lcFields?.gender||"Child"}, approx ${lcFields?.age}${lcFields?.hair?" · "+lcFields.hair:""}${lcFields?.top?" · "+lcFields.top:""}\nLast seen: ${lcFields?.lastSeenTime||""}\nMeet Reporting Party / Parent: ${lcFields?.assembly}\nParent: ${lcFields?.parentName||"Unknown"} · ${lcFields?.parentPhone||""}\nDATE/TIME: ${new Date().toLocaleString()}`;
             const newCall={id:Date.now(),type:"lost_child",location:lcFields?.lastSeen,problem:`${lcFields?.gender||"Child"}, approx ${lcFields?.age}. ${lcFields?.hair||""} ${lcFields?.top||""} ${lcFields?.bottom||""}. Last seen: ${lcFields?.lastSeenTime} near ${lcFields?.lastSeen}. Assembly: ${lcFields?.assembly}. Parent: ${lcFields?.parentName||"Unknown"} ${lcFields?.parentPhone||""}`,requestedBy:"Admin",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
             setCalls(p=>[newCall,...p]);
             sendGroupMe(lcMsg,["all_staff","admin","medical","bar_stage","financial","restock","maintenance"]);
@@ -1189,6 +1205,80 @@ Reply YES to acknowledge.`
   );
 
   // MED HOME
+  // END OF NIGHT REPORT VIEW
+  if(view==="endofnight") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>setView("home")}/>
+        <span style={S.panelTitle}>🌙 End of Night Report</span>
+      </div>
+      <div style={S.cWrap}>
+        <div style={{background:"rgba(99,102,241,0.08)",borderRadius:12,border:"1px solid rgba(99,102,241,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:14,fontWeight:800,color:"#a5b4fc"}}>Tonight's Summary</div>
+          <div style={{fontSize:13,color:"#94a3b8"}}>Date: {new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{[...calls,...completed].length}</div><div style={{fontSize:11,color:"#64748b"}}>Total Calls</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{lfItems.length}</div><div style={{fontSize:11,color:"#64748b"}}>L&F Items</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{broadcastAlerts.length}</div><div style={{fontSize:11,color:"#64748b"}}>Broadcasts</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{activityLog.length}</div><div style={{fontSize:11,color:"#64748b"}}>Log Entries</div></div>
+          </div>
+        </div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Call Breakdown</div>
+          {[["medical","🩺 Medical"],["fire","🔥 Fire/Safety"],["security","🛡️ Security"],["supplies","📦 Supplies"],["maintenance","🔧 Maintenance"],["lost_child","🧒 Lost Child"]].map(([type,label])=>{
+            const count=[...calls,...completed].filter(c=>c.type===type).length;
+            return count>0?(<div key={type} style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:"rgba(255,255,255,0.03)",borderRadius:8}}><span style={{fontSize:13,color:"#f1f5f9"}}>{label}</span><span style={{fontSize:13,fontWeight:700,color:"#a5b4fc"}}>{count}</span></div>):null;
+          })}
+        </div>
+
+        {lfItems.length>0&&(
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Lost & Found</div>
+            {lfItems.map(item=>(
+              <div key={item.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:"rgba(255,255,255,0.03)",borderRadius:8}}>
+                <span style={{fontSize:12,color:"#f1f5f9"}}>#{item.itemNumber} — {item.description}</span>
+                <span style={{fontSize:11,color:item.status==="Claimed"?"#10b981":"#f59e0b"}}>{item.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Fld label="Additional Notes for Report" value={endOfNightNotes||""} onChange={e=>setEndOfNightNotes(e.target.value)} ph="Any additional notes for tonight's summary..." multi/>
+
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#6366f1,#4f46e5)"}}
+          onClick={async()=>{
+            const report={
+              date:new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}),
+              totalCalls:[...calls,...completed].length,
+              callBreakdown:{
+                medical:[...calls,...completed].filter(c=>c.type==="medical"||c.type==="walk_in").length,
+                fire:[...calls,...completed].filter(c=>c.type==="fire").length,
+                security:[...calls,...completed].filter(c=>c.type==="security").length,
+                supplies:[...calls,...completed].filter(c=>c.type==="supplies").length,
+                maintenance:[...calls,...completed].filter(c=>c.type==="maintenance").length,
+                lostChild:[...calls,...completed].filter(c=>c.type==="lost_child").length,
+              },
+              lostFound:lfItems.map(i=>`#${i.itemNumber}: ${i.description} (${i.status})`).join("\n"),
+              broadcasts:broadcastAlerts.map(b=>`${b.label}: ${b.msg?.slice(0,80)}`).join("\n"),
+              notes:endOfNightNotes||"",
+              generatedBy:role,
+              generatedAt:new Date().toLocaleString(),
+            };
+            // Send SMS summary to Admin
+            const summary=`🌙 END OF NIGHT REPORT\n${report.date}\n\nCalls: ${report.totalCalls}\nMedical: ${report.callBreakdown.medical}\nSecurity: ${report.callBreakdown.security}\nL&F Items: ${lfItems.length}\nBroadcasts: ${broadcastAlerts.length}\n\nGenerated by ${role}`;
+            fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:summary})}).catch(e=>console.log(e));
+            sendGroupMe(summary,["admin"]);
+            setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"report",label:"End of Night Report Generated",msg:`${report.totalCalls} calls · ${lfItems.length} L&F items`},...p]);
+            alert("✅ End of Night Report sent to Admin via SMS and GroupMe!");
+            setView("home");
+          }}>
+          📧 Generate & Send Report
+        </button>
+      </div>
+    </div></div>
+  );
+
   if(view==="911") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       {/* FULL SCREEN ALERT HEADER */}
@@ -1225,7 +1315,24 @@ Reply YES to acknowledge.`
           :<div style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.4)",borderRadius:10,padding:"12px",fontSize:13,color:"#f59e0b",fontWeight:700}}>✅ Acknowledged — EMS Inbound banner active on home screen</div>
         }
 
-        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{set911({active:false,info:{},by:null,at:null});setEmsDispatched(false);setEmsAcked(false);setEmsAlertDismissed(false);setEmsForm({staging:"",eta:"",nature:"",notes:""});setView("home");}}>✅ CLOSE INCIDENT</button>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{
+          // Trigger incident report before closing
+          const callData={
+            id:`911-${Date.now()}`,
+            type:"medical",
+            location:nineOneOne.info?.location||"Festival Grounds",
+            problem:nineOneOne.info?.nature||"EMS/911 Incident",
+            details:emsForm.notes||"",
+            requestedBy:nineOneOne.by||role,
+            timestamp:nineOneOne.at||new Date().toISOString(),
+          };
+          setIncidentView(callData);
+          setIncFields({respondingUnit:role,disposition:"",interventions:nineOneOne.info?.interventions||"",narrative:"",notes:`ETA: ${emsForm.eta||""} · Staging: ${emsForm.staging||""} · Meeting EMS: ${nineOneOne.info?.meeting||""}`});
+          set911({active:false,info:{},by:null,at:null});
+          setEmsDispatched(false);setEmsAcked(false);setEmsAlertDismissed(false);
+          setEmsForm({staging:"",eta:"",nature:"",notes:""});
+          setView("home");
+        }}>✅ CLOSE INCIDENT & FILE REPORT</button>
       </div>
     </div></div>
   );
@@ -1268,7 +1375,13 @@ Reply YES to acknowledge.`
         ):(
           <button style={{width:"100%",padding:"18px",borderRadius:12,border:"2px solid rgba(180,0,0,0.8)",background:"linear-gradient(135deg,rgba(180,0,0,0.4),rgba(120,0,0,0.2))",color:"#fff",fontSize:17,fontWeight:900,cursor:"pointer",textAlign:"center",boxShadow:"0 0 14px rgba(200,0,0,0.3)",letterSpacing:"0.04em"}}
             onClick={()=>{
-              set911({active:true,by:role,at:now(),info:{}});
+              // Auto-populate from active call if one exists
+              const activeCall=myActive?.[0]||unassigned?.[0];
+              set911({active:true,by:role,at:now(),info:{
+                location:activeCall?.location||"",
+                nature:activeCall?.problem||"",
+                patients:activeCall?.details||"",
+              }});
               setView("911");
               sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS has been called. Stand by.`,["admin","medical"]);
               fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 911 ACTIVATED by ${role} at Fete de Marquette.`})}).catch(e=>console.log(e));
@@ -1277,7 +1390,7 @@ Reply YES to acknowledge.`
           </button>
         )}
       </div>
-      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne}/>
+      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne} triggerIncident={(call)=>{setIncidentView(call);setIncFields({respondingUnit:role,disposition:"",interventions:"",narrative:"",notes:""});}} sendGroupMe={sendGroupMe} liveMode={liveMode}/>
     </div></div>
   );
 
@@ -1538,7 +1651,7 @@ Reply YES to acknowledge.`
 
       {/* SECTION 4: EQUIPMENT TRACKER */}
       <div style={{background:"rgba(16,185,129,0.04)",borderRadius:14,border:"1px solid rgba(16,185,129,0.2)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#10b981"}} onClick={()=>window.open("/equipment","_blank")}>
+        <div style={{...S.sectionHdr,background:"rgba(234,179,8,0.2)",borderBottom:"1px solid rgba(234,179,8,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fcd34d"}} onClick={()=>window.open("/equipment","_blank")}>
           <span>📻 Equipment Tracker</span>
           <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>Radios · Readers · Bundles →</span>
         </div>
@@ -1558,8 +1671,8 @@ Reply YES to acknowledge.`
       </div>
 
       {/* SECTION 5: LOST & FOUND */}
-      <div style={{background:"rgba(139,92,246,0.05)",borderRadius:14,border:"1px solid rgba(139,92,246,0.2)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(139,92,246,0.15)"}} onClick={()=>{setView("lostfound");fetchLostFound();}}>
+      <div style={{background:"rgba(249,115,22,0.08)",borderRadius:14,border:"1px solid rgba(249,115,22,0.3)",overflow:"hidden"}}>
+        <div style={{...S.sectionHdr,background:"rgba(249,115,22,0.2)",borderBottom:"1px solid rgba(249,115,22,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>{setView("lostfound");fetchLostFound();}}>
           <span>📦 Lost & Found</span>
           <span style={{fontSize:11,color:"#a78bfa",fontWeight:400}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed →</span>
         </div>
@@ -1605,6 +1718,17 @@ Reply YES to acknowledge.`
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* END OF NIGHT REPORT */}
+      <div style={{background:"rgba(99,102,241,0.08)",borderRadius:14,border:"1px solid rgba(99,102,241,0.25)",overflow:"hidden"}}>
+        <div style={{...S.sectionHdr,background:"rgba(99,102,241,0.2)",borderBottom:"1px solid rgba(99,102,241,0.3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("endofnight")}>
+          <span>🌙 End of Night Report</span>
+          <span style={{fontSize:11,color:"#a5b4fc",fontWeight:400}}>Generate & Email →</span>
+        </div>
+        <div style={{padding:"10px 14px",fontSize:13,color:"#64748b"}}>
+          Tap to generate tonight's summary — all calls, incidents, L&F, broadcasts.
         </div>
       </div>
 
@@ -1660,10 +1784,15 @@ function SecurityAckPanel({alertCall,role,ackCall,tick}){
   </div>);
 }
 
-function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne}){
+function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode}){
   const [tab,setTab]=useState("calls");
   const [wiComplaint,setWiComplaint]=useState("");
   const [wiDetails,setWiDetails]=useState("");
+  const [medReqView,setMedReqView]=useState(false);
+  const [medReqType,setMedReqType]=useState("");
+  const [medReqLocation,setMedReqLocation]=useState("");
+  const [medReqProblem,setMedReqProblem]=useState("");
+  const [medReqDetails,setMedReqDetails]=useState("");
   const walkIns=(calls||[]).filter(c=>c.type==="walk_in"&&c.unit===role);
   const allActive=[...myActive];
 
@@ -1721,7 +1850,13 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
               🔴 On Scene
             </button>
             <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.4)",cursor:"pointer",fontSize:14,fontWeight:800,background:"rgba(16,185,129,0.15)",color:"#6ee7b7"}}
-              onClick={()=>{setCalls(p=>p.filter(x=>x.id!==c.id));setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));}}>
+              onClick={()=>{
+                setCalls(p=>p.filter(x=>x.id!==c.id));
+                setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);
+                setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));
+                if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:role})}).catch(e=>console.log(e));
+                if(["medical","walk_in","fire","security"].includes(c.type)&&triggerIncident) triggerIncident({...c,timestamp:c.history?.[0]?.ts||new Date().toISOString()});
+              }}>
               ✅ Clear
             </button>
             <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.5)",cursor:"pointer",fontSize:14,fontWeight:800,background:"rgba(16,185,129,0.3)",color:"#fff"}}
@@ -1790,6 +1925,40 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         </div>
       ))}
       {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"24px 0",fontSize:14}}>No active calls — standing by</div>}
+
+      {/* MED REQUEST BUTTON */}
+      <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(219,39,119,0.4)",background:"rgba(219,39,119,0.08)",cursor:"pointer"}} onClick={()=>setMedReqView(p=>!p)}>
+        <span style={{fontSize:18}}>📋</span>
+        <div><div style={{fontSize:13,fontWeight:800,color:"#f9a8d4"}}>Send a Request</div><div style={{fontSize:11,color:"#64748b"}}>Medical, Security, Supplies</div></div>
+      </button>
+
+      {medReqView&&(
+        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Request Type</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {[{id:"medical",label:"🩺 Medical",color:"#db2777"},{id:"security",label:"🛡️ Security",color:"#2563eb"},{id:"supplies",label:"📦 Supplies",color:"#10b981"},{id:"maintenance",label:"🔧 Maintenance",color:"#f59e0b"}].map(t=>(
+              <button key={t.id} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${medReqType===t.id?t.color+"aa":"rgba(255,255,255,0.1)"}`,background:medReqType===t.id?t.color+"22":"rgba(255,255,255,0.03)",color:medReqType===t.id?"#f1f5f9":"#64748b",fontSize:13,fontWeight:medReqType===t.id?700:400,cursor:"pointer"}} onClick={()=>setMedReqType(t.id)}>{t.label}</button>
+            ))}
+          </div>
+          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Location *" value={medReqLocation} onChange={e=>setMedReqLocation(e.target.value)}/>
+          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="What's the problem? *" value={medReqProblem} onChange={e=>setMedReqProblem(e.target.value)}/>
+          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Additional details (optional)" value={medReqDetails} onChange={e=>setMedReqDetails(e.target.value)}/>
+          <button style={{padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#db2777,#9d174d)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",opacity:(!medReqType||!medReqLocation||!medReqProblem)?0.5:1}}
+            disabled={!medReqType||!medReqLocation||!medReqProblem}
+            onClick={()=>{
+              const newCall={id:Date.now(),type:medReqType,location:medReqLocation,problem:medReqProblem,details:medReqDetails,requestedBy:role,status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:new Date().toLocaleTimeString()},{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}],unit:role,firedAt:Date.now()};
+              setCalls(p=>[newCall,...p]);
+              if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:medReqType,location:medReqLocation,problem:medReqProblem,details:medReqDetails,requestedBy:role})}).catch(e=>console.log(e));
+              if(sendGroupMe){
+                const channelMap={medical:"medical",security:"admin",supplies:"restock",maintenance:"maintenance"};
+                sendGroupMe(`${medReqType==="medical"?"🩺":medReqType==="security"?"🛡️":medReqType==="supplies"?"📦":"🔧"} REQUEST from ${role}\nLOCATION: ${medReqLocation}\nPROBLEM: ${medReqProblem}${medReqDetails?"\n"+medReqDetails:""}\nDATE/TIME: ${new Date().toLocaleString()}`,[channelMap[medReqType]||"admin","admin"]);
+              }
+              setMedReqType("");setMedReqLocation("");setMedReqProblem("");setMedReqDetails("");setMedReqView(false);
+            }}>
+            📤 Send Request — Self Assigned to {role}
+          </button>
+        </div>
+      )}
 
       <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer"}} onClick={()=>setResourceView(true)}>
         <span style={{fontSize:18}}>📋</span><span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>Request Resources</span>

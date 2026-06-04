@@ -1762,7 +1762,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         </div>
       ))}
       {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"24px 0",fontSize:14}}>No active calls — standing by</div>}
-      <button style={{display:"flex",alignItems:"center",gap:10,padding:"14px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.2),rgba(120,0,0,0.08))",cursor:"pointer",boxShadow:"0 0 8px rgba(200,0,0,0.15)"}} onClick={()=>set911({active:true,by:role,at:new Date().toLocaleString(),info:{}})}>
+      <button style={{display:"flex",alignItems:"center",gap:10,padding:"14px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.2),rgba(120,0,0,0.08))",cursor:"pointer",boxShadow:"0 0 8px rgba(200,0,0,0.15)"}} onClick={()=>{set911({active:true,by:role,at:new Date().toLocaleString(),info:{}});setView("911");}}>
         <span style={{fontSize:20}}>🚨</span><span style={{fontSize:14,fontWeight:800,color:"#fff"}}>🚨 Activate 911 🚨</span>
       </button>
       <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer"}} onClick={()=>setResourceView(true)}>

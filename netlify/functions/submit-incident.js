@@ -55,7 +55,7 @@ exports.handler = async (event) => {
     RespondingUnit: respondingUnit || '',
     Interventions: interventions || '',
     Disposition: disposition || '',
-    Narrative: narrative || '',
+    Notes: narrative || '',
     OpenedAt: openedAtDate,
     ClosedAt: closedAtDate,
     Duration: duration,

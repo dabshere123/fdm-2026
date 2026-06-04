@@ -22,7 +22,7 @@ exports.handler = async (event) => {
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch(e) { console.log('Parse error:', e.message); }
 
-  const { callId, type, location, problem, patientDescription, requestedBy, respondingUnit, interventions, disposition, narrative, openedAt } = body;
+  const { callId, type, location, problem, patientDescription, requestedBy, respondingUnit, interventions, disposition, notes, openedAt } = body;
 
   console.log('Type:', type, 'Location:', location, 'Disposition:', disposition);
 

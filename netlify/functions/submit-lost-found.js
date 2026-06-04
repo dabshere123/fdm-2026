@@ -14,18 +14,12 @@ function generateItemNumber() {
 
 exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: 'Method not allowed' };
-  }
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch(e) {}
-
-  const { description, location, foundBy, narrative } = body;
+  const { description, location, foundBy } = body;
 
   if (!description || !location) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing description or location' }) };
@@ -38,10 +32,7 @@ exports.handler = async (event) => {
 
   const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       fields: {
         ItemNumber: itemNumber,
@@ -49,7 +40,6 @@ exports.handler = async (event) => {
         Location: location,
         FoundBy: foundBy || 'Staff',
         FoundAt: foundAtDate,
-        Narrative: narrative || '',
         Status: 'Unclaimed',
         EventDay: eventDay,
       }
@@ -57,16 +47,11 @@ exports.handler = async (event) => {
   });
 
   const data = await res.json();
-  console.log('Airtable response status:', res.status);
-  console.log('Airtable response:', JSON.stringify(data).slice(0, 500));
+  console.log('Airtable status:', res.status, JSON.stringify(data).slice(0, 300));
 
   if (!res.ok) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: data.error?.message || 'Airtable error', details: data }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: data.error?.message || 'Airtable error' }) };
   }
 
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, itemNumber, id: data.id })
-  };
+  return { statusCode: 200, headers, body: JSON.stringify({ success: true, itemNumber, id: data.id }) };
 };

@@ -1938,6 +1938,16 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
       ))}
       {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"24px 0",fontSize:14}}>No active calls — standing by</div>}
 
+      {/* LOST CHILD — OWN SECTION */}
+      <button style={{display:"flex",alignItems:"center",gap:14,padding:"16px",borderRadius:12,border:"2px solid rgba(249,115,22,0.6)",background:"rgba(249,115,22,0.12)",cursor:"pointer",width:"100%"}}
+        onClick={()=>{ if(openLostChild) openLostChild(); }}>
+        <span style={{fontSize:28}}>🧒</span>
+        <div style={{textAlign:"left"}}>
+          <div style={{fontSize:16,fontWeight:900,color:"#fdba74"}}>Report Lost Child</div>
+          <div style={{fontSize:11,color:"#64748b"}}>Alert all staff, GroupMe + SMS + MPD</div>
+        </div>
+      </button>
+
       {/* MED REQUEST BUTTON */}
       <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(219,39,119,0.4)",background:"rgba(219,39,119,0.08)",cursor:"pointer"}} onClick={()=>setMedReqView(p=>!p)}>
         <span style={{fontSize:18}}>📋</span>
@@ -1948,7 +1958,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         <div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
           <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Request Type</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {[{id:"medical",label:"🩺 Medical",color:"#db2777"},{id:"security",label:"🛡️ Security",color:"#2563eb"},{id:"supplies",label:"📦 Supplies",color:"#10b981"},{id:"maintenance",label:"🔧 Maintenance",color:"#f59e0b"},{id:"lost_child",label:"🧒 Lost Child",color:"#f97316"}].map(t=>(
+            {[{id:"medical",label:"🩺 Medical",color:"#db2777"},{id:"security",label:"🛡️ Security",color:"#2563eb"},{id:"supplies",label:"📦 Supplies",color:"#10b981"},{id:"maintenance",label:"🔧 Maintenance",color:"#f59e0b"}].map(t=>(
               <button key={t.id} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${medReqType===t.id?t.color+"aa":"rgba(255,255,255,0.1)"}`,background:medReqType===t.id?t.color+"22":"rgba(255,255,255,0.03)",color:medReqType===t.id?"#f1f5f9":"#64748b",fontSize:13,fontWeight:medReqType===t.id?700:400,cursor:"pointer"}} onClick={()=>setMedReqType(t.id)}>{t.label}</button>
             ))}
           </div>

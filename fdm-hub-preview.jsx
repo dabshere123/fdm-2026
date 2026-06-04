@@ -1398,7 +1398,7 @@ Reply YES to acknowledge.`
           </button>
         )}
       </div>
-      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne} triggerIncident={(call)=>{setIncidentView(call);setIncFields({respondingUnit:role,disposition:"",interventions:"",narrative:"",notes:""});}} sendGroupMe={sendGroupMe} liveMode={liveMode}/>
+      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne} triggerIncident={(call)=>{setIncidentView(call);setIncFields({respondingUnit:role,disposition:"",interventions:"",narrative:"",notes:""});}} sendGroupMe={sendGroupMe} liveMode={liveMode} openLostChild={()=>setLcView(true)}/>
     </div></div>
   );
 
@@ -1796,7 +1796,7 @@ function SecurityAckPanel({alertCall,role,ackCall,tick}){
   </div>);
 }
 
-function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode}){
+function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild}){
   const [tab,setTab]=useState("calls");
   const [wiComplaint,setWiComplaint]=useState("");
   const [wiDetails,setWiDetails]=useState("");
@@ -1948,7 +1948,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         <div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
           <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Request Type</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {[{id:"medical",label:"🩺 Medical",color:"#db2777"},{id:"security",label:"🛡️ Security",color:"#2563eb"},{id:"supplies",label:"📦 Supplies",color:"#10b981"},{id:"maintenance",label:"🔧 Maintenance",color:"#f59e0b"}].map(t=>(
+            {[{id:"medical",label:"🩺 Medical",color:"#db2777"},{id:"security",label:"🛡️ Security",color:"#2563eb"},{id:"supplies",label:"📦 Supplies",color:"#10b981"},{id:"maintenance",label:"🔧 Maintenance",color:"#f59e0b"},{id:"lost_child",label:"🧒 Lost Child",color:"#f97316"}].map(t=>(
               <button key={t.id} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${medReqType===t.id?t.color+"aa":"rgba(255,255,255,0.1)"}`,background:medReqType===t.id?t.color+"22":"rgba(255,255,255,0.03)",color:medReqType===t.id?"#f1f5f9":"#64748b",fontSize:13,fontWeight:medReqType===t.id?700:400,cursor:"pointer"}} onClick={()=>setMedReqType(t.id)}>{t.label}</button>
             ))}
           </div>

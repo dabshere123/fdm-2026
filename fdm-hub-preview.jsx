@@ -795,6 +795,58 @@ function HubApp({onBack}){
   );
 
   // CALL QUEUE VIEW
+  // ─── INCIDENT REPORT VIEW ─────────────────────────────────────────────────────
+  if(incidentView) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>{setIncidentView(null);setIncFields({});}}/>
+        <span style={S.panelTitle}>📋 Incident Report</span>
+      </div>
+      <div style={S.cWrap}>
+        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"12px 14px",display:"flex",flexDirection:"column",gap:4}}>
+          <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Auto-filled from call</div>
+          <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>{incidentView.type?.toUpperCase()} — {incidentView.location}</div>
+          <div style={{fontSize:13,color:"#94a3b8"}}>{incidentView.problem}</div>
+          {incidentView.details&&<div style={{fontSize:12,color:"#64748b"}}>{incidentView.details}</div>}
+          <div style={{fontSize:12,color:"#64748b"}}>Reported by: {incidentView.requestedBy} · Unit: {incFields.respondingUnit}</div>
+        </div>
+        <Fld label="Patient / Person Description" value={incFields.patientDescription||""} onChange={e=>setIncFields(p=>({...p,patientDescription:e.target.value}))} ph="Age, gender, appearance, condition" multi/>
+        <Fld label="Interventions Performed" value={incFields.interventions||""} onChange={e=>setIncFields(p=>({...p,interventions:e.target.value}))} ph="e.g. CPR, AED, oxygen, bandaging, verbal de-escalation" multi/>
+        <label style={S.lbl}>Disposition *</label>
+        <select style={S.sel} value={incFields.disposition||""} onChange={e=>setIncFields(p=>({...p,disposition:e.target.value}))}>
+          <option value="">Select disposition...</option>
+          <option>Treated on Scene</option>
+          <option>Transported — Madison Fire Medics</option>
+          <option>Transported — Private Vehicle</option>
+          <option>Refused Care</option>
+          <option>No Treatment Needed</option>
+          <option>Patron Removed</option>
+          <option>Police Custody</option>
+          <option>Other</option>
+        </select>
+        <Fld label="Narrative" value={incFields.narrative||""} onChange={e=>setIncFields(p=>({...p,narrative:e.target.value}))} ph="Full narrative of what happened, timeline, actions taken" multi/>
+        <Fld label="Additional Notes" value={incFields.notes||""} onChange={e=>setIncFields(p=>({...p,notes:e.target.value}))} ph="Any other relevant info" multi/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",opacity:!incFields.disposition?0.5:1}}
+          disabled={!incFields.disposition}
+          onClick={async()=>{
+            try{
+              const res=await fetch("/.netlify/functions/submit-incident",{method:"POST",headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({callId:incidentView.id,type:incidentView.type,location:incidentView.location,problem:incidentView.problem,patientDescription:incFields.patientDescription||"",requestedBy:incidentView.requestedBy,respondingUnit:incFields.respondingUnit||role,interventions:incFields.interventions||"",disposition:incFields.disposition,narrative:incFields.narrative||"",notes:incFields.notes||"",openedAt:incidentView.timestamp||new Date().toISOString()})});
+              const data=await res.json();
+              if(data.success){
+                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"incident",label:`Incident Report: ${data.incidentNumber}`,msg:`${incidentView.type} — ${incidentView.location}`},...p]);
+              }
+            }catch(e){console.log(e);}
+            setIncidentView(null);setIncFields({});
+          }}>
+          📋 SUBMIT INCIDENT REPORT
+        </button>
+        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#64748b",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});}}>Skip Report</button>
+      </div>
+    </div></div>
+  );
+
+
   if(view==="callqueue"){
     const qCalls=callFilter?calls.filter(c=>callFilter.includes(c.type)):calls;
     const unacked=qCalls.filter(c=>!c.acknowledged);
@@ -1031,56 +1083,6 @@ Reply YES to acknowledge.`
     </div></div>
   );
 
-  // ─── INCIDENT REPORT VIEW ─────────────────────────────────────────────────────
-  if(incidentView) return(
-    <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}>
-        <BB onClick={()=>{setIncidentView(null);setIncFields({});}}/>
-        <span style={S.panelTitle}>📋 Incident Report</span>
-      </div>
-      <div style={S.cWrap}>
-        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"12px 14px",display:"flex",flexDirection:"column",gap:4}}>
-          <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Auto-filled from call</div>
-          <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>{incidentView.type?.toUpperCase()} — {incidentView.location}</div>
-          <div style={{fontSize:13,color:"#94a3b8"}}>{incidentView.problem}</div>
-          {incidentView.details&&<div style={{fontSize:12,color:"#64748b"}}>{incidentView.details}</div>}
-          <div style={{fontSize:12,color:"#64748b"}}>Reported by: {incidentView.requestedBy} · Unit: {incFields.respondingUnit}</div>
-        </div>
-        <Fld label="Patient / Person Description" value={incFields.patientDescription||""} onChange={e=>setIncFields(p=>({...p,patientDescription:e.target.value}))} ph="Age, gender, appearance, condition" multi/>
-        <Fld label="Interventions Performed" value={incFields.interventions||""} onChange={e=>setIncFields(p=>({...p,interventions:e.target.value}))} ph="e.g. CPR, AED, oxygen, bandaging, verbal de-escalation" multi/>
-        <label style={S.lbl}>Disposition *</label>
-        <select style={S.sel} value={incFields.disposition||""} onChange={e=>setIncFields(p=>({...p,disposition:e.target.value}))}>
-          <option value="">Select disposition...</option>
-          <option>Treated on Scene</option>
-          <option>Transported — Madison Fire Medics</option>
-          <option>Transported — Private Vehicle</option>
-          <option>Refused Care</option>
-          <option>No Treatment Needed</option>
-          <option>Patron Removed</option>
-          <option>Police Custody</option>
-          <option>Other</option>
-        </select>
-        <Fld label="Narrative" value={incFields.narrative||""} onChange={e=>setIncFields(p=>({...p,narrative:e.target.value}))} ph="Full narrative of what happened, timeline, actions taken" multi/>
-        <Fld label="Additional Notes" value={incFields.notes||""} onChange={e=>setIncFields(p=>({...p,notes:e.target.value}))} ph="Any other relevant info" multi/>
-        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",opacity:!incFields.disposition?0.5:1}}
-          disabled={!incFields.disposition}
-          onClick={async()=>{
-            try{
-              const res=await fetch("/.netlify/functions/submit-incident",{method:"POST",headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({callId:incidentView.id,type:incidentView.type,location:incidentView.location,problem:incidentView.problem,patientDescription:incFields.patientDescription||"",requestedBy:incidentView.requestedBy,respondingUnit:incFields.respondingUnit||role,interventions:incFields.interventions||"",disposition:incFields.disposition,narrative:incFields.narrative||"",notes:incFields.notes||"",openedAt:incidentView.timestamp||new Date().toISOString()})});
-              const data=await res.json();
-              if(data.success){
-                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"incident",label:`Incident Report: ${data.incidentNumber}`,msg:`${incidentView.type} — ${incidentView.location}`},...p]);
-              }
-            }catch(e){console.log(e);}
-            setIncidentView(null);setIncFields({});
-          }}>
-          📋 SUBMIT INCIDENT REPORT
-        </button>
-        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#64748b",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});}}>Skip Report</button>
-      </div>
-    </div></div>
-  );
 
   // ─── LOST & FOUND VIEW ────────────────────────────────────────────────────────
   if(view==="lostfound") return(

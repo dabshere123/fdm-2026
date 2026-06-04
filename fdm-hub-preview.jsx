@@ -376,12 +376,13 @@ function HubApp({onBack}){
   useEffect(()=>{
     const unacked = calls.filter(c=>!c.acknowledged&&c.status==="new_call");
     if(unacked.length===0)return;
+    if(!liveMode)return; // No auto-alerts in demo mode
     const newest = unacked.reduce((a,b)=>b.firedAt>a.firedAt?b:a);
     if(newest.id!==_lastSoundId.current){
       _lastSoundId.current=newest.id;
       playAlert(newest.type);
     }
-  },[calls]);
+  },[calls,liveMode]);
   const [mpdOfficers,setMpdOfficers]=useState([
     {id:"o1", name:"Officer Martinez", badge:"MPD-412", phone:"(608) 555-0101", status:"on_duty"},
     {id:"o2", name:"Officer Chen",     badge:"MPD-387", phone:"(608) 555-0102", status:"on_duty"},

@@ -61,7 +61,6 @@ const RESOURCE_TYPES=[
   {id:"ems_festival",label:"Festival Medics",emoji:"🚑",desc:"Request additional festival medical units"},
   {id:"ems_mfd",label:"Madison Fire Medics",emoji:"🏥",desc:"Request Madison Fire Department medics"},
   {id:"maintenance",label:"Maintenance Crew",emoji:"🔧",desc:"Request maintenance personnel"},
-  {id:"restock",label:"Restock Team",emoji:"📦",desc:"Request restock team dispatch"},
   {id:"other",label:"Other Resource",emoji:"📋",desc:"Request any other resource"},
 ];
 
@@ -1529,12 +1528,12 @@ Reply YES to acknowledge.`
 
       {/* SECTION 1: COMMAND */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,fontSize:16,fontWeight:900}}>📡 Command</div>
+        <div style={{...S.sectionHdr,fontSize:13,fontWeight:900,padding:"8px 12px 6px"}}>📡 Command</div>
         {/* ROW 1: Activate 911 + Lost Child side by side */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"10px 10px 6px"}}>
           <button style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.25),rgba(120,0,0,0.1))",cursor:"pointer",boxShadow:"0 0 10px rgba(200,0,0,0.2)",minHeight:90}} onClick={()=>{set911({active:true,by:"Admin",at:now(),info:{}});setView("911");}}>
             <span style={{fontSize:28}}>🚨</span>
-            <span style={{fontSize:17,fontWeight:900,color:"#fff",textAlign:"center",lineHeight:1.2}}>Activate 911</span>
+            <span style={{fontSize:14,fontWeight:900,color:"#fff",textAlign:"center",lineHeight:1.2}}>Activate 911</span>
           </button>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
             <button style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:"10px 8px",borderRadius:12,border:`2px solid ${lostChildCalls.length>0?"rgba(234,179,8,0.7)":"rgba(245,158,11,0.3)"}`,background:lostChildCalls.length>0?"linear-gradient(135deg,rgba(234,179,8,0.2),rgba(202,138,4,0.1))":"rgba(255,255,255,0.03)",cursor:"pointer",position:"relative",minHeight:60}} onClick={()=>{setCallFilter(["lost_child"]);setCallFilterTitle("Lost Child");setCallTab("active");setView("callqueue");}}>
@@ -1575,6 +1574,10 @@ Reply YES to acknowledge.`
                 {tc.filter(c=>!c.acknowledged).length>0&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{tc.filter(c=>!c.acknowledged).length}</div>}
               </button>
             ))}
+          <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:"1px solid rgba(99,102,241,0.4)",background:"rgba(99,102,241,0.1)",cursor:"pointer",textAlign:"left",margin:"0 8px 8px"}} onClick={()=>setResourceView(true)}>
+              <span style={{fontSize:18}}>📡</span>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:800,color:"#a5b4fc"}}>Request Resources</div><div style={{fontSize:10,color:"#64748b"}}>MFD, Police, etc.</div></div>
+            </button>
           </div>
         </div>
 

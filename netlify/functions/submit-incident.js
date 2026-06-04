@@ -49,7 +49,6 @@ exports.handler = async (event) => {
         Interventions: interventions || '',
         Disposition: disposition || '',
         Narrative: narrative || '',
-        Notes: notes || '',
         OpenedAt: openedAt ? new Date(openedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         ClosedAt: new Date(closedAt).toISOString().split('T')[0],
         Duration: duration,

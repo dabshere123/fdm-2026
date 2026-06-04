@@ -16,13 +16,24 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
-  let body = {};
-  try { body = JSON.parse(event.body || '{}'); } catch(e) {}
+  console.log('--- submit-incident called ---');
+  console.log('Body:', event.body?.slice(0, 300));
 
-  const { callId, type, location, problem, patientDescription, requestedBy, respondingUnit, interventions, disposition, narrative, notes, openedAt } = body;
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch(e) { console.log('Parse error:', e.message); }
+
+  const { callId, type, location, problem, patientDescription, requestedBy, respondingUnit, interventions, disposition, narrative, openedAt } = body;
+
+  console.log('Type:', type, 'Location:', location, 'Disposition:', disposition);
+
+  if (!disposition) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing disposition' }) };
+  }
 
   const incidentNumber = generateIncidentNumber();
   const closedAt = new Date().toISOString();
+  const openedAtDate = openedAt ? new Date(openedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  const closedAtDate = new Date(closedAt).toISOString().split('T')[0];
 
   let duration = '';
   if (openedAt) {
@@ -34,31 +45,34 @@ exports.handler = async (event) => {
     } catch(e) {}
   }
 
+  const fields = {
+    IncidentNumber: incidentNumber,
+    Type: type || '',
+    Location: location || '',
+    Problem: problem || '',
+    PatientDescription: patientDescription || '',
+    RequestedBy: requestedBy || '',
+    RespondingUnit: respondingUnit || '',
+    Interventions: interventions || '',
+    Disposition: disposition || '',
+    Narrative: narrative || '',
+    OpenedAt: openedAtDate,
+    ClosedAt: closedAtDate,
+    Duration: duration,
+    CallId: String(callId || ''),
+  };
+
+  console.log('Sending to Airtable:', JSON.stringify(fields).slice(0, 300));
+
   const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      fields: {
-        IncidentNumber: incidentNumber,
-        Type: type || '',
-        Location: location || '',
-        Problem: problem || '',
-        PatientDescription: patientDescription || '',
-        RequestedBy: requestedBy || '',
-        RespondingUnit: respondingUnit || '',
-        Interventions: interventions || '',
-        Disposition: disposition || '',
-        Narrative: narrative || '',
-        OpenedAt: openedAt ? new Date(openedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        ClosedAt: new Date(closedAt).toISOString().split('T')[0],
-        Duration: duration,
-        CallId: callId || '',
-      }
-    })
+    body: JSON.stringify({ fields })
   });
 
   const data = await res.json();
-  console.log('Airtable status:', res.status, JSON.stringify(data).slice(0, 400));
+  console.log('Airtable status:', res.status);
+  console.log('Airtable response:', JSON.stringify(data).slice(0, 500));
 
   if (!res.ok) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: data.error?.message || 'Airtable error', details: data }) };

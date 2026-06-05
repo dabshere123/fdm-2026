@@ -580,7 +580,7 @@ export default function FieldApp(){const onBack=()=>{};
         <label style={S.lbl}>Your Role</label>
         {staffName?(
           <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"10px 14px",color:"#f1f5f9",fontSize:14,fontWeight:700}}>{ROLE_TYPES[roleType]?.label||roleType}</div>
-        ):roleLocked?(
+        ):roleLocked&&(
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{flex:1,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:15,fontWeight:700}}>{ROLE_TYPES[roleType]?.label}</div>
             {!confirmChange?(
@@ -595,11 +595,11 @@ export default function FieldApp(){const onBack=()=>{};
               </div>
             )}
           </div>
-        ):(
+        )}
+        {!staffName&&!roleLocked&&(
           <select style={{...S.sel,fontSize:16,padding:"12px",fontWeight:600}} value={roleType} onChange={e=>{setRoleType(e.target.value);setReqType(null);setFields({});}}>
             {Object.entries(ROLE_TYPES).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
           </select>
-        )}
         )}
       </div>
       <div style={{display:"flex",gap:8}}>

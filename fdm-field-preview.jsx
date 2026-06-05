@@ -40,6 +40,7 @@ export default function FieldApp(){const onBack=()=>{};
   const [overnightNarrative,setOvernightNarrative]=useState("");
   const [overnightNotes,setOvernightNotes]=useState("");
   const [overnightSubmitted,setOvernightSubmitted]=useState(false);
+  const [overnightEncounters,setOvernightEncounters]=useState([]);
   const [staffList,setStaffList]=useState([]);
   const [staffLoading,setStaffLoading]=useState(true);
   const [staffSearch,setStaffSearch]=useState("");
@@ -342,17 +343,52 @@ export default function FieldApp(){const onBack=()=>{};
             <div style={{fontSize:13,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:8}}>Shift Narrative / Notes</div>
             <textarea style={{...S.ta,minHeight:100}} placeholder="Overall summary of the night..." value={overnightNarrative} onChange={e=>setOvernightNarrative(e.target.value)}/>
 
+            {/* PUBLIC ENCOUNTERS LOG */}
+            <div style={{fontSize:13,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Public Encounters (Fire/EMS/Police)</div>
+            {overnightEncounters.map((enc,i)=>(
+              <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px",fontSize:13,color:"#e2e8f0"}}>
+                <div style={{fontWeight:700,color:"#f97316"}}>{enc.time} · {enc.type}</div>
+                <div style={{color:"#94a3b8"}}>{enc.location}</div>
+                <div>{enc.description}</div>
+                {enc.outcome&&<div style={{fontSize:12,color:"#64748b",marginTop:4}}>Outcome: {enc.outcome}</div>}
+              </div>
+            ))}
+            <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",padding:"12px",fontSize:14}}
+              onClick={()=>setView("overnight_encounter")}>
+              ➕ Log Public Encounter
+            </button>
+
             {!overnightSubmitted?(
-              <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",padding:"16px",fontSize:16,fontWeight:900}}
-                onClick={async()=>{
-                  try{
-                    await fetch("/.netlify/functions/submit-overnight-report",{method:"POST",headers:{"Content-Type":"application/json"},
-                      body:JSON.stringify({id:overnightRecordId,crewMember:staffName,incidents:overnightIncidents.map(i=>`${i.time}: ${i.text}`).join("\n"),narrative:overnightNarrative,notes:overnightNotes,eventDay:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})})});
-                    setOvernightSubmitted(true);
-                  }catch(e){console.log(e);}
-                }}>
-                ☀️ Submit Nightly Report
-              </button>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",padding:"16px",fontSize:16,fontWeight:900}}
+                  onClick={async()=>{
+                    const allIncidents=[
+                      ...overnightIncidents.map(i=>`${i.time}: ${i.text}`),
+                      ...overnightEncounters.map(e=>`[PUBLIC ENCOUNTER] ${e.time} · ${e.type} · ${e.location}: ${e.description}${e.outcome?" — "+e.outcome:""}`)
+                    ].join("\n");
+                    try{
+                      await fetch("/.netlify/functions/submit-overnight-report",{method:"POST",headers:{"Content-Type":"application/json"},
+                        body:JSON.stringify({id:overnightRecordId,crewMember:staffName,incidents:allIncidents,narrative:overnightNarrative,notes:overnightNotes,eventDay:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})})});
+                      setOvernightSubmitted(true);
+                    }catch(e){console.log(e);}
+                  }}>
+                  ☀️ Submit Nightly Report
+                </button>
+                <button style={{...S.sendBtn,background:"linear-gradient(135deg,#ef4444,#b91c1c)",padding:"14px",fontSize:15,fontWeight:900}}
+                  onClick={async()=>{
+                    const allIncidents=[
+                      ...overnightIncidents.map(i=>`${i.time}: ${i.text}`),
+                      ...overnightEncounters.map(e=>`[PUBLIC ENCOUNTER] ${e.time} · ${e.type} · ${e.location}: ${e.description}${e.outcome?" — "+e.outcome:""}`)
+                    ].join("\n");
+                    try{
+                      await fetch("/.netlify/functions/submit-overnight-report",{method:"POST",headers:{"Content-Type":"application/json"},
+                        body:JSON.stringify({id:overnightRecordId,crewMember:staffName,incidents:allIncidents,narrative:overnightNarrative,notes:overnightNotes,eventDay:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"}),checkOut:true})});
+                      setOvernightSubmitted(true);
+                    }catch(e){console.log(e);}
+                  }}>
+                  🚪 Check Out & Submit Report
+                </button>
+              </div>
             ):(
               <div style={{background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:12,padding:"16px",textAlign:"center"}}>
                 <div style={{fontSize:24,marginBottom:8}}>☀️</div>
@@ -362,6 +398,36 @@ export default function FieldApp(){const onBack=()=>{};
             )}
           </>
         )}
+      </div>
+    </div></div>
+  );
+
+  // OVERNIGHT ENCOUNTER FORM
+  if(view==="overnight_encounter") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><span style={S.panelTitle}>Log Public Encounter</span><BB onClick={()=>setView("home")}/></div>
+      <div style={S.cWrap}>
+        <Fld label="Time" value={f("enc_time")} onChange={setF("enc_time")} ph={new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} required/>
+        <Fld label="Location" value={f("enc_location")} onChange={setF("enc_location")} ph="e.g. Near Moon Stage" required/>
+        <label style={S.lbl}>Type of Encounter *</label>
+        <select style={S.sel} value={f("enc_type")||""} onChange={setF("enc_type")}>
+          <option value="">Select...</option>
+          <option>Fire/EMS Response</option>
+          <option>Police Called</option>
+          <option>Police Drive-By</option>
+          <option>Medical Emergency</option>
+          <option>Other</option>
+        </select>
+        <Fld label="Description *" value={f("enc_description")} onChange={setF("enc_description")} ph="What happened?" required multi/>
+        <Fld label="Outcome / Disposition" value={f("enc_outcome")} onChange={setF("enc_outcome")} ph="e.g. Fire cleared, EMS transported, Police took report" multi/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!f("enc_time")||!f("enc_location")||!f("enc_type")||!f("enc_description"))?0.5:1}}
+          disabled={!f("enc_time")||!f("enc_location")||!f("enc_type")||!f("enc_description")}
+          onClick={()=>{
+            setOvernightEncounters(p=>[...p,{time:f("enc_time"),type:f("enc_type"),location:f("enc_location"),description:f("enc_description"),outcome:f("enc_outcome")||""}]);
+            setFields({});setView("home");
+          }}>
+          ✅ Save Encounter
+        </button>
       </div>
     </div></div>
   );
@@ -511,7 +577,9 @@ export default function FieldApp(){const onBack=()=>{};
       <div style={{fontSize:17,fontWeight:800,color:"#f1f5f9",textAlign:"center"}}>What's your role today?</div>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         <label style={S.lbl}>Your Role</label>
-        {roleLocked?(
+        {staffName?(
+          <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"10px 14px",color:"#f1f5f9",fontSize:14,fontWeight:700}}>{ROLE_TYPES[roleType]?.label||roleType}</div>
+        ):roleLocked?(
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{flex:1,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:15,fontWeight:700}}>{ROLE_TYPES[roleType]?.label}</div>
             {!confirmChange?(
@@ -530,6 +598,7 @@ export default function FieldApp(){const onBack=()=>{};
           <select style={{...S.sel,fontSize:16,padding:"12px",fontWeight:600}} value={roleType} onChange={e=>{setRoleType(e.target.value);setReqType(null);setFields({});}}>
             {Object.entries(ROLE_TYPES).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
           </select>
+        )}
         )}
       </div>
       <div style={{display:"flex",gap:8}}>

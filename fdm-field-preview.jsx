@@ -1101,7 +1101,7 @@ Reply YES to acknowledge.`
   // ─── LOST CHILD VIEW ─────────────────────────────────────────────────────────
   if(lcView) return(
     <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><span style={S.panelTitle}>🧒 Report Lost Child</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>🧒 Report Lost Child</span><BB onClick={()=>setLcView(false)}/></div>
       <div style={S.cWrap}>
         <div style={{fontSize:14,color:"#fcd34d",fontWeight:700,background:"rgba(202,138,4,0.1)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:8,padding:"10px 12px"}}>📋 Gather info from parent/guardian first, then fill in below.</div>
         <Fld label="Child Age *" value={lcFields?.age||""} onChange={e=>setLcFields(p=>({...p,age:e.target.value}))} ph="e.g. 6" required large/>
@@ -1342,7 +1342,7 @@ Reply YES to acknowledge.`
         <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>911 Active · Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
       </div>
 
-      <div style={S.panelHd}><span style={S.panelTitle}>911 Incident Details</span><BB onClick={()=>setView("home")} label="← Back"/></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>911 Incident Details</span><BB onClick={()=>setView("home")}/><BB onClick={()=>setView("home")} label="← Back"/></div>
 
       <div style={S.cWrap}>
         {/* ALL INCIDENT INFO */}

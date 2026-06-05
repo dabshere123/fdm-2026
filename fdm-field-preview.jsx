@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)",overflow:"hidden"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/></div>);}
+function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)",overflow:"hidden",pointerEvents:"none"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px",pointerEvents:"none"}}/></div>);}
 function BB({onClick,label="← Back"}){return(<button style={{background:"rgba(255,255,255,0.1)",border:"2px solid rgba(255,255,255,0.25)",color:"#f1f5f9",padding:"10px 18px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800}} onClick={onClick}>{label}</button>);}
 function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={S.lbl}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}
 
@@ -179,9 +179,98 @@ export default function FieldApp(){
     </div>
   );
 
+  // OVERNIGHT SUB-VIEWS (must be before overnight crew check)
+  if(rt?.overnight&&view==="overnight_encounter") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><span style={S.panelTitle}>Log Public Encounter</span><BB onClick={()=>setView("home")}/></div>
+      <div style={S.cWrap}>
+        <Fld label="Time" value={f("enc_time")} onChange={setF("enc_time")} ph={new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} required/>
+        <Fld label="Location" value={f("enc_location")} onChange={setF("enc_location")} ph="e.g. Near Moon Stage" required/>
+        <label style={S.lbl}>Type of Encounter *</label>
+        <select style={S.sel} value={f("enc_type")||""} onChange={setF("enc_type")}>
+          <option value="">Select...</option>
+          <option>Fire/EMS Response</option>
+          <option>Police Called</option>
+          <option>Police Drive-By</option>
+          <option>Medical Emergency</option>
+          <option>Other</option>
+        </select>
+        <Fld label="Description *" value={f("enc_description")} onChange={setF("enc_description")} ph="What happened?" required multi/>
+        <Fld label="Outcome / Disposition" value={f("enc_outcome")} onChange={setF("enc_outcome")} ph="e.g. Fire cleared, EMS transported" multi/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!f("enc_time")||!f("enc_location")||!f("enc_type")||!f("enc_description"))?0.5:1}}
+          disabled={!f("enc_time")||!f("enc_location")||!f("enc_type")||!f("enc_description")}
+          onClick={()=>{
+            setOvernightEncounters(p=>[...p,{time:f("enc_time"),type:f("enc_type"),location:f("enc_location"),description:f("enc_description"),outcome:f("enc_outcome")||""}]);
+            setFields({});setView("home");
+          }}>✅ Save Encounter</button>
+      </div>
+    </div></div>
+  );
+
+  if(rt?.overnight&&view==="overnight_incident") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><span style={S.panelTitle}>Log Incident</span><BB onClick={()=>setView("home")}/></div>
+      <div style={S.cWrap}>
+        <Fld label="Time" value={f("oi_time")} onChange={setF("oi_time")} ph={new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} required/>
+        <Fld label="Location" value={f("oi_location")} onChange={setF("oi_location")} ph="e.g. Near Moon Stage" required/>
+        <label style={S.lbl}>Type of Incident</label>
+        <select style={S.sel} value={f("oi_type")||""} onChange={setF("oi_type")}>
+          <option value="">Select...</option>
+          <option>Suspicious Activity</option>
+          <option>Vandalism</option>
+          <option>Trespasser</option>
+          <option>Equipment Issue</option>
+          <option>Weather Damage</option>
+          <option>All Clear Check</option>
+          <option>Other</option>
+        </select>
+        <Fld label="Description *" value={f("oi_description")} onChange={setF("oi_description")} ph="What happened?" required multi/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)"}}
+          onClick={()=>{
+            const time=f("oi_time")||new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+            const text=`[${f("oi_type")||"Incident"}] ${f("oi_location")} — ${f("oi_description")}`;
+            setOvernightIncidents(p=>[...p,{time,text}]);
+            setFields({});setView("home");
+          }}>✅ Save Incident</button>
+      </div>
+    </div></div>
+  );
+
+  if(rt?.overnight&&view==="request"&&reqType==="lost_found") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><span style={S.panelTitle}>📦 Log Lost & Found</span><BB onClick={()=>{setView("home");setReqType(null);setFields({});}}/></div>
+      <div style={S.cWrap}>
+        <Fld label="Description of Item *" value={f("lf_description")} onChange={setF("lf_description")} ph="e.g. Black wallet, keys, phone" required large/>
+        <Fld label="Where Found *" value={f("lf_location")} onChange={setF("lf_location")} ph="e.g. Near Moon Stage entrance" required large/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",opacity:(!f("lf_description")||!f("lf_location"))?0.5:1}}
+          disabled={!f("lf_description")||!f("lf_location")}
+          onClick={async()=>{
+            try{
+              const res=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:f("lf_description"),location:f("lf_location"),foundBy:"Overnight Crew"})});
+              const data=await res.json();
+              if(data.success){setFields({...fields,_lfNumber:data.itemNumber});setView("lf_overnight_confirm");}
+            }catch(e){console.log(e);}
+          }}>📦 Log Item</button>
+      </div>
+    </div></div>
+  );
+
+  if(rt?.overnight&&view==="lf_overnight_confirm") return(
+    <div style={S.root}><Bg/><div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,zIndex:10,background:"#0d0d1a",padding:"32px"}}>
+      <div style={{fontSize:72}}>📦</div>
+      <div style={{fontSize:26,fontWeight:900,color:"#8b5cf6"}}>Item Logged!</div>
+      <div style={{background:"rgba(139,92,246,0.12)",border:"2px solid rgba(139,92,246,0.5)",borderRadius:14,padding:"20px 24px",textAlign:"center"}}>
+        <div style={{fontSize:13,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",fontWeight:700}}>Item Number</div>
+        <div style={{fontSize:36,fontWeight:900,color:"#a78bfa"}}>{fields._lfNumber}</div>
+      </div>
+      <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",textAlign:"center"}}>Tag item and bring to Festival Office in the morning.</div>
+      <button style={{...S.sendBtn,background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",width:"100%",maxWidth:320}} onClick={()=>{setView("home");setReqType(null);setFields({});}}>Done</button>
+    </div></div>
+  );
+
   // OVERNIGHT CREW VIEW
   if(rt?.overnight) return(
-    <div style={S.root}><Bg/><div style={S.panel}>
+    <div style={S.root}><Bg/><div style={{...S.panel,position:"relative",zIndex:1}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 20px 4px"}}>
         <div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Fête de Marquette 2026</div><div style={{fontSize:12,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2,fontWeight:700}}>Overnight Crew</div></div>
       </div>
@@ -280,8 +369,8 @@ export default function FieldApp(){
     </div></div>
   );
 
-  // OVERNIGHT ENCOUNTER FORM
-  if(view==="overnight_encounter") return(
+  // OVERNIGHT ENCOUNTER FORM (handled above for overnight crew)
+  if(!rt?.overnight&&view==="overnight_encounter") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}><span style={S.panelTitle}>Log Public Encounter</span><BB onClick={()=>setView("home")}/></div>
       <div style={S.cWrap}>
@@ -310,8 +399,8 @@ export default function FieldApp(){
     </div></div>
   );
 
-  // OVERNIGHT INCIDENT FORM
-  if(view==="overnight_incident") return(
+  // OVERNIGHT INCIDENT FORM (handled above for overnight crew)
+  if(!rt?.overnight&&view==="overnight_incident") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}><span style={S.panelTitle}>Log Incident</span><BB onClick={()=>setView("home")}/></div>
       <div style={S.cWrap}>

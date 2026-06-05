@@ -516,7 +516,7 @@ function HubApp({onBack}){
     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"ack",label:`Acknowledged by ${by}`,msg:calls.find(c=>c.id===id)?.problem||""},...p]);
   };
   const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
-  const clearCall=(id,by)=>{ playAlert("clear"); removeAckedBanner(id);
+  const clearCall=(id,by)=>{ playAlert("clear"); removeAckedBanner(id); setView("home");
     if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Cleared",unit:by})}).catch(e=>console.log(e)); }
     // Trigger incident report for medical/fire/security
     const call=activeCalls.find(c=>c.id===id)||calls.find(c=>c.id===id);
@@ -1366,7 +1366,7 @@ Reply YES to acknowledge.`
         <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>911 Active · Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
       </div>
 
-      <div style={S.panelHd}><span style={S.panelTitle}>911 Incident Details</span><BB onClick={()=>setView("home")}/><BB onClick={()=>setView("home")} label="← Back"/></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>911 Incident Details</span><BB onClick={()=>setView("home")}/></div>
 
       <div style={S.cWrap}>
         {/* ALL INCIDENT INFO */}
@@ -1622,11 +1622,30 @@ Reply YES to acknowledge.`
             <button style={{padding:"7px",borderRadius:8,border:"1px solid rgba(234,179,8,0.4)",background:"rgba(234,179,8,0.08)",color:"#fcd34d",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLcView(true)}>➕ Report Lost Child</button>
           </div>
         </div>
-        {/* ROW 2: Request Resources full width */}
-        <div style={{padding:"0 10px 10px"}}>
-          <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"14px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer"}} onClick={()=>setResourceView(true)}>
-            <span style={{fontSize:22}}>📋</span>
-            <span style={{fontSize:18,fontWeight:900,color:"#a78bfa"}}>Request Resources</span>
+        {/* ROW 2: 911 Activation + Request Resources */}
+        <div style={{padding:"0 10px 10px",display:"flex",flexDirection:"column",gap:8}}>
+          <button style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.8)":"rgba(180,0,0,0.4)"}`,background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.2),rgba(180,0,0,0.15))":"rgba(180,0,0,0.06)",cursor:"pointer",boxShadow:nineOneOne.active?"0 0 14px rgba(239,68,68,0.35)":"none"}}
+            onClick={()=>{
+              if(nineOneOne.active){
+                const msg=`🚨 911 ACTIVE 🚨\n\nEMS/Fire has been called.\nLOCATION: ${nineOneOne.info?.location||"Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature||""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
+                sendGroupMe(msg,["admin","medical"]);
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(e=>console.log(e));
+                fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"911_active",officers:mpdOfficers,location:nineOneOne.info?.location||"Festival Grounds",situation:msg})}).catch(e=>console.log(e));
+                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"911",label:"911 Alert — Admin/Med/MPD",msg},...p]);
+              } else {
+                set911({active:true,by:"Admin",at:now(),info:{}});
+                setView("911");
+              }
+            }}>
+            <span style={{fontSize:22}}>🚨</span>
+            <div style={{flex:1,textAlign:"left"}}>
+              <div style={{fontSize:14,fontWeight:900,color:nineOneOne.active?"#fca5a5":"#f87171"}}>{nineOneOne.active?"911 Active — Tap to Notify Admin/Med/MPD":"911 Activation — Tap to Notify"}</div>
+              <div style={{fontSize:11,color:"#64748b"}}>{nineOneOne.active?"Fires GroupMe + SMS to Admin and Med · Voice to MPD":"Tap after calling 911 — alerts Admin, Med and MPD"}</div>
+            </div>
+          </button>
+          <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer"}} onClick={()=>setResourceView(true)}>
+            <span style={{fontSize:20}}>📋</span>
+            <span style={{fontSize:16,fontWeight:900,color:"#a78bfa"}}>Request Resources</span>
           </button>
         </div>
       </div>

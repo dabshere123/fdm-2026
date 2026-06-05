@@ -193,7 +193,7 @@ function HubApp({onBack}){
     {id:3,type:"fire",location:"Sun Stage Vendor Area",problem:"Cooking flame too close to tent fabric",details:"Vendor unaware",requestedBy:"Sun Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:20 PM"}],unit:null,firedAt:Date.now()-180000},
     {id:4,type:"supplies",subtype:"restock",location:"Sun Left",problem:"Ice — 3 bags",requestedBy:"Sun Left",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:15 PM"}],unit:null,firedAt:Date.now()-240000,quantityRequested:"3 bags"},
     {id:5,type:"maintenance",location:"Cabaret Stage",problem:"Generator tripped, no power to bar",requestedBy:"Cabaret Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:10 PM"}],unit:null,firedAt:Date.now()-300000},
-    {id:6,type:"lost_child",location:"Moon Stage Area",problem:"Girl, approx 6 · Brown pigtails · Red shirt · Blue shorts\nLast seen: 4:05 PM near Moon Stage 1 bar\nMeet Reporting Party / Parent: Medical Tent\nParent: Sarah Johnson · 608-555-1234",requestedBy:"Moon Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:08 PM"}],unit:null,firedAt:Date.now()-400000},
+    {id:6,type:"lost_child",location:"Moon Stage Area",problem:"Girl, approx 6 · Brown pigtails · Red shirt · Blue shorts\nLast seen: 4:05 PM near Moon Stage 1 bar\nMeet Reporting Party / Parent: Medical Tent\nParent: Sarah Johnson · 608-555-1234",requestedBy:"Moon Stage Manager",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:"4:08 PM"},{status:"acknowledged",ts:"4:09 PM",unit:"Admin"}],unit:"Admin",firedAt:Date.now()-400000},
   ]);
   const [completed,setCompleted]=useState([
     {id:99,type:"medical",location:"Lagniappe",problem:"Heat exhaustion",status:"cleared",clearedBy:"Med 1",clearedAt:"2:35 PM",history:[{status:"new_call",ts:"2:10 PM"},{status:"acknowledged",ts:"2:11 PM",unit:"Med 1"},{status:"on_scene",ts:"2:14 PM",unit:"Med 1"},{status:"cleared",ts:"2:35 PM",unit:"Med 1"}]},
@@ -205,7 +205,7 @@ function HubApp({onBack}){
   ]);
   const [nineOneOne,set911]=useState({active:false,info:{},by:null,at:null});
   const [nineOneOneHistory,setNineOneOneHistory]=useState([]);
-  const [emsForm,setEmsForm]=useState({staging:"",eta:"",nature:"",notes:""});
+  const [emsForm,setEmsForm]=useState({staging:"",eta:"",nature:"",notes:"",activatedBy:""});
   const [emsDispatched,setEmsDispatched]=useState(false);
   // END OF NIGHT
   const [endOfNightNotes,setEndOfNightNotes]=useState("");
@@ -535,7 +535,7 @@ function HubApp({onBack}){
     const PRIORITY=["lost_child","medical","walk_in","fire","security","supplies","maintenance"];
     let alertCall=null;
     for(const t of PRIORITY){alertCall=calls.find(c=>c.type===t&&!c.acknowledged);if(alertCall)break;}
-    if(alertCall&&(isAdmin||isMed)){
+    if(alertCall&&(isAdmin||isMed||alertCall.type==="lost_child")){
       const ac=ALERT_COLORS[alertCall.type]||ALERT_COLORS.medical;
       const bg=lostChildBlink?ac.full2:ac.full;
       const isLC=alertCall.type==="lost_child";
@@ -567,8 +567,14 @@ function HubApp({onBack}){
             </div>
           )}
           {isLC?(
-            <><button style={{...S.bigAckBtn,background:"rgba(0,0,0,0.3)"}} onClick={()=>ackCall(alertCall.id,role||"Admin")}>✅ ACKNOWLEDGED — Searching</button>
-            <button style={{...S.bigAckBtn,background:"rgba(16,185,129,0.5)",border:"2px solid rgba(16,185,129,0.8)"}} onClick={()=>clearCall(alertCall.id,role||"Admin")}>🧒 CHILD LOCATED — Close</button></>
+            <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:380}}>
+              <button style={{...S.bigAckBtn,background:"linear-gradient(135deg,rgba(245,158,11,0.5),rgba(202,138,4,0.5))",border:"2px solid rgba(245,158,11,0.8)",fontSize:16}} onClick={()=>{
+                ackCall(alertCall.id,role||"Admin");
+                // Force navigate away so alert screen dismisses
+                setTimeout(()=>setView("home"),100);
+              }}>✅ ACKNOWLEDGED — SEARCHING</button>
+              <button style={{...S.bigAckBtn,background:"linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.6))",border:"2px solid rgba(16,185,129,0.9)",fontSize:16}} onClick={()=>clearCall(alertCall.id,role||"Admin")}>🧒 CHILD LOCATED — Close</button>
+            </div>
           ):(
             <button style={S.bigAckBtn} onClick={()=>ackCall(alertCall.id,role||"Admin")}>✅ ACKNOWLEDGE</button>
           )}
@@ -908,7 +914,7 @@ function HubApp({onBack}){
           }}>
           📋 SUBMIT INCIDENT REPORT
         </button>
-        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#64748b",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});}}>Skip Report</button>
+        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#64748b",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});setView("home");}}>Skip & Return to Hub</button>
       </div>
     </div></div>
   );
@@ -1116,8 +1122,11 @@ Reply YES to acknowledge.`
   // 911 VIEW
   // ─── LOST CHILD VIEW ─────────────────────────────────────────────────────────
   if(lcView) return(
-    <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><span style={S.panelTitle}>🧒 Report Lost Child</span><BB onClick={()=>setLcView(false)}/></div>
+    <div style={{...S.root,position:"relative"}}><Bg/><div style={{...S.panel,position:"relative",zIndex:1}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.95)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <span style={{fontSize:17,fontWeight:800,color:"#f1f5f9"}}>🧒 Report Lost Child</span>
+        <button style={{background:"rgba(255,255,255,0.12)",border:"2px solid rgba(255,255,255,0.4)",color:"#fff",padding:"12px 20px",borderRadius:10,cursor:"pointer",fontSize:15,fontWeight:900,boxShadow:"0 2px 8px rgba(0,0,0,0.4)"}} onClick={()=>setLcView(false)}>← Back</button>
+      </div>
       <div style={S.cWrap}>
         <div style={{fontSize:14,color:"#fcd34d",fontWeight:700,background:"rgba(202,138,4,0.1)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:8,padding:"10px 12px"}}>📋 Gather info from parent/guardian first, then fill in below.</div>
         <Fld label="Child Age *" value={lcFields?.age||""} onChange={e=>setLcFields(p=>({...p,age:e.target.value}))} ph="e.g. 6" required large/>
@@ -1127,8 +1136,7 @@ Reply YES to acknowledge.`
         <Fld label="Bottom / Pants" value={lcFields?.bottom||""} onChange={e=>setLcFields(p=>({...p,bottom:e.target.value}))} ph="e.g. Blue shorts"/>
         <Fld label="Last Seen Location *" value={lcFields?.lastSeen||""} onChange={e=>setLcFields(p=>({...p,lastSeen:e.target.value}))} ph="e.g. Near Moon Stage 1 bar" required large/>
         <Fld label="Last Seen Time" value={lcFields?.lastSeenTime||""} onChange={e=>setLcFields(p=>({...p,lastSeenTime:e.target.value}))} ph="e.g. 5:30 PM"/>
-        <Fld label="Meet Reporting Party / Parent *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. Medical Tent" required large/>
-        <Fld label="Meet Reporting Party (Parent)" value={lcFields?.meetParent||lcFields?.parentName||""} onChange={e=>setLcFields(p=>({...p,meetParent:e.target.value}))} ph="Auto: parent name — or specify location to meet them"/>
+        <Fld label="Meet Reporting Party / Parent *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. Medical Tent, Moon Stage entrance" required large/>
         <Fld label="Parent / Guardian Name" value={lcFields?.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Sarah Johnson"/>
         <Fld label="Parent / Guardian Phone" value={lcFields?.parentPhone||""} onChange={e=>setLcFields(p=>({...p,parentPhone:e.target.value}))} ph="(608) 555-1234"/>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly)?0.5:1}}
@@ -1427,7 +1435,7 @@ Reply YES to acknowledge.`
               <div style={{fontSize:15,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em",textTransform:"uppercase"}}>🚨 EMS INBOUND — ACTIVE</div>
               {nineOneOne.info?.location&&<div style={{fontSize:14,fontWeight:700,color:"#fff"}}>📍 {nineOneOne.info.location}</div>}
               {nineOneOne.info?.nature&&<div style={{fontSize:13,color:"#fca5a5"}}>{nineOneOne.info.nature}</div>}
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>Initiated by {nineOneOne.by}{nineOneOne.info?.activatedBy?" · "+nineOneOne.info.activatedBy:""} · {nineOneOne.at}</div>
               <button style={{padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.15)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setView("911")}>Update / View Details →</button>
             </div>
             <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.25),rgba(120,0,0,0.1))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",textAlign:"center"}}
@@ -1603,7 +1611,7 @@ Reply YES to acknowledge.`
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"10px 10px 6px"}}>
           <button style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.25),rgba(120,0,0,0.1))",cursor:"pointer",boxShadow:"0 0 10px rgba(200,0,0,0.2)",minHeight:90}} onClick={()=>{set911({active:true,by:"Admin",at:now(),info:{}});setView("911");}}>
             <span style={{fontSize:28}}>🚨</span>
-            <span style={{fontSize:14,fontWeight:900,color:"#fff",textAlign:"center",lineHeight:1.2}}>Activate 911</span>
+            <span style={{fontSize:14,fontWeight:900,color:"#fff",textAlign:"center",lineHeight:1.2}}>{nineOneOne.active?"🚨 911 Called\nTap to Notify Staff":"Activate 911\nEMS / Fire"}</span>
           </button>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
             <button style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:"10px 8px",borderRadius:12,border:`2px solid ${lostChildCalls.length>0?"rgba(234,179,8,0.7)":"rgba(245,158,11,0.3)"}`,background:lostChildCalls.length>0?"linear-gradient(135deg,rgba(234,179,8,0.2),rgba(202,138,4,0.1))":"rgba(255,255,255,0.03)",cursor:"pointer",position:"relative",minHeight:60}} onClick={()=>{setCallFilter(["lost_child"]);setCallFilterTitle("Lost Child");setCallTab("active");setView("callqueue");}}>
@@ -1859,14 +1867,14 @@ function SecurityAckPanel({alertCall,role,ackCall,tick}){
 }
 
 function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild}){
-  const [tab,setTab]=useState("calls");
-  const [wiComplaint,setWiComplaint]=useState("");
-  const [wiDetails,setWiDetails]=useState("");
   const [medReqView,setMedReqView]=useState(false);
   const [medReqType,setMedReqType]=useState("");
   const [medReqLocation,setMedReqLocation]=useState("");
   const [medReqProblem,setMedReqProblem]=useState("");
   const [medReqDetails,setMedReqDetails]=useState("");
+  const [medReqSubmitting,setMedReqSubmitting]=useState(false);
+  const [wiComplaint,setWiComplaint]=useState("");
+  const [wiDetails,setWiDetails]=useState("");
   const walkIns=(calls||[]).filter(c=>c.type==="walk_in"&&c.unit===role);
   const allActive=[...myActive];
 
@@ -1874,198 +1882,130 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
     if(!wiComplaint)return;
     const c={id:Date.now(),type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role,status:"on_scene",acknowledged:true,history:[{status:"walk_in",ts:new Date().toLocaleTimeString()},{status:"on_scene",ts:new Date().toLocaleTimeString(),unit:role}],unit:role,firedAt:Date.now()};
     setCalls(p=>[c,...p]);
-    playAlert("walk_in");
-    setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:new Date().toLocaleTimeString()}}));
-    setWiComplaint("");setWiDetails("");setTab("calls");
+    setWiComplaint("");setWiDetails("");
   };
 
-  return(<div style={{display:"flex",flexDirection:"column",gap:0}}>
-    {/* ACTIVE CALL — top, always open */}
-    {allActive.length>0&&<div style={{padding:"0 16px 10px"}}>
-      {allActive.map(c=>{
-        const isAcked=c.acknowledged||c.status==="acknowledged";
-        const isOnScene=c.status==="on_scene";
-        const tc=ALERT_COLORS[c.type]||ALERT_COLORS.medical;
-        return(<div key={c.id} style={{borderRadius:16,border:`2px solid ${tc.border}`,padding:"18px",display:"flex",flexDirection:"column",gap:12,background:tc.bg}}>
-          <div style={{fontSize:12,fontWeight:800,color:"#ec4899",letterSpacing:"0.08em",textTransform:"uppercase"}}>{tc.icon} Current Call — {role}</div>
-          <div style={{display:"flex",flexDirection:"column",gap:2}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Location</div>
-            <div style={{fontSize:22,fontWeight:900,color:"#fff"}}>📍 {c.location}</div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:2}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Reason for Request</div>
-            <div style={{fontSize:16,fontWeight:700,color:"#e2e8f0",lineHeight:1.5}}>{c.problem}</div>
-          </div>
-          {c.details&&<div style={{display:"flex",flexDirection:"column",gap:2}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Patient Description</div>
-            <div style={{fontSize:14,color:"#cbd5e1",lineHeight:1.5}}>{c.details}</div>
-          </div>}
-          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-            <div style={{display:"flex",flexDirection:"column",gap:1}}>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Sent By</div>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{c.requestedBy}</div>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:1}}>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Time</div>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{c.history[0]?.ts}</div>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:1}}>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Date</div>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            <button style={{padding:"14px",borderRadius:12,border:isAcked?"none":"2px solid #10b981",cursor:"pointer",fontSize:14,fontWeight:800,background:isAcked?"#059669":"rgba(16,185,129,0.2)",color:"#fff"}}
-              onClick={()=>setCalls(p=>p.map(x=>x.id===c.id?{...x,acknowledged:true,status:"acknowledged",history:[...x.history,{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}]}:x))}>
-              ✅ {isAcked?"Acknowledged":"Acknowledge"}
-            </button>
-            <button style={{padding:"14px",borderRadius:12,border:isOnScene?"none":"2px solid #ef4444",cursor:"pointer",fontSize:14,fontWeight:800,background:isOnScene?"#dc2626":"rgba(239,68,68,0.2)",color:"#fff"}}
-              onClick={()=>setCalls(p=>p.map(x=>x.id===c.id?{...x,status:"on_scene",history:[...x.history,{status:"on_scene",ts:new Date().toLocaleTimeString(),unit:role}]}:x))}>
-              🔴 On Scene
-            </button>
-            <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.4)",cursor:"pointer",fontSize:14,fontWeight:800,background:"rgba(16,185,129,0.15)",color:"#6ee7b7"}}
-              onClick={()=>{
-                setCalls(p=>p.filter(x=>x.id!==c.id));
-                setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);
-                setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));
-                if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:role})}).catch(e=>console.log(e));
-                if(["medical","walk_in","fire","security"].includes(c.type)&&triggerIncident) triggerIncident({...c,timestamp:c.history?.[0]?.ts||new Date().toISOString()});
-              }}>
-              ✅ Clear
-            </button>
-            <button style={{padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.5)",cursor:"pointer",fontSize:14,fontWeight:800,background:"rgba(16,185,129,0.3)",color:"#fff"}}
-              onClick={()=>{setCalls(p=>p.filter(x=>x.id!==c.id));setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));}}>
-              🟢 Ready
-            </button>
-          </div>
-        </div>);
-      })}
-    </div>}
+  const sendRequest=(type,location,problem,details)=>{
+    const newCall={id:Date.now(),type,location,problem,details:details||"",requestedBy:role,status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:new Date().toLocaleTimeString()},{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}],unit:role,firedAt:Date.now()};
+    setCalls(p=>[newCall,...p]);
+    if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type,location,problem,details:details||"",requestedBy:role})}).catch(e=>console.log(e));
+    if(sendGroupMe){
+      const channelMap={security:"admin",supplies:"admin",maintenance:"admin",medical:"medical"};
+      const emoji={security:"🛡️",supplies:"📦",maintenance:"🔧",medical:"🩺"}[type]||"📋";
+      sendGroupMe(`${emoji} REQUEST from ${role}\nLOCATION: ${location}\nPROBLEM: ${problem}${details?"\n"+details:""}\nDATE/TIME: ${new Date().toLocaleString()}`,[channelMap[type]||"admin","admin"]);
+    }
+    setMedReqView(false);setMedReqType("");setMedReqLocation("");setMedReqProblem("");setMedReqDetails("");
+  };
 
-    {/* 911 INBOUND BANNER — shows when 911 is active */}
-    {nineOneOne?.active&&(
-      <div style={{margin:"0 16px 10px",borderRadius:12,border:"2px solid rgba(239,68,68,0.8)",background:"linear-gradient(135deg,rgba(180,0,0,0.3),rgba(120,0,0,0.15))",padding:"14px 16px",display:"flex",flexDirection:"column",gap:6,boxShadow:"0 0 16px rgba(239,68,68,0.3)"}}>
-        <div style={{fontSize:13,fontWeight:900,color:"#ef4444",letterSpacing:"0.08em",textTransform:"uppercase"}}>🚨 911 INBOUND — EMS EN ROUTE</div>
-        {nineOneOne.info?.location&&<div style={{fontSize:18,fontWeight:800,color:"#fff"}}>📍 {nineOneOne.info.location}</div>}
-        {nineOneOne.info?.nature&&<div style={{fontSize:14,color:"#fca5a5"}}>{nineOneOne.info.nature}</div>}
-        <div style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
-        <div style={{fontSize:13,fontWeight:700,color:"#fbbf24"}}>⚠️ Prepare to meet EMS at entry point</div>
+  // Request form
+  if(medReqView) return(
+    <div style={{display:"flex",flexDirection:"column",gap:14,padding:"16px 20px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+        <div style={{fontSize:16,fontWeight:900,color:"#f1f5f9"}}>
+          {{security:"🛡️ Security Request",supplies:"📦 Supplies Request",maintenance:"🔧 Maintenance Request",medical:"🩺 Additional Medical Units"}[medReqType]}
+        </div>
+        <button style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",color:"#94a3b8",padding:"8px 14px",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:700}} onClick={()=>{setMedReqView(false);setMedReqType("");}}>Cancel</button>
       </div>
-    )}
-
-    {/* TABS — Walk-In only */}
-    <div style={{display:"flex",margin:"0 16px 8px",background:"rgba(255,255,255,0.04)",borderRadius:12,padding:4,gap:4}}>
-      <button style={{flex:1,padding:"10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="walkin"?"rgba(249,115,22,0.4)":"none",color:tab==="walkin"?"#fff":"#64748b"}} onClick={()=>setTab("walkin")}>🚶 Walk-In {walkIns.length>0&&`(${walkIns.length})`}</button>
-    </div>
-
-    {tab==="calls"&&<div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 20px"}}>
-      {unassigned.map(c=>(
-        <div key={c.id} style={{borderRadius:12,border:"2px solid #ef4444",padding:"14px",display:"flex",flexDirection:"column",gap:10,background:"rgba(239,68,68,0.1)"}}>
-          <div style={{fontSize:13,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em"}}>🆕 INCOMING — UNASSIGNED</div>
-          {/* LOCATION */}
-          <div style={{display:"flex",flexDirection:"column",gap:2}}>
-            <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Location</div>
-            <div style={{fontSize:22,fontWeight:900,color:"#fff"}}>📍 {c.location}</div>
-          </div>
-          {/* REASON */}
-          <div style={{display:"flex",flexDirection:"column",gap:2}}>
-            <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Reason for Request</div>
-            <div style={{fontSize:15,fontWeight:700,color:"#e2e8f0",lineHeight:1.5}}>{c.problem}</div>
-          </div>
-          {/* PATIENT DESCRIPTION */}
-          {c.details&&<div style={{display:"flex",flexDirection:"column",gap:2}}>
-            <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Patient Description</div>
-            <div style={{fontSize:14,color:"#cbd5e1",lineHeight:1.5}}>{c.details}</div>
-          </div>}
-          {/* WHO + WHEN */}
-          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-            <div style={{display:"flex",flexDirection:"column",gap:1}}>
-              <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Sent By</div>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{c.requestedBy}</div>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:1}}>
-              <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Time</div>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{c.history[0]?.ts}</div>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:1}}>
-              <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Date</div>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>
-            </div>
-          </div>
-          <button style={{background:"linear-gradient(135deg,#059669,#047857)",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}
-            onClick={()=>setCalls(p=>p.map(x=>x.id===c.id?{...x,acknowledged:true,unit:role,status:"acknowledged",history:[...x.history,{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}]}:x))}>
-            ✅ ASSIGN TO ME — {role}
-          </button>
-        </div>
-      ))}
-      {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"24px 0",fontSize:14}}>No active calls — standing by</div>}
-
-      {/* LOST CHILD — OWN SECTION */}
-      <button style={{display:"flex",alignItems:"center",gap:14,padding:"16px",borderRadius:12,border:"2px solid rgba(249,115,22,0.6)",background:"rgba(249,115,22,0.12)",cursor:"pointer",width:"100%"}}
-        onClick={()=>{ if(openLostChild) openLostChild(); }}>
-        <span style={{fontSize:28}}>🧒</span>
-        <div style={{textAlign:"left"}}>
-          <div style={{fontSize:16,fontWeight:900,color:"#fdba74"}}>Report Lost Child</div>
-          <div style={{fontSize:11,color:"#64748b"}}>Alert all staff, GroupMe + SMS + MPD</div>
-        </div>
-      </button>
-
-      {/* MED REQUEST BUTTON */}
-      <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(219,39,119,0.4)",background:"rgba(219,39,119,0.08)",cursor:"pointer"}} onClick={()=>setMedReqView(p=>!p)}>
-        <span style={{fontSize:18}}>📋</span>
-        <div><div style={{fontSize:13,fontWeight:800,color:"#f9a8d4"}}>Send a Request</div><div style={{fontSize:11,color:"#64748b"}}>Medical, Security, Supplies</div></div>
-      </button>
-
-      {medReqView&&(
-        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Request Type</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {[{id:"medical",label:"🩺 Medical",color:"#db2777"},{id:"security",label:"🛡️ Security",color:"#2563eb"},{id:"supplies",label:"📦 Supplies",color:"#10b981"},{id:"maintenance",label:"🔧 Maintenance",color:"#f59e0b"}].map(t=>(
-              <button key={t.id} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${medReqType===t.id?t.color+"aa":"rgba(255,255,255,0.1)"}`,background:medReqType===t.id?t.color+"22":"rgba(255,255,255,0.03)",color:medReqType===t.id?"#f1f5f9":"#64748b",fontSize:13,fontWeight:medReqType===t.id?700:400,cursor:"pointer"}} onClick={()=>setMedReqType(t.id)}>{t.label}</button>
-            ))}
-          </div>
-          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Location *" value={medReqLocation} onChange={e=>setMedReqLocation(e.target.value)}/>
-          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="What's the problem? *" value={medReqProblem} onChange={e=>setMedReqProblem(e.target.value)}/>
-          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Additional details (optional)" value={medReqDetails} onChange={e=>setMedReqDetails(e.target.value)}/>
-          <button style={{padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#db2777,#9d174d)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",opacity:(!medReqType||!medReqLocation||!medReqProblem)?0.5:1}}
-            disabled={!medReqType||!medReqLocation||!medReqProblem}
+      <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Location *" value={medReqLocation} onChange={e=>setMedReqLocation(e.target.value)}/>
+      <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="What's needed? *" value={medReqProblem} onChange={e=>setMedReqProblem(e.target.value)}/>
+      <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Additional details (optional)" value={medReqDetails} onChange={e=>setMedReqDetails(e.target.value)}/>
+      {medReqType==="security"&&(
+        <div style={{background:"rgba(29,78,216,0.08)",border:"1px solid rgba(59,130,246,0.3)",borderRadius:10,padding:"12px",display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#93c5fd",textTransform:"uppercase"}}>Request MPD?</div>
+          <button style={{padding:"12px",borderRadius:8,border:"1px solid rgba(59,130,246,0.4)",background:"rgba(59,130,246,0.1)",color:"#93c5fd",fontSize:14,fontWeight:700,cursor:"pointer"}}
             onClick={()=>{
-              const newCall={id:Date.now(),type:medReqType,location:medReqLocation,problem:medReqProblem,details:medReqDetails,requestedBy:role,status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:new Date().toLocaleTimeString()},{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}],unit:role,firedAt:Date.now()};
-              setCalls(p=>[newCall,...p]);
-              if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:medReqType,location:medReqLocation,problem:medReqProblem,details:medReqDetails,requestedBy:role})}).catch(e=>console.log(e));
-              if(sendGroupMe){
-                const channelMap={medical:"medical",security:"admin",supplies:"restock",maintenance:"maintenance"};
-                sendGroupMe(`${medReqType==="medical"?"🩺":medReqType==="security"?"🛡️":medReqType==="supplies"?"📦":"🔧"} REQUEST from ${role}\nLOCATION: ${medReqLocation}\nPROBLEM: ${medReqProblem}${medReqDetails?"\n"+medReqDetails:""}\nDATE/TIME: ${new Date().toLocaleString()}`,[channelMap[medReqType]||"admin","admin"]);
-              }
-              setMedReqType("");setMedReqLocation("");setMedReqProblem("");setMedReqDetails("");setMedReqView(false);
-            }}>
-            📤 Send Request — Self Assigned to {role}
-          </button>
+              if(sendGroupMe) sendGroupMe(`🚨 MPD REQUESTED by ${role}\nLOCATION: ${medReqLocation||"Festival Grounds"}\nSITUATION: ${medReqProblem||""}\nDATE/TIME: ${new Date().toLocaleString()}`,["admin","medical"]);
+            }}>👮 Notify MPD via Admin</button>
         </div>
       )}
-
-      <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:12,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",cursor:"pointer"}} onClick={()=>setResourceView(true)}>
-        <span style={{fontSize:18}}>📋</span><span style={{fontSize:13,fontWeight:700,color:"#a78bfa"}}>Request Resources</span>
+      <button style={{background:"linear-gradient(135deg,#7c3aed,#4f46e5)",border:"none",borderRadius:12,padding:"16px",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",opacity:(!medReqLocation||!medReqProblem)?0.5:1}}
+        disabled={!medReqLocation||!medReqProblem}
+        onClick={()=>sendRequest(medReqType,medReqLocation,medReqProblem,medReqDetails)}>
+        📤 Send Request
       </button>
-    </div>}
+    </div>
+  );
 
-    {tab==="walkin"&&<div style={{display:"flex",flexDirection:"column",gap:12,padding:"0 20px"}}>
-      <div style={{fontSize:13,color:"#94a3b8",background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px 12px",lineHeight:1.5}}>Log a walk-in patient at the Medical Tent.</div>
-      <Fld label="Chief Complaint *" value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)} ph="e.g. Chest pain, heat exhaustion, laceration" large/>
-      <div style={{fontSize:15,fontWeight:800,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Patient Description</div>
-      <Fld label="" value={wiDetails} onChange={e=>setWiDetails(e.target.value)} ph="Approx age, gender, conscious/unconscious, visible injuries, condition details..." multi/>
-      <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={doWalkIn}>🚶 LOG WALK-IN PATIENT</button>
-      {walkIns.length>0&&<>
-        <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",padding:"8px 0 4px",borderTop:"1px solid rgba(255,255,255,0.06)"}}>Active Walk-Ins</div>
-        {walkIns.map(c=>(
-          <div key={c.id} style={{borderRadius:10,border:"1px solid rgba(249,115,22,0.4)",padding:"12px",background:"rgba(249,115,22,0.06)"}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{c.problem}</div>
-            {c.details&&<div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>{c.details}</div>}
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:10,padding:"8px 16px 32px"}}>
+
+      {/* ACTIVE CALLS */}
+      {allActive.length>0&&<>
+        <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Active Calls ({allActive.length})</div>
+        {allActive.map(c=>(
+          <div key={c.id} style={{borderRadius:12,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>📍 {c.location}</div>
+            <div style={{fontSize:13,color:"#94a3b8"}}>{c.problem}</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <button style={{flex:1,padding:"10px",borderRadius:8,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.15)",color:"#fca5a5",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>{setCalls(p=>p.map(x=>x.id===c.id?{...x,status:"on_scene",history:[...x.history,{status:"on_scene",ts:new Date().toLocaleTimeString(),unit:role}]}:x));setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:new Date().toLocaleTimeString()}}));}}>🔴 On Scene</button>
+              <button style={{flex:1,padding:"10px",borderRadius:8,border:"2px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:13,fontWeight:800,cursor:"pointer"}}
+                onClick={()=>{
+                  setCalls(p=>p.filter(x=>x.id!==c.id));
+                  setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);
+                  setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));
+                  if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:role})}).catch(e=>console.log(e));
+                  if(["medical","walk_in","fire","security"].includes(c.type)&&triggerIncident) triggerIncident({...c,timestamp:c.history?.[0]?.ts||new Date().toISOString()});
+                }}>✅ Clear</button>
+            </div>
           </div>
         ))}
       </>}
-    </div>}
-  </div>);
+
+      {/* UNASSIGNED CALLS */}
+      {unassigned.length>0&&<>
+        <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Unassigned ({unassigned.length})</div>
+        {unassigned.map(c=>(
+          <div key={c.id} style={{borderRadius:12,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>📍 {c.location}</div>
+            <div style={{fontSize:13,color:"#94a3b8"}}>{c.problem}</div>
+            <button style={{padding:"10px",borderRadius:8,border:"2px solid rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.12)",color:"#fcd34d",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>{setCalls(p=>p.map(x=>x.id===c.id?{...x,acknowledged:true,status:"acknowledged",unit:role,history:[...x.history,{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}]}:x));setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"responding",since:new Date().toLocaleTimeString()}}));}}>✅ Assign to {role}</button>
+          </div>
+        ))}
+      </>}
+
+      {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"16px 0",fontSize:14}}>No active calls — standing by</div>}
+
+      {/* WALK-IN */}
+      <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Walk-In Patient</div>
+      <div style={{display:"flex",gap:8}}>
+        <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Chief complaint..." value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)}/>
+        <button style={{padding:"12px 16px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#a855f7,#7c3aed)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={doWalkIn}>➕</button>
+      </div>
+
+      <div style={{height:1,background:"rgba(255,255,255,0.06)",margin:"4px 0"}}/>
+
+      {/* 🧒 LOST CHILD */}
+      <button style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:"2px solid rgba(249,115,22,0.6)",background:"rgba(249,115,22,0.1)",cursor:"pointer"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
+        <span style={{fontSize:24}}>🧒</span>
+        <div style={{textAlign:"left"}}><div style={{fontSize:15,fontWeight:900,color:"#fdba74"}}>Report Lost Child</div><div style={{fontSize:11,color:"#64748b"}}>Alerts all staff, GroupMe + SMS + MPD</div></div>
+      </button>
+
+      {/* ➕ ADDITIONAL MEDICAL UNITS */}
+      <button style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:"2px solid rgba(168,85,247,0.5)",background:"rgba(168,85,247,0.08)",cursor:"pointer"}} onClick={()=>{setMedReqType("medical");setMedReqView(true);}}>
+        <span style={{fontSize:24}}>🩺</span>
+        <div style={{textAlign:"left"}}><div style={{fontSize:15,fontWeight:900,color:"#d8b4fe"}}>Additional Medical Units</div><div style={{fontSize:11,color:"#64748b"}}>Request more medical personnel</div></div>
+      </button>
+
+      {/* 🛡️ SECURITY */}
+      <button style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer"}} onClick={()=>{setMedReqType("security");setMedReqView(true);}}>
+        <span style={{fontSize:24}}>🛡️</span>
+        <div style={{textAlign:"left"}}><div style={{fontSize:15,fontWeight:900,color:"#93c5fd"}}>Security</div><div style={{fontSize:11,color:"#64748b"}}>Security assistance · MPD request inside</div></div>
+      </button>
+
+      {/* 📦 SUPPLIES */}
+      <button style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:"2px solid rgba(120,53,15,0.5)",background:"rgba(120,53,15,0.1)",cursor:"pointer"}} onClick={()=>{setMedReqType("supplies");setMedReqView(true);}}>
+        <span style={{fontSize:24}}>📦</span>
+        <div style={{textAlign:"left"}}><div style={{fontSize:15,fontWeight:900,color:"#fbbf24"}}>Supplies</div><div style={{fontSize:11,color:"#64748b"}}>Request medical supplies</div></div>
+      </button>
+
+      {/* 🔧 MAINTENANCE */}
+      <button style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:"2px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.06)",cursor:"pointer"}} onClick={()=>{setMedReqType("maintenance");setMedReqView(true);}}>
+        <span style={{fontSize:24}}>🔧</span>
+        <div style={{textAlign:"left"}}><div style={{fontSize:15,fontWeight:900,color:"#6ee7b7"}}>Maintenance</div><div style={{fontSize:11,color:"#64748b"}}>Equipment or structural issue</div></div>
+      </button>
+
+    </div>
+  );
 }
 
 const S={

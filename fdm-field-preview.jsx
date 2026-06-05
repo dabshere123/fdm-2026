@@ -199,8 +199,23 @@ export default function FieldApp(){
         <Fld label="Outcome / Disposition" value={f("enc_outcome")} onChange={setF("enc_outcome")} ph="e.g. Fire cleared, EMS transported" multi/>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!f("enc_time")||!f("enc_location")||!f("enc_type")||!f("enc_description"))?0.5:1}}
           disabled={!f("enc_time")||!f("enc_location")||!f("enc_type")||!f("enc_description")}
-          onClick={()=>{
+          onClick={async()=>{
             setOvernightEncounters(p=>[...p,{time:f("enc_time"),type:f("enc_type"),location:f("enc_location"),description:f("enc_description"),outcome:f("enc_outcome")||""}]);
+            // Save to Airtable Incidents table
+            try{
+              await fetch("/.netlify/functions/submit-incident",{method:"POST",headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({
+                  type:"public_encounter",
+                  location:f("enc_location"),
+                  problem:`${f("enc_type")}: ${f("enc_description")}`,
+                  requestedBy:staffName||"Overnight Crew",
+                  respondingUnit:"Overnight Crew",
+                  disposition:f("enc_outcome")||"Logged",
+                  notes:`Time: ${f("enc_time")} · Public Encounter (Fire/EMS/Police)`,
+                  openedAt:new Date().toISOString(),
+                })
+              });
+            }catch(e){console.log("Encounter save error:",e.message);}
             setFields({});setView("home");
           }}>✅ Save Encounter</button>
       </div>
@@ -226,10 +241,25 @@ export default function FieldApp(){
         </select>
         <Fld label="Description *" value={f("oi_description")} onChange={setF("oi_description")} ph="What happened?" required multi/>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)"}}
-          onClick={()=>{
+          onClick={async()=>{
             const time=f("oi_time")||new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
             const text=`[${f("oi_type")||"Incident"}] ${f("oi_location")} — ${f("oi_description")}`;
             setOvernightIncidents(p=>[...p,{time,text}]);
+            // Save to Airtable Incidents table immediately
+            try{
+              await fetch("/.netlify/functions/submit-incident",{method:"POST",headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({
+                  type:"overnight_"+((f("oi_type")||"incident").toLowerCase().replace(/\s+/g,"_")),
+                  location:f("oi_location"),
+                  problem:f("oi_description"),
+                  requestedBy:staffName||"Overnight Crew",
+                  respondingUnit:"Overnight Crew",
+                  disposition:"Logged by Overnight Crew",
+                  notes:`Time: ${time} · Overnight Incident Report`,
+                  openedAt:new Date().toISOString(),
+                })
+              });
+            }catch(e){console.log("Incident save error:",e.message);}
             setFields({});setView("home");
           }}>✅ Save Incident</button>
       </div>

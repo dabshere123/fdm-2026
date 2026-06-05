@@ -12,21 +12,21 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body || '{}'); } catch(e) {}
 
   const { crewMember, eventDay } = body;
-  console.log('Crew member:', crewMember, 'Event day:', eventDay);
-
   const checkInTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  const fields = {
+    CrewMember: crewMember || 'Unknown',
+    EventDay: eventDay || '',
+    Status: 'Checked In',
+    Notes: `Checked in at ${checkInTime}`,
+  };
+
+  console.log('Sending fields:', JSON.stringify(fields));
 
   const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      fields: {
-        CrewMember: crewMember || 'Unknown',
-        EventDay: eventDay || '',
-        CheckInTime: checkInTime,
-        Status: 'Checked In',
-      }
-    })
+    body: JSON.stringify({ fields })
   });
 
   const data = await res.json();

@@ -270,8 +270,9 @@ export default function FieldApp(){
 
   // OVERNIGHT CREW VIEW
   if(rt?.overnight) return(
-    <div style={S.root}><Bg/><div style={{...S.panel,position:"relative",zIndex:1}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 20px 4px"}}>
+    <div style={{...S.root,position:"relative"}}>
+      <Bg/>
+      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:768,minHeight:"100vh",display:"flex",flexDirection:"column"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 20px 4px"}}>
         <div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Fête de Marquette 2026</div><div style={{fontSize:12,color:"#f59e0b",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2,fontWeight:700}}>Overnight Crew</div></div>
       </div>
       <div style={{padding:"8px 20px",fontSize:15,fontWeight:700,color:"#94a3b8"}}>{staffName||"Crew Member"}</div>

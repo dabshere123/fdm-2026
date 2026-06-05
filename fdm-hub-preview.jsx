@@ -1880,8 +1880,12 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
   const doWalkIn=()=>{
     if(!wiComplaint)return;
-    const c={id:Date.now(),type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role,status:"on_scene",acknowledged:true,history:[{status:"walk_in",ts:new Date().toLocaleTimeString()},{status:"on_scene",ts:new Date().toLocaleTimeString(),unit:role}],unit:role,firedAt:Date.now()};
+    const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+    const c={id:Date.now(),type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role,status:"on_scene",acknowledged:true,history:[{status:"walk_in",ts},{status:"on_scene",ts,unit:role}],unit:role,firedAt:Date.now()};
     setCalls(p=>[c,...p]);
+    setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:ts}}));
+    if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role})}).catch(e=>console.log(e));
+    if(sendGroupMe) sendGroupMe(`🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails?"\n"+wiDetails:""}\nTIME: ${ts}`,["admin","medical"]);
     setWiComplaint("");setWiDetails("");
   };
 
@@ -2001,65 +2005,70 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
       {/* REQUEST TAB */}
       {medTab==="request"&&<>
 
-      {/* 🚨 911 ACTIVATION — TAP TO NOTIFY */}
-      <button style={{display:"flex",alignItems:"center",gap:12,padding:"18px",borderRadius:12,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.3),rgba(180,0,0,0.2))":"rgba(180,0,0,0.08)",cursor:"pointer",boxShadow:nineOneOne.active?"0 0 16px rgba(239,68,68,0.4)":"none"}}
+      {/* 🚨 911 ACTIVATION */}
+      <button style={{display:"flex",alignItems:"center",gap:14,padding:"18px",borderRadius:12,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.3),rgba(180,0,0,0.2))":"rgba(180,0,0,0.08)",cursor:"pointer",boxShadow:nineOneOne.active?"0 0 16px rgba(239,68,68,0.4)":"none"}}
         onClick={()=>{
           if(nineOneOne.active){
-            const msg=`🚨 911 ACTIVE 🚨
-
-EMS/Fire has been called.
-LOCATION: ${nineOneOne.info?.location||"Festival Grounds"}
-NATURE: ${nineOneOne.info?.nature||""}
-Activated by: ${nineOneOne.by} · ${nineOneOne.at}
-
-Clear a path for emergency vehicles.`;
+            const msg=`🚨 911 ACTIVE 🚨\n\nEMS/Fire has been called.\nLOCATION: ${nineOneOne.info?.location||"Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature||""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
             if(sendGroupMe) sendGroupMe(msg,["admin","medical"]);
           } else {
             const activeCall=myActive?.[0]||unassigned?.[0];
             set911({active:true,by:role,at:new Date().toLocaleTimeString(),info:{location:activeCall?.location||"",nature:activeCall?.problem||""}});
             setView("911");
-            if(sendGroupMe) sendGroupMe(`🚨 911 ACTIVATED by ${role}
-EMS/Fire has been called. Stand by.`,["admin","medical"]);
+            if(sendGroupMe) sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS/Fire has been called. Stand by.`,["admin","medical"]);
           }
         }}>
-        <span style={{fontSize:28}}>🚨</span>
-        <div style={{textAlign:"left"}}>
-          <div style={{fontSize:15,fontWeight:900,color:nineOneOne.active?"#fca5a5":"#f87171"}}>{nineOneOne.active?"911 Active — Tap to Notify Admin & Med":"911 Activation — Tap to Notify"}</div>
-          <div style={{fontSize:11,color:"#64748b"}}>{nineOneOne.active?"Fires GroupMe + SMS to Admin and Med units":"After calling 911 — alerts Admin and Med"}</div>
+        <span style={{fontSize:28,flexShrink:0}}>🚨</span>
+        <div>
+          <div style={{fontSize:16,fontWeight:900,color:nineOneOne.active?"#fca5a5":"#f87171"}}>{nineOneOne.active?"911 Active — Tap to Notify":"911 Activation — Tap to Notify"}</div>
+          <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{nineOneOne.active?"Alerts Admin + Med units · After calling 911":"Tap after calling 911 — alerts Admin and Med"}</div>
         </div>
       </button>
 
-      {/* 🧒 REPORT LOST CHILD */}
-      <button style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:"2px solid rgba(249,115,22,0.6)",background:"rgba(249,115,22,0.1)",cursor:"pointer"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
-        <span style={{fontSize:24}}>🧒</span>
-        <div style={{textAlign:"left"}}><div style={{fontSize:15,fontWeight:900,color:"#fdba74"}}>Report Lost Child</div><div style={{fontSize:11,color:"#64748b"}}>Alerts all staff, GroupMe + SMS + MPD</div></div>
+      {/* 🧒 LOST CHILD */}
+      <button style={{display:"flex",alignItems:"center",gap:14,padding:"18px",borderRadius:12,border:"2px solid rgba(249,115,22,0.6)",background:"rgba(249,115,22,0.1)",cursor:"pointer"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
+        <span style={{fontSize:28,flexShrink:0}}>🧒</span>
+        <div>
+          <div style={{fontSize:16,fontWeight:900,color:"#fdba74"}}>Report Lost Child</div>
+          <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Alerts all staff, GroupMe + SMS + MPD</div>
+        </div>
       </button>
 
-      {/* 🩺 ADDITIONAL MEDICAL + 🛡️ SECURITY */}
-      <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Medical & Security</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        <button style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(168,85,247,0.5)",background:"rgba(168,85,247,0.08)",cursor:"pointer"}} onClick={()=>{setMedReqType("medical");setMedReqView(true);}}>
-          <span style={{fontSize:24}}>🩺</span>
-          <div style={{fontSize:13,fontWeight:800,color:"#d8b4fe",textAlign:"center"}}>Additional Medical Units</div>
-        </button>
-        <button style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer"}} onClick={()=>{setMedReqType("security");setMedReqView(true);}}>
-          <span style={{fontSize:24}}>🛡️</span>
-          <div style={{fontSize:13,fontWeight:800,color:"#93c5fd",textAlign:"center"}}>Security + MPD</div>
-        </button>
-      </div>
+      {/* 🩺 ADDITIONAL MEDICAL */}
+      <button style={{display:"flex",alignItems:"center",gap:14,padding:"18px",borderRadius:12,border:"2px solid rgba(168,85,247,0.5)",background:"rgba(168,85,247,0.08)",cursor:"pointer"}} onClick={()=>{setMedReqType("medical");setMedReqView(true);}}>
+        <span style={{fontSize:28,flexShrink:0}}>🩺</span>
+        <div>
+          <div style={{fontSize:16,fontWeight:900,color:"#d8b4fe"}}>Additional Medical Units</div>
+          <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Request more medical personnel</div>
+        </div>
+      </button>
 
-      {/* 📦 SUPPLIES + 🔧 MAINTENANCE */}
-      <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Supplies & Maintenance</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        <button style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(120,53,15,0.5)",background:"rgba(120,53,15,0.1)",cursor:"pointer"}} onClick={()=>{setMedReqType("supplies");setMedReqView(true);}}>
-          <span style={{fontSize:24}}>📦</span>
-          <div style={{fontSize:13,fontWeight:800,color:"#fbbf24",textAlign:"center"}}>Supplies</div>
-        </button>
-        <button style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.06)",cursor:"pointer"}} onClick={()=>{setMedReqType("maintenance");setMedReqView(true);}}>
-          <span style={{fontSize:24}}>🔧</span>
-          <div style={{fontSize:13,fontWeight:800,color:"#6ee7b7",textAlign:"center"}}>Maintenance</div>
-        </button>
-      </div>
+      {/* 🛡️ SECURITY + MPD */}
+      <button style={{display:"flex",alignItems:"center",gap:14,padding:"18px",borderRadius:12,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer"}} onClick={()=>{setMedReqType("security");setMedReqView(true);}}>
+        <span style={{fontSize:28,flexShrink:0}}>🛡️</span>
+        <div>
+          <div style={{fontSize:16,fontWeight:900,color:"#93c5fd"}}>Security</div>
+          <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Security assistance · MPD request inside</div>
+        </div>
+      </button>
+
+      {/* 📦 SUPPLIES */}
+      <button style={{display:"flex",alignItems:"center",gap:14,padding:"18px",borderRadius:12,border:"2px solid rgba(120,53,15,0.5)",background:"rgba(120,53,15,0.1)",cursor:"pointer"}} onClick={()=>{setMedReqType("supplies");setMedReqView(true);}}>
+        <span style={{fontSize:28,flexShrink:0}}>📦</span>
+        <div>
+          <div style={{fontSize:16,fontWeight:900,color:"#fbbf24"}}>Supplies</div>
+          <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Request medical supplies</div>
+        </div>
+      </button>
+
+      {/* 🔧 MAINTENANCE */}
+      <button style={{display:"flex",alignItems:"center",gap:14,padding:"18px",borderRadius:12,border:"2px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.06)",cursor:"pointer"}} onClick={()=>{setMedReqType("maintenance");setMedReqView(true);}}>
+        <span style={{fontSize:28,flexShrink:0}}>🔧</span>
+        <div>
+          <div style={{fontSize:16,fontWeight:900,color:"#6ee7b7"}}>Maintenance</div>
+          <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Equipment or structural issue</div>
+        </div>
+      </button>
 
       </>}
 

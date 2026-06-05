@@ -126,30 +126,32 @@ export default function FieldApp(){
     setTimeout(()=>{setDone(false);setView("home");},2500);
   };
 
-  // NAME PICKER
+  // LAST NAME LOGIN
+  const [lastNameInput,setLastNameInput]=useState?.(undefined)||"";
+  const [loginError,setLoginError]=useState?.(undefined)||"";
+
   if(!loggedIn) return(
     <div style={{minHeight:"100vh",background:"#0d0d1a",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'DM Sans',sans-serif",position:"relative"}}>
       <Bg/>
-      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,padding:"40px 24px"}}>
-        <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{fontSize:56,marginBottom:12}}>📱</div>
-          <div style={{fontSize:24,fontWeight:900,color:"#f1f5f9",marginBottom:4}}>Worker App</div>
-          <div style={{fontSize:13,color:"#f59e0b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em"}}>Fête de Marquette 2026</div>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:420,padding:"60px 24px"}}>
+        <div style={{textAlign:"center",marginBottom:36}}>
+          <div style={{fontSize:56,marginBottom:12}}>🎪</div>
+          <div style={{fontSize:26,fontWeight:900,color:"#f1f5f9",marginBottom:4}}>Fête de Marquette</div>
+          <div style={{fontSize:13,color:"#f59e0b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em"}}>Worker App 2026</div>
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{fontSize:15,fontWeight:700,color:"#94a3b8",textAlign:"center",marginBottom:4}}>Tap your name to get started</div>
-          <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px 16px",color:"#f1f5f9",fontSize:15,width:"100%",fontFamily:"inherit",outline:"none"}}
-            placeholder="Search your name..." value={staffSearch} onChange={e=>setStaffSearch(e.target.value)}/>
-          {staffLoading
-            ?<div style={{textAlign:"center",color:"#64748b",padding:"20px",fontSize:14}}>Loading staff list...</div>
-            :staffList.length===0
-              ?<div style={{textAlign:"center",padding:"20px",display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{color:"#64748b",fontSize:14}}>No registered staff found yet.</div>
-                <a href="/register" style={{color:"#f59e0b",fontWeight:700,fontSize:14,textDecoration:"none"}}>Register here →</a>
-               </div>
-              :(staffList.filter(s=>s.name.toLowerCase().includes(staffSearch.toLowerCase()))).map(s=>(
-                <button key={s.id} style={{display:"flex",alignItems:"center",gap:14,padding:"16px",borderRadius:14,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",width:"100%"}}
-                  onClick={()=>{
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <label style={{fontSize:13,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Enter your last name</label>
+            <input
+              style={{background:"rgba(255,255,255,0.08)",border:"2px solid rgba(255,255,255,0.15)",borderRadius:14,padding:"18px 20px",color:"#f1f5f9",fontSize:20,width:"100%",fontFamily:"inherit",outline:"none",textAlign:"center",fontWeight:700,letterSpacing:"0.05em"}}
+              placeholder="Last name..."
+              value={staffSearch}
+              onChange={e=>{setStaffSearch(e.target.value);setLoginError("");}}
+              onKeyDown={e=>{
+                if(e.key==="Enter"){
+                  const matches=staffList.filter(s=>s.name.toLowerCase().split(" ").pop()===staffSearch.toLowerCase().trim());
+                  if(matches.length===1){
+                    const s=matches[0];
                     const role=s.role.toLowerCase();
                     if(role.includes("admin")){window.location.href="/hub";return;}
                     if(role.includes("med unit 1")||role.includes("med 1")){window.location.href="/hub?role=med1";return;}
@@ -162,18 +164,47 @@ export default function FieldApp(){
                     setRoleType(matched||"bar_manager");
                     setName(s.location||"Moon Stage 1");
                     setLoggedIn(true);
-                  }}>
-                  <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#d97706)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:"#1a1a00",flexShrink:0}}>
-                    {s.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
-                  </div>
-                  <div>
-                    <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>{s.name}</div>
-                    <div style={{fontSize:13,color:"#64748b"}}>{s.role} · {s.location||"No location"}</div>
-                  </div>
-                </button>
-              ))
-          }
-          <a href="/register" style={{textAlign:"center",fontSize:13,color:"#475569",marginTop:8,textDecoration:"none"}}>Not on the list? <span style={{color:"#f59e0b",fontWeight:700}}>Register here →</span></a>
+                  } else if(matches.length===0){
+                    setLoginError("No match found. Check spelling or register below.");
+                  }
+                }
+              }}
+            />
+          </div>
+
+          {/* MATCHES */}
+          {staffSearch.length>=2&&(()=>{
+            const matches=staffList.filter(s=>s.name.toLowerCase().split(" ").pop().startsWith(staffSearch.toLowerCase().trim()));
+            if(matches.length===0) return <div style={{fontSize:14,color:"#ef4444",textAlign:"center",padding:"8px"}}>No match found. Check spelling or register below.</div>;
+            return matches.map(s=>(
+              <button key={s.id} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 20px",borderRadius:14,border:"2px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.08)",cursor:"pointer",textAlign:"left",width:"100%"}}
+                onClick={()=>{
+                  const role=s.role.toLowerCase();
+                  if(role.includes("admin")){window.location.href="/hub";return;}
+                  if(role.includes("med unit 1")||role.includes("med 1")){window.location.href="/hub?role=med1";return;}
+                  if(role.includes("med unit 2")||role.includes("med 2")){window.location.href="/hub?role=med2";return;}
+                  if(role.includes("overnight")||role.includes("cleaning")||role.includes("night crew")){
+                    setStaffName(s.name);setRoleType("overnight");setName(s.location||"Festival Grounds");setLoggedIn(true);return;
+                  }
+                  setStaffName(s.name);
+                  const matched=Object.keys(ROLE_TYPES).find(k=>ROLE_TYPES[k].label.toLowerCase()===s.role.toLowerCase().trim());
+                  setRoleType(matched||"bar_manager");
+                  setName(s.location||"Moon Stage 1");
+                  setLoggedIn(true);
+                }}>
+                <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#d97706)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:900,color:"#1a1a00",flexShrink:0}}>
+                  {s.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
+                </div>
+                <div>
+                  <div style={{fontSize:17,fontWeight:800,color:"#f1f5f9"}}>{s.name}</div>
+                  <div style={{fontSize:13,color:"#94a3b8"}}>{s.role} · {s.location||""}</div>
+                </div>
+              </button>
+            ));
+          })()}
+
+          {loginError&&<div style={{fontSize:14,color:"#ef4444",textAlign:"center"}}>{loginError}</div>}
+          <a href="/register" style={{textAlign:"center",fontSize:13,color:"#475569",marginTop:4,textDecoration:"none"}}>Not registered? <span style={{color:"#f59e0b",fontWeight:700}}>Register here →</span></a>
         </div>
       </div>
     </div>

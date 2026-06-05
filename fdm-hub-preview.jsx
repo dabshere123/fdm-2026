@@ -1607,16 +1607,31 @@ Reply YES to acknowledge.`
       {/* SECTION 1: COMMAND */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
         <div style={{...S.sectionHdr,fontSize:13,fontWeight:900,padding:"8px 12px 6px"}}>📡 Command</div>
-        {/* ROW 1: Activate 911 + Lost Child side by side */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"10px 10px 6px"}}>
-          <button style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,padding:"16px 8px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.25),rgba(120,0,0,0.1))",cursor:"pointer",boxShadow:"0 0 10px rgba(200,0,0,0.2)",minHeight:90}} onClick={()=>{set911({active:true,by:"Admin",at:now(),info:{}});setView("911");}}>
-            <span style={{fontSize:28}}>🚨</span>
-            <span style={{fontSize:14,fontWeight:900,color:"#fff",textAlign:"center",lineHeight:1.2}}>{nineOneOne.active?"🚨 911 Called\nTap to Notify Staff":"Activate 911\nEMS / Fire"}</span>
+        {/* ROW 1: 911 Activation Notify + Lost Child */}
+        <div style={{padding:"10px 10px 6px",display:"flex",flexDirection:"column",gap:8}}>
+          <button style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.8)":"rgba(180,0,0,0.4)"}`,background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.2),rgba(180,0,0,0.15))":"rgba(180,0,0,0.06)",cursor:"pointer",boxShadow:nineOneOne.active?"0 0 14px rgba(239,68,68,0.35)":"none"}}
+            onClick={()=>{
+              if(nineOneOne.active){
+                const msg=`🚨 911 ACTIVE 🚨\n\nEMS/Fire has been called.\nLOCATION: ${nineOneOne.info?.location||"Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature||""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
+                sendGroupMe(msg,["admin","medical"]);
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(e=>console.log(e));
+                fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"911_active",officers:mpdOfficers,location:nineOneOne.info?.location||"Festival Grounds",situation:msg})}).catch(e=>console.log(e));
+                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"911",label:"911 Alert — Admin/Med/MPD",msg},...p]);
+              } else {
+                set911({active:true,by:"Admin",at:now(),info:{}});
+                setView("911");
+              }
+            }}>
+            <span style={{fontSize:22}}>🚨</span>
+            <div style={{flex:1,textAlign:"left"}}>
+              <div style={{fontSize:14,fontWeight:900,color:nineOneOne.active?"#fca5a5":"#f87171"}}>{nineOneOne.active?"911 Active — Tap to Notify Admin/Med/MPD":"911 Activation — Tap to Notify"}</div>
+              <div style={{fontSize:11,color:"#64748b"}}>{nineOneOne.active?"Fires GroupMe + SMS + MPD voice":"Tap after calling 911"}</div>
+            </div>
           </button>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <button style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:"10px 8px",borderRadius:12,border:`2px solid ${lostChildCalls.length>0?"rgba(234,179,8,0.7)":"rgba(245,158,11,0.3)"}`,background:lostChildCalls.length>0?"linear-gradient(135deg,rgba(234,179,8,0.2),rgba(202,138,4,0.1))":"rgba(255,255,255,0.03)",cursor:"pointer",position:"relative",minHeight:60}} onClick={()=>{setCallFilter(["lost_child"]);setCallFilterTitle("Lost Child");setCallTab("active");setView("callqueue");}}>
+            <button style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",borderRadius:12,border:`2px solid ${lostChildCalls.length>0?"rgba(234,179,8,0.7)":"rgba(245,158,11,0.3)"}`,background:lostChildCalls.length>0?"linear-gradient(135deg,rgba(234,179,8,0.2),rgba(202,138,4,0.1))":"rgba(255,255,255,0.03)",cursor:"pointer",position:"relative"}} onClick={()=>{setCallFilter(["lost_child"]);setCallFilterTitle("Lost Child");setCallTab("active");setView("callqueue");}}>
               <span style={{fontSize:22}}>🧒</span>
-              <span style={{fontSize:14,fontWeight:800,color:lostChildCalls.length>0?"#fcd34d":"#94a3b8",textAlign:"center"}}>Lost Child{lostChildCalls.length>0?` (${lostChildCalls.length})`:""}</span>
+              <span style={{fontSize:15,fontWeight:800,color:lostChildCalls.length>0?"#fcd34d":"#94a3b8"}}>Lost Child{lostChildCalls.length>0?` (${lostChildCalls.length})`:""}</span>
               {lostChildCalls.length>0&&<div style={{position:"absolute",top:6,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{lostChildCalls.length}</div>}
             </button>
             <button style={{padding:"7px",borderRadius:8,border:"1px solid rgba(234,179,8,0.4)",background:"rgba(234,179,8,0.08)",color:"#fcd34d",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLcView(true)}>➕ Report Lost Child</button>
@@ -1892,6 +1907,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [medReqProblem,setMedReqProblem]=useState("");
   const [medReqDetails,setMedReqDetails]=useState("");
   const [medReqSubmitting,setMedReqSubmitting]=useState(false);
+  const [showWalkIn,setShowWalkIn]=useState(false);
   const [wiComplaint,setWiComplaint]=useState("");
   const [wiDetails,setWiDetails]=useState("");
   const walkIns=(calls||[]).filter(c=>c.type==="walk_in"&&c.unit===role);
@@ -1949,22 +1965,12 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
     </div>
   );
 
-  const [medTab,setMedTab]=useState("calls");
 
   return(
-    <div style={{display:"flex",flexDirection:"column",gap:0}}>
+    <div style={{display:"flex",flexDirection:"column",gap:12,padding:"12px 16px 32px"}}>
 
-      {/* TAB BAR */}
-      <div style={{display:"flex",borderBottom:"2px solid rgba(255,255,255,0.08)",background:"rgba(0,0,0,0.2)"}}>
-        {[["calls","📋 Calls"],["walkin","🏥 Walk-In"],["request","📤 Request"],["nine11","🚨 911"]].map(([id,label])=>(
-          <button key={id} style={{flex:1,padding:"12px 4px",border:"none",background:"none",color:medTab===id?"#f59e0b":"#64748b",fontSize:13,fontWeight:medTab===id?800:400,cursor:"pointer",borderBottom:medTab===id?"2px solid #f59e0b":"2px solid transparent",marginBottom:-2}} onClick={()=>setMedTab(id)}>{label}</button>
-        ))}
-      </div>
-
-      <div style={{display:"flex",flexDirection:"column",gap:10,padding:"12px 16px 32px"}}>
-
-      {/* ACTIVE CALLS TAB */}
-      {medTab==="calls"&&<>
+      {/* ACTIVE CALLS */}
+      <>
         {/* ACTIVE CALLS */}
       {allActive.length>0&&<>
         <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Active Calls ({allActive.length})</div>
@@ -2001,28 +2007,34 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
       {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"16px 0",fontSize:14}}>No active calls — standing by</div>}
 
-      </>}
+      </>
 
-      {/* WALK-IN TAB */}
-      {medTab==="walkin"&&<>
-        <div style={{fontSize:15,fontWeight:800,color:"#a855f7",marginBottom:4}}>🏥 Walk-In Patient</div>
-        <div style={{fontSize:13,color:"#64748b",marginBottom:8}}>Log a patient who walked in to the medical tent.</div>
-        <Fld label="Chief Complaint *" value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)} ph="e.g. Heat exhaustion, laceration, chest pain" required large/>
-        <Fld label="Additional Details" value={wiDetails} onChange={e=>setWiDetails(e.target.value)} ph="Age, gender, condition, vitals..." multi/>
-        <button style={{background:"linear-gradient(135deg,#a855f7,#7c3aed)",border:"none",borderRadius:12,padding:"16px",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={()=>{doWalkIn();setMedTab("calls");}}>🏥 Log Walk-In</button>
-        {walkIns.length>0&&<>
-          <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",marginTop:8}}>Walk-In Log ({walkIns.length})</div>
-          {walkIns.map(c=>(
-            <div key={c.id} style={{borderRadius:10,border:"1px solid rgba(168,85,247,0.3)",background:"rgba(168,85,247,0.06)",padding:"12px",display:"flex",flexDirection:"column",gap:4}}>
-              <div style={{fontSize:14,fontWeight:700,color:"#d8b4fe"}}>{c.problem}</div>
-              <div style={{fontSize:12,color:"#64748b"}}>{c.history?.[0]?.ts} · {c.status}</div>
-            </div>
-          ))}
-        </>}
-      </>}
+      {/* WALK-IN PATIENT BUTTON */}
+      <div style={{background:"rgba(168,85,247,0.08)",borderRadius:14,border:"1px solid rgba(168,85,247,0.3)",overflow:"hidden"}}>
+        <div style={{background:"rgba(168,85,247,0.2)",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#d8b4fe",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span>🏥 Walk-In Patient{walkIns.length>0?` (${walkIns.length})`:""}</span>
+          <button style={{background:"rgba(168,85,247,0.2)",border:"1px solid rgba(168,85,247,0.4)",borderRadius:8,padding:"4px 12px",color:"#d8b4fe",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setShowWalkIn(p=>!p)}>{showWalkIn?"▲ Hide":"▼ Log Walk-In"}</button>
+        </div>
+        {showWalkIn&&(
+          <div style={{padding:"12px",display:"flex",flexDirection:"column",gap:10}}>
+            <Fld label="Chief Complaint *" value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)} ph="e.g. Heat exhaustion, laceration, chest pain" required large/>
+            <Fld label="Additional Details" value={wiDetails} onChange={e=>setWiDetails(e.target.value)} ph="Age, gender, condition, vitals..." multi/>
+            <button style={{background:"linear-gradient(135deg,#a855f7,#7c3aed)",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={()=>{doWalkIn();setShowWalkIn(false);}}>🏥 Log Walk-In Patient</button>
+          </div>
+        )}
+        {walkIns.length>0&&(
+          <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:6}}>
+            {walkIns.map(c=>(
+              <div key={c.id} style={{borderRadius:8,border:"1px solid rgba(168,85,247,0.2)",background:"rgba(168,85,247,0.05)",padding:"10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div><div style={{fontSize:13,fontWeight:700,color:"#d8b4fe"}}>{c.problem}</div><div style={{fontSize:11,color:"#64748b"}}>{c.history?.[0]?.ts} · {c.status}</div></div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* REQUEST TAB */}
-      {medTab==="request"&&<>
+      {/* REQUEST */}
+      <>
 
       {/* 911 ACTIVATION SECTION */}
       <div style={{background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(180,0,0,0.1))":"rgba(180,0,0,0.06)",borderRadius:14,border:`1px solid ${nineOneOne.active?"rgba(239,68,68,0.5)":"rgba(180,0,0,0.3)"}`,overflow:"hidden"}}>
@@ -2093,51 +2105,9 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         </div>
       </div>
 
-      </>}
+      </>
 
-      {/* 911 TAB */}
-      {medTab==="nine11"&&<>
-        <div style={{background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(180,0,0,0.1))":"rgba(180,0,0,0.06)",borderRadius:14,border:`1px solid ${nineOneOne.active?"rgba(239,68,68,0.5)":"rgba(180,0,0,0.3)"}`,overflow:"hidden"}}>
-          <div style={{background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.3),rgba(180,0,0,0.2))":"rgba(180,0,0,0.15)",padding:"12px 14px",fontSize:14,fontWeight:900,color:nineOneOne.active?"#fca5a5":"#f87171",textTransform:"uppercase",letterSpacing:"0.06em"}}>
-            {nineOneOne.active?"🚨 EMS INBOUND — ACTIVE":"🚨 911 Activation"}
-          </div>
-          {nineOneOne.active&&(
-            <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:6}}>
-              {nineOneOne.info?.location&&<div style={{fontSize:14,fontWeight:700,color:"#fff"}}>📍 {nineOneOne.info.location}</div>}
-              {nineOneOne.info?.nature&&<div style={{fontSize:13,color:"#fca5a5"}}>{nineOneOne.info.nature}</div>}
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>By {nineOneOne.by}{nineOneOne.info?.activatedBy?" · "+nineOneOne.info.activatedBy:""} · {nineOneOne.at}</div>
-            </div>
-          )}
-          <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:8}}>
-            <button style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:10,border:`1px solid ${nineOneOne.active?"rgba(239,68,68,0.6)":"rgba(239,68,68,0.3)"}`,background:nineOneOne.active?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left"}}
-              onClick={()=>{
-                if(nineOneOne.active){
-                  const msg=`🚨 911 ACTIVE 🚨\n\nEMS/Fire has been called.\nLOCATION: ${nineOneOne.info?.location||"Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature||""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
-                  if(sendGroupMe) sendGroupMe(msg,["admin","medical"]);
-                } else {
-                  const activeCall=myActive?.[0]||unassigned?.[0];
-                  set911({active:true,by:role,at:new Date().toLocaleTimeString(),info:{location:activeCall?.location||"",nature:activeCall?.problem||""}});
-                  setView("911");
-                  if(sendGroupMe) sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS/Fire has been called. Stand by.`,["admin","medical"]);
-                }
-              }}>
-              <span style={{fontSize:24}}>🚨</span>
-              <div style={{flex:1}}>
-                <div style={{fontSize:15,fontWeight:900,color:nineOneOne.active?"#fca5a5":"#f87171"}}>{nineOneOne.active?"Tap to Notify Admin & Med":"Tap to Notify of 911 Activation"}</div>
-                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{nineOneOne.active?"Fires GroupMe + SMS to Admin and Med":"Tap after calling 911 — alerts Admin and Med"}</div>
-              </div>
-            </button>
-            {nineOneOne.active&&(
-              <button style={{display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:10,border:"1px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.08)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("911")}>
-                <span style={{fontSize:20}}>📋</span>
-                <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#6ee7b7"}}>Update / View 911 Details</div><div style={{fontSize:11,color:"#64748b"}}>Add location, nature, staging info</div></div>
-              </button>
-            )}
-          </div>
-        </div>
-      </>}
 
-      </div>
     </div>
   );
 }

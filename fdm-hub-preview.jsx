@@ -502,7 +502,7 @@ function HubApp({onBack}){
         ].filter(Boolean).join("\n");
         // Lost child — SMS + voice + MPD on acknowledge
         fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({message:msg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Lost child alert. ${call.problem||""}. Location: ${call.location}. All staff please be on alert.`})
+          body:JSON.stringify({message:finalMsg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Lost child alert. ${call.problem||""}. Location: ${call.location}. All staff please be on alert.`})
         }).catch(e=>console.log(e));
         fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({type:"lost_child",officers:mpdOfficers,location:call.location,situation:msg})
@@ -646,7 +646,7 @@ function HubApp({onBack}){
   // BROADCAST VIEW
   if(view==="alert") return(
     <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><BB onClick={()=>{setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");}}/><span style={S.panelTitle}>Broadcast Alert</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>Broadcast Alert</span><BB onClick={()=>{setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");}}/></div>
       {!alertView?(
         <div style={S.cWrap}>
           {BROADCAST_ALERTS.map(t=>(
@@ -661,9 +661,11 @@ function HubApp({onBack}){
         const selectedReason=alertFields._reason||"";
         const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]");
         const preview=editedMsg||msgBase;
-        return(<div style={S.cWrap}>
-          <BB onClick={()=>setAlertView(null)}/>
-          <div style={{display:"inline-flex",alignSelf:"flex-start",padding:"4px 12px",borderRadius:20,fontSize:13,fontWeight:600,color:"#fff",background:t?.color,marginTop:8}}>{t?.label}</div>
+        return(<><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 8px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.95)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+            <div style={{display:"inline-flex",padding:"4px 12px",borderRadius:20,fontSize:13,fontWeight:600,color:"#fff",background:t?.color}}>{t?.label}</div>
+            <BB onClick={()=>setAlertView(null)}/>
+          </div>
+          <div style={S.cWrap}>
           <div style={{fontSize:12,color:"#a855f7",background:"rgba(168,85,247,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(168,85,247,0.2)",fontWeight:600}}>📞 Voice call + SMS fires to all teams</div>
           {t?.fields?.map(f=>f.type==="select"?(
             <div key={f.key} style={{display:"flex",flexDirection:"column",gap:6}}><label style={S.lbl}>{f.label}</label>
@@ -748,6 +750,52 @@ function HubApp({onBack}){
             </div>
           )}
 
+          {/* STAGE/AREA TARGETING */}
+          {t.id==="weather_imminent"&&(()=>{
+            const wTypes=alertFields._weatherTypes||[];
+            const isHeavy=wTypes.some(w=>["Thunderstorm","Severe Thunderstorm","High Winds","Tornado Watch","Tornado Warning"].includes(w));
+            const isRain=wTypes.some(w=>["Rain Storm","Torrential Rain / Downpour","Thunderstorm"].includes(w));
+            const AREAS=["Moon Stage","Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
+            const RAIN_AREAS=["Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
+            // Auto-set areas when weather type changes
+            const autoAreas=isHeavy?["All Areas",...AREAS]:isRain?RAIN_AREAS:[];
+            const selected=alertFields._areasOverridden?(alertFields._targetAreas||[]):autoAreas;
+            return(
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Areas Affected</label>
+                  {alertFields._areasOverridden&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:11,cursor:"pointer"}} onClick={()=>setAlertFields(p=>({...p,_areasOverridden:false,_targetAreas:[]}))}>↩ Reset to auto</button>}
+                </div>
+                {isHeavy&&!alertFields._areasOverridden&&<div style={{fontSize:12,color:"#ef4444",background:"rgba(220,38,38,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(220,38,38,0.2)",fontWeight:700}}>⚡ ALL AREAS — Full shutdown protocol</div>}
+                {isRain&&!isHeavy&&!alertFields._areasOverridden&&<div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(245,158,11,0.2)",fontWeight:700}}>🌧️ Moon Stage stays open (tent). All other areas notified.</div>}
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {["All Areas",...AREAS].map(area=>{
+                    const sel=selected.includes(area);
+                    return(
+                      <button key={area} style={{padding:"10px 14px",borderRadius:8,border:`2px solid ${sel?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.1)"}`,background:sel?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",color:sel?"#fbbf24":"#64748b",fontSize:13,fontWeight:sel?800:400,cursor:"pointer"}}
+                        onClick={()=>{
+                          const cur=selected;
+                          let next;
+                          if(area==="All Areas"){
+                            next=sel?[]:["All Areas",...AREAS];
+                          } else {
+                            next=sel?cur.filter(x=>x!==area):[...cur,area];
+                          }
+                          setAlertFields(p=>({...p,_targetAreas:next,_areasOverridden:true}));
+                          setEditedMsg("");
+                        }}>
+                        {sel?"✓ ":""}{area}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selected.length>0&&<div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(245,158,11,0.2)"}}>
+                  📍 Notifying: {selected.filter(a=>a!=="All Areas").join(", ")||"All Areas"}
+                </div>}
+              </div>
+            );
+          })()}
+
           {/* ESTIMATED ARRIVAL (for weather/delays) */}
           {(t.id==="weather_imminent"||t.id==="event_delayed")&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -777,10 +825,24 @@ function HubApp({onBack}){
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{
   const msg=editedMsg||preview;
-  setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
-  setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg},...p]);
+  // Build targeted areas string for weather
+  const wTypes=alertFields._weatherTypes||[];
+  const isHeavy=wTypes.some(w=>["Thunderstorm","Severe Thunderstorm","High Winds","Tornado Watch","Tornado Warning"].includes(w));
+  const isRain=wTypes.some(w=>["Rain Storm","Torrential Rain / Downpour"].includes(w));
+  const RAIN_AREAS=["Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
+  const ALL_AREAS=["Moon Stage","Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
+  let effectiveAreas=alertFields._areasOverridden?(alertFields._targetAreas||[]).filter(a=>a!=="All Areas"):isHeavy?ALL_AREAS:isRain?RAIN_AREAS:[];
+  let areasStr="";
+  if(t.id==="weather_imminent"&&effectiveAreas.length>0){
+    if(isHeavy&&!alertFields._areasOverridden) areasStr="\nAFFECTED: ALL AREAS — Full Shutdown Protocol";
+    else if(isRain&&!alertFields._areasOverridden) areasStr="\nAFFECTED: "+RAIN_AREAS.join(", ")+"\nMoon Stage remains open (tent)";
+    else areasStr="\nAFFECTED: "+effectiveAreas.join(", ");
+  }
+  const finalMsg=msg+(areasStr?areasStr:"");
+  setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:finalMsg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
+  setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:finalMsg},...p]);
   // GroupMe
-  sendGroupMe(`FDM 2026 — ${t.label}\n\n${msg}`, alertFields._gmChannels||["all_staff","admin"]);
+  sendGroupMe(`FDM 2026 — ${t.label}\n\n${finalMsg}`, alertFields._gmChannels||["all_staff","admin"]);
   // SMS + Voice to Admin only
   if(alertFields._smsChannels?.includes("sms_all")){
     fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},
@@ -791,7 +853,7 @@ function HubApp({onBack}){
   playAlert("broadcast");
   setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
 }}>🚀 SEND NOW</button>
-        </div>);
+        </div></>);
       })()}
     </div></div>
   );
@@ -1055,7 +1117,7 @@ Reply YES to acknowledge.`
   // ─── LOST CHILD VIEW ─────────────────────────────────────────────────────────
   if(lcView) return(
     <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><span style={S.panelTitle}>🧒 Report Lost Child</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>🧒 Report Lost Child</span><BB onClick={()=>setLcView(false)}/></div>
       <div style={S.cWrap}>
         <div style={{fontSize:14,color:"#fcd34d",fontWeight:700,background:"rgba(202,138,4,0.1)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:8,padding:"10px 12px"}}>📋 Gather info from parent/guardian first, then fill in below.</div>
         <Fld label="Child Age *" value={lcFields?.age||""} onChange={e=>setLcFields(p=>({...p,age:e.target.value}))} ph="e.g. 6" required large/>
@@ -1296,7 +1358,7 @@ Reply YES to acknowledge.`
         <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>911 Active · Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
       </div>
 
-      <div style={S.panelHd}><span style={S.panelTitle}>911 Incident Details</span><BB onClick={()=>setView("home")} label="← Back"/></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>911 Incident Details</span><BB onClick={()=>setView("home")}/><BB onClick={()=>setView("home")} label="← Back"/></div>
 
       <div style={S.cWrap}>
         {/* ALL INCIDENT INFO */}

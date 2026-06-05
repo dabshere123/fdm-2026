@@ -85,6 +85,7 @@ export default function FieldApp(){const onBack=()=>{};
     financial4:     {label:"Financial 4",            requests:["lost_child","emergency","security","lost_found","general"]},
     marketing:      {label:"Marketing",              requests:["lost_child","emergency","security","lost_found","general"]},
     misc:           {label:"MISC",                   requests:["lost_child","emergency","security","supplies","lost_found","general"]},
+    overnight:      {label:"Overnight Crew",          requests:[],overnight:true},
   };
 
   // FETCH STAFF LIST ON LOAD

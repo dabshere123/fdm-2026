@@ -347,8 +347,8 @@ function FieldApp() {
   };
 
   // LAST NAME LOGIN
-  const [lastNameInput, setLastNameInput] = (useState === null || useState === void 0 ? void 0 : useState(undefined)) || "";
-  const [loginError, setLoginError] = (useState === null || useState === void 0 ? void 0 : useState(undefined)) || "";
+  const [lastNameInput, setLastNameInput] = useState("");
+  const [loginError, setLoginError] = useState("");
   if (!loggedIn) return /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: "100vh",

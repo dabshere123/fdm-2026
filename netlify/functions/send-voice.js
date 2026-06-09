@@ -17,11 +17,12 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing to or message' }) };
   }
 
+  const safe = message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice" rate="90%">${message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Say>
-  <Pause length="1"/>
-  <Say voice="alice" rate="90%">${message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Say>
+  <Say voice="Polly.Matthew" language="en-US">${safe}</Say>
+  <Pause length="2"/>
+  <Say voice="Polly.Matthew" language="en-US">${safe}</Say>
 </Response>`;
 
   try {

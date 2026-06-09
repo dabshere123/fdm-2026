@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Fête de Marquette 2026 — QR Codes</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#0f172a;}
+.page-header{background:#0a0f1e;color:#f59e0b;padding:20px 24px;text-align:center;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+.page-header h1{font-size:22px;font-weight:900;}
+.page-header p{font-size:13px;color:#64748b;margin-top:4px;}
+.section{padding:16px 20px 8px;}
+.section h2{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#475569;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.card{border:2px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center;page-break-inside:avoid;}
+.card.radio{border-color:#f59e0b;}
+.card.reader{border-color:#6366f1;}
+.card img{width:120px;height:120px;margin:0 auto 8px;}
+.card .id{font-size:18px;font-weight:900;color:#0f172a;}
+.card .loc{font-size:11px;color:#64748b;margin-top:2px;line-height:1.4;}
+.card .type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.card.radio .type{color:#d97706;}
+.card.reader .type{color:#4f46e5;}
+@media print{
+  body{background:#fff;}
+  .page-header{background:#0a0f1e !important;}
+  .no-print{display:none;}
+  .card{break-inside:avoid;}
+}
+.print-btn{display:block;margin:16px auto;padding:12px 32px;background:#f59e0b;color:#0a0f1e;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="page-header">
+  <h1>Fête de Marquette 2026 — Equipment QR Codes</h1>
+  <p>Print and attach to each radio and credit card reader</p>
+</div>
+
+<div class="no-print" style="text-align:center;padding:16px;">
+  <button class="print-btn" onclick="window.print()">🖨️ Print QR Codes</button>
+</div>
+
+<div class="section">
+  <h2>📟 Radios (25)</h2>
+  <div class="grid" id="radios"></div>
+</div>
+
+<div class="section">
+  <h2>💳 Credit Card Readers (9)</h2>
+  <div class="grid" id="readers"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const BASE_URL = 'https://fdm2026.netlify.app/equipment';
+
+const RADIO_LOCATIONS = [
+  'Sun Left','Sun Right','Cabaret','Lafayette','Lagniappe',
+  'Moon Stage 1','Moon Stage 2','Kids/Family Fête','Merch Tent',
+  'Cabaret Stage','Lafayette Stage','Lagniappe Stage','Moon Stage',
+  'First Aid 1','First Aid 2','Medical Tent',
+  'Devin','Marketing','MPD 1','MPD 2','MPD 3','MPD 4',
+  'Extra 1','Extra 2','Extra 3'
+];
+
+const READER_LOCATIONS = [
+  'Sun Left','Sun Right','Cabaret','Lafayette','Lagniappe',
+  'Moon Stage 1','Moon Stage 2','Kids/Family Fête','Merch Tent'
+];
+
+function makeCard(container, id, label, location, type) {
+  const card = document.createElement('div');
+  card.className = `card ${type}`;
+  card.innerHTML = `
+    <div class="type">${type === 'radio' ? '📟 Radio' : '💳 Reader'}</div>
+    <div id="qr-${id}"></div>
+    <div class="id">${id}</div>
+    <div class="loc">${location}</div>
+  `;
+  container.appendChild(card);
+  
+  setTimeout(() => {
+    new QRCode(document.getElementById(`qr-${id}`), {
+      text: `${BASE_URL}?item=${id}&type=${type}`,
+      width: 120,
+      height: 120,
+      colorDark: '#0f172a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }, 10);
+}
+
+const radioGrid = document.getElementById('radios');
+const readerGrid = document.getElementById('readers');
+
+RADIO_LOCATIONS.forEach((loc, i) => {
+  const id = `R${String(i+1).padStart(2,'0')}`;
+  makeCard(radioGrid, id, `Radio ${i+1}`, loc, 'radio');
+});
+
+READER_LOCATIONS.forEach((loc, i) => {
+  const id = `CR${String(i+1).padStart(2,'0')}`;
+  makeCard(readerGrid, id, `Reader ${i+1}`, loc, 'reader');
+});
+</script>
+</body>
+</html>

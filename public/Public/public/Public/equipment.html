@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>FDM Equipment Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0f1e"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0a0f1e;}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+var useState = React.useState,
+  useEffect = React.useEffect,
+  useRef = React.useRef,
+  useCallback = React.useCallback,
+  useMemo = React.useMemo;
+
+// ── EQUIPMENT DATA ─────────────────────────────────────────────────────────────
+const LOCATIONS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Kids/Family Fete", "Merch Tent", "Cabaret Stage", "Lafayette Stage", "Lagniappe Stage", "Moon Stage", "First Aid 1", "First Aid 2", "Medical Tent", "Devin", "Marketing", "MPD 1", "MPD 2", "MPD 3", "MPD 4", "Extra 1", "Extra 2", "Extra 3"];
+const READER_LOCATIONS = ["Sun Left", "Sun Right", "Cabaret", "Lafayette", "Lagniappe", "Moon Stage 1", "Moon Stage 2", "Kids/Family Fete", "Merch Tent"];
+
+// 25 radios — serial numbers filled in by admin
+const INIT_RADIOS = Array.from({
+  length: 25
+}, (_, i) => ({
+  id: `R${String(i + 1).padStart(2, "0")}`,
+  num: i + 1,
+  label: `Radio ${i + 1}`,
+  serial: "",
+  location: i < 9 ? READER_LOCATIONS[i] : LOCATIONS[i] || `Extra ${i - 21}`,
+  paired: i < 9,
+  // radios 1-9 paired with readers
+  status: "available",
+  // available | out | returned
+  checkedOutBy: "",
+  checkedOutAt: null,
+  checkedInBy: "",
+  checkedInAt: null,
+  notes: ""
+}));
+const INIT_READERS = Array.from({
+  length: 9
+}, (_, i) => ({
+  id: `CR${String(i + 1).padStart(2, "0")}`,
+  num: i + 1,
+  label: `Reader ${i + 1}`,
+  serial: "",
+  location: READER_LOCATIONS[i],
+  status: "available",
+  checkedOutBy: "",
+  checkedOutAt: null,
+  checkedInBy: "",
+  checkedInAt: null,
+  notes: ""
+}));
+const ADMIN_PIN = "8510";
+const STORAGE_KEY = "fdm2026-equipment-v1";
+function ts() {
+  return new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+function dt() {
+  return new Date().toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+function load() {
+  try {
+    const d = localStorage.getItem(STORAGE_KEY);
+    return d ? JSON.parse(d) : null;
+  } catch {
+    return null;
+  }
+}
+function save(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {}
+}
+const S = {
+  root: {
+    minHeight: "100vh",
+    background: "#0a0f1e",
+    fontFamily: "'DM Sans',sans-serif",
+    color: "#e2e8f0"
+  },
+  panel: {
+    maxWidth: 800,
+    margin: "0 auto",
+    padding: "0 0 80px"
+  },
+  hdr: {
+    background: "linear-gradient(135deg,rgba(245,158,11,0.15),rgba(234,179,8,0.08))",
+    borderBottom: "1px solid rgba(245,158,11,0.2)",
+    padding: "16px 20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  card: {
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.03)",
+    marginBottom: 8,
+    overflow: "hidden"
+  },
+  inp: {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 8,
+    padding: "10px 12px",
+    color: "#f1f5f9",
+    fontSize: 14,
+    fontFamily: "inherit",
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box"
+  },
+  btn: {
+    border: "none",
+    borderRadius: 10,
+    padding: "12px 18px",
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: "pointer"
+  }
+};
+function Badge({
+  status
+}) {
+  const map = {
+    available: ["#10b981", "✅ Available"],
+    out: ["#f59e0b", "📤 Checked Out"],
+    returned: ["#6366f1", "✅ Returned"]
+  };
+  const [color, label] = map[status] || ["#64748b", "Unknown"];
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: color + "22",
+      color,
+      border: `1px solid ${color}44`,
+      borderRadius: 6,
+      padding: "3px 8px",
+      fontSize: 11,
+      fontWeight: 700
+    }
+  }, label);
+}
+function EquipmentTracker() {
+  const saved = load();
+  const [radios, setRadios] = useState((saved === null || saved === void 0 ? void 0 : saved.radios) || INIT_RADIOS);
+  const [readers, setReaders] = useState((saved === null || saved === void 0 ? void 0 : saved.readers) || INIT_READERS);
+  const [tab, setTab] = useState("overview"); // overview | radios | readers | admin | notifications
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [searchQ, setSearchQ] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedItem, setSelectedItem] = useState(null); // {type,id}
+  const [checkoutName, setCheckoutName] = useState("");
+  const [checkinName, setCheckinName] = useState("");
+  const [itemNotes, setItemNotes] = useState("");
+  const [adminSearch, setAdminSearch] = useState("");
+  const [editSerial, setEditSerial] = useState({}); // {id: serial}
+  const [log, setLog] = useState((saved === null || saved === void 0 ? void 0 : saved.log) || []);
+  const [notifSettings, setNotifSettings] = useState((saved === null || saved === void 0 ? void 0 : saved.notifSettings) || {
+    preEventTime: "09:00",
+    followupMins: "30",
+    broadcastSMS: "Hi team! This is Fête de Marquette Operations. A friendly reminder to stop by the festival office to pick up your radio and/or credit card reader before your shift begins. See you out there!",
+    followupSMS: "Hi [Name], this is Fête de Marquette Operations. It looks like your equipment hasn't been picked up yet. Please stop by the festival office as soon as possible to grab your radio and/or credit card reader(s). Thanks!",
+    postEventTime: "22:00",
+    postBroadcastSMS: "Hi team! Fête de Marquette is wrapping up for the night. Please return your radio and/or credit card reader to the festival office within the next 30 minutes. Thank you for a great night!",
+    post30SMS: "Hi [Name], this is Fête de Marquette Operations. We still have your equipment on record. Please return your radio and/or credit card reader to the festival office as soon as possible. Thank you!"
+  });
+  const [notifDirty, setNotifDirty] = useState(false);
+
+  // Persist
+  useEffect(() => {
+    save({
+      radios,
+      readers,
+      log,
+      notifSettings
+    });
+  }, [radios, readers, log, notifSettings]);
+  const addLog = msg => setLog(p => [{
+    id: Date.now(),
+    ts: dt(),
+    msg
+  }, ...p].slice(0, 200));
+
+  // Derived
+  const allItems = [...radios.map(r => ({
+    ...r,
+    type: "radio"
+  })), ...readers.map(r => ({
+    ...r,
+    type: "reader"
+  }))];
+  const out = allItems.filter(i => i.status === "out").length;
+  const available = allItems.filter(i => i.status === "available").length;
+  const returned = allItems.filter(i => i.status === "returned").length;
+  function updateRadio(id, fields) {
+    setRadios(p => p.map(r => r.id === id ? {
+      ...r,
+      ...fields
+    } : r));
+  }
+  function updateReader(id, fields) {
+    setReaders(p => p.map(r => r.id === id ? {
+      ...r,
+      ...fields
+    } : r));
+  }
+  function updateItem(type, id, fields) {
+    type === "radio" ? updateRadio(id, fields) : updateReader(id, fields);
+  }
+  function checkout(type, id, name) {
+    if (!name.trim()) return;
+    updateItem(type, id, {
+      status: "out",
+      checkedOutBy: name,
+      checkedOutAt: ts(),
+      checkedInBy: "",
+      checkedInAt: null
+    });
+    addLog(`${id} checked out to ${name}`);
+    setCheckoutName("");
+    setSelectedItem(null);
+  }
+  function checkin(type, id, byName, isAdmin) {
+    updateItem(type, id, {
+      status: "returned",
+      checkedInBy: byName || (isAdmin ? "Admin Override" : ""),
+      checkedInAt: ts()
+    });
+    addLog(`${id} checked in by ${byName || "Admin"}`);
+    setCheckinName("");
+    setSelectedItem(null);
+  }
+  function resetAll() {
+    if (!window.confirm("Reset all equipment to Available? This clears all check-out data.")) return;
+    setRadios(p => p.map(r => ({
+      ...r,
+      status: "available",
+      checkedOutBy: "",
+      checkedOutAt: null,
+      checkedInBy: "",
+      checkedInAt: null
+    })));
+    setReaders(p => p.map(r => ({
+      ...r,
+      status: "available",
+      checkedOutBy: "",
+      checkedOutAt: null,
+      checkedInBy: "",
+      checkedInAt: null
+    })));
+    addLog("Full reset by Admin");
+  }
+  const selItem = selectedItem ? (selectedItem.type === "radio" ? radios : readers).find(i => i.id === selectedItem.id) : null;
+
+  // Filter helper
+  function filterItems(items) {
+    return items.filter(i => {
+      const q = searchQ.toLowerCase();
+      const matchQ = !q || i.label.toLowerCase().includes(q) || i.location.toLowerCase().includes(q) || (i.serial || "").toLowerCase().includes(q) || (i.checkedOutBy || "").toLowerCase().includes(q);
+      const matchS = filterStatus === "all" || i.status === filterStatus;
+      return matchQ && matchS;
+    });
+  }
+
+  // ── ITEM DETAIL MODAL ─────────────────────────────────────────────────────────
+  if (selectedItem && selItem) {
+    const isOut = selItem.status === "out";
+    const isAvail = selItem.status === "available";
+    return /*#__PURE__*/React.createElement("div", {
+      style: S.root
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.panel
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.hdr
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(255,255,255,0.1)",
+        color: "#f1f5f9"
+      },
+      onClick: () => setSelectedItem(null)
+    }, "\u2190 Back"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 800,
+        color: "#f59e0b",
+        fontSize: 16
+      }
+    }, selItem.label), /*#__PURE__*/React.createElement(Badge, {
+      status: selItem.status
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "20px 16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.card,
+        padding: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 10,
+        fontSize: 13
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#64748b",
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 4
+      }
+    }, "Location"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#f1f5f9",
+        fontWeight: 700
+      }
+    }, selItem.location)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#64748b",
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 4
+      }
+    }, "Serial #"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#f1f5f9",
+        fontWeight: 700
+      }
+    }, selItem.serial || "—")), selItem.checkedOutBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#64748b",
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 4
+      }
+    }, "Checked Out By"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#fbbf24",
+        fontWeight: 700
+      }
+    }, selItem.checkedOutBy)), selItem.checkedOutAt && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#64748b",
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 4
+      }
+    }, "At"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#f1f5f9"
+      }
+    }, selItem.checkedOutAt)), selItem.checkedInBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#64748b",
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 4
+      }
+    }, "Checked In By"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#6ee7b7",
+        fontWeight: 700
+      }
+    }, selItem.checkedInBy)), selItem.checkedInAt && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#64748b",
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 4
+      }
+    }, "At"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#f1f5f9"
+      }
+    }, selItem.checkedInAt)))), isAvail && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#94a3b8",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "Check Out"), /*#__PURE__*/React.createElement("input", {
+      style: S.inp,
+      placeholder: "Name checking out *",
+      value: checkoutName,
+      onChange: e => setCheckoutName(e.target.value),
+      onKeyDown: e => e.key === "Enter" && checkout(selectedItem.type, selItem.id, checkoutName)
+    }), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "linear-gradient(135deg,#f59e0b,#d97706)",
+        color: "#0a0f1e",
+        opacity: !checkoutName ? 0.5 : 1
+      },
+      disabled: !checkoutName,
+      onClick: () => checkout(selectedItem.type, selItem.id, checkoutName)
+    }, "\uD83D\uDCE4 Check Out")), isOut && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#94a3b8",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "Check In / Return"), /*#__PURE__*/React.createElement("input", {
+      style: S.inp,
+      placeholder: "Your name (returning)",
+      value: checkinName,
+      onChange: e => setCheckinName(e.target.value),
+      onKeyDown: e => e.key === "Enter" && checkin(selectedItem.type, selItem.id, checkinName, false)
+    }), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "linear-gradient(135deg,#10b981,#059669)",
+        color: "#fff",
+        opacity: !checkinName ? 0.5 : 1
+      },
+      disabled: !checkinName,
+      onClick: () => checkin(selectedItem.type, selItem.id, checkinName, false)
+    }, "\u2705 Return Equipment"), adminUnlocked && /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(99,102,241,0.3)",
+        color: "#a5b4fc",
+        border: "1px solid rgba(99,102,241,0.5)"
+      },
+      onClick: () => checkin(selectedItem.type, selItem.id, "Admin Override", true)
+    }, "\uD83D\uDC64 Admin Override \u2014 Force Check In")), selItem.status === "returned" && adminUnlocked && /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(245,158,11,0.2)",
+        color: "#fbbf24",
+        border: "1px solid rgba(245,158,11,0.4)"
+      },
+      onClick: () => {
+        updateItem(selectedItem.type, selItem.id, {
+          status: "available",
+          checkedOutBy: "",
+          checkedOutAt: null,
+          checkedInBy: "",
+          checkedInAt: null
+        });
+        addLog(`${selItem.id} reset to Available by Admin`);
+        setSelectedItem(null);
+      }
+    }, "\uD83D\uDD04 Reset to Available"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: "#64748b",
+        textTransform: "uppercase"
+      }
+    }, "Notes"), /*#__PURE__*/React.createElement("textarea", {
+      style: {
+        ...S.inp,
+        resize: "vertical",
+        height: 80
+      },
+      placeholder: "Optional notes...",
+      value: selItem.notes,
+      onChange: e => updateItem(selectedItem.type, selItem.id, {
+        notes: e.target.value
+      })
+    })))));
+  }
+
+  // ── ADMIN PIN GATE ────────────────────────────────────────────────────────────
+  if (tab === "admin" && !adminUnlocked) {
+    return /*#__PURE__*/React.createElement("div", {
+      style: S.root
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.panel
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.hdr
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(255,255,255,0.1)",
+        color: "#f1f5f9"
+      },
+      onClick: () => setTab("overview")
+    }, "\u2190 Back"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 800,
+        color: "#f59e0b"
+      }
+    }, "Admin Access"), /*#__PURE__*/React.createElement("span", null)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "60px 24px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 40
+      }
+    }, "\uD83D\uDD10"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 18,
+        fontWeight: 800,
+        color: "#f1f5f9"
+      }
+    }, "Enter Admin PIN"), /*#__PURE__*/React.createElement("input", {
+      style: {
+        ...S.inp,
+        maxWidth: 200,
+        textAlign: "center",
+        fontSize: 28,
+        fontWeight: 900,
+        letterSpacing: "0.2em"
+      },
+      type: "password",
+      maxLength: 4,
+      placeholder: "\u2022 \u2022 \u2022 \u2022",
+      value: pinInput,
+      onChange: e => {
+        setPinInput(e.target.value);
+        setPinError("");
+      },
+      onKeyDown: e => {
+        if (e.key === "Enter") {
+          if (pinInput === ADMIN_PIN) {
+            setAdminUnlocked(true);
+          } else {
+            setPinError("Incorrect PIN");
+          }
+        }
+      }
+    }), pinError && /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#ef4444",
+        fontSize: 14
+      }
+    }, pinError), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "linear-gradient(135deg,#f59e0b,#d97706)",
+        color: "#0a0f1e"
+      },
+      onClick: () => {
+        if (pinInput === ADMIN_PIN) {
+          setAdminUnlocked(true);
+        } else {
+          setPinError("Incorrect PIN");
+        }
+      }
+    }, "Enter"))));
+  }
+
+  // ── NOTIFICATIONS TAB ─────────────────────────────────────────────────────────
+  if (tab === "notifications") {
+    return /*#__PURE__*/React.createElement("div", {
+      style: S.root
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.panel
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.hdr
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(255,255,255,0.1)",
+        color: "#f1f5f9"
+      },
+      onClick: () => setTab("overview")
+    }, "\u2190 Back"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 800,
+        color: "#f59e0b"
+      }
+    }, "\uD83D\uDD14 Notifications"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: notifDirty ? "linear-gradient(135deg,#10b981,#059669)" : "rgba(255,255,255,0.06)",
+        color: notifDirty ? "#fff" : "#64748b",
+        fontSize: 12
+      },
+      onClick: () => {
+        setNotifDirty(false);
+        addLog("Notification settings saved");
+      }
+    }, "\uD83D\uDCBE Save")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 20
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.card,
+        border: "1px solid rgba(245,158,11,0.3)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(245,158,11,0.15)",
+        padding: "10px 14px",
+        fontSize: 13,
+        fontWeight: 900,
+        color: "#fbbf24",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "\u23F0 Pre-Event"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 6
+      }
+    }, "Broadcast Reminder Time (daily)"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569",
+        marginBottom: 6
+      }
+    }, "SMS fires to all staff with assigned bundles at this time each event day"), /*#__PURE__*/React.createElement("input", {
+      type: "time",
+      style: {
+        ...S.inp,
+        width: "auto"
+      },
+      value: notifSettings.preEventTime,
+      onChange: e => {
+        setNotifSettings(p => ({
+          ...p,
+          preEventTime: e.target.value
+        }));
+        setNotifDirty(true);
+      }
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 6
+      }
+    }, "Individual Follow-up (mins before event)"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569",
+        marginBottom: 6
+      }
+    }, "If bundle not picked up \u2192 individual SMS + voice fires"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, ["15", "30", "45", "60"].map(m => /*#__PURE__*/React.createElement("button", {
+      key: m,
+      style: {
+        ...S.btn,
+        padding: "8px 14px",
+        background: notifSettings.followupMins === m ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.04)",
+        color: notifSettings.followupMins === m ? "#fbbf24" : "#64748b",
+        border: `1px solid ${notifSettings.followupMins === m ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.1)"}`,
+        fontSize: 13
+      },
+      onClick: () => {
+        setNotifSettings(p => ({
+          ...p,
+          followupMins: m
+        }));
+        setNotifDirty(true);
+      }
+    }, m, "m")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 6
+      }
+    }, "\uD83D\uDCF1 Broadcast SMS"), /*#__PURE__*/React.createElement("textarea", {
+      style: {
+        ...S.inp,
+        resize: "vertical",
+        height: 90,
+        lineHeight: 1.5
+      },
+      value: notifSettings.broadcastSMS,
+      onChange: e => {
+        setNotifSettings(p => ({
+          ...p,
+          broadcastSMS: e.target.value
+        }));
+        setNotifDirty(true);
+      }
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 6
+      }
+    }, "\uD83D\uDCF1 Follow-up SMS"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#475569",
+        marginBottom: 4
+      }
+    }, "[Name] will be replaced with the staff member's name"), /*#__PURE__*/React.createElement("textarea", {
+      style: {
+        ...S.inp,
+        resize: "vertical",
+        height: 90,
+        lineHeight: 1.5
+      },
+      value: notifSettings.followupSMS,
+      onChange: e => {
+        setNotifSettings(p => ({
+          ...p,
+          followupSMS: e.target.value
+        }));
+        setNotifDirty(true);
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        flex: 1,
+        background: "rgba(245,158,11,0.15)",
+        color: "#fbbf24",
+        border: "1px solid rgba(245,158,11,0.3)",
+        fontSize: 13
+      },
+      onClick: () => alert("Sim: Would send broadcast SMS to all assigned staff")
+    }, "\uD83D\uDCE4 Sim Broadcast"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        flex: 1,
+        background: "rgba(99,102,241,0.15)",
+        color: "#a5b4fc",
+        border: "1px solid rgba(99,102,241,0.3)",
+        fontSize: 13
+      },
+      onClick: () => alert("Sim: Would send individual follow-up to unpicked-up staff")
+    }, "\uD83D\uDCDE Sim Follow-up")))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.card,
+        border: "1px solid rgba(99,102,241,0.3)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(99,102,241,0.15)",
+        padding: "10px 14px",
+        fontSize: 13,
+        fontWeight: 900,
+        color: "#a5b4fc",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "\uD83C\uDF19 Post-Event"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 6
+      }
+    }, "Event Close Time"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569",
+        marginBottom: 6
+      }
+    }, "Broadcast fires at close. 30-min follow-up runs automatically."), /*#__PURE__*/React.createElement("input", {
+      type: "time",
+      style: {
+        ...S.inp,
+        width: "auto"
+      },
+      value: notifSettings.postEventTime,
+      onChange: e => {
+        setNotifSettings(p => ({
+          ...p,
+          postEventTime: e.target.value
+        }));
+        setNotifDirty(true);
+      }
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 6
+      }
+    }, "\uD83D\uDCF1 Broadcast SMS"), /*#__PURE__*/React.createElement("textarea", {
+      style: {
+        ...S.inp,
+        resize: "vertical",
+        height: 90,
+        lineHeight: 1.5
+      },
+      value: notifSettings.postBroadcastSMS,
+      onChange: e => {
+        setNotifSettings(p => ({
+          ...p,
+          postBroadcastSMS: e.target.value
+        }));
+        setNotifDirty(true);
+      }
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        marginBottom: 6
+      }
+    }, "\uD83D\uDCF1 30-Min Follow-up SMS"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#475569",
+        marginBottom: 4
+      }
+    }, "[Name] will be replaced with the staff member's name"), /*#__PURE__*/React.createElement("textarea", {
+      style: {
+        ...S.inp,
+        resize: "vertical",
+        height: 90,
+        lineHeight: 1.5
+      },
+      value: notifSettings.post30SMS,
+      onChange: e => {
+        setNotifSettings(p => ({
+          ...p,
+          post30SMS: e.target.value
+        }));
+        setNotifDirty(true);
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        flex: 1,
+        background: "rgba(99,102,241,0.15)",
+        color: "#a5b4fc",
+        border: "1px solid rgba(99,102,241,0.3)",
+        fontSize: 13
+      },
+      onClick: () => alert("Sim: Would send post-event broadcast SMS")
+    }, "\uD83D\uDCE4 Sim Broadcast"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        flex: 1,
+        background: "rgba(239,68,68,0.15)",
+        color: "#fca5a5",
+        border: "1px solid rgba(239,68,68,0.3)",
+        fontSize: 13
+      },
+      onClick: () => alert("Sim: Would send 30-min follow-up to unreturned staff")
+    }, "\uD83D\uDCDE Sim 30-Min")))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.card,
+        border: "1px solid rgba(16,185,129,0.3)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(16,185,129,0.12)",
+        padding: "10px 14px",
+        fontSize: 13,
+        fontWeight: 900,
+        color: "#6ee7b7",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "\u2709\uFE0F Custom Individual Reminder"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#64748b"
+      }
+    }, "Send a one-off SMS + voice call to any person"), /*#__PURE__*/React.createElement("input", {
+      style: S.inp,
+      placeholder: "Name"
+    }), /*#__PURE__*/React.createElement("input", {
+      style: S.inp,
+      placeholder: "Phone Number",
+      type: "tel"
+    }), /*#__PURE__*/React.createElement("textarea", {
+      style: {
+        ...S.inp,
+        resize: "vertical",
+        height: 80
+      },
+      placeholder: "Message",
+      defaultValue: "Please return your equipment to the festival office."
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        alignSelf: "center"
+      }
+    }, "Quick Templates"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        padding: "6px 12px",
+        background: "rgba(255,255,255,0.06)",
+        color: "#94a3b8",
+        fontSize: 12,
+        border: "1px solid rgba(255,255,255,0.1)"
+      },
+      onClick: () => {}
+    }, "Pick up your equipment"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        padding: "6px 12px",
+        background: "rgba(255,255,255,0.06)",
+        color: "#94a3b8",
+        fontSize: 12,
+        border: "1px solid rgba(255,255,255,0.1)"
+      },
+      onClick: () => {}
+    }, "Return your equipment")), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "linear-gradient(135deg,#10b981,#059669)",
+        color: "#fff"
+      }
+    }, "\uD83D\uDCF1 Send SMS + Voice Call"))))));
+  }
+
+  // ── ADMIN TAB ─────────────────────────────────────────────────────────────────
+  if (tab === "admin") {
+    const adminItems = allItems.filter(i => {
+      const q = adminSearch.toLowerCase();
+      return !q || i.label.toLowerCase().includes(q) || i.location.toLowerCase().includes(q) || (i.serial || "").toLowerCase().includes(q) || (i.checkedOutBy || "").toLowerCase().includes(q);
+    });
+    return /*#__PURE__*/React.createElement("div", {
+      style: S.root
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.panel
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.hdr
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(255,255,255,0.1)",
+        color: "#f1f5f9"
+      },
+      onClick: () => setTab("overview")
+    }, "\u2190 Back"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 800,
+        color: "#f59e0b"
+      }
+    }, "\u2699\uFE0F Admin"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(239,68,68,0.2)",
+        color: "#fca5a5",
+        border: "1px solid rgba(239,68,68,0.4)",
+        fontSize: 12
+      },
+      onClick: resetAll
+    }, "Reset All")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "12px 16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.card,
+        border: "1px solid rgba(245,158,11,0.3)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(245,158,11,0.12)",
+        padding: "10px 14px",
+        fontSize: 13,
+        fontWeight: 900,
+        color: "#fbbf24",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "\uD83D\uDCDF Serial Numbers"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "10px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 0
+      }
+    }, radios.map(r => /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 4px",
+        borderBottom: "1px solid rgba(255,255,255,0.04)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#f1f5f9",
+        minWidth: 70
+      }
+    }, r.label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        flex: 1
+      }
+    }, r.location), /*#__PURE__*/React.createElement("input", {
+      style: {
+        ...S.inp,
+        width: 130,
+        fontSize: 13,
+        padding: "6px 10px"
+      },
+      placeholder: "Serial #",
+      value: editSerial[r.id] !== undefined ? editSerial[r.id] : r.serial,
+      onChange: e => setEditSerial(p => ({
+        ...p,
+        [r.id]: e.target.value
+      })),
+      onBlur: () => {
+        if (editSerial[r.id] !== undefined) {
+          updateRadio(r.id, {
+            serial: editSerial[r.id]
+          });
+          setEditSerial(p => {
+            const n = {
+              ...p
+            };
+            delete n[r.id];
+            return n;
+          });
+        }
+      }
+    }))), readers.map(r => /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 4px",
+        borderBottom: "1px solid rgba(255,255,255,0.04)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#f1f5f9",
+        minWidth: 70
+      }
+    }, r.label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        flex: 1
+      }
+    }, r.location), /*#__PURE__*/React.createElement("input", {
+      style: {
+        ...S.inp,
+        width: 130,
+        fontSize: 13,
+        padding: "6px 10px"
+      },
+      placeholder: "Serial #",
+      value: editSerial[r.id] !== undefined ? editSerial[r.id] : r.serial,
+      onChange: e => setEditSerial(p => ({
+        ...p,
+        [r.id]: e.target.value
+      })),
+      onBlur: () => {
+        if (editSerial[r.id] !== undefined) {
+          updateReader(r.id, {
+            serial: editSerial[r.id]
+          });
+          setEditSerial(p => {
+            const n = {
+              ...p
+            };
+            delete n[r.id];
+            return n;
+          });
+        }
+      }
+    }))))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.card,
+        border: "1px solid rgba(99,102,241,0.3)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(99,102,241,0.12)",
+        padding: "10px 14px",
+        fontSize: 13,
+        fontWeight: 900,
+        color: "#a5b4fc",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "\uD83D\uDC64 Admin Check-In Override"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "10px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#64748b",
+        marginBottom: 10
+      }
+    }, "Force check-in any item \u2014 use when staff can't scan themselves"), /*#__PURE__*/React.createElement("input", {
+      style: {
+        ...S.inp,
+        marginBottom: 8
+      },
+      placeholder: "Search by name, location, serial...",
+      value: adminSearch,
+      onChange: e => setAdminSearch(e.target.value)
+    }), adminItems.filter(i => i.status === "out").map(i => /*#__PURE__*/React.createElement("div", {
+      key: i.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px",
+        borderRadius: 10,
+        border: "1px solid rgba(245,158,11,0.2)",
+        background: "rgba(245,158,11,0.06)",
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: "#f1f5f9"
+      }
+    }, i.label, " ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: "#64748b"
+      }
+    }, "\xB7 ", i.location)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#fbbf24"
+      }
+    }, "Out: ", i.checkedOutBy, " \xB7 ", i.checkedOutAt)), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        padding: "8px 14px",
+        background: "rgba(16,185,129,0.2)",
+        color: "#6ee7b7",
+        border: "1px solid rgba(16,185,129,0.4)",
+        fontSize: 12
+      },
+      onClick: () => checkin(i.type, i.id, "Admin Override", true)
+    }, "\u2705 Force In"))), adminItems.filter(i => i.status === "out").length === 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#475569",
+        padding: "8px 0"
+      }
+    }, "No items currently checked out."))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.card
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "10px 14px",
+        fontSize: 13,
+        fontWeight: 900,
+        color: "#94a3b8",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "\uD83D\uDCCB Activity Log"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "0 10px 10px",
+        maxHeight: 300,
+        overflowY: "auto"
+      }
+    }, log.length === 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#475569",
+        padding: "8px 0"
+      }
+    }, "No activity yet."), log.map(l => /*#__PURE__*/React.createElement("div", {
+      key: l.id,
+      style: {
+        padding: "8px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        fontSize: 12
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#f59e0b",
+        marginRight: 8
+      }
+    }, l.ts), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#94a3b8"
+      }
+    }, l.msg))))))), /*#__PURE__*/React.createElement(BottomNav, {
+      tab: tab,
+      setTab: setTab,
+      adminUnlocked: adminUnlocked
+    }));
+  }
+
+  // ── ITEMS LIST (radios / readers) ─────────────────────────────────────────────
+  if (tab === "radios" || tab === "readers") {
+    const items = filterItems(tab === "radios" ? radios.map(r => ({
+      ...r,
+      type: "radio"
+    })) : readers.map(r => ({
+      ...r,
+      type: "reader"
+    })));
+    return /*#__PURE__*/React.createElement("div", {
+      style: S.root
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.panel
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.hdr
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.btn,
+        background: "rgba(255,255,255,0.1)",
+        color: "#f1f5f9"
+      },
+      onClick: () => setTab("overview")
+    }, "\u2190 Back"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 800,
+        color: "#f59e0b"
+      }
+    }, tab === "radios" ? "📻 Radios" : "💳 Readers"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: "#64748b"
+      }
+    }, items.length, " items")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "12px 16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      style: S.inp,
+      placeholder: "Search...",
+      value: searchQ,
+      onChange: e => setSearchQ(e.target.value)
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, ["all", "available", "out", "returned"].map(s => /*#__PURE__*/React.createElement("button", {
+      key: s,
+      style: {
+        ...S.btn,
+        padding: "6px 12px",
+        fontSize: 12,
+        background: filterStatus === s ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.04)",
+        color: filterStatus === s ? "#fbbf24" : "#64748b",
+        border: `1px solid ${filterStatus === s ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.08)"}`
+      },
+      onClick: () => setFilterStatus(s)
+    }, s.charAt(0).toUpperCase() + s.slice(1)))), items.map(i => /*#__PURE__*/React.createElement("button", {
+      key: i.id,
+      style: {
+        ...S.card,
+        padding: "12px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        border: `1px solid ${i.status === "out" ? "rgba(245,158,11,0.3)" : i.status === "returned" ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.08)"}`,
+        cursor: "pointer",
+        background: i.status === "out" ? "rgba(245,158,11,0.05)" : i.status === "returned" ? "rgba(99,102,241,0.05)" : "rgba(255,255,255,0.02)",
+        textAlign: "left",
+        width: "100%"
+      },
+      onClick: () => setSelectedItem({
+        type: i.type,
+        id: i.id
+      })
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        background: i.status === "out" ? "rgba(245,158,11,0.2)" : i.status === "returned" ? "rgba(99,102,241,0.2)" : "rgba(16,185,129,0.15)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 18,
+        flexShrink: 0
+      }
+    }, i.type === "radio" ? "📻" : "💳"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 800,
+        color: "#f1f5f9"
+      }
+    }, i.label, " ", i.serial && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: "#64748b",
+        fontWeight: 400
+      }
+    }, "#", i.serial)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#64748b"
+      }
+    }, i.location), i.status === "out" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#fbbf24",
+        marginTop: 2
+      }
+    }, "\u2192 ", i.checkedOutBy, " \xB7 ", i.checkedOutAt), i.status === "returned" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#a5b4fc",
+        marginTop: 2
+      }
+    }, "Returned by ", i.checkedInBy, " \xB7 ", i.checkedInAt)), /*#__PURE__*/React.createElement(Badge, {
+      status: i.status
+    }))))), /*#__PURE__*/React.createElement(BottomNav, {
+      tab: tab,
+      setTab: setTab,
+      adminUnlocked: adminUnlocked
+    }));
+  }
+
+  // ── OVERVIEW ──────────────────────────────────────────────────────────────────
+  const outItems = allItems.filter(i => i.status === "out");
+  const notReturned = allItems.filter(i => i.status === "out" || i.status === "available").filter(i => i.checkedOutBy); // has been out and not returned
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.panel
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 900,
+      color: "#f59e0b"
+    }
+  }, "\uD83D\uDCFB Equipment Tracker"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#64748b"
+    }
+  }, "F\xEAte de Marquette 2026")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.btn,
+      background: "rgba(245,158,11,0.15)",
+      color: "#fbbf24",
+      border: "1px solid rgba(245,158,11,0.3)",
+      fontSize: 12
+    },
+    onClick: () => setTab("notifications")
+  }, "\uD83D\uDD14 Notifications")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, [["📤", out, "Out", "rgba(245,158,11,0.3)", "#fbbf24"], ["✅", available, "Available", "rgba(16,185,129,0.3)", "#6ee7b7"], ["🔄", returned, "Returned", "rgba(99,102,241,0.3)", "#a5b4fc"]].map(([icon, count, label, bg, color]) => /*#__PURE__*/React.createElement("div", {
+    key: label,
+    style: {
+      ...S.card,
+      padding: "14px 10px",
+      textAlign: "center",
+      border: `1px solid ${bg}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 900,
+      color
+    }
+  }, count), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#64748b",
+      textTransform: "uppercase",
+      fontWeight: 700,
+      marginTop: 2
+    }
+  }, icon, " ", label)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.card,
+      padding: "16px",
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      cursor: "pointer",
+      border: "1px solid rgba(245,158,11,0.2)",
+      textAlign: "left"
+    },
+    onClick: () => setTab("radios")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 28
+    }
+  }, "\uD83D\uDCFB"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: "#f1f5f9"
+    }
+  }, "Radios"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#64748b"
+    }
+  }, radios.filter(r => r.status === "out").length, " out of ", radios.length))), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.card,
+      padding: "16px",
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      cursor: "pointer",
+      border: "1px solid rgba(99,102,241,0.2)",
+      textAlign: "left"
+    },
+    onClick: () => setTab("readers")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 28
+    }
+  }, "\uD83D\uDCB3"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: "#f1f5f9"
+    }
+  }, "Readers"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#64748b"
+    }
+  }, readers.filter(r => r.status === "out").length, " out of ", readers.length)))), outItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 8
+    }
+  }, "Currently Out (", outItems.length, ")"), outItems.map(i => /*#__PURE__*/React.createElement("button", {
+    key: i.id,
+    style: {
+      ...S.card,
+      padding: "12px",
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 6,
+      border: "1px solid rgba(245,158,11,0.25)",
+      background: "rgba(245,158,11,0.04)",
+      cursor: "pointer",
+      textAlign: "left",
+      width: "100%"
+    },
+    onClick: () => setSelectedItem({
+      type: i.type,
+      id: i.id
+    })
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20
+    }
+  }, i.type === "radio" ? "📻" : "💳"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: "#f1f5f9"
+    }
+  }, i.label, " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "#64748b"
+    }
+  }, "\xB7 ", i.location)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#fbbf24"
+    }
+  }, i.checkedOutBy, " \xB7 ", i.checkedOutAt)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#64748b",
+      fontSize: 12
+    }
+  }, "\u2192")))), outItems.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "32px 0",
+      color: "#475569",
+      fontSize: 14
+    }
+  }, "All equipment accounted for \u2705"))), /*#__PURE__*/React.createElement(BottomNav, {
+    tab: tab,
+    setTab: setTab,
+    adminUnlocked: adminUnlocked
+  }));
+}
+function BottomNav({
+  tab,
+  setTab,
+  adminUnlocked
+}) {
+  const tabs = [["overview", "🏠", "Home"], ["radios", "📻", "Radios"], ["readers", "💳", "Readers"], ["admin", "⚙️", "Admin"]];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      background: "rgba(10,15,30,0.97)",
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      display: "flex",
+      zIndex: 100
+    }
+  }, tabs.map(([id, icon, label]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    style: {
+      flex: 1,
+      padding: "12px 0",
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 3
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20,
+      opacity: tab === id ? 1 : 0.5
+    },
+    onClick: () => setTab(id)
+  }, icon), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: tab === id ? "#f59e0b" : "#475569",
+      fontWeight: tab === id ? 700 : 400
+    }
+  }, label, id === "admin" && adminUnlocked ? " 🔓" : ""))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(EquipmentTracker,{}));
+</script>
+</body></html>

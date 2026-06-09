@@ -55,18 +55,18 @@ exports.handler = async (event) => {
 
   // Save to Airtable OvernightReports table
   try {
-    await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/OvernightReports`, {
+    await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/EODReports`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         fields: {
           EventDay: date,
-          CrewMember: generatedBy,
-          Status: 'EOD Report',
+          GeneratedBy: generatedBy,
+          TotalCalls: totalCalls,
           Narrative: reportText,
           Incidents: `Medical: ${breakdown.medical || 0}, Fire: ${breakdown.fire || 0}, Security: ${breakdown.security || 0}, Lost Child: ${breakdown.lostChild || 0}`,
           Notes: notes || '',
-          ShiftEnd: new Date().toISOString(),
+          GeneratedAt: generatedAt || new Date().toISOString(),
         }
       })
     });

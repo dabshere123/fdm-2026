@@ -30,6 +30,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         fields: {
           Name:       name,
+          FullName:   name,
           Role:       role,
           Location:   location || '',
           Phone:      phone,

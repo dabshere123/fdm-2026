@@ -40,7 +40,7 @@ async function sendSMS(to, message) {
 
 async function sendVoice(to, message) {
   const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN_}`).toString('base64');
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="alice" rate="90%">${message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Say><Pause length="1"/><Say voice="alice" rate="90%">${message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Say></Response>`;
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Matthew" language="en-US">${message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Say><Pause length="1"/><Say voice="Polly.Matthew" language="en-US">${message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Say></Response>`;
   await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
     method: 'POST',
     headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },

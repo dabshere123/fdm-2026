@@ -141,8 +141,18 @@ function Register() {
   const [smsConsent, setSmsConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [touched, setTouched] = useState(false);
   const finalLocation = location === "Other" ? locationCustom : location;
   const canSubmit = name && role && finalLocation && phone.replace(/\D/g, "").length >= 10 && workDays.length > 0;
+  const getValidationErrors = () => {
+    const errors = [];
+    if (!name.trim()) errors.push("Full name is required");
+    if (!role) errors.push("Role / position is required");
+    if (!finalLocation) errors.push("Station / location is required");
+    if (phone.replace(/\D/g, "").length < 10) errors.push("A valid 10-digit phone number is required");
+    if (workDays.length === 0) errors.push("Please select at least one event day");
+    return errors;
+  };
   const formatPhone = val => {
     const digits = val.replace(/\D/g, "").slice(0, 10);
     if (digits.length <= 3) return digits;
@@ -764,14 +774,40 @@ function Register() {
       lineHeight: 1.5
     }
   }, "Once you've joined, let operations know your username and we'll add you to the right channels."))), error && /*#__PURE__*/React.createElement("div", {
+    "data-error": true,
     style: {
       fontSize: 13,
       color: "#fca5a5",
-      background: "rgba(239,68,68,0.1)",
-      borderRadius: 8,
-      padding: "10px 12px"
+      background: "rgba(239,68,68,0.12)",
+      border: "1px solid rgba(239,68,68,0.4)",
+      borderRadius: 10,
+      padding: "14px 16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
     }
-  }, error), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 800,
+      color: "#f87171",
+      marginBottom: 2
+    }
+  }, "\u26A0\uFE0F Please fix the following before submitting:"), getValidationErrors().map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      fontSize: 13,
+      color: "#fca5a5",
+      display: "flex",
+      gap: 8,
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#ef4444",
+      flexShrink: 0
+    }
+  }, "\u2022"), /*#__PURE__*/React.createElement("span", null, e)))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(255,255,255,0.04)",
       border: "1px solid rgba(255,255,255,0.1)",

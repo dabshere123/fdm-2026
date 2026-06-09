@@ -1,3 +1,15 @@
 [build]
   publish = "public/Public/public/Public"
   command = ""
+
+[functions]
+  directory = "netlify/functions"
+
+[functions."auto-clear-staff"]
+  schedule = "*/30 * * * *"
+
+[functions."send-scheduled"]
+  schedule = "* * * * *"
+
+[functions."weather-monitor"]
+  schedule = "*/5 * * * *"

@@ -29,17 +29,16 @@ exports.handler = async (event) => {
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         fields: {
-          Name:         name,
-          Role:         role,
-          Location:     location || '',
-          Phone:        phone,
-          Days:         Array.isArray(days) ? days.join(', ') : days || '',
-          ShiftStart:   shiftStart || '',
-          ShiftEnd:     shiftEnd || '',
-          SMSConsent:   smsConsent ? 'Yes' : 'No',
-          GroupMe:      groupme || '',
-          Status:       'Approved',
-          RegisteredAt: new Date().toISOString()
+          Name:       name,
+          Role:       role,
+          Location:   location || '',
+          Phone:      phone,
+          Days:       Array.isArray(days) ? days.join(', ') : days || '',
+          ShiftStart: shiftStart || '',
+          ShiftEnd:   shiftEnd || '',
+          SMSConsent: smsConsent ? 'Yes' : 'No',
+          GroupMe:    groupme || '',
+          Status:     'Approved',
         }
       })
     });

@@ -10,7 +10,7 @@ exports.handler = async (event) => {
 
   try {
     const res = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}?filterByFormula={Status}="On Duty"&sort[0][field]=Name&sort[0][direction]=asc`,
+      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}?filterByFormula={MPDStatus}="OD"&sort[0][field]=Name&sort[0][direction]=asc`,
       { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
     );
     const data = await res.json();
@@ -20,7 +20,7 @@ exports.handler = async (event) => {
       name:   r.fields.Name   || '',
       badge:  r.fields.Badge  || '',
       phone:  r.fields.Phone  || '',
-      status: (r.fields.Status || 'On Duty').toLowerCase().replace(' ', '_'),
+      status: (r.fields.MPDStatus || 'On Duty').toLowerCase().replace(' ', '_'),
     }));
 
     return { statusCode: 200, headers, body: JSON.stringify({ officers }) };

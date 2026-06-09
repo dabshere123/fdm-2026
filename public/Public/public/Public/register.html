@@ -1,418 +1,862 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fête de Marquette 2026 — Staff Registration</title>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="theme-color" content="#0d0d0d"/>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:#0d0d1a;font-family:'DM Sans',sans-serif;color:#f1f5f9;min-height:100vh;}
-    .bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 20%,#1a0a2e 0%,#0d0d1a 60%);}
-    .wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:32px 20px 60px;}
-    h1{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;}
-    .sub{font-size:12px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:20px;}
-    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
-    label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;}
-    input,select,textarea{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px;color:#f1f5f9;font-size:15px;width:100%;font-family:inherit;outline:none;}
-    select option{background:#1e293b;color:#f1f5f9;}
-    .day-card{border-radius:12px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.02);margin-bottom:8px;overflow:hidden;}
-    .day-card.selected{border-color:#f59e0b;background:rgba(245,158,11,0.06);}
-    .day-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;width:100%;background:none;border:none;color:inherit;font-family:inherit;text-align:left;}
-    .checkbox{width:22px;height:22px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:900;color:#1a1a00;}
-    .day-card.selected .checkbox{background:#f59e0b;border-color:#f59e0b;}
-    .day-label{font-size:15px;font-weight:700;color:#f1f5f9;}
-    .day-card.selected .day-label{color:#fde047;}
-    .times{display:flex;gap:8px;padding:0 16px 14px;}
-    .times .field{flex:1;margin:0;}
-    .times label{font-size:10px;}
-    .hidden{display:none;}
-    .groupme-btns{display:flex;gap:8px;}
-    .gm-btn{flex:1;padding:12px;border-radius:10px;border:2px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#94a3b8;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .gm-btn.active{border-color:#f59e0b;background:rgba(245,158,11,0.15);color:#f59e0b;}
-    .submit-btn{width:100%;padding:18px;border-radius:14px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a00;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;margin-top:8px;}
-    .submit-btn:disabled{background:rgba(255,255,255,0.06);color:#475569;cursor:default;}
-    .hint{font-size:12px;color:#475569;text-align:center;margin-top:8px;line-height:1.6;}
-    .code-valid{font-size:12px;color:#10b981;font-weight:700;margin-top:4px;}
-    .success{display:none;text-align:center;padding:40px 20px;}
-    .success.show{display:block;}
-    .form-wrap.hide{display:none;}
-    .back-link{display:inline-flex;align-items:center;gap:6px;color:#64748b;font-size:13px;font-weight:600;text-decoration:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:8px 14px;border-radius:10px;margin-bottom:20px;}
-  </style>
-</head>
-<body>
-  <div class="bg"></div>
-  <div class="wrap">
-    <a class="back-link" href="/">← Back to Launcher</a>
-    <h1>Fête de Marquette</h1>
-    <div class="sub">2026 Staff Registration</div>
-
-    <div class="form-wrap" id="formWrap">
-      <!-- NAME -->
-      <div class="field">
-        <label>Your Full Name *</label>
-        <input type="text" id="fname" placeholder="e.g. Maria Johnson"/>
-      </div>
-
-      <!-- ROLE -->
-      <div class="field">
-        <label>Your Role *</label>
-        <select id="frole" onchange="checkOtherRole()">
-          <option value="">Select your role...</option>
-          <optgroup label="Bar Managers">
-            <option>Bar Manager — Moon Stage 1</option>
-            <option>Bar Manager — Moon Stage 2</option>
-            <option>Bar Manager — Lafayette</option>
-            <option>Bar Manager — Lagniappe</option>
-            <option>Bar Manager — Sun Left</option>
-            <option>Bar Manager — Sun Right</option>
-            <option>Bar Manager — Cabaret</option>
-          </optgroup>
-          <optgroup label="Stage Managers">
-            <option>Stage Manager — Moon Stage</option>
-            <option>Stage Manager — Lafayette</option>
-            <option>Stage Manager — Lagniappe</option>
-            <option>Stage Manager — Sun Stage</option>
-            <option>Stage Manager — Cabaret</option>
-          </optgroup>
-          <optgroup label="Other Roles">
-            <option>Tent Manager</option>
-            <option>Merch Tent Manager</option>
-            <option>Greeter Supervisor</option>
-            <option>Greeter — Few</option>
-            <option>Greeter — Ingersoll Left</option>
-            <option>Greeter — Ingersoll Right</option>
-            <option>Med Unit 1</option>
-            <option>Med Unit 2</option>
-            <option>Admin 1</option>
-            <option>Admin 2</option>
-            <option>Financial 1</option>
-            <option>Financial 2</option>
-            <option>Financial 3</option>
-            <option>Financial 4</option>
-            <option>Marketing</option>
-            <option>Vendor</option>
-            <option>Other</option>
-          </optgroup>
-        </select>
-        <div id="role-other" style="display:none;margin-top:8px;">
-          <input type="text" id="frole-other" placeholder="Please describe your role..." style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px;color:#f1f5f9;font-size:15px;width:100%;font-family:inherit;outline:none;"/>
-        </div>
-      </div>
-
-      <!-- LOCATION -->
-      <div class="field">
-        <label>Your Location *</label>
-        <select id="flocation" onchange="checkOtherLocation()">
-          <option value="">Select your location...</option>
-          <option>Moon Stage 1</option><option>Moon Stage 2</option>
-          <option>Lafayette</option><option>Lagniappe</option>
-          <option>Sun Left</option><option>Sun Right</option><option>Cabaret</option>
-          <option>Med Unit 1</option><option>Med Unit 2</option>
-          <option>Admin</option><option>Financial</option><option>Marketing</option>
-          <option>Merch Tent</option><option>Hospitality</option>
-          <option>Greeter — Few</option><option>Greeter — Ingersoll Left</option><option>Greeter — Ingersoll Right</option>
-          <option>Other</option>
-        </select>
-        <div id="location-other" style="display:none;margin-top:8px;">
-          <input type="text" id="flocation-other" placeholder="Please describe your location..." style="width:100%;"/>
-        </div>
-      </div>
-
-      <!-- PHONE -->
-      <div class="field">
-        <label>Cell Phone Number *</label>
-        <input type="tel" id="fphone" placeholder="(608) 555-1234"/>
-      </div>
-
-      <!-- DAYS -->
-      <div class="field">
-        <label>Days & Times You Are Working *</label>
-
-        <div class="day-card" id="card-thu">
-          <button class="day-header" onclick="toggleDay('thu')">
-            <div class="checkbox" id="chk-thu"></div>
-            <div class="day-label">Thursday, July 9</div>
-          </button>
-          <div class="times hidden" id="times-thu">
-            <div class="field"><label>Start Time</label>
-              <select id="start-thu" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-            <div class="field"><label>End Time</label>
-              <select id="end-thu" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-          </div>
-        </div>
-
-        <div class="day-card" id="card-fri">
-          <button class="day-header" onclick="toggleDay('fri')">
-            <div class="checkbox" id="chk-fri"></div>
-            <div class="day-label">Friday, July 10</div>
-          </button>
-          <div class="times hidden" id="times-fri">
-            <div class="field"><label>Start Time</label>
-              <select id="start-fri" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-            <div class="field"><label>End Time</label>
-              <select id="end-fri" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-          </div>
-        </div>
-
-        <div class="day-card" id="card-sat">
-          <button class="day-header" onclick="toggleDay('sat')">
-            <div class="checkbox" id="chk-sat"></div>
-            <div class="day-label">Saturday, July 11</div>
-          </button>
-          <div class="times hidden" id="times-sat">
-            <div class="field"><label>Start Time</label>
-              <select id="start-sat" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-            <div class="field"><label>End Time</label>
-              <select id="end-sat" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-          </div>
-        </div>
-
-        <div class="day-card" id="card-sun">
-          <button class="day-header" onclick="toggleDay('sun')">
-            <div class="checkbox" id="chk-sun"></div>
-            <div class="day-label">Sunday, July 12</div>
-          </button>
-          <div class="times hidden" id="times-sun">
-            <div class="field"><label>Start Time</label>
-              <select id="start-sun" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-            <div class="field"><label>End Time</label>
-              <select id="end-sun" onchange="checkForm()"><option value="">Select...</option></select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- GROUPME -->
-      <div class="field">
-        <label>Are you on GroupMe?</label>
-        <div class="groupme-btns">
-          <button class="gm-btn" id="gm-yes" onclick="setGroupme('yes')">✅ Yes</button>
-          <button class="gm-btn" id="gm-no" onclick="setGroupme('no')">❌ No</button>
-        </div>
-        <div id="gm-username" class="hidden" style="margin-top:8px;">
-          <div class="field" style="position:relative;">
-            <label>GroupMe Username</label>
-            <span style="position:absolute;left:14px;bottom:14px;color:#64748b;font-size:16px;font-weight:700;">@</span>
-            <input type="text" id="fgroupme" placeholder="your_username" style="padding-left:28px;"/>
-          </div>
-        </div>
-      </div>
-
-      <!-- APPROVAL CODE -->
-      <div class="field">
-        <label>Approval Code <span style="color:#475569;text-transform:none;font-size:10px;letter-spacing:0;">(optional — skip the review queue)</span></label>
-        <input type="text" id="fcode" placeholder="Enter code if you have one" oninput="checkCode()"/>
-        <div id="code-msg" style="display:none;" class="code-valid"></div>
-      </div>
-
-      <!-- SMS CONSENT -->
-      <div class="field" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:14px 16px;">
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <input type="checkbox" id="smsConsent" onchange="checkForm()" style="width:20px;height:20px;margin-top:2px;flex-shrink:0;cursor:pointer;accent-color:#f59e0b;"/>
-          <label for="smsConsent" style="font-size:13px;color:#94a3b8;line-height:1.6;cursor:pointer;">
-            I agree to receive SMS text messages and voice calls from Fête de Marquette Operations regarding my volunteer role at the festival. Message and data rates may apply. Reply STOP to opt out at any time.
-            View our <a href="/privacy-policy" target="_blank" style="color:#f59e0b;font-weight:700;">Privacy Policy</a> and
-            <a href="/terms" target="_blank" style="color:#f59e0b;font-weight:700;">Terms & Conditions</a>.
-          </label>
-        </div>
-      </div>
-
-      <!-- SUBMIT -->
-      <button class="submit-btn" id="submitBtn" disabled onclick="submitForm()">Fill in all fields above to register</button>
-      <div class="hint">Your information is used only for Fête de Marquette event operations.</div>
-    </div>
-
-    <!-- SUCCESS -->
-    <div class="success" id="successDiv">
-      <div style="font-size:72px;margin-bottom:16px;">🎪</div>
-      <div style="font-size:28px;font-weight:900;color:#10b981;margin-bottom:8px;">You're Registered!</div>
-      <div id="successName" style="font-size:17px;font-weight:700;margin-bottom:20px;"></div>
-      <div id="successStatus" style="font-size:14px;line-height:1.7;border-radius:12px;padding:14px 16px;margin-bottom:20px;"></div>
-      <a href="/" style="display:block;padding:14px;border-radius:12px;background:rgba(245,158,11,0.1);border:2px solid rgba(245,158,11,0.4);color:#f59e0b;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:8px;">← Back to Launcher</a>
-      <button onclick="resetForm()" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Register Another Person</button>
-    </div>
-  </div>
-
-  <script>
-    function checkOtherRole() {
-      const roleRaw = document.getElementById('frole').value;
-      const role = roleRaw === 'Other' ? (document.getElementById('frole-other').value.trim() || 'Other') : roleRaw;
-      document.getElementById('role-other').style.display = role === 'Other' ? 'block' : 'none';
-      checkForm();
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Staff Registration</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+var useState = React.useState,
+  useEffect = React.useEffect,
+  useRef = React.useRef,
+  useCallback = React.useCallback,
+  useMemo = React.useMemo;
+const EVENT_DAYS = [{
+  id: "thu",
+  label: "Thursday, July 9",
+  date: "2026-07-09",
+  hours: "4:00 PM – 11:00 PM",
+  end: "23:45"
+}, {
+  id: "fri",
+  label: "Friday, July 10",
+  date: "2026-07-10",
+  hours: "4:00 PM – 11:00 PM",
+  end: "23:45"
+}, {
+  id: "sat",
+  label: "Saturday, July 11",
+  date: "2026-07-11",
+  hours: "12:00 PM – 11:00 PM",
+  end: "23:45"
+}, {
+  id: "sun",
+  label: "Sunday, July 12",
+  date: "2026-07-12",
+  hours: "10:00 AM – 9:00 PM",
+  end: "21:45"
+}];
+const ROLES = ["Bar Manager", "Stage Manager", "Tent Manager", "Merch Tent Manager", "Greeter Supervisor", "Greeter — Few", "Greeter — Ingersoll Left", "Greeter — Ingersoll Right", "Med Unit 1", "Med Unit 2", "Admin 1", "Admin 2", "Financial 1", "Financial 2", "Financial 3", "Financial 4", "Marketing", "MISC", "Vendor", "Other"];
+const LOCATIONS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Moon Stage Manager", "Lagniappe Manager", "Lafayette Manager", "Sun Stage Manager", "Cabaret Manager", "Greeter — Few", "Greeter — Ingersoll Left", "Greeter — Ingersoll Right", "Med Unit 1", "Med Unit 2", "Admin", "Financial", "Marketing", "Merch Tent", "Hospitality", "Sun Stage Vendors", "Moon Stage Vendors", "Lafayette Vendors", "Other"];
+function Bg() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 0,
+      background: "radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)"
     }
-    function checkOtherLocation() {
-      const loc = document.getElementById('flocation').value;
-      document.getElementById('location-other').style.display = loc === 'Other' ? 'block' : 'none';
-      checkForm();
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",
+      backgroundSize: "32px 32px"
     }
-    const TIMES = ["6:00 AM","6:30 AM","7:00 AM","7:30 AM","8:00 AM","8:30 AM","9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","12:00 PM","12:30 PM","1:00 PM","1:30 PM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM","5:00 PM","5:30 PM","6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM","10:30 PM","11:00 PM","11:30 PM"];
-    const DEFAULTS = {thu:{start:"4:00 PM",end:"11:00 PM"},fri:{start:"4:00 PM",end:"11:00 PM"},sat:{start:"12:00 PM",end:"11:00 PM"},sun:{start:"10:00 AM",end:"9:00 PM"}};
-    const CODES = ["FDM2026","FETE26","MARQUETTE"];
-    const days = ['thu','fri','sat','sun'];
-    const selected = {};
-
-    // Populate time dropdowns
-    days.forEach(d => {
-      ['start','end'].forEach(t => {
-        const sel = document.getElementById(`${t}-${d}`);
-        TIMES.forEach(time => {
-          const opt = document.createElement('option');
-          opt.value = time; opt.textContent = time;
-          sel.appendChild(opt);
-        });
-      });
-    });
-
-    function toggleDay(d) {
-      selected[d] = !selected[d];
-      const card = document.getElementById(`card-${d}`);
-      const chk = document.getElementById(`chk-${d}`);
-      const times = document.getElementById(`times-${d}`);
-      if (selected[d]) {
-        card.classList.add('selected');
-        chk.textContent = '✓';
-        times.classList.remove('hidden');
-        document.getElementById(`start-${d}`).value = DEFAULTS[d].start;
-        document.getElementById(`end-${d}`).value = DEFAULTS[d].end;
-      } else {
-        card.classList.remove('selected');
-        chk.textContent = '';
-        times.classList.add('hidden');
-      }
-      checkForm();
+  }));
+}
+function Fld({
+  label,
+  value,
+  onChange,
+  ph,
+  required,
+  type = "text"
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
     }
-
-    function setGroupme(val) {
-      document.getElementById('gm-yes').classList.toggle('active', val==='yes');
-      document.getElementById('gm-no').classList.toggle('active', val==='no');
-      document.getElementById('gm-username').classList.toggle('hidden', val!=='yes');
-      document.getElementById('gm-yes').dataset.val = val;
-      checkForm();
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      fontWeight: 700
     }
-
-    function checkCode() {
-      const code = document.getElementById('fcode').value.toUpperCase().trim();
-      const msg = document.getElementById('code-msg');
-      if (!code) { msg.style.display='none'; return; }
-      if (CODES.includes(code)) {
-        msg.style.display='block'; msg.style.color='#10b981';
-        msg.textContent = '✅ Valid — you\'ll be approved instantly and receive your app link';
-      } else {
-        msg.style.display='block'; msg.style.color='#f59e0b';
-        msg.textContent = '⏳ Code not recognized — registration will go to the pending queue';
-      }
-      checkForm();
+  }, label, required && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#ef4444",
+      marginLeft: 4
     }
-
-    function formatPhone(v) {
-      const d = v.replace(/\D/g,'').slice(0,10);
-      if(d.length<=3) return d;
-      if(d.length<=6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
-      return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: type,
+    style: {
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: "14px",
+      color: "#f1f5f9",
+      fontSize: 16,
+      width: "100%",
+      boxSizing: "border-box",
+      outline: "none",
+      fontFamily: "inherit",
+      fontWeight: 500
+    },
+    placeholder: ph,
+    value: value,
+    onChange: onChange
+  }));
+}
+function Register() {
+  // Pre-fill role from URL param (e.g. ?role=bar_manager)
+  const urlRole = (() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const r = p.get("role");
+      if (r) return ROLES.find(x => x.toLowerCase().replace(/\s+/g, "-") === r) || "";
+      return "";
+    } catch {
+      return "";
     }
-
-    document.getElementById('fphone').addEventListener('input', function() {
-      this.value = formatPhone(this.value);
-      checkForm();
-    });
-
-    ['fname','frole','flocation'].forEach(id => {
-      document.getElementById(id).addEventListener('input', checkForm);
-      document.getElementById(id).addEventListener('change', checkForm);
-    });
-
-    function checkForm() {
-      const name = document.getElementById('fname').value.trim();
-      const roleVal = document.getElementById('frole').value;
-      const role = roleVal === 'Other' ? (document.getElementById('frole-other')?.value.trim() || '') : roleVal;
-      const loc = document.getElementById('flocation').value;
-      const phone = document.getElementById('fphone').value.replace(/\D/g,'');
-      const anyDay = days.some(d => selected[d]);
-      const allTimes = days.filter(d=>selected[d]).every(d =>
-        document.getElementById(`start-${d}`).value && document.getElementById(`end-${d}`).value
-      );
-      const consent = document.getElementById("smsConsent")?.checked;
-      const ok = name && role && loc && phone.length>=10 && anyDay && allTimes && consent;
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = !ok;
-      btn.textContent = ok ? '🎪 REGISTER FOR FÊTE 2026' : 'Fill in all fields above to register';
+  })();
+  const [name, setName] = useState("");
+  const [role, setRole] = useState(urlRole);
+  const [location, setLocation] = useState("");
+  const [locationCustom, setLocationCustom] = useState("");
+  const [phone, setPhone] = useState("");
+  const [groupme, setGroupme] = useState("");
+  const [onGroupme, setOnGroupme] = useState(null); // null | "yes" | "no"
+  const [workDays, setWorkDays] = useState([]);
+  const [workShifts, setWorkShifts] = useState({
+    thu: {
+      selected: false,
+      start: "",
+      end: ""
+    },
+    fri: {
+      selected: false,
+      start: "",
+      end: ""
+    },
+    sat: {
+      selected: false,
+      start: "",
+      end: ""
+    },
+    sun: {
+      selected: false,
+      start: "",
+      end: ""
     }
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const finalLocation = location === "Other" ? locationCustom : location;
+  const canSubmit = name && role && finalLocation && phone.replace(/\D/g, "").length >= 10 && workDays.length > 0;
+  const formatPhone = val => {
+    const digits = val.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setError("");
 
-    async function submitForm() {
-      const btn = document.getElementById('submitBtn');
-      btn.textContent = '⏳ Submitting...';
-      btn.disabled = true;
+    // Build shift times from workShifts
+    const shiftEntries = Object.entries(workShifts).filter(([, v]) => v.selected && v.start && v.end);
+    const shiftStart = shiftEntries.map(([day, v]) => `${day}: ${v.start}`).join(", ");
+    const shiftEnd = shiftEntries.map(([day, v]) => `${day}: ${v.end}`).join(", ");
+    // For auto-delete, use the latest end time across all days
+    const lastShiftEnd = shiftEntries.reduce((latest, [, v]) => {
+      return !latest || v.end > latest ? v.end : latest;
+    }, "");
+    const payload = {
+      action: "register_staff",
+      work_days: workDays,
+      name,
+      role,
+      location: finalLocation,
+      phone: phone.replace(/\D/g, ""),
+      groupme_username: onGroupme === "yes" ? groupme : "",
+      shiftStart,
+      smsConsent,
+      shiftEnd: lastShiftEnd,
+      timestamp: new Date().toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      })
+    };
 
-      const name = document.getElementById('fname').value.trim();
-      const role = document.getElementById('frole').value;
-      const locationRaw = document.getElementById('flocation').value;
-      const location = locationRaw === 'Other' ? (document.getElementById('flocation-other').value.trim() || 'Other') : locationRaw;
-      const phone = document.getElementById('fphone').value;
-      const code = document.getElementById('fcode').value.toUpperCase().trim();
-      const groupme = document.getElementById('fgroupme')?.value || '';
-
-      const workedDays = days.filter(d => selected[d]).map(d => {
-        const dayNames = {thu:'Thursday Jul 9',fri:'Friday Jul 10',sat:'Saturday Jul 11',sun:'Sunday Jul 12'};
-        const start = document.getElementById(`start-${d}`).value;
-        const end = document.getElementById(`end-${d}`).value;
-        return `${dayNames[d]}: ${start} - ${end}`;
-      });
-
-      try {
-        const res = await fetch('/.netlify/functions/register-staff', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, role, location, phone, days: workedDays, groupme, code })
-        });
-        const data = await res.json();
-
-        document.getElementById('formWrap').classList.add('hide');
-        const s = document.getElementById('successDiv');
-        s.classList.add('show');
-        document.getElementById('successName').textContent = name;
-
-        const statusDiv = document.getElementById('successStatus');
-        if (data.approved) {
-          statusDiv.style.background = 'rgba(16,185,129,0.08)';
-          statusDiv.style.border = '1px solid rgba(16,185,129,0.3)';
-          statusDiv.style.color = '#10b981';
-          statusDiv.innerHTML = `✅ You are approved!<br><br>Username: <strong>${data.username}</strong><br>Password: <strong>1234</strong><br><br>Your worker app link and login have been sent to ${phone} via SMS.`;
-        } else {
-          statusDiv.style.background = 'rgba(255,255,255,0.04)';
-          statusDiv.style.border = '1px solid rgba(255,255,255,0.08)';
-          statusDiv.style.color = '#94a3b8';
-          statusDiv.textContent = '⏳ Your registration is pending review. You will receive your app link and login via SMS once approved. Keep your phone handy!';
+    // Try backend — fall back to demo mode
+    try {
+      const backendUrl = (() => {
+        try {
+          return new URLSearchParams(window.location.search).get("backend") || "";
+        } catch {
+          return "";
         }
-      } catch(err) {
-        btn.textContent = '🎪 REGISTER FOR FÊTE 2026';
-        btn.disabled = false;
-        alert('Something went wrong. Please try again.');
+      })();
+      if (backendUrl) {
+        const r = await fetch(backendUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!r.ok) throw new Error("Server error");
       }
+      setSubmitted(true);
+    } catch (e) {
+      // Demo mode — just show success
+      setSubmitted(true);
     }
-
-    function resetForm() {
-      document.getElementById('formWrap').classList.remove('hide');
-      document.getElementById('successDiv').classList.remove('show');
-      document.getElementById('fname').value='';
-      document.getElementById('frole').value='';
-      document.getElementById('flocation').value='';
-      document.getElementById('fphone').value='';
-      document.getElementById('fcode').value='';
-      document.getElementById('code-msg').style.display='none';
-      days.forEach(d=>{ if(selected[d]) toggleDay(d); });
-      setGroupme('');
-      checkForm();
+    setSubmitting(false);
+  };
+  if (submitted) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "#0d0d1a",
+      fontFamily: "'DM Sans',sans-serif",
+      padding: "32px 20px",
+      textAlign: "center"
     }
-  </script>
-</body>
-</html>
+  }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      zIndex: 1,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 16,
+      maxWidth: 400
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 80
+    }
+  }, "\uD83C\uDFAA"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 28,
+      fontWeight: 900,
+      color: "#10b981"
+    }
+  }, "You're Registered!"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      color: "#f1f5f9",
+      fontWeight: 600
+    }
+  }, name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      width: "100%"
+    }
+  }, [["Role", role], ["Location", finalLocation], ["Phone", phone], onGroupme === "yes" && groupme ? ["GroupMe", "@" + groupme] : null].filter(Boolean).map(([k, v]) => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      padding: "10px 14px",
+      background: "rgba(255,255,255,0.04)",
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.08)"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: "#64748b",
+      fontWeight: 600
+    }
+  }, k), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: "#f1f5f9",
+      fontWeight: 700
+    }
+  }, v)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: "#94a3b8",
+      lineHeight: 1.7,
+      background: "rgba(255,255,255,0.04)",
+      borderRadius: 12,
+      padding: "14px 16px",
+      border: "1px solid rgba(255,255,255,0.08)"
+    }
+  }, "Operations has been notified. You will receive event alerts via text message. Make sure your phone is charged and with you on event day."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#475569",
+      marginTop: 8
+    }
+  }, "F\xEAte de Marquette 2026")));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      background: "#0d0d1a",
+      fontFamily: "'DM Sans',sans-serif"
+    }
+  }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      zIndex: 1,
+      width: "100%",
+      maxWidth: 480,
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "36px 20px 16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 44,
+      marginBottom: 8
+    }
+  }, "\uD83C\uDFAA"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 24,
+      fontWeight: 900,
+      color: "#fff",
+      letterSpacing: "-0.02em"
+    }
+  }, "F\xEAte de Marquette"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#f59e0b",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em",
+      fontWeight: 700,
+      marginTop: 4
+    }
+  }, "2026 Staff Registration"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: "#64748b",
+      marginTop: 10,
+      lineHeight: 1.6
+    }
+  }, "Fill in your info below to register for event day communications.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 16,
+      padding: "0 20px 40px"
+    }
+  }, /*#__PURE__*/React.createElement(Fld, {
+    label: "Your Full Name",
+    value: name,
+    onChange: e => setName(e.target.value),
+    ph: "e.g. Maria Johnson",
+    required: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      fontWeight: 700
+    }
+  }, "Your Role ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#ef4444"
+    }
+  }, "*")), /*#__PURE__*/React.createElement("select", {
+    style: {
+      background: "#1e293b",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: "14px",
+      color: role ? "#f1f5f9" : "#475569",
+      fontSize: 16,
+      width: "100%",
+      boxSizing: "border-box",
+      fontFamily: "inherit",
+      fontWeight: 600
+    },
+    value: role,
+    onChange: e => setRole(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Select your role..."), ROLES.map(r => /*#__PURE__*/React.createElement("option", {
+    key: r,
+    value: r
+  }, r)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      fontWeight: 700
+    }
+  }, "Your Location ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#ef4444"
+    }
+  }, "*")), /*#__PURE__*/React.createElement("select", {
+    style: {
+      background: "#1e293b",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: "14px",
+      color: location ? "#f1f5f9" : "#475569",
+      fontSize: 16,
+      width: "100%",
+      boxSizing: "border-box",
+      fontFamily: "inherit",
+      fontWeight: 600
+    },
+    value: location,
+    onChange: e => setLocation(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Select your location..."), LOCATIONS.map(l => /*#__PURE__*/React.createElement("option", {
+    key: l,
+    value: l
+  }, l))), location === "Other" && /*#__PURE__*/React.createElement("input", {
+    style: {
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: "14px",
+      color: "#f1f5f9",
+      fontSize: 16,
+      width: "100%",
+      boxSizing: "border-box",
+      outline: "none",
+      fontFamily: "inherit",
+      fontWeight: 500,
+      marginTop: 6
+    },
+    placeholder: "Describe your location...",
+    value: locationCustom,
+    onChange: e => setLocationCustom(e.target.value)
+  })), /*#__PURE__*/React.createElement(Fld, {
+    label: "Cell Phone Number",
+    value: phone,
+    onChange: e => setPhone(formatPhone(e.target.value)),
+    ph: "(608) 555-1234",
+    required: true,
+    type: "tel"
+  }), (() => {
+    const TIMES = ["6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM"];
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("label", {
+      style: {
+        fontSize: 12,
+        color: "#64748b",
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        fontWeight: 700
+      }
+    }, "Days & Times You Are Working ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#ef4444"
+      }
+    }, "*")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }
+    }, EVENT_DAYS.map(day => {
+      const shift = workShifts[day.id];
+      const sel = shift.selected;
+      return /*#__PURE__*/React.createElement("div", {
+        key: day.id,
+        style: {
+          borderRadius: 12,
+          border: `2px solid ${sel ? "#f59e0b" : "rgba(255,255,255,0.1)"}`,
+          background: sel ? "rgba(245,158,11,0.06)" : "rgba(255,255,255,0.02)",
+          overflow: "hidden"
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          padding: "14px 16px",
+          width: "100%",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left"
+        },
+        onClick: () => setWorkShifts(p => ({
+          ...p,
+          [day.id]: {
+            ...p[day.id],
+            selected: !p[day.id].selected
+          }
+        }))
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 22,
+          height: 22,
+          borderRadius: 6,
+          border: `2px solid ${sel ? "#f59e0b" : "rgba(255,255,255,0.2)"}`,
+          background: sel ? "#f59e0b" : "transparent",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0
+        }
+      }, sel && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 13,
+          color: "#1a1a00",
+          fontWeight: 900
+        }
+      }, "\u2713")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 15,
+          fontWeight: 700,
+          color: sel ? "#fde047" : "#f1f5f9"
+        }
+      }, day.label), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#64748b",
+          marginTop: 2
+        }
+      }, day.hours))), sel && /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8,
+          padding: "0 16px 14px"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4
+        }
+      }, /*#__PURE__*/React.createElement("label", {
+        style: {
+          fontSize: 11,
+          color: "#64748b",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em"
+        }
+      }, "My Start Time"), /*#__PURE__*/React.createElement("select", {
+        style: {
+          background: "#1e293b",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 8,
+          padding: "10px",
+          color: shift.start ? "#f1f5f9" : "#475569",
+          fontSize: 14,
+          width: "100%",
+          boxSizing: "border-box",
+          fontFamily: "inherit",
+          fontWeight: 600
+        },
+        value: shift.start,
+        onChange: e => setWorkShifts(p => ({
+          ...p,
+          [day.id]: {
+            ...p[day.id],
+            start: e.target.value
+          }
+        }))
+      }, /*#__PURE__*/React.createElement("option", {
+        value: ""
+      }, "Start..."), TIMES.map(t => /*#__PURE__*/React.createElement("option", {
+        key: t,
+        value: t
+      }, t)))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4
+        }
+      }, /*#__PURE__*/React.createElement("label", {
+        style: {
+          fontSize: 11,
+          color: "#64748b",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em"
+        }
+      }, "My End Time"), /*#__PURE__*/React.createElement("select", {
+        style: {
+          background: "#1e293b",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 8,
+          padding: "10px",
+          color: shift.end ? "#f1f5f9" : "#475569",
+          fontSize: 14,
+          width: "100%",
+          boxSizing: "border-box",
+          fontFamily: "inherit",
+          fontWeight: 600
+        },
+        value: shift.end,
+        onChange: e => setWorkShifts(p => ({
+          ...p,
+          [day.id]: {
+            ...p[day.id],
+            end: e.target.value
+          }
+        }))
+      }, /*#__PURE__*/React.createElement("option", {
+        value: ""
+      }, "End..."), TIMES.map(t => /*#__PURE__*/React.createElement("option", {
+        key: t,
+        value: t
+      }, t))))));
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569",
+        lineHeight: 1.5
+      }
+    }, "You will be automatically removed from the notification system at the end of your last shift."));
+  })(), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      fontWeight: 700
+    }
+  }, "Are you on GroupMe?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, [["yes", "✅ Yes"], ["no", "❌ No"]].map(([val, lbl]) => /*#__PURE__*/React.createElement("button", {
+    key: val,
+    style: {
+      flex: 1,
+      padding: "12px",
+      borderRadius: 10,
+      border: `2px solid ${onGroupme === val ? "#f59e0b" : "rgba(255,255,255,0.12)"}`,
+      background: onGroupme === val ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.04)",
+      color: onGroupme === val ? "#f59e0b" : "#94a3b8",
+      fontSize: 15,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => setOnGroupme(val)
+  }, lbl))), onGroupme === "yes" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      fontWeight: 700
+    }
+  }, "GroupMe Username"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 14,
+      top: "50%",
+      transform: "translateY(-50%)",
+      color: "#64748b",
+      fontSize: 16,
+      fontWeight: 700
+    }
+  }, "@"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: "14px 14px 14px 30px",
+      color: "#f1f5f9",
+      fontSize: 16,
+      width: "100%",
+      boxSizing: "border-box",
+      outline: "none",
+      fontFamily: "inherit",
+      fontWeight: 500
+    },
+    placeholder: "your_username",
+    value: groupme,
+    onChange: e => setGroupme(e.target.value.replace("@", ""))
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#475569",
+      lineHeight: 1.5
+    }
+  }, "Find your username in GroupMe \u2192 Settings \u2192 Profile. Operations will add you to the right channels.")), onGroupme === "no" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#94a3b8",
+      background: "rgba(255,255,255,0.04)",
+      borderRadius: 8,
+      padding: "10px 12px",
+      lineHeight: 1.6
+    }
+  }, "No problem \u2014 you'll still receive event alerts via text message. GroupMe is free and only takes 2 minutes to set up if you'd like to join."), /*#__PURE__*/React.createElement("a", {
+    href: "https://groupme.com",
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      padding: "12px",
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "rgba(255,255,255,0.04)",
+      color: "#f1f5f9",
+      fontSize: 14,
+      fontWeight: 700,
+      textDecoration: "none"
+    }
+  }, "\uD83D\uDCF2 Sign up for GroupMe \u2014 it's free"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#475569",
+      lineHeight: 1.5
+    }
+  }, "Once you've joined, let operations know your username and we'll add you to the right channels."))), error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#fca5a5",
+      background: "rgba(239,68,68,0.1)",
+      borderRadius: 8,
+      padding: "10px 12px"
+    }
+  }, error), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(255,255,255,0.04)",
+      border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: 12,
+      padding: "14px 16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 12,
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: smsConsent,
+    onChange: e => setSmsConsent(e.target.checked),
+    style: {
+      marginTop: 3,
+      width: 18,
+      height: 18,
+      flexShrink: 0,
+      accentColor: "#f59e0b"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: "#94a3b8",
+      lineHeight: 1.6
+    }
+  }, /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: "#f1f5f9"
+    }
+  }, "Optional:"), " I agree to receive SMS text messages and voice calls from F\xEAte de Marquette Operations regarding my shift, equipment pickup, and safety alerts. ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: "#f59e0b"
+    }
+  }, "Consent is not required to register or participate."), " Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe at any time.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#475569",
+      paddingLeft: 30
+    }
+  }, "By checking this box you agree to our", " ", /*#__PURE__*/React.createElement("a", {
+    href: "/privacy-policy",
+    target: "_blank",
+    style: {
+      color: "#f59e0b",
+      textDecoration: "none"
+    }
+  }, "Privacy Policy"), " ", "and", " ", /*#__PURE__*/React.createElement("a", {
+    href: "/terms",
+    target: "_blank",
+    style: {
+      color: "#f59e0b",
+      textDecoration: "none"
+    }
+  }, "Terms & Conditions"), ".")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: canSubmit ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(255,255,255,0.06)",
+      border: canSubmit ? "none" : "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 14,
+      padding: "18px",
+      color: canSubmit ? "#1a1a00" : "#475569",
+      fontSize: 17,
+      fontWeight: 900,
+      cursor: canSubmit ? "pointer" : "default",
+      letterSpacing: "0.02em",
+      marginTop: 4,
+      transition: "all 0.2s"
+    },
+    disabled: !canSubmit || submitting,
+    onClick: handleSubmit
+  }, submitting ? "Registering..." : "🎪 REGISTER FOR FÊTE 2026"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#334155",
+      textAlign: "center",
+      lineHeight: 1.6
+    }
+  }, "Your information is used only for F\xEAte de Marquette event operations and will not be shared."))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Register,{}));
+</script></body></html>

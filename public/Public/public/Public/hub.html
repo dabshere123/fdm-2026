@@ -714,8 +714,6 @@ function HubApp({
   });
   const [showSerials, setShowSerials] = useState(false);
   const [showStaffMgmt, setShowStaffMgmt] = useState(false);
-  const [wxAlerts, setWxAlerts] = useState([]);
-  const [wxDismissed, setWxDismissed] = useState([]);
   const [scheduledMsgs, setScheduledMsgs] = useState([]);
   const [showScheduler, setShowScheduler] = useState(false);
   const [broadcastSending, setBroadcastSending] = useState(false);
@@ -4282,7 +4280,7 @@ Reply YES to acknowledge.`
       color: "#fff",
       letterSpacing: "0.04em"
     }
-  }, "EMS INBOUND"), /*#__PURE__*/React.createElement("div", {
+  }, "MFD / EMS INBOUND"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "rgba(255,255,255,0.7)"
@@ -4359,7 +4357,7 @@ Reply YES to acknowledge.`
       setEmsAlertDismissed(false);
       setView("home");
     }
-  }, "\u2705 ACKNOWLEDGE \u2014 EMS INBOUND") : /*#__PURE__*/React.createElement("div", {
+  }, "\u2705 ACKNOWLEDGE \u2014 MFD / EMS INBOUND") : /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(245,158,11,0.1)",
       border: "1px solid rgba(245,158,11,0.4)",
@@ -4369,7 +4367,7 @@ Reply YES to acknowledge.`
       color: "#f59e0b",
       fontWeight: 700
     }
-  }, "\u2705 Acknowledged \u2014 EMS Inbound banner active on home screen"), /*#__PURE__*/React.createElement("button", {
+  }, "\u2705 Acknowledged \u2014 MFD / EMS Inbound banner active on home screen"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.sendBtn,
       background: "linear-gradient(135deg,#10b981,#059669)"
@@ -4493,7 +4491,7 @@ Reply YES to acknowledge.`
       letterSpacing: "0.06em",
       textTransform: "uppercase"
     }
-  }, "\uD83D\uDEA8 EMS INBOUND \u2014 ACTIVE"), nineOneOne.info?.location && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8 MFD / EMS INBOUND \u2014 ACTIVE"), nineOneOne.info?.location && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 700,
@@ -4547,7 +4545,7 @@ Reply YES to acknowledge.`
         info: {}
       });
       setView("911");
-      sendGroupMe(`🚨 ADDITIONAL 911 INCIDENT by ${role}\nNew EMS activation — separate incident.`, ["admin", "medical"]);
+      sendGroupMe(`🚨 ADDITIONAL 911 INCIDENT by ${role}\nNew MFD / EMS activation — separate incident.`, ["admin", "medical"]);
       fetch("/.netlify/functions/send-sms", {
         method: "POST",
         headers: {
@@ -4586,7 +4584,7 @@ Reply YES to acknowledge.`
         }
       });
       setView("911");
-      sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS/Fire has been called. Stand by.`, ["admin", "medical"]);
+      sendGroupMe(`🚨 911 ACTIVATED by ${role}\nMFD / EMS has been called. Stand by.`, ["admin", "medical"]);
       fetch("/.netlify/functions/send-sms", {
         method: "POST",
         headers: {
@@ -4726,7 +4724,7 @@ Reply YES to acknowledge.`
       letterSpacing: "0.08em",
       textTransform: "uppercase"
     }
-  }, "\uD83D\uDEA8 EMS INBOUND \u2014 ACTIVE INCIDENT"), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDEA8 MFD / EMS INBOUND \u2014 ACTIVE INCIDENT"), /*#__PURE__*/React.createElement("button", {
     style: {
       background: "none",
       border: "none",
@@ -5118,67 +5116,7 @@ Reply YES to acknowledge.`
       border: "none"
     },
     title: "NWS Radar"
-  })), wxAlerts.filter(a => !wxDismissed.includes(a.id)).map(a => /*#__PURE__*/React.createElement("div", {
-    key: a.id,
-    style: {
-      margin: "0 0 0",
-      background: `linear-gradient(135deg,${a.color}33,${a.color}18)`,
-      borderBottom: `2px solid ${a.color}`,
-      padding: "12px 16px",
-      display: "flex",
-      alignItems: "flex-start",
-      gap: 12,
-      animation: "pulse 2s infinite",
-      position: "relative"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 24,
-      flexShrink: 0
-    }
-  }, a.icon), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 900,
-      color: "#fff",
-      textTransform: "uppercase",
-      letterSpacing: "0.04em"
-    }
-  }, a.event), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "rgba(255,255,255,0.8)",
-      marginTop: 2,
-      lineHeight: 1.4
-    }
-  }, a.headline), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: "rgba(255,255,255,0.5)",
-      marginTop: 4
-    }
-  }, "NWS Dane County \xB7 Expires: ", a.expires ? new Date(a.expires).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit"
-  }) : "")), /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: "rgba(255,255,255,0.1)",
-      border: "1px solid rgba(255,255,255,0.2)",
-      color: "rgba(255,255,255,0.7)",
-      padding: "4px 10px",
-      borderRadius: 6,
-      cursor: "pointer",
-      fontSize: 11,
-      fontWeight: 700,
-      flexShrink: 0
-    },
-    onClick: () => setWxDismissed(p => [...p, a.id])
-  }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(255,255,255,0.03)",
       borderRadius: 14,
@@ -5214,7 +5152,7 @@ Reply YES to acknowledge.`
     },
     onClick: () => {
       if (nineOneOne.active) {
-        const msg = `🚨 911 ACTIVE 🚨\n\nEMS/Fire has been called.\nLOCATION: ${nineOneOne.info?.location || "Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature || ""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
+        const msg = `🚨 911 ACTIVE 🚨\n\nMadison Fire / EMS has been called.\nLOCATION: ${nineOneOne.info?.location || "Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature || ""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
         sendGroupMe(msg, ["admin", "medical"]);
         fetch("/.netlify/functions/send-sms", {
           method: "POST",

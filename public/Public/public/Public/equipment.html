@@ -1,17 +1,4 @@
-<!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
-<title>FDM Equipment Tracker</title>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#0a0f1e"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0a0f1e;}</style>
-</head><body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Equipment Tracker</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -156,8 +143,8 @@ function Badge({
 }
 function EquipmentTracker() {
   const saved = load();
-  const [radios, setRadios] = useState((saved === null || saved === void 0 ? void 0 : saved.radios) || INIT_RADIOS);
-  const [readers, setReaders] = useState((saved === null || saved === void 0 ? void 0 : saved.readers) || INIT_READERS);
+  const [radios, setRadios] = useState(saved?.radios || INIT_RADIOS);
+  const [readers, setReaders] = useState(saved?.readers || INIT_READERS);
   const [tab, setTab] = useState("overview"); // overview | radios | readers | admin | notifications
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState("");
@@ -170,8 +157,23 @@ function EquipmentTracker() {
   const [itemNotes, setItemNotes] = useState("");
   const [adminSearch, setAdminSearch] = useState("");
   const [editSerial, setEditSerial] = useState({}); // {id: serial}
-  const [log, setLog] = useState((saved === null || saved === void 0 ? void 0 : saved.log) || []);
-  const [notifSettings, setNotifSettings] = useState((saved === null || saved === void 0 ? void 0 : saved.notifSettings) || {
+  const [log, setLog] = useState(saved?.log || []);
+
+  // Deep link from QR code: ?item=R01&type=radio
+  useEffect(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const item = p.get("item");
+      const type = p.get("type");
+      if (item && type) {
+        setSelectedItem({
+          type: type === "reader" ? "reader" : "radio",
+          id: item.toUpperCase()
+        });
+      }
+    } catch (e) {}
+  }, []);
+  const [notifSettings, setNotifSettings] = useState(saved?.notifSettings || {
     preEventTime: "09:00",
     followupMins: "30",
     broadcastSMS: "Hi team! This is Fête de Marquette Operations. A friendly reminder to stop by the festival office to pick up your radio and/or credit card reader before your shift begins. See you out there!",
@@ -1665,5 +1667,4 @@ function BottomNav({
   }, label, id === "admin" && adminUnlocked ? " 🔓" : ""))));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(EquipmentTracker,{}));
-</script>
-</body></html>
+</script></body></html>

@@ -2226,7 +2226,16 @@ function HubApp({
         }, ...p]);
         // GroupMe
         const broadcastChannels = alertFields._gmChannels || t.defaultChannels || ["all_staff", "admin"];
-        sendGroupMe(`FDM 2026 — ${t.label}\n\n${finalMsg}`, broadcastChannels);
+        const _ts = new Date().toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit"
+        });
+        const _date = new Date().toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric"
+        });
+        sendGroupMe(`FDM 2026 — ${t.label}\n${_date} · ${_ts}\n\n${finalMsg}`, broadcastChannels);
         // SMS + Voice to all staff, SMS only to vendors
         const bcastMsg = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
         const bcastPhones = getNotifyList("broadcast");
@@ -2257,18 +2266,21 @@ function HubApp({
         }
         playAlert("broadcast");
         setBroadcastSending(false);
-        setBroadcastSuccess({
+        const _successData = {
           label: t.label,
           channels: broadcastChannels,
           count: bcastPhones.length + vendorOnly.length
-        });
+        };
         setTimeout(() => {
-          setBroadcastSuccess(null);
-          setView("home");
-          setAlertView(null);
-          setAlertFields({});
-          setEditedMsg("");
-        }, 4000);
+          setBroadcastSuccess(_successData);
+          setTimeout(() => {
+            setBroadcastSuccess(null);
+            setView("home");
+            setAlertView(null);
+            setAlertFields({});
+            setEditedMsg("");
+          }, 4000);
+        }, 50);
       }
     }, broadcastSending ? "⏳ Sending..." : "🚀 SEND NOW"), broadcastSuccess && /*#__PURE__*/React.createElement("div", {
       style: {

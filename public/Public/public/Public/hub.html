@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -655,6 +655,53 @@ function HubApp({
 
   // ADMIN REQUEST FORM
   const [adminReqView, setAdminReqView] = useState(false);
+  // NOTIFICATION ROSTER — Admin 2 hardcoded, others from Airtable
+  const ADMIN2_PHONE = "+16082289692";
+  const getNotifyList = type => {
+    // Get phones from staffList by role
+    const byRole = roles => staffList.filter(s => roles.some(r => s.role?.toLowerCase().includes(r.toLowerCase()))).map(s => s.phone).filter(Boolean);
+    if (type === "lost_child" || type === "broadcast") {
+      // Everyone with a phone
+      return [...new Set([ADMIN2_PHONE, ...staffList.map(s => s.phone).filter(Boolean)])];
+    }
+    if (type === "medical" || type === "fire") {
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "med unit 1", "med 1", "med unit 2", "med 2"])])];
+    }
+    if (type === "security") {
+      // Admin 2 (Devin), Admin 1 from Airtable, MPD officers
+      const mpdPhones = mpdOfficers.filter(o => o.phone).map(o => o.phone);
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin 1", "admin"]), ...mpdPhones])];
+    }
+    return [ADMIN2_PHONE];
+  };
+  const sendVoice = (phones, message) => {
+    phones.forEach(phone => {
+      fetch("/.netlify/functions/send-voice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          to: phone,
+          message
+        })
+      }).catch(e => console.log(e));
+    });
+  };
+  const sendSMSList = (phones, message) => {
+    phones.forEach(phone => {
+      fetch("/.netlify/functions/send-sms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          to: phone,
+          message
+        })
+      }).catch(e => console.log(e));
+    });
+  };
   const [serialNums, setSerialNums] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("fdm-serials") || "{}");
@@ -663,6 +710,20 @@ function HubApp({
     }
   });
   const [showSerials, setShowSerials] = useState(false);
+  const [showStaffMgmt, setShowStaffMgmt] = useState(false);
+  const [wxAlerts, setWxAlerts] = useState([]);
+  const [wxDismissed, setWxDismissed] = useState([]);
+  const [scheduledMsgs, setScheduledMsgs] = useState([]);
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [schedMsg, setSchedMsg] = useState("");
+  const [schedLabel, setSchedLabel] = useState("");
+  const [schedTime, setSchedTime] = useState("");
+  const [schedChannels, setSchedChannels] = useState(["all_staff"]);
+  const [schedPhones, setSchedPhones] = useState(["+16082289692"]);
+  const [schedSaving, setSchedSaving] = useState(false);
+  const [staffMgmtSearch, setStaffMgmtSearch] = useState("");
+  const [staffMgmtTab, setStaffMgmtTab] = useState("staff"); // staff | mpd
+  const [deletingId, setDeletingId] = useState(null);
   const saveSerial = (id, val) => {
     const n = {
       ...serialNums,
@@ -881,31 +942,13 @@ function HubApp({
       playAlert(newest.type);
     }
   }, [calls, liveMode]);
-  const [mpdOfficers, setMpdOfficers] = useState([{
-    id: "o1",
-    name: "Officer Martinez",
-    badge: "MPD-412",
-    phone: "(608) 555-0101",
-    status: "on_duty"
-  }, {
-    id: "o2",
-    name: "Officer Chen",
-    badge: "MPD-387",
-    phone: "(608) 555-0102",
-    status: "on_duty"
-  }, {
-    id: "o3",
-    name: "Officer Williams",
-    badge: "MPD-455",
-    phone: "(608) 555-0103",
-    status: "on_duty"
-  }, {
-    id: "o4",
-    name: "Officer Johnson",
-    badge: "MPD-391",
-    phone: "(608) 555-0104",
-    status: "on_duty"
-  }]);
+  const [mpdOfficers, setMpdOfficers] = useState([]);
+  // Fetch MPD officers from Airtable
+  useEffect(() => {
+    fetch("/.netlify/functions/get-mpd-officers").then(r => r.json()).then(d => {
+      if (d.officers?.length) setMpdOfficers(d.officers);
+    }).catch(e => console.log("MPD fetch error:", e));
+  }, []);
   const [assignPanel, setAssignPanel] = useState(null); // callId being assigned
   const [lcForm, setLcForm] = useState({
     name: "",
@@ -1037,113 +1080,22 @@ function HubApp({
       let msg = "";
       if (call.type === "medical" || call.type === "walk_in") {
         msg = [`🩺 MEDICAL ALERT 🩺`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // SMS + Voice to Admin and Med units
-        fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: "+16082289692",
-            message: msg
-          })
-        }).catch(e => console.log(e));
-        if (medSt?.med1?.phone) fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: medSt.med1.phone,
-            message: msg
-          })
-        }).catch(e => console.log(e));
-        if (medSt?.med2?.phone) fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: medSt.med2.phone,
-            message: msg
-          })
-        }).catch(e => console.log(e));
-        fetch("/.netlify/functions/send-broadcast", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: msg,
-            recipients: [{
-              name: "Admin",
-              phone: "+16082289692"
-            }],
-            includeVoice: true,
-            voiceScript: `Medical alert at Fete de Marquette. Location: ${call.location}. ${call.problem || ""}. Please respond immediately.`
-          })
-        }).catch(e => console.log(e));
+        // SMS + Voice to Admin + Med roster
+        const medPhones = getNotifyList("medical");
+        sendSMSList(medPhones, msg);
+        sendVoice(medPhones, `Medical alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
       } else if (call.type === "fire") {
         msg = [`🔥 LIFE SAFETY ALERT 🔥`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // SMS + Voice to Admin and Med units for fire/life safety
-        fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: "+16082289692",
-            message: msg
-          })
-        }).catch(e => console.log(e));
-        if (medSt?.med1?.phone) fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: medSt.med1.phone,
-            message: msg
-          })
-        }).catch(e => console.log(e));
-        if (medSt?.med2?.phone) fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: medSt.med2.phone,
-            message: msg
-          })
-        }).catch(e => console.log(e));
-        fetch("/.netlify/functions/send-broadcast", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: msg,
-            recipients: [{
-              name: "Admin",
-              phone: "+16082289692"
-            }],
-            includeVoice: true,
-            voiceScript: `Life safety alert at Fete de Marquette. Location: ${call.location}. ${call.problem || ""}. Please respond immediately.`
-          })
-        }).catch(e => console.log(e));
+        // SMS + Voice to Admin + Med roster for fire/life safety
+        const firePhones = getNotifyList("fire");
+        sendSMSList(firePhones, msg);
+        sendVoice(firePhones, `Life safety alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
       } else if (call.type === "security") {
         msg = [`👮 SECURITY 👮`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // SMS to Admin only for security (MPD only if manually requested)
-        fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: "+16082289692",
-            message: msg
-          })
-        }).catch(e => console.log(e));
+        // SMS + Voice to Admin + Security roster
+        const secPhones = getNotifyList("security");
+        sendSMSList(secPhones, msg);
+        sendVoice(secPhones, `Security alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
       } else if (call.type === "supplies") {
         msg = [`📦 RESTOCK REQUEST 📦`, ``, `LOCATION: ${call.location}`, `WHAT'S NEEDED: ${call.problem || ""}`, call.details ? `AMOUNT: ${call.details}` : "", `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // Supplies go directly to Admin only
@@ -2263,26 +2215,11 @@ function HubApp({
         // GroupMe
         const broadcastChannels = alertFields._gmChannels || t.defaultChannels || ["all_staff", "admin"];
         sendGroupMe(`FDM 2026 — ${t.label}\n\n${finalMsg}`, broadcastChannels);
-        // SMS + Voice to selected recipients
-        const smsRecs = alertFields._smsRecipients || ["admin"];
-        const phoneMap = {
-          "admin": "+16082289692",
-          "med1": medSt?.med1?.phone || "+16082289692",
-          "med2": medSt?.med2?.phone || "+16082289692"
-        };
-        if (smsRecs.includes("admin") || smsRecs.includes("med1") || smsRecs.includes("med2")) {
-          const uniquePhones = [...new Set(smsRecs.filter(r => phoneMap[r]).map(r => phoneMap[r]))];
-          uniquePhones.forEach(phone => fetch("/.netlify/functions/send-sms", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              to: phone,
-              message: `FDM 2026 — ${t.label}\n\n${finalMsg}`
-            })
-          }).catch(e => console.log(e)));
-        }
+        // SMS + Voice to broadcast roster (all staff for weather/postponed/cancelled/allclear)
+        const bcastMsg = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
+        const bcastPhones = getNotifyList("broadcast");
+        sendSMSList(bcastPhones, bcastMsg);
+        sendVoice(bcastPhones, `Fete de Marquette announcement. ${finalMsg.replace(/\n/g, " ")}`);
         // SMS + Voice to Admin only
         if (alertFields._smsChannels?.includes("sms_all")) {
           fetch("/.netlify/functions/send-broadcast", {
@@ -5031,7 +4968,67 @@ Reply YES to acknowledge.`
       border: "none"
     },
     title: "NWS Radar"
-  })), /*#__PURE__*/React.createElement("div", {
+  })), wxAlerts.filter(a => !wxDismissed.includes(a.id)).map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.id,
+    style: {
+      margin: "0 0 0",
+      background: `linear-gradient(135deg,${a.color}33,${a.color}18)`,
+      borderBottom: `2px solid ${a.color}`,
+      padding: "12px 16px",
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 12,
+      animation: "pulse 2s infinite",
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24,
+      flexShrink: 0
+    }
+  }, a.icon), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 900,
+      color: "#fff",
+      textTransform: "uppercase",
+      letterSpacing: "0.04em"
+    }
+  }, a.event), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "rgba(255,255,255,0.8)",
+      marginTop: 2,
+      lineHeight: 1.4
+    }
+  }, a.headline), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "rgba(255,255,255,0.5)",
+      marginTop: 4
+    }
+  }, "NWS Dane County \xB7 Expires: ", a.expires ? new Date(a.expires).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit"
+  }) : "")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "rgba(255,255,255,0.1)",
+      border: "1px solid rgba(255,255,255,0.2)",
+      color: "rgba(255,255,255,0.7)",
+      padding: "4px 10px",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: 11,
+      fontWeight: 700,
+      flexShrink: 0
+    },
+    onClick: () => setWxDismissed(p => [...p, a.id])
+  }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(255,255,255,0.03)",
       borderRadius: 14,
@@ -5602,6 +5599,230 @@ Reply YES to acknowledge.`
       color: "#f1f5f9"
     }
   }, "Request")))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(99,102,241,0.08)",
+      borderRadius: 14,
+      border: "1px solid rgba(99,102,241,0.3)",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(99,102,241,0.15)",
+      padding: "10px 14px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 900,
+      color: "#a5b4fc",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "\uD83D\uDC65 Staff Management"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "rgba(99,102,241,0.2)",
+      border: "1px solid rgba(99,102,241,0.4)",
+      color: "#a5b4fc",
+      padding: "4px 12px",
+      borderRadius: 8,
+      cursor: "pointer",
+      fontSize: 12,
+      fontWeight: 700
+    },
+    onClick: () => setShowStaffMgmt(p => !p)
+  }, showStaffMgmt ? "▲ Hide" : "▼ Manage")), showStaffMgmt && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      borderBottom: "1px solid rgba(255,255,255,0.08)"
+    }
+  }, [["staff", "👤 Staff"], ["mpd", "👮 MPD Officers"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    style: {
+      flex: 1,
+      padding: "10px",
+      border: "none",
+      background: "none",
+      color: staffMgmtTab === id ? "#a5b4fc" : "#64748b",
+      fontWeight: staffMgmtTab === id ? 700 : 400,
+      fontSize: 13,
+      cursor: "pointer",
+      borderBottom: staffMgmtTab === id ? "2px solid #a5b4fc" : "2px solid transparent",
+      marginBottom: -1
+    },
+    onClick: () => {
+      setStaffMgmtTab(id);
+      setStaffMgmtSearch("");
+    }
+  }, label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: 8,
+      padding: "8px 12px",
+      color: "#f1f5f9",
+      fontSize: 13,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    placeholder: staffMgmtTab === "staff" ? "Search staff by name..." : "Search officers...",
+    value: staffMgmtSearch,
+    onChange: e => setStaffMgmtSearch(e.target.value)
+  }), staffMgmtTab === "staff" && (() => {
+    const filtered = staffList.filter(s => !staffMgmtSearch || s.name.toLowerCase().includes(staffMgmtSearch.toLowerCase()) || s.role?.toLowerCase().includes(staffMgmtSearch.toLowerCase()));
+    if (filtered.length === 0) return /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569",
+        padding: "8px 0",
+        textAlign: "center"
+      }
+    }, "No staff found");
+    return filtered.map(s => /*#__PURE__*/React.createElement("div", {
+      key: s.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px",
+        borderRadius: 10,
+        border: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(255,255,255,0.02)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#f1f5f9",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
+      }
+    }, s.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b"
+      }
+    }, s.role, " ", s.location ? `· ${s.location}` : "")), /*#__PURE__*/React.createElement("button", {
+      style: {
+        padding: "6px 12px",
+        borderRadius: 8,
+        border: "1px solid rgba(239,68,68,0.4)",
+        background: "rgba(239,68,68,0.1)",
+        color: "#fca5a5",
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        flexShrink: 0,
+        opacity: deletingId === s.id ? 0.5 : 1
+      },
+      disabled: deletingId === s.id,
+      onClick: async () => {
+        if (!window.confirm(`Remove ${s.name} from staff?`)) return;
+        setDeletingId(s.id);
+        try {
+          await fetch("/.netlify/functions/delete-staff", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              id: s.id,
+              table: "staff"
+            })
+          });
+          setStaffList(p => p.filter(x => x.id !== s.id));
+        } catch (e) {
+          console.log(e);
+        }
+        setDeletingId(null);
+      }
+    }, deletingId === s.id ? "..." : "✕ Remove")));
+  })(), staffMgmtTab === "mpd" && (() => {
+    const filtered = mpdOfficers.filter(o => !staffMgmtSearch || o.name.toLowerCase().includes(staffMgmtSearch.toLowerCase()) || (o.badge || "").toLowerCase().includes(staffMgmtSearch.toLowerCase()));
+    if (filtered.length === 0) return /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569",
+        padding: "8px 0",
+        textAlign: "center"
+      }
+    }, "No officers loaded \u2014 add them in Airtable MPDOfficers table");
+    return filtered.map(o => /*#__PURE__*/React.createElement("div", {
+      key: o.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px",
+        borderRadius: 10,
+        border: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(255,255,255,0.02)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#f1f5f9"
+      }
+    }, o.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b"
+      }
+    }, o.badge, " ", o.phone ? `· ${o.phone}` : "")), /*#__PURE__*/React.createElement("button", {
+      style: {
+        padding: "6px 12px",
+        borderRadius: 8,
+        border: "1px solid rgba(245,158,11,0.4)",
+        background: "rgba(245,158,11,0.1)",
+        color: "#fbbf24",
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        flexShrink: 0
+      },
+      onClick: async () => {
+        if (!window.confirm(`Remove ${o.name} from on-duty officers?`)) return;
+        setDeletingId(o.id);
+        try {
+          await fetch("/.netlify/functions/delete-staff", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              id: o.id,
+              table: "mpd"
+            })
+          });
+          setMpdOfficers(p => p.filter(x => x.id !== o.id));
+        } catch (e) {
+          console.log(e);
+        }
+        setDeletingId(null);
+      }
+    }, deletingId === o.id ? "..." : "✕ Off Duty")));
+  })()))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(234,179,8,0.1)",
       borderRadius: 14,

@@ -21,6 +21,7 @@ exports.handler = async (event) => {
         name: r.fields['Full Name'] || r.fields['Name'] || '',
         role: r.fields['Role'] || '',
         location: r.fields['Location'] || '',
+        phone: r.fields['Phone'] || '',
       }))
       .filter(s => s.name)
       .sort((a,b) => a.name.localeCompare(b.name));

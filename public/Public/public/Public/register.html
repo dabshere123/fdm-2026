@@ -871,19 +871,20 @@ function Register() {
     }
   }, "Terms & Conditions"), ".")), /*#__PURE__*/React.createElement("button", {
     style: {
-      background: canSubmit ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(255,255,255,0.06)",
-      border: canSubmit ? "none" : "1px solid rgba(255,255,255,0.12)",
+      background: "linear-gradient(135deg,#f59e0b,#d97706)",
+      border: "none",
       borderRadius: 14,
       padding: "18px",
-      color: canSubmit ? "#1a1a00" : "#475569",
+      color: "#1a1a00",
       fontSize: 17,
       fontWeight: 900,
-      cursor: canSubmit ? "pointer" : "default",
+      cursor: "pointer",
       letterSpacing: "0.02em",
       marginTop: 4,
-      transition: "all 0.2s"
+      transition: "all 0.2s",
+      opacity: submitting ? 0.7 : 1
     },
-    disabled: !canSubmit || submitting,
+    disabled: submitting,
     onClick: handleSubmit
   }, submitting ? "Registering..." : "🎪 REGISTER FOR FÊTE 2026"), /*#__PURE__*/React.createElement("div", {
     style: {

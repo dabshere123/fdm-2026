@@ -22,30 +22,30 @@ function generateUsername(name) {
   return `${first}${last}`;
 }
 
-const approvalSMS = (name, username) =>
-`Hi ${name}! You're approved for Fête de Marquette 2026 Operations! 🎉
+const approvalSMS = (name) => {
+  const lastName = name.trim().split(' ').pop();
+  return `Hi ${name}! You're registered for Fête de Marquette 2026 Operations! 🎉
 
 Worker App: https://fdm2026.netlify.app/field
 
-Sign in with:
-Username: ${username}
-Password: 1234
+To sign in, enter your last name: ${lastName}
 
 📱 Add to home screen for quick access:
   iPhone: Share → Add to Home Screen
-  Android: ⋮ → Add to Home Screen
+  Android: Menu → Add to Home Screen
 
 See you at the fest! 🎶
 — Fête de Marquette Operations
 
-Reply STOP to opt out.`;
+Reply STOP to unsubscribe.`;
+};
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
   }
 
-  const { name, role, location, phone, days, groupme, code } = JSON.parse(event.body || '{}');
+  const { name, role, location, phone, days, groupme, code, shiftStart, shiftEnd, smsConsent } = JSON.parse(event.body || '{}');
 
   if (!name || !phone || !role) {
     return {
@@ -73,6 +73,9 @@ exports.handler = async (event) => {
           Location: location || '',
           Phone: phone,
           Days: Array.isArray(days) ? days.join(', ') : days || '',
+          ShiftStart: shiftStart || '',
+          ShiftEnd: shiftEnd || '',
+          SMSConsent: smsConsent ? 'Yes' : 'No',
           GroupMe: groupme || '',
           Username: username,
           Password: password,
@@ -94,11 +97,16 @@ exports.handler = async (event) => {
     // Fire approval SMS if approved
     if (approved) {
       const client = twilio(TWILIO_SID, TWILIO_AUTH);
-      await client.messages.create({
-        body: approvalSMS(name, username),
-        messagingServiceSid: TWILIO_MSG_SID,
+      const msgParams = {
+        body: approvalSMS(name),
         to: phone
-      });
+      };
+      if (process.env.TWILIO_MESSAGING_SERVICE_SID) {
+        msgParams.messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+      } else {
+        msgParams.from = process.env.TWILIO_PHONE_NUMBER;
+      }
+      await client.messages.create(msgParams);
     }
 
     return {

@@ -160,7 +160,15 @@ function Register() {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   };
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    const errs = getValidationErrors();
+    if (errs.length > 0) {
+      setError(errs.join("|"));
+      setTimeout(() => document.querySelector('[data-error]')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      }), 50);
+      return;
+    }
     setSubmitting(true);
     setError("");
 
@@ -793,7 +801,7 @@ function Register() {
       color: "#f87171",
       marginBottom: 2
     }
-  }, "\u26A0\uFE0F Please fix the following before submitting:"), getValidationErrors().map((e, i) => /*#__PURE__*/React.createElement("div", {
+  }, "\u26A0\uFE0F Please fix the following before submitting:"), error.split("|").map((e, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       fontSize: 13,

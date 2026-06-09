@@ -659,10 +659,13 @@ function HubApp({
   const ADMIN2_PHONE = "+16082289692";
   const getNotifyList = type => {
     // Get phones from staffList by role
-    const byRole = roles => staffList.filter(s => roles.some(r => s.role?.toLowerCase().includes(r.toLowerCase()))).map(s => s.phone).filter(Boolean);
+    const safeList = staffList || [];
+    const byRole = roles => safeList.filter(s => roles.some(r => (s.role || "").toLowerCase().includes(r.toLowerCase()))).map(s => s.phone).filter(Boolean);
     if (type === "lost_child" || type === "broadcast") {
-      // Everyone with a phone
-      return [...new Set([ADMIN2_PHONE, ...staffList.map(s => s.phone).filter(Boolean)])];
+      return [...new Set([ADMIN2_PHONE, ...safeList.map(s => s.phone).filter(Boolean)])];
+    }
+    if (type === "vendors_sms") {
+      return [...new Set([...safeList.filter(s => (s.role || "").toLowerCase().includes("vendor")).map(s => s.phone).filter(Boolean)])];
     }
     if (type === "medical" || type === "fire") {
       return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "med unit 1", "med 1", "med unit 2", "med 2"])])];
@@ -1080,22 +1083,28 @@ function HubApp({
       let msg = "";
       if (call.type === "medical" || call.type === "walk_in") {
         msg = [`🩺 MEDICAL ALERT 🩺`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // SMS + Voice to Admin + Med roster
-        const medPhones = getNotifyList("medical");
-        sendSMSList(medPhones, msg);
-        sendVoice(medPhones, `Medical alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
+        // SMS + Voice to Admin + Med roster (async so UI doesn't freeze)
+        setTimeout(() => {
+          const medPhones = getNotifyList("medical");
+          sendSMSList(medPhones, msg);
+          sendVoice(medPhones, `Medical alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
+        }, 100);
       } else if (call.type === "fire") {
         msg = [`🔥 LIFE SAFETY ALERT 🔥`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // SMS + Voice to Admin + Med roster for fire/life safety
-        const firePhones = getNotifyList("fire");
-        sendSMSList(firePhones, msg);
-        sendVoice(firePhones, `Life safety alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
+        // SMS + Voice to Admin + Med roster for fire (async)
+        setTimeout(() => {
+          const firePhones = getNotifyList("fire");
+          sendSMSList(firePhones, msg);
+          sendVoice(firePhones, `Life safety alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
+        }, 100);
       } else if (call.type === "security") {
         msg = [`👮 SECURITY 👮`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // SMS + Voice to Admin + Security roster
-        const secPhones = getNotifyList("security");
-        sendSMSList(secPhones, msg);
-        sendVoice(secPhones, `Security alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
+        // SMS + Voice to Admin + Security roster (async)
+        setTimeout(() => {
+          const secPhones = getNotifyList("security");
+          sendSMSList(secPhones, msg);
+          sendVoice(secPhones, `Security alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
+        }, 100);
       } else if (call.type === "supplies") {
         msg = [`📦 RESTOCK REQUEST 📦`, ``, `LOCATION: ${call.location}`, `WHAT'S NEEDED: ${call.problem || ""}`, call.details ? `AMOUNT: ${call.details}` : "", `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // Supplies go directly to Admin only
@@ -2215,11 +2224,16 @@ function HubApp({
         // GroupMe
         const broadcastChannels = alertFields._gmChannels || t.defaultChannels || ["all_staff", "admin"];
         sendGroupMe(`FDM 2026 — ${t.label}\n\n${finalMsg}`, broadcastChannels);
-        // SMS + Voice to broadcast roster (all staff for weather/postponed/cancelled/allclear)
+        // SMS + Voice to all staff, SMS only to vendors
         const bcastMsg = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
         const bcastPhones = getNotifyList("broadcast");
+        const vendorPhones = getNotifyList("vendors_sms");
+        // Staff get SMS + Voice
         sendSMSList(bcastPhones, bcastMsg);
         sendVoice(bcastPhones, `Fete de Marquette announcement. ${finalMsg.replace(/\n/g, " ")}`);
+        // Vendors get SMS only
+        const vendorOnly = vendorPhones.filter(p => !bcastPhones.includes(p));
+        sendSMSList(vendorOnly, bcastMsg);
         // SMS + Voice to Admin only
         if (alertFields._smsChannels?.includes("sms_all")) {
           fetch("/.netlify/functions/send-broadcast", {

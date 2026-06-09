@@ -718,6 +718,8 @@ function HubApp({
   const [wxDismissed, setWxDismissed] = useState([]);
   const [scheduledMsgs, setScheduledMsgs] = useState([]);
   const [showScheduler, setShowScheduler] = useState(false);
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastSuccess, setBroadcastSuccess] = useState(null); // {label, channels}
   const [schedMsg, setSchedMsg] = useState("");
   const [schedLabel, setSchedLabel] = useState("");
   const [schedTime, setSchedTime] = useState("");
@@ -2203,6 +2205,7 @@ function HubApp({
           if (isHeavy && !alertFields._areasOverridden) areasStr = "\nAFFECTED: ALL AREAS — Full Shutdown Protocol";else if (isRain && !alertFields._areasOverridden) areasStr = "\nAFFECTED: " + RAIN_AREAS.join(", ") + "\nMoon Stage remains open (tent)";else areasStr = "\nAFFECTED: " + effectiveAreas.join(", ");
         }
         const finalMsg = msg + (areasStr ? areasStr : "");
+        setBroadcastSending(true);
         setBroadcastAlerts(p => [{
           id: Date.now(),
           label: t.label,
@@ -2253,12 +2256,87 @@ function HubApp({
           }).catch(e => console.log("SMS broadcast error:", e));
         }
         playAlert("broadcast");
-        setView("home");
-        setAlertView(null);
-        setAlertFields({});
-        setEditedMsg("");
+        setBroadcastSending(false);
+        setBroadcastSuccess({
+          label: t.label,
+          channels: broadcastChannels,
+          count: bcastPhones.length + vendorOnly.length
+        });
+        setTimeout(() => {
+          setBroadcastSuccess(null);
+          setView("home");
+          setAlertView(null);
+          setAlertFields({});
+          setEditedMsg("");
+        }, 4000);
       }
-    }, "\uD83D\uDE80 SEND NOW")));
+    }, broadcastSending ? "⏳ Sending..." : "🚀 SEND NOW"), broadcastSuccess && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0.85)",
+        zIndex: 999,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 16,
+        padding: "32px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 72
+      }
+    }, "\u2705"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 24,
+        fontWeight: 900,
+        color: "#10b981",
+        textAlign: "center"
+      }
+    }, "Broadcast Sent!"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(16,185,129,0.12)",
+        border: "2px solid rgba(16,185,129,0.4)",
+        borderRadius: 14,
+        padding: "20px 24px",
+        textAlign: "center",
+        maxWidth: 340,
+        width: "100%"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        fontWeight: 800,
+        color: "#f1f5f9",
+        marginBottom: 8
+      }
+    }, broadcastSuccess.label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#6ee7b7",
+        marginBottom: 4
+      }
+    }, "\u2713 GroupMe \u2014 ", broadcastSuccess.channels.length, " channels"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#6ee7b7",
+        marginBottom: 4
+      }
+    }, "\u2713 SMS \u2014 ", broadcastSuccess.count, " recipients"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#6ee7b7"
+      }
+    }, "\u2713 Voice calls firing")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569"
+      }
+    }, "Returning to home in 4 seconds..."))));
   })()));
 
   // CALL QUEUE VIEW

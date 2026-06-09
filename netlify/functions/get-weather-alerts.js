@@ -25,8 +25,17 @@ exports.handler = async () => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
   try {
     const res = await fetch(NWS_URL, {
-      headers: { 'User-Agent': 'FDMOps/1.0 (fdm2026.netlify.app; contact: dabshere@gmail.com)' }
+      method: 'GET',
+      headers: {
+        'User-Agent': 'FDMOps/1.0 (fdm2026.netlify.app; dabshere@gmail.com)',
+        'Accept': 'application/geo+json',
+        'Accept-Language': 'en-US'
+      }
     });
+    if (!res.ok) {
+      console.error('NWS API error:', res.status, res.statusText);
+      return { statusCode: 200, headers, body: JSON.stringify({ alerts: [], error: `NWS returned ${res.status}` }) };
+    }
     const data = await res.json();
     const features = data.features || [];
 

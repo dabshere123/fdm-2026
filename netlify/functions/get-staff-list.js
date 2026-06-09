@@ -18,7 +18,7 @@ exports.handler = async (event) => {
       .filter(r => r.fields.Status === 'Approved')
       .map(r => ({
         id: r.id,
-        name: r.fields['Full Name'] || r.fields['Name'] || '',
+        name: r.fields['Name'] || '',
         role: r.fields['Role'] || '',
         location: r.fields['Location'] || '',
         phone: r.fields['Phone'] || '',

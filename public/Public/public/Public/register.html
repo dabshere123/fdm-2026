@@ -114,25 +114,25 @@ function Register() {
   const [phone, setPhone] = useState("");
   const [groupme, setGroupme] = useState("");
   const [onGroupme, setOnGroupme] = useState(null); // null | "yes" | "no"
-  const [workDays, setWorkDays] = useState([]);
+  const [workDays, setWorkDays] = useState(["thu", "fri", "sat", "sun"]);
   const [workShifts, setWorkShifts] = useState({
     thu: {
-      selected: false,
+      selected: true,
       start: "",
       end: ""
     },
     fri: {
-      selected: false,
+      selected: true,
       start: "",
       end: ""
     },
     sat: {
-      selected: false,
+      selected: true,
       start: "",
       end: ""
     },
     sun: {
-      selected: false,
+      selected: true,
       start: "",
       end: ""
     }
@@ -525,13 +525,17 @@ function Register() {
           cursor: "pointer",
           textAlign: "left"
         },
-        onClick: () => setWorkShifts(p => ({
-          ...p,
-          [day.id]: {
-            ...p[day.id],
-            selected: !p[day.id].selected
-          }
-        }))
+        onClick: () => {
+          const nowSelected = !workShifts[day.id].selected;
+          setWorkShifts(p => ({
+            ...p,
+            [day.id]: {
+              ...p[day.id],
+              selected: nowSelected
+            }
+          }));
+          setWorkDays(p => nowSelected ? [...p, day.id] : p.filter(d => d !== day.id));
+        }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           width: 22,

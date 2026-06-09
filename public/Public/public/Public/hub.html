@@ -70,13 +70,13 @@ const BROADCAST_ALERTS = [{
   label: "⛈ Inclement Weather Imminent",
   color: "#dc2626",
   requiresWeatherType: true,
-  defaultMsg: "ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Please begin storm procedures and secure all items. Food, beverage, and merchandise sales are postponed until further notice. Additional information will be sent out once available.",
+  defaultMsg: "ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.",
   fields: []
 }, {
   id: "event_delayed",
   label: "⏰ Event Delayed",
   color: "#f59e0b",
-  defaultMsg: "Attention all staff and vendors — Fête de Marquette has been delayed. Further information will be provided via the festival app and messaging.",
+  defaultMsg: "Attention all staff and vendors — Fête de Marquette has been delayed. Expected resumption: [TIME]. Further information will be provided as it becomes available.",
   fields: [{
     key: "duration",
     label: "Estimated Delay",
@@ -1708,7 +1708,7 @@ function HubApp({
   }, "\uD83D\uDCDE Voice + SMS")))) : (() => {
     const t = BROADCAST_ALERTS.find(x => x.id === alertView);
     const selectedReason = alertFields._reason || "";
-    const msgBase = (t?.defaultMsg || "").replace("[REASON]", selectedReason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom..." ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]");
+    const msgBase = (t?.defaultMsg || "").replace("[REASON]", selectedReason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom..." ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD");
     const preview = editedMsg || msgBase;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2163,10 +2163,10 @@ function HubApp({
         lineHeight: 1.6,
         borderColor: "rgba(124,58,237,0.4)"
       },
-      value: editedMsg || (t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom..." ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]"),
+      value: editedMsg || (t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom..." ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"),
       onChange: e => setEditedMsg(e.target.value),
       onFocus: e => {
-        if (!editedMsg) setEditedMsg((t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]"));
+        if (!editedMsg) setEditedMsg((t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[TIME]", alertFields.eta || "time TBD"));
       }
     }), editedMsg && /*#__PURE__*/React.createElement("button", {
       style: {

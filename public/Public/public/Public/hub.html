@@ -445,6 +445,10 @@ function HubApp({
   const [view, setView] = useState("home");
   const [tick, setTick] = useState(0);
   const [lostChildBlink, setLostChildBlink] = useState(false);
+  const [newCallView, setNewCallView] = useState(false);
+  const [newCallType, setNewCallType] = useState("");
+  const [newCallLocation, setNewCallLocation] = useState("");
+  const [newCallProblem, setNewCallProblem] = useState("");
   const [lcFields, setLcFields] = useState({});
   const blinkRef = useRef(null);
   const [escalated, setEscalated] = useState({});
@@ -1177,22 +1181,13 @@ function HubApp({
         msg = [`🔧 MAINTENANCE 🔧`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
       } else if (call.type === "lost_child") {
         msg = [`🧒 LOST CHILD 🧒`, ``, `LOCATION: ${call.location}`, `DESCRIPTION: ${call.problem || ""}`, call.details ? `${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // Lost child — SMS + voice + MPD on acknowledge
-        fetch("/.netlify/functions/send-broadcast", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: finalMsg,
-            recipients: [{
-              name: "Admin",
-              phone: "+16082289692"
-            }],
-            includeVoice: true,
-            voiceScript: `Lost child alert. ${call.problem || ""}. Location: ${call.location}. All staff please be on alert.`
-          })
-        }).catch(e => console.log(e));
+        // Lost child — SMS + voice to ALL staff
+        setTimeout(() => {
+          const lcPhones = getNotifyList("lost_child");
+          const lcPhonesFinal = lcPhones.length > 0 ? lcPhones : [ADMIN2_PHONE];
+          sendSMSList(lcPhonesFinal, msg);
+          sendVoice(lcPhonesFinal, `Urgent. Lost child at Fete de Marquette. ${(call.problem || "").replace(/\n/g, " ")}. Location: ${call.location}. All staff please be on alert immediately.`);
+        }, 100);
         fetch("/.netlify/functions/send-mpd", {
           method: "POST",
           headers: {
@@ -2301,30 +2296,16 @@ function HubApp({
         const bcastMsg = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
         const bcastPhones = getNotifyList("broadcast");
         const vendorPhones = getNotifyList("vendors_sms");
-        // Staff get SMS + Voice
-        sendSMSList(bcastPhones, bcastMsg);
-        sendVoice(bcastPhones, `Fete de Marquette announcement. ${finalMsg.replace(/\n/g, " ")}`);
-        // Vendors get SMS only
-        const vendorOnly = vendorPhones.filter(p => !bcastPhones.includes(p));
-        sendSMSList(vendorOnly, bcastMsg);
-        // SMS + Voice to Admin only
-        if (alertFields._smsChannels?.includes("sms_all")) {
-          fetch("/.netlify/functions/send-broadcast", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              message: msg,
-              recipients: [{
-                name: "Admin",
-                phone: "+16082289692"
-              }],
-              includeVoice: true,
-              voiceScript: msg.replace(/[*#]/g, "")
-            })
-          }).catch(e => console.log("SMS broadcast error:", e));
-        }
+        // Async SMS + Voice to prevent UI freeze
+        setTimeout(() => {
+          const bcastMsg2 = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
+          const bcastPhones2 = getNotifyList("broadcast");
+          const vendorPhones2 = getNotifyList("vendors_sms");
+          const vendorOnly2 = vendorPhones2.filter(p => !bcastPhones2.includes(p));
+          sendSMSList(bcastPhones2, bcastMsg2);
+          sendVoice(bcastPhones2, `Fete de Marquette announcement. ${finalMsg.replace(/\n/g, " ")}`);
+          sendSMSList(vendorOnly2, bcastMsg2);
+        }, 100);
         playAlert("broadcast");
         setBroadcastSending(false);
         const _successData = {
@@ -2411,6 +2392,192 @@ function HubApp({
       }
     }, "Returning to home in 4 seconds..."))));
   })()));
+
+  // NEW CALL VIEW (Admin initiated)
+  if (newCallView) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 0,
+      height: "100vh",
+      background: "#0d0d0d",
+      overflowY: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.panelHdr,
+      position: "sticky",
+      top: 0,
+      zIndex: 10
+    }
+  }, /*#__PURE__*/React.createElement(BB, {
+    onClick: () => setNewCallView(false)
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...S.panelTitle
+    }
+  }, "\u2795 New Call")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 4
+    }
+  }, "Call Type"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, [{
+    type: "medical",
+    label: "🩺 Medical",
+    color: "#a855f7"
+  }, {
+    type: "fire",
+    label: "🔥 Fire / Life Safety",
+    color: "#ef4444"
+  }, {
+    type: "security",
+    label: "🛡️ Security",
+    color: "#3b82f6"
+  }].map(({
+    type,
+    label,
+    color
+  }) => /*#__PURE__*/React.createElement("button", {
+    key: type,
+    style: {
+      padding: "14px",
+      borderRadius: 10,
+      border: `2px solid ${newCallType === type ? color : color + "44"}`,
+      background: newCallType === type ? color + "22" : "rgba(255,255,255,0.03)",
+      color: newCallType === type ? "#f1f5f9" : "#64748b",
+      fontWeight: 800,
+      fontSize: 14,
+      cursor: "pointer",
+      textAlign: "left"
+    },
+    onClick: () => setNewCallType(type)
+  }, label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginTop: 4
+    }
+  }, "Location *"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: "14px",
+      color: "#f1f5f9",
+      fontSize: 14,
+      outline: "none"
+    },
+    placeholder: "e.g. Sun Stage \xB7 Moon Bar \xB7 Medical Tent",
+    value: newCallLocation,
+    onChange: e => setNewCallLocation(e.target.value)
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Problem / Description *"), /*#__PURE__*/React.createElement("textarea", {
+    style: {
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: "14px",
+      color: "#f1f5f9",
+      fontSize: 14,
+      outline: "none",
+      minHeight: 80,
+      resize: "none",
+      fontFamily: "inherit"
+    },
+    placeholder: "What's happening?",
+    value: newCallProblem,
+    onChange: e => setNewCallProblem(e.target.value)
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "16px",
+      borderRadius: 12,
+      border: "none",
+      background: !newCallType || !newCallLocation || !newCallProblem ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#ef4444,#dc2626)",
+      color: !newCallType || !newCallLocation || !newCallProblem ? "#475569" : "#fff",
+      fontWeight: 800,
+      fontSize: 16,
+      cursor: "pointer",
+      opacity: !newCallType || !newCallLocation || !newCallProblem ? 0.5 : 1
+    },
+    disabled: !newCallType || !newCallLocation || !newCallProblem,
+    onClick: () => {
+      const call = {
+        id: Date.now(),
+        type: newCallType,
+        location: newCallLocation,
+        problem: newCallProblem,
+        requestedBy: "Admin",
+        status: "new_call",
+        acknowledged: false,
+        history: [{
+          status: "new_call",
+          ts: tShort()
+        }],
+        unit: null,
+        firedAt: Date.now()
+      };
+      setCalls(p => [call, ...p]);
+      // Fire alerts same as incoming call
+      const msg = `🚨 FDM ALERT — ${newCallType.toUpperCase()}\nLOCATION: ${newCallLocation}\n${newCallProblem}\nReported by: Admin\nDATE/TIME: ${now()}`;
+      const channelMap = {
+        medical: "medical",
+        fire: "medical",
+        security: "admin"
+      };
+      sendGroupMe(msg, [channelMap[newCallType] || "admin", "admin"]);
+      setTimeout(() => {
+        if (newCallType === "medical" || newCallType === "fire") {
+          const phones = getNotifyList("medical");
+          sendSMSList(phones, msg);
+          sendVoice(phones, `${newCallType === "fire" ? "Life safety" : "Medical"} alert at Fete de Marquette. ${newCallProblem}. Location: ${newCallLocation}. Please respond immediately.`);
+        } else if (newCallType === "security") {
+          const phones = getNotifyList("security");
+          sendSMSList(phones, msg);
+          sendVoice(phones, `Security alert at Fete de Marquette. ${newCallProblem}. Location: ${newCallLocation}. Please respond.`);
+        }
+      }, 100);
+      playAlert(newCallType);
+      setActivityLog(p => [{
+        id: Date.now(),
+        ts: tShort(),
+        date: now(),
+        type: newCallType,
+        label: `${newCallType} call initiated by Admin`,
+        msg: newCallProblem
+      }, ...p]);
+      setNewCallView(false);
+      setNewCallType("");
+      setNewCallLocation("");
+      setNewCallProblem("");
+    }
+  }, "\uD83D\uDEA8 Submit & Alert Staff")));
 
   // CALL QUEUE VIEW
 
@@ -3414,21 +3581,13 @@ Reply YES to acknowledge.`
       };
       setCalls(p => [newCall, ...p]);
       sendGroupMe(lcMsg, ["all_staff", "admin", "medical", "bar_stage", "financial", "restock", "maintenance"]);
-      fetch("/.netlify/functions/send-broadcast", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: lcMsg,
-          recipients: [{
-            name: "Admin",
-            phone: "+16082289692"
-          }],
-          includeVoice: true,
-          voiceScript: `Lost child alert at Fete de Marquette. ${lcFields?.gender || "Child"}, approximately ${lcFields?.age} years old. Last seen near ${lcFields?.lastSeen}. Assembly point is ${lcFields?.assembly}. Parent name ${lcFields?.parentName || "unknown"}. All staff please be on alert.`
-        })
-      }).catch(e => console.log(e));
+      setTimeout(() => {
+        const lcPhones = getNotifyList("lost_child");
+        const lcPhonesFinal = lcPhones.length > 0 ? lcPhones : [ADMIN2_PHONE];
+        const lcVoice = `Urgent. Lost child at Fete de Marquette. ${lcFields?.gender || "Child"}, approximately ${lcFields?.age} years old. Last seen near ${lcFields?.lastSeen}. Assembly point is ${lcFields?.assembly}. Parent name ${lcFields?.parentName || "unknown"}. All staff please be on alert immediately.`;
+        sendSMSList(lcPhonesFinal, lcMsg);
+        sendVoice(lcPhonesFinal, lcVoice);
+      }, 100);
       fetch("/.netlify/functions/send-mpd", {
         method: "POST",
         headers: {
@@ -5383,7 +5542,33 @@ Reply YES to acknowledge.`
       cursor: "pointer"
     },
     onClick: () => setLcView(true)
-  }, "\u2795 Report Lost Child"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2795 Report Lost Child"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      padding: "14px",
+      borderRadius: 12,
+      border: "2px solid rgba(239,68,68,0.5)",
+      background: "rgba(239,68,68,0.1)",
+      color: "#fca5a5",
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      setNewCallType("");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20
+    }
+  }, "\uD83D\uDEA8"), " New Call \u2014 Medical / Fire / Security"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",

@@ -1,40 +1,57 @@
-const twilio = require('twilio');
+// send-sms.js
+// Sends a single SMS via Twilio
+// POST body: { to, message }
+
+const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_FROM  = process.env.TWILIO_PHONE_NUMBER;
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method not allowed' };
-  }
+  const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
   const { to, message } = JSON.parse(event.body || '{}');
 
   if (!to || !message) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Missing required fields: to, message' })
-    };
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing to or message' }) };
   }
 
-  const client = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
-  );
+  // Normalize phone number to E.164
+  const digits = to.replace(/\D/g, '');
+  const normalized = digits.length === 10 ? `+1${digits}` : digits.length === 11 && digits.startsWith('1') ? `+${digits}` : to.startsWith('+') ? to : null;
+  if (!normalized) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: `Invalid phone number: ${to}` }) };
+  }
 
   try {
-    const result = await client.messages.create({
-      body: message,
-      messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
-      to: to
-    });
+    const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64');
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          To: normalized,
+          From: TWILIO_FROM,
+          Body: message
+        }).toString()
+      }
+    );
 
-    return {
-      statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ success: true, sid: result.sid })
-    };
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('Twilio error:', data);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: data.message || 'Twilio error', code: data.code }) };
+    }
+
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, sid: data.sid }) };
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    console.error('Error:', err.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };

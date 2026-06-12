@@ -1153,24 +1153,27 @@ function HubApp({
         // SMS + Voice to Admin + Med roster (async so UI doesn't freeze)
         setTimeout(() => {
           const medPhones = getNotifyList("medical");
-          sendSMSList(medPhones, msg);
-          sendVoice(medPhones, `Medical alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
+          const medPhonesFinal = [...new Set([ADMIN2_PHONE, ...medPhones])];
+          sendSMSList(medPhonesFinal, msg);
+          sendVoice(medPhonesFinal, `Medical alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
         }, 100);
       } else if (call.type === "fire") {
         msg = [`🔥 LIFE SAFETY ALERT 🔥`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Med roster for fire (async)
         setTimeout(() => {
           const firePhones = getNotifyList("fire");
-          sendSMSList(firePhones, msg);
-          sendVoice(firePhones, `Life safety alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
+          const firePhonesFinal = [...new Set([ADMIN2_PHONE, ...firePhones])];
+          sendSMSList(firePhonesFinal, msg);
+          sendVoice(firePhonesFinal, `Life safety alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
         }, 100);
       } else if (call.type === "security") {
         msg = [`👮 SECURITY 👮`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Security roster (async)
         setTimeout(() => {
           const secPhones = getNotifyList("security");
-          sendSMSList(secPhones, msg);
-          sendVoice(secPhones, `Security alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
+          const secPhonesFinal = [...new Set([ADMIN2_PHONE, ...secPhones])];
+          sendSMSList(secPhonesFinal, msg);
+          sendVoice(secPhonesFinal, `Security alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
         }, 100);
       } else if (call.type === "supplies") {
         msg = [`📦 RESTOCK REQUEST 📦`, ``, `LOCATION: ${call.location}`, `WHAT'S NEEDED: ${call.problem || ""}`, call.details ? `AMOUNT: ${call.details}` : "", `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
@@ -5542,33 +5545,7 @@ Reply YES to acknowledge.`
       cursor: "pointer"
     },
     onClick: () => setLcView(true)
-  }, "\u2795 Report Lost Child"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      width: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-      padding: "14px",
-      borderRadius: 12,
-      border: "2px solid rgba(239,68,68,0.5)",
-      background: "rgba(239,68,68,0.1)",
-      color: "#fca5a5",
-      fontSize: 15,
-      fontWeight: 900,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      setNewCallType("");
-      setNewCallLocation("");
-      setNewCallProblem("");
-      setNewCallView(true);
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 20
-    }
-  }, "\uD83D\uDEA8"), " New Call \u2014 Medical / Fire / Security"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2795 Report Lost Child"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -8288,6 +8265,36 @@ function MedHome({
       letterSpacing: "0.06em"
     }
   }, "\uD83E\uDE7A Medical & \uD83D\uDEE1 Security"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 10px 4px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      padding: "14px",
+      borderRadius: 12,
+      border: "2px solid rgba(239,68,68,0.5)",
+      background: "rgba(239,68,68,0.1)",
+      color: "#fca5a5",
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      setNewCallType("");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20
+    }
+  }, "\uD83D\uDEA8"), " New Call \u2014 Medical / Fire / Security")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",

@@ -66,5 +66,21 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: data.error?.message || 'Airtable error' }) };
   }
 
+  // Trigger incident report email for medical/security/fire incidents
+  if (['medical','walk_in','fire','security'].includes(type)) {
+    try {
+      const baseUrl = `https://${event.headers.host || 'fdm2026.netlify.app'}`;
+      fetch(`${baseUrl}/.netlify/functions/send-incident-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          incidentNumber, type, location, problem, patientDescription,
+          respondingUnit, interventions, disposition, narrative: notes,
+          notes: '', requestedBy, openedAt,
+        })
+      }).catch(e => console.log('Report email error:', e.message));
+    } catch(e) { console.log('Report trigger error:', e.message); }
+  }
+
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, incidentNumber, id: data.id }) };
 };

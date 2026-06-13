@@ -674,12 +674,17 @@ function HubApp({
       return [...new Set([...staffVendors, ...vendorPhonesList])];
     }
     if (type === "medical" || type === "fire") {
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "med unit 1", "med 1", "med unit 2", "med 2"])])];
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2", "med unit 1", "med 1", "m1", "med unit 2", "med 2", "m2"])])];
     }
     if (type === "security") {
-      // Admin 2 (Devin), Admin 1 from Airtable, MPD officers
       const mpdPhones = mpdOfficers.filter(o => o.phone).map(o => o.phone);
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin 1", "admin"]), ...mpdPhones])];
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2"]), ...mpdPhones])];
+    }
+    if (type === "supplies") {
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2"])])];
+    }
+    if (type === "maintenance") {
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2", "oc1", "oc2", "oc3", "oc4"])])];
     }
     return [ADMIN2_PHONE];
   };
@@ -1178,11 +1183,20 @@ function HubApp({
         }, 100);
       } else if (call.type === "supplies") {
         msg = [`📦 RESTOCK REQUEST 📦`, ``, `LOCATION: ${call.location}`, `WHAT'S NEEDED: ${call.problem || ""}`, call.details ? `AMOUNT: ${call.details}` : "", `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        // Supplies go directly to Admin only
-        if (msg) sendGroupMe(msg, ["admin"]);
-        msg = null; // prevent double-send below
+        sendGroupMe(msg, ["admin", "restock"]);
+        setTimeout(() => {
+          const phones = getNotifyList("supplies");
+          sendSMSList(phones, msg);
+          sendVoice(phones, `Supplies request at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
+        }, 100);
+        msg = null;
       } else if (call.type === "maintenance") {
         msg = [`🔧 MAINTENANCE 🔧`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
+        setTimeout(() => {
+          const phones = getNotifyList("maintenance");
+          sendSMSList(phones, msg);
+          sendVoice(phones, `Maintenance request at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
+        }, 100);
       } else if (call.type === "lost_child") {
         msg = [`🧒 LOST CHILD 🧒`, ``, `LOCATION: ${call.location}`, `DESCRIPTION: ${call.problem || ""}`, call.details ? `${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // Lost child — SMS + voice to ALL staff
@@ -4871,7 +4885,11 @@ Reply YES to acknowledge.`
     },
     sendGroupMe: sendGroupMe,
     liveMode: liveMode,
-    openLostChild: () => setLcView(true)
+    openLostChild: () => setLcView(true),
+    setNewCallView: setNewCallView,
+    setNewCallType: setNewCallType,
+    setNewCallLocation: setNewCallLocation,
+    setNewCallProblem: setNewCallProblem
   })));
 
   // ADMIN HOME
@@ -5444,16 +5462,11 @@ Reply YES to acknowledge.`
       if (nineOneOne.active) {
         const msg = `🚨 911 ACTIVE 🚨\n\nMadison Fire / EMS has been called.\nLOCATION: ${nineOneOne.info?.location || "Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature || ""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
         sendGroupMe(msg, ["admin", "medical"]);
-        fetch("/.netlify/functions/send-sms", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            to: "+16082289692",
-            message: msg
-          })
-        }).catch(e => console.log(e));
+        setTimeout(() => {
+          const phones = [...new Set([ADMIN2_PHONE, ...getNotifyList("medical")])];
+          sendSMSList(phones, msg);
+          sendVoice(phones, `911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location || "Festival Grounds"}. Clear a path for emergency vehicles.`);
+        }, 100);
         fetch("/.netlify/functions/send-mpd", {
           method: "POST",
           headers: {
@@ -7569,7 +7582,11 @@ function MedHome({
   triggerIncident,
   sendGroupMe,
   liveMode,
-  openLostChild
+  openLostChild,
+  setNewCallView,
+  setNewCallType,
+  setNewCallLocation,
+  setNewCallProblem
 }) {
   const [medReqView, setMedReqView] = useState(false);
   const [medReqType, setMedReqType] = useState("");

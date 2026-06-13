@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -814,6 +814,10 @@ function HubApp({
   const [adminReqLoc, setAdminReqLoc] = useState("");
   const [adminReqProblem, setAdminReqProblem] = useState("");
   const [adminReqDetails, setAdminReqDetails] = useState("");
+  const [adminSupplyItem, setAdminSupplyItem] = useState("");
+  const [adminSupplyQty, setAdminSupplyQty] = useState("");
+  const [adminMaintProblem, setAdminMaintProblem] = useState("");
+  const [adminMaintLoc, setAdminMaintLoc] = useState("");
 
   // INCIDENT REPORT
   const [incidentView, setIncidentView] = useState(null); // holds call data for report form
@@ -1672,7 +1676,300 @@ function HubApp({
       cursor: "pointer"
     },
     onClick: () => setResourceType(null)
-  }, "Change")), /*#__PURE__*/React.createElement(Fld, {
+  }, "Change")), resourceType === "supplies" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#94a3b8",
+      fontWeight: 700,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "What do you need?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, [{
+    id: "ice",
+    label: "Ice",
+    emoji: "🧊"
+  }, {
+    id: "beer_cups",
+    label: "Beer Cup Sleeves",
+    emoji: "🍺"
+  }, {
+    id: "wine_cups",
+    label: "Wine Cup Sleeves",
+    emoji: "🍷"
+  }, {
+    id: "paper_towels",
+    label: "Paper Towels",
+    emoji: "🧻"
+  }, {
+    id: "bar_towels",
+    label: "Bar Towels",
+    emoji: "🧼"
+  }, {
+    id: "water",
+    label: "Bottled Water (24-pack)",
+    emoji: "💧"
+  }, {
+    id: "other",
+    label: "Other",
+    emoji: "➕"
+  }].map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      padding: "14px",
+      borderRadius: 12,
+      border: `2px solid ${adminSupplyItem === item.id ? "rgba(245,158,11,0.7)" : "rgba(255,255,255,0.08)"}`,
+      background: adminSupplyItem === item.id ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.03)",
+      cursor: "pointer",
+      textAlign: "left",
+      width: "100%"
+    },
+    onClick: () => {
+      setAdminSupplyItem(item.id);
+      setAdminSupplyQty("");
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 22,
+      width: 28
+    }
+  }, item.emoji), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 15,
+      fontWeight: adminSupplyItem === item.id ? 800 : 500,
+      color: adminSupplyItem === item.id ? "#fcd34d" : "#f1f5f9"
+    }
+  }, item.label), adminSupplyItem === item.id && /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: "auto",
+      color: "#fcd34d",
+      fontSize: 18
+    }
+  }, "\u2713")))), adminSupplyItem && adminSupplyItem !== "other" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#94a3b8",
+      fontWeight: 700,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Quantity?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(5,1fr)",
+      gap: 8
+    }
+  }, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"].map(q => /*#__PURE__*/React.createElement("button", {
+    key: q,
+    style: {
+      padding: "14px 0",
+      borderRadius: 10,
+      border: `2px solid ${adminSupplyQty === q ? "rgba(245,158,11,0.7)" : "rgba(255,255,255,0.08)"}`,
+      background: adminSupplyQty === q ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.03)",
+      cursor: "pointer",
+      fontSize: 16,
+      fontWeight: adminSupplyQty === q ? 900 : 400,
+      color: adminSupplyQty === q ? "#fcd34d" : "#f1f5f9",
+      textAlign: "center"
+    },
+    onClick: () => setAdminSupplyQty(q)
+  }, q)))), adminSupplyItem === "other" && /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp
+    },
+    placeholder: "What do you need?",
+    value: adminReqProblem,
+    onChange: e => setAdminReqProblem(e.target.value)
+  }), /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp
+    },
+    placeholder: "Location / Station *",
+    value: adminReqLoc,
+    onChange: e => setAdminReqLoc(e.target.value)
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.sendBtn,
+      background: "linear-gradient(135deg,#f59e0b,#d97706)",
+      color: "#0a0f1e",
+      opacity: !adminReqLoc || !adminSupplyItem || adminSupplyItem !== "other" && !adminSupplyQty ? 0.5 : 1
+    },
+    disabled: !adminReqLoc || !adminSupplyItem || adminSupplyItem !== "other" && !adminSupplyQty,
+    onClick: () => {
+      const item = adminSupplyItem === "other" ? adminReqProblem : adminSupplyItem.replace(/_/g, " ");
+      const prob = `Restock: ${item}${adminSupplyQty ? " x" + adminSupplyQty : ""}`;
+      const msg = `📦 RESTOCK REQUEST — Admin
+LOCATION: ${adminReqLoc}
+WHAT'S NEEDED: ${prob}
+DATE/TIME: ${now()}`;
+      const call = {
+        id: Date.now(),
+        type: "supplies",
+        location: adminReqLoc,
+        problem: prob,
+        requestedBy: "Admin",
+        status: "acknowledged",
+        acknowledged: true,
+        history: [{
+          status: "new_call",
+          ts: tShort()
+        }, {
+          status: "acknowledged",
+          ts: tShort(),
+          unit: "Admin"
+        }],
+        unit: "Admin",
+        firedAt: Date.now()
+      };
+      setCalls(p => [call, ...p]);
+      sendGroupMe(msg, ["admin", "restock"]);
+      setTimeout(() => {
+        const phones = getNotifyList("supplies");
+        sendSMSList(phones, msg);
+        sendVoice(phones, `Supplies request at Fete de Marquette. ${prob}. Location: ${adminReqLoc}. Please respond.`);
+      }, 100);
+      setActivityLog(p => [{
+        id: Date.now(),
+        ts: tShort(),
+        date: now(),
+        type: "supplies",
+        label: `Supplies: ${prob}`,
+        msg: adminReqLoc
+      }, ...p]);
+      setAdminSupplyItem("");
+      setAdminSupplyQty("");
+      setAdminReqLoc("");
+      setAdminReqProblem("");
+      setResourceView(false);
+      setResourceType(null);
+      setResourceFields({});
+    }
+  }, "\uD83D\uDCE6 Send Supplies Request")), resourceType === "maintenance" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#94a3b8",
+      fontWeight: 700,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "What's the issue?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, ["Generator / Power", "Sound / PA System", "Lighting", "Tent / Structure", "Plumbing / Water", "Trash / Cleanup", "Equipment Breakdown", "Other"].map(item => /*#__PURE__*/React.createElement("button", {
+    key: item,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      padding: "14px",
+      borderRadius: 12,
+      border: `2px solid ${adminMaintProblem === item ? "rgba(16,185,129,0.7)" : "rgba(255,255,255,0.08)"}`,
+      background: adminMaintProblem === item ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.03)",
+      cursor: "pointer",
+      textAlign: "left",
+      width: "100%"
+    },
+    onClick: () => setAdminMaintProblem(item)
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: adminMaintProblem === item ? 800 : 500,
+      color: adminMaintProblem === item ? "#6ee7b7" : "#f1f5f9"
+    }
+  }, item), adminMaintProblem === item && /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: "auto",
+      color: "#6ee7b7",
+      fontSize: 18
+    }
+  }, "\u2713")))), adminMaintProblem === "Other" && /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp
+    },
+    placeholder: "Describe the issue...",
+    value: adminReqProblem,
+    onChange: e => setAdminReqProblem(e.target.value)
+  }), /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp
+    },
+    placeholder: "Location *",
+    value: adminMaintLoc,
+    onChange: e => setAdminMaintLoc(e.target.value)
+  }), /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp
+    },
+    placeholder: "Additional details (optional)",
+    value: adminReqDetails,
+    onChange: e => setAdminReqDetails(e.target.value)
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.sendBtn,
+      background: "linear-gradient(135deg,#10b981,#059669)",
+      opacity: !adminMaintLoc || !adminMaintProblem ? 0.5 : 1
+    },
+    disabled: !adminMaintLoc || !adminMaintProblem,
+    onClick: () => {
+      const prob = adminMaintProblem === "Other" ? adminReqProblem : adminMaintProblem;
+      const msg = `🔧 MAINTENANCE REQUEST — Admin
+LOCATION: ${adminMaintLoc}
+ISSUE: ${prob}${adminReqDetails ? "\n" + adminReqDetails : ""}
+DATE/TIME: ${now()}`;
+      const call = {
+        id: Date.now(),
+        type: "maintenance",
+        location: adminMaintLoc,
+        problem: prob,
+        requestedBy: "Admin",
+        status: "acknowledged",
+        acknowledged: true,
+        history: [{
+          status: "new_call",
+          ts: tShort()
+        }, {
+          status: "acknowledged",
+          ts: tShort(),
+          unit: "Admin"
+        }],
+        unit: "Admin",
+        firedAt: Date.now()
+      };
+      setCalls(p => [call, ...p]);
+      sendGroupMe(msg, ["admin", "maintenance"]);
+      setTimeout(() => {
+        const phones = getNotifyList("maintenance");
+        sendSMSList(phones, msg);
+        sendVoice(phones, `Maintenance request at Fete de Marquette. ${prob}. Location: ${adminMaintLoc}. Please respond.`);
+      }, 100);
+      setActivityLog(p => [{
+        id: Date.now(),
+        ts: tShort(),
+        date: now(),
+        type: "maintenance",
+        label: `Maintenance: ${prob}`,
+        msg: adminMaintLoc
+      }, ...p]);
+      setAdminMaintProblem("");
+      setAdminMaintLoc("");
+      setAdminReqDetails("");
+      setAdminReqProblem("");
+      setResourceView(false);
+      setResourceType(null);
+      setResourceFields({});
+    }
+  }, "\uD83D\uDD27 Send Maintenance Request")), resourceType !== "supplies" && resourceType !== "maintenance" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Fld, {
     label: "Location / Where needed",
     value: resourceFields.location || "",
     onChange: e => setResourceFields(p => ({
@@ -1714,7 +2011,6 @@ function HubApp({
         label: `Resource Request: ${RESOURCE_TYPES.find(t => t.id === resourceType)?.label}`,
         msg: `${resourceFields.reason} — ${resourceFields.location}`
       }, ...p]);
-      // MFD + Madison Fire Medics auto-trigger 911 activation
       if (resourceType === "mfd" || resourceType === "ems_mfd") {
         set911({
           active: true,
@@ -1732,7 +2028,7 @@ function HubApp({
       setResourceFields({});
       if (resourceType === "mfd" || resourceType === "ems_mfd") setView("911");
     }
-  }, "\uD83D\uDCCB SUBMIT RESOURCE REQUEST")))));
+  }, "\uD83D\uDCCB SUBMIT RESOURCE REQUEST"))))));
 
   // BROADCAST VIEW
   if (view === "alert") return /*#__PURE__*/React.createElement("div", {
@@ -4889,7 +5185,8 @@ Reply YES to acknowledge.`
     setNewCallView: setNewCallView,
     setNewCallType: setNewCallType,
     setNewCallLocation: setNewCallLocation,
-    setNewCallProblem: setNewCallProblem
+    setNewCallProblem: setNewCallProblem,
+    staffList: staffList
   })));
 
   // ADMIN HOME
@@ -6389,7 +6686,12 @@ Reply YES to acknowledge.`
       fontSize: 12,
       fontWeight: 700
     },
-    onClick: () => setShowStaffMgmt(p => !p)
+    onClick: () => {
+      setShowStaffMgmt(p => !p);
+      if (!showStaffMgmt) {
+        fetch("/.netlify/functions/get-staff-list").then(r => r.json()).then(d => setStaffList(d.staff || d.members || [])).catch(() => {});
+      }
+    }
   }, showStaffMgmt ? "▲ Hide" : "▼ Manage")), showStaffMgmt && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -6679,24 +6981,36 @@ Reply YES to acknowledge.`
         ...r,
         name: e.target.value
       } : r)) : setGmNewName(e.target.value)
-    }), /*#__PURE__*/React.createElement("input", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      style: {
         background: "rgba(255,255,255,0.06)",
         border: "1px solid rgba(255,255,255,0.1)",
         borderRadius: 8,
         padding: "8px 10px",
         color: "#f1f5f9",
         fontSize: 12,
-        outline: "none"
+        outline: "none",
+        width: "100%"
       },
-      placeholder: "GroupMe username",
+      placeholder: "GroupMe display name (e.g. Moon Stage Joe)",
       value: gmEditId ? editing?.username || "" : gmNewUsername,
       onChange: e => gmEditId ? setGmRoster(p => p.map(r => r.id === gmEditId ? {
         ...r,
         username: e.target.value
       } : r)) : setGmNewUsername(e.target.value)
-    })), /*#__PURE__*/React.createElement("div", {
+    }), !gmEditId && gmNewName && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#475569"
+      }
+    }, "This is how they appear in GroupMe channels"))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: "#64748b",
@@ -7586,7 +7900,8 @@ function MedHome({
   setNewCallView,
   setNewCallType,
   setNewCallLocation,
-  setNewCallProblem
+  setNewCallProblem,
+  staffList
 }) {
   const [medReqView, setMedReqView] = useState(false);
   const [medReqType, setMedReqType] = useState("");
@@ -7649,6 +7964,35 @@ function MedHome({
       })
     }).catch(e => console.log(e));
     if (sendGroupMe) sendGroupMe(`🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails ? "\n" + wiDetails : ""}\nTIME: ${ts}`, ["admin", "medical"]);
+    // SMS + Voice to M1/M2/A1/A2
+    const wiMsg = `🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails ? "\n" + wiDetails : ""}\nTIME: ${ts}`;
+    const wiPhones = [...new Set(["+16082289692", ...(staffList || []).filter(s => ["m1", "m2", "a1", "a2"].some(r => (s.role || "").toLowerCase().startsWith(r))).map(s => s.phone).filter(Boolean)])];
+    setTimeout(() => {
+      wiPhones.forEach(p => {
+        const d = p.replace(/\D/g, "");
+        const fmt = d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === "1" ? `+${d}` : p;
+        fetch("/.netlify/functions/send-sms", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: fmt,
+            message: wiMsg
+          })
+        }).catch(() => {});
+        fetch("/.netlify/functions/send-voice", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: fmt,
+            message: `Walk in patient at Fete de Marquette Medical Tent. Chief complaint: ${wiComplaint}. Please respond.`
+          })
+        }).catch(() => {});
+      });
+    }, 100);
     setWiComplaint("");
     setWiDetails("");
   };

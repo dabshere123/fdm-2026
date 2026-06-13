@@ -31,7 +31,20 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
   }
 
-  // Build Airtable fields — only core fields that exist in the table
+  // Normalize Days — "Everyday" / "All Days" → all 4 days
+  let normalizedDays = Array.isArray(days) ? days.join(', ') : (days || '');
+  const daysLower = normalizedDays.toLowerCase();
+  if (daysLower.includes('every') || daysLower.includes('all day') || daysLower === 'all') {
+    normalizedDays = 'Thursday, Friday, Saturday, Sunday';
+  }
+
+  // Normalize Location — "All Areas" → "FULL FEST GROUNDS"
+  let normalizedLocation = location || '';
+  if (normalizedLocation.toLowerCase().includes('all area')) {
+    normalizedLocation = 'FULL FEST GROUNDS';
+  }
+
+  // Build Airtable fields using updated field names
   const fields = {
     Name:     name,
     FullName: name,
@@ -40,13 +53,12 @@ exports.handler = async (event) => {
     Status:   'Approved',
   };
 
-  // Optional fields — add only if non-empty to avoid Airtable field-not-found errors
-  if (location)   fields.Location   = location;
-  if (groupme)    fields.GroupMe    = groupme;
+  if (normalizedLocation) fields.Location  = normalizedLocation;
+  if (groupme)            fields.GroupMEGPName = groupme;  // renamed field
   if (smsConsent !== undefined) fields.SMSConsent = smsConsent ? 'Yes' : 'No';
-  if (days && Array.isArray(days) && days.length > 0) fields.Days = days.join(', ');
-  if (shiftStart) fields.ShiftStart = shiftStart;
-  if (shiftEnd)   fields.ShiftEnd   = shiftEnd;
+  if (normalizedDays)     fields.Days      = normalizedDays;
+  if (shiftStart)         fields.ShiftStart = shiftStart;
+  if (shiftEnd)           fields.ShiftEnd   = shiftEnd;
 
   try {
     const airtableRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {

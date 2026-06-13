@@ -31,11 +31,31 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
   }
 
-  // Normalize Days — "Everyday" / "All Days" → all 4 days
-  let normalizedDays = Array.isArray(days) ? days.join(', ') : (days || '');
-  const daysLower = normalizedDays.toLowerCase();
-  if (daysLower.includes('every') || daysLower.includes('all day') || daysLower === 'all') {
-    normalizedDays = 'Thursday, Friday, Saturday, Sunday';
+  // Build compact day+time format: "Th 16-23 F 16-23 S 12-23 SU 10-21"
+  // payload.work_days = [{id:'thu',start:16,end:23}, ...]  OR  ['thu','fri',...]
+  // payload.shiftStart/shiftEnd = may also be passed as separate fields
+  let normalizedDays = '';
+  if (Array.isArray(days) && days.length > 0 && typeof days[0] === 'object') {
+    // Rich format: [{id, start, end}]
+    const abbrevMap = {thu:'Th', fri:'F', sat:'S', sun:'SU'};
+    const parts = days.map(d => {
+      const ab = abbrevMap[d.id] || d.id;
+      return (d.start !== '' && d.end !== '') ? `${ab} ${d.start}-${d.end}` : ab;
+    });
+    const allSameTime = parts.every((p,_,arr) => p.replace(/\w+\s/,'') === arr[0].replace(/\w+\s/,''));
+    if (days.length === 4 && allSameTime) {
+      const time = parts[0].includes(' ') ? ' '+parts[0].split(' ')[1] : '';
+      normalizedDays = 'EVERYDAY'+time;
+    } else {
+      normalizedDays = parts.join(' ');
+    }
+  } else if (Array.isArray(days)) {
+    // Simple string array — build without times
+    const abbrevMap = {thu:'Th', fri:'F', sat:'S', sun:'SU'};
+    const abbrev = days.map(d => abbrevMap[d.toLowerCase()] || d);
+    normalizedDays = days.length === 4 ? 'EVERYDAY' : abbrev.join(' ');
+  } else {
+    normalizedDays = days || 'EVERYDAY';
   }
 
   // Normalize Location — "All Areas" → "FULL FEST GROUNDS"

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Worker App</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Worker App</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -477,19 +477,19 @@ function FieldApp() {
       },
       onClick: () => {
         const role = s.role.toLowerCase();
-        if (role.includes("admin")) {
+        if (role.includes("admin") || role.startsWith("a1") || role.startsWith("a2")) {
           window.location.href = "/hub";
           return;
         }
-        if (role.includes("med unit 1") || role.includes("med 1")) {
+        if (role.includes("med unit 1") || role.includes("med 1") || role.startsWith("m1")) {
           window.location.href = "/hub?role=med1";
           return;
         }
-        if (role.includes("med unit 2") || role.includes("med 2")) {
+        if (role.includes("med unit 2") || role.includes("med 2") || role.startsWith("m2")) {
           window.location.href = "/hub?role=med2";
           return;
         }
-        if (role.includes("overnight") || role.includes("cleaning") || role.includes("night crew")) {
+        if (role.includes("overnight") || role.includes("cleaning") || role.includes("night crew") || role.startsWith("oc")) {
           setStaffName(s.name);
           setRoleType("overnight");
           setName(s.location || "Festival Grounds");
@@ -2322,5 +2322,5 @@ const S = {
     boxSizing: "border-box"
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,{onBack:function(){window.location.href="/"}}));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,{}));
 </script></body></html>

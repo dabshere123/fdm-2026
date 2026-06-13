@@ -2303,7 +2303,7 @@ function HubApp({
         // Async SMS + Voice to prevent UI freeze
         setTimeout(() => {
           const bcastMsg2 = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
-          const bcastPhones2 = getNotifyList("broadcast");
+          const bcastPhones2 = [...new Set([ADMIN2_PHONE, ...getNotifyList("broadcast")])];
           const vendorPhones2 = getNotifyList("vendors_sms");
           const vendorOnly2 = vendorPhones2.filter(p => !bcastPhones2.includes(p));
           sendSMSList(bcastPhones2, bcastMsg2);

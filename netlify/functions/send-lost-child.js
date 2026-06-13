@@ -6,6 +6,7 @@ const TWILIO_SID     = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH    = process.env.TWILIO_AUTH_TOKEN;
 const MESSAGING_SID  = process.env.TWILIO_MESSAGING_SERVICE_SID;
 const ADMIN_PHONE    = '+16082289692';
+const TWILIO_FROM    = process.env.TWILIO_PHONE_NUMBER || '+16089048750';
 
 const GM_BOTS = {
   all_staff:   '98b725b13c73172ca29fc3cc1e',
@@ -99,7 +100,7 @@ exports.handler = async (event) => {
         headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           To: phone,
-          From: ADMIN_PHONE,
+          From: TWILIO_FROM,
           Twiml: `<Response><Say voice="alice" loop="2">${voiceMsg}</Say></Response>`
         }).toString()
       });

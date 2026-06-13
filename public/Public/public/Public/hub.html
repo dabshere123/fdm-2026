@@ -1012,7 +1012,7 @@ function HubApp({
   // Sound on new incoming calls
   const _lastSoundId = React.useRef(null);
   useEffect(() => {
-    const unacked = calls.filter(c => !c.acknowledged && c.status === "new_call");
+    const unacked = activeCalls.filter(c => !c.acknowledged && c.status === "new_call");
     if (unacked.length === 0) return;
     if (!liveMode) return; // No auto-alerts in demo mode
     const newest = unacked.reduce((a, b) => b.firedAt > a.firedAt ? b : a);
@@ -1099,7 +1099,7 @@ function HubApp({
   const suppCalls = activeCalls.filter(c => c.type === "supplies");
   const maintCalls = activeCalls.filter(c => c.type === "maintenance");
   const lostChildCalls = activeCalls.filter(c => c.type === "lost_child");
-  const myActive = isMed ? calls.filter(c => c.unit === role) : [];
+  const myActive = isMed ? activeCalls.filter(c => c.unit === role) : [];
   const unassigned = isMed ? activeCalls.filter(c => (c.type === "medical" || c.type === "walk_in") && !c.unit && c.status === "new_call") : [];
 
   // Tick for countdown
@@ -1134,7 +1134,7 @@ function HubApp({
         })
       }).catch(e => console.log(e));
     }
-    const call = calls.find(c => c.id === id);
+    const call = activeCalls.find(c => c.id === id) || calls.find(c => c.id === id);
     if (call) addAckedBanner({
       ...call,
       unit: by
@@ -1243,7 +1243,7 @@ function HubApp({
       date: now(),
       type: "ack",
       label: `Acknowledged by ${by}`,
-      msg: calls.find(c => c.id === id)?.problem || ""
+      msg: activeCalls.find(c => c.id === id)?.problem || ""
     }, ...p]);
   };
   const updCall = (id, status, unit = null) => setCalls(p => p.map(c => c.id !== id ? c : {
@@ -1318,7 +1318,7 @@ function HubApp({
     setView("home");
   };
   const clearCall = (id, by) => {
-    const c = calls.find(x => x.id === id);
+    const c = activeCalls.find(x => x.id === id) || calls.find(x => x.id === id);
     if (!c) return;
     if (["medical", "walk_in", "fire", "security"].includes(c.type)) {
       // Show quick incident form before clearing
@@ -1455,7 +1455,7 @@ function HubApp({
           width: `${pct}%`,
           transition: "width 1s"
         }
-      }))), calls.filter(c => !c.acknowledged).length > 1 && /*#__PURE__*/React.createElement("div", {
+      }))), activeCalls.filter(c => !c.acknowledged).length > 1 && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 13,
           color: "rgba(255,255,255,0.7)",
@@ -1463,7 +1463,7 @@ function HubApp({
           borderRadius: 8,
           padding: "6px 14px"
         }
-      }, "+", calls.filter(c => !c.acknowledged).length - 1, " more pending"), (alertCall.type === "medical" || alertCall.type === "walk_in") && isMed && /*#__PURE__*/React.createElement("div", {
+      }, "+", activeCalls.filter(c => !c.acknowledged).length - 1, " more pending"), (alertCall.type === "medical" || alertCall.type === "walk_in") && isMed && /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
@@ -3126,7 +3126,7 @@ DATE/TIME: ${now()}`;
     }
   }, "Skip & Return to Hub"))));
   if (view === "callqueue") {
-    const qCalls = callFilter ? calls.filter(c => callFilter.includes(c.type)) : calls;
+    const qCalls = callFilter ? activeCalls.filter(c => callFilter.includes(c.type)) : activeCalls;
     const unacked = qCalls.filter(c => !c.acknowledged);
     const acked = qCalls.filter(c => c.acknowledged);
     const compQ = callFilter ? completed.filter(c => callFilter.includes(c.type)) : completed;

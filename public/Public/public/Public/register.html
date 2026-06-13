@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Staff Registration</title><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;font-family:"DM Sans",system-ui,sans-serif;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -29,17 +29,7 @@ const EVENT_DAYS = [{
   hours: "10:00 AM – 9:00 PM",
   end: "21:45"
 }];
-const ROLES = [
-// Admin
-"A1 — Admin 1", "A2 — Admin 2",
-// Medical
-"M1 — Med Unit 1", "M2 — Med Unit 2",
-// Bar Staff
-"SBL — Sun Stage Bar Left", "SBR — Sun Stage Bar Right", "CB — Cabaret Bar", "FF — Family Fete Bar", "MB1 — Moon Stage Bar 1", "MB2 — Moon Stage Bar 2", "LB — Lafayette Bar", "LGB — Lagniappe Bar",
-// Stage Managers
-"SB — Sun Stage Manager", "C — Cabaret Manager", "FF — Family Fete Manager", "MS — Moon Stage Manager", "LAF — Lafayette Manager", "LAG — Lagniappe Manager",
-// Other Staff
-"MT — Merch Tent", "20th — 20th Year Tent", "MKT — Marketing", "F1 — Financial 1", "F2 — Financial 2", "F3 — Financial 3", "F4 — Financial 4", "OC1 — Overnight Crew 1", "OC2 — Overnight Crew 2", "OC3 — Overnight Crew 3", "OC4 — Overnight Crew 4", "MPD1 — Madison Police 1", "MPD2 — Madison Police 2", "MPD3 — Madison Police 3", "MPD4 — Madison Police 4", "V — Vendor", "Other"];
+const ROLES = ["A1", "A2", "M1", "M2", "SBL", "SBR", "CB", "FF", "MB1", "MB2", "LB", "LGB", "ETEB", "SB", "CSB", "FSF", "MS", "LAF", "LAG", "MT", "20th", "MKT", "F1", "F2", "F3", "F4", "OC1", "OC2", "OC3", "OC4", "MPD1", "MPD2", "MPD3", "MPD4", "VEND"];
 const LOCATIONS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Moon Stage Manager", "Lagniappe Manager", "Lafayette Manager", "Sun Stage Manager", "Cabaret Manager", "Greeter — Few", "Greeter — Ingersoll Left", "Greeter — Ingersoll Right", "Med Unit 1", "Med Unit 2", "Admin", "Financial", "Marketing", "Merch Tent", "Hospitality", "Sun Stage Vendors", "Moon Stage Vendors", "Lafayette Vendors", "Other"];
 function Bg() {
   return /*#__PURE__*/React.createElement("div", {
@@ -927,5 +917,5 @@ function Register() {
     }
   }, "Your information is used only for F\xEAte de Marquette event operations and will not be shared."))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Register,{}));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Register));
 </script></body></html>

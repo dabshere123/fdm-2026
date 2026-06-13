@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Worker App</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -316,6 +316,61 @@ function FieldApp() {
       });
     } catch (e) {
       console.log("submit-call error:", e.message);
+    }
+
+    // SMS + GroupMe + Voice notifications
+    const callType = callData.type;
+    const emoji = {
+      medical: "🩺",
+      fire: "🔥",
+      security: "🛡",
+      restock: "📦",
+      maintenance: "🔧",
+      general: "📋"
+    }[callType] || "📋";
+    const gmChannel = {
+      medical: "medical",
+      fire: "medical",
+      security: "admin",
+      restock: "restock",
+      maintenance: "maintenance",
+      general: "admin"
+    }[callType] || "admin";
+    const notifMsg = `${emoji} ${callType.toUpperCase()} REQUEST\nFROM: ${callData.requestedBy}\nLOCATION: ${callData.location}\nPROBLEM: ${callData.problem}${callData.details ? "\n" + callData.details : ""}\nDATE/TIME: ${new Date().toLocaleString()}`;
+    // GroupMe
+    fetch("/.netlify/functions/send-groupme", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: notifMsg,
+        channels: [gmChannel, "admin"]
+      })
+    }).catch(() => {});
+    // SMS to admin
+    fetch("/.netlify/functions/send-sms", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        to: "+16082289692",
+        message: notifMsg
+      })
+    }).catch(() => {});
+    // Voice for medical/fire/security only
+    if (callType === "medical" || callType === "fire" || callType === "security") {
+      fetch("/.netlify/functions/send-voice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          to: "+16082289692",
+          message: `${callType === "fire" ? "Fire or life safety" : "Medical"} request at Fete de Marquette. Location: ${callData.location}. ${callData.problem}. Please respond.`
+        })
+      }).catch(() => {});
     }
     setDone(true);
     setReqType(null);
@@ -931,6 +986,20 @@ function FieldApp() {
           setOvernightRecordId(data.id);
           setOvernightCheckedIn(true);
         }
+        // Alert admin on check-in
+        fetch("/.netlify/functions/send-sms", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: "+16082289692",
+            message: `🌙 OVERNIGHT CREW CHECK-IN\n${staffName || "Crew Member"} has arrived at Fest Grounds.\nTIME: ${new Date().toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit"
+            })}`
+          })
+        }).catch(() => {});
       } catch (e) {
         console.log(e);
       }
@@ -945,7 +1014,7 @@ function FieldApp() {
       color: "#10b981",
       fontWeight: 700
     }
-  }, "\u2705 Checked in \u2014 Admin has been notified"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2705 Checked in \u2014 Admin has been notified. Good luck tonight!"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#64748b",
@@ -1084,7 +1153,7 @@ function FieldApp() {
         console.log(e);
       }
     }
-  }, "\u2600\uFE0F Submit Nightly Report"), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDCCB Submit End of Night Report"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.sendBtn,
       background: "linear-gradient(135deg,#ef4444,#b91c1c)",
@@ -1117,7 +1186,7 @@ function FieldApp() {
         console.log(e);
       }
     }
-  }, "\uD83D\uDEAA Check Out & Submit Report")) : /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEAA Submit End of Night Report \u2014 Check Out")) : /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(16,185,129,0.1)",
       border: "1px solid rgba(16,185,129,0.4)",
@@ -2322,5 +2391,5 @@ const S = {
     boxSizing: "border-box"
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,{}));
 </script></body></html>

@@ -908,12 +908,10 @@ function HubApp({
     const urlRole = params.get("role");
     if (urlRole === "med1") {
       setRole("Med 1");
-      setPin(PINS["Med 1"] || "0000");
-      setLoggedIn(true);
+      setLiveMode(true);
     } else if (urlRole === "med2") {
       setRole("Med 2");
-      setPin(PINS["Med 2"] || "0000");
-      setLoggedIn(true);
+      setLiveMode(true);
     }
   }, []);
 
@@ -1598,7 +1596,10 @@ function HubApp({
       cursor: "pointer",
       textAlign: "left"
     },
-    onClick: () => setRole(r)
+    onClick: () => {
+      setRole(r);
+      if (r === "Med 1" || r === "Med 2") setLiveMode(true);
+    }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 24,

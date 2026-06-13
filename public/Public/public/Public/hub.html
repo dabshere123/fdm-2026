@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -1187,11 +1187,12 @@ function HubApp({
         }, 100);
       } else if (call.type === "supplies") {
         msg = [`📦 RESTOCK REQUEST 📦`, ``, `LOCATION: ${call.location}`, `WHAT'S NEEDED: ${call.problem || ""}`, call.details ? `AMOUNT: ${call.details}` : "", `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
-        sendGroupMe(msg, ["admin", "restock"]);
+        const suppliesGmMsg = "SUPPLY ALERT 📦\n" + msg;
+        sendGroupMe(suppliesGmMsg, ["admin", "restock"]);
         setTimeout(() => {
           const phones = getNotifyList("supplies");
           sendSMSList(phones, msg);
-          sendVoice(phones, `Supplies request at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
+          // No voice for supplies
         }, 100);
         msg = null;
       } else if (call.type === "maintenance") {
@@ -1199,7 +1200,7 @@ function HubApp({
         setTimeout(() => {
           const phones = getNotifyList("maintenance");
           sendSMSList(phones, msg);
-          sendVoice(phones, `Maintenance request at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond.`);
+          // No voice for maintenance
         }, 100);
       } else if (call.type === "lost_child") {
         msg = [`🧒 LOST CHILD 🧒`, ``, `LOCATION: ${call.location}`, `DESCRIPTION: ${call.problem || ""}`, call.details ? `${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
@@ -1256,10 +1257,9 @@ function HubApp({
       unit
     }]
   }));
-  const clearCall = (id, by) => {
+  const submitAndClearCall = (c, by, incidentData) => {
     playAlert("clear");
-    removeAckedBanner(id);
-    setView("home");
+    removeAckedBanner(c.id);
     if (liveMode) {
       fetch("/.netlify/functions/update-call", {
         method: "POST",
@@ -1267,33 +1267,46 @@ function HubApp({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          id,
+          id: c.id,
           status: "Cleared",
           unit: by
         })
-      }).catch(e => console.log(e));
+      }).catch(() => {});
     }
-    // Trigger incident report for medical/fire/security
-    const call = activeCalls.find(c => c.id === id) || calls.find(c => c.id === id);
-    if (call && ["medical", "walk_in", "fire", "security"].includes(call.type)) {
-      setIncidentView(call);
-      setIncFields({
-        respondingUnit: by,
-        disposition: "",
-        interventions: "",
-        narrative: "",
-        notes: ""
-      });
+    // Send incident report with provided data
+    if (["medical", "walk_in", "fire", "security"].includes(c.type)) {
+      const incNum = `FDM-${new Date().toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit"
+      }).replace("/", "")}${c.id.toString().slice(-4)}`;
+      fetch("/.netlify/functions/send-incident-report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          incidentNumber: incNum,
+          type: c.type,
+          location: incidentData?.location || c.location || "",
+          problem: incidentData?.problem || c.problem || "",
+          requestedBy: c.requestedBy || "Staff",
+          respondingUnit: incidentData?.respondingUnit || by,
+          disposition: incidentData?.disposition || `Cleared by ${by} at ${tShort()}`,
+          narrative: incidentData?.narrative || `${c.type} call at ${c.location}. ${c.problem}. Cleared by ${by} at ${tShort()}.`,
+          patientDescription: incidentData?.patientDescription || "",
+          interventions: incidentData?.interventions || "",
+          notes: incidentData?.notes || "",
+          openedAt: c.firedAt ? new Date(c.firedAt).toISOString() : new Date().toISOString()
+        })
+      }).catch(() => {});
     }
-    const c = calls.find(x => x.id === id);
-    if (!c) return;
     setCompleted(p => [{
       ...c,
       status: "cleared",
       clearedBy: by,
       clearedAt: tShort()
     }, ...p]);
-    setCalls(p => p.filter(x => x.id !== id));
+    setCalls(p => p.filter(x => x.id !== c.id));
     setActivityLog(p => [{
       id: Date.now(),
       ts: tShort(),
@@ -1302,6 +1315,52 @@ function HubApp({
       label: `Cleared by ${by}`,
       msg: c.problem || ""
     }, ...p]);
+    setClearIncView(null);
+    setView("home");
+  };
+  const clearCall = (id, by) => {
+    const c = calls.find(x => x.id === id);
+    if (!c) return;
+    if (["medical", "walk_in", "fire", "security"].includes(c.type)) {
+      // Show quick incident form before clearing
+      setClearIncView({
+        call: c,
+        by
+      });
+    } else {
+      // Non-medical/security — just clear immediately
+      playAlert("clear");
+      removeAckedBanner(id);
+      if (liveMode) {
+        fetch("/.netlify/functions/update-call", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id,
+            status: "Cleared",
+            unit: by
+          })
+        }).catch(() => {});
+      }
+      setCompleted(p => [{
+        ...c,
+        status: "cleared",
+        clearedBy: by,
+        clearedAt: tShort()
+      }, ...p]);
+      setCalls(p => p.filter(x => x.id !== id));
+      setActivityLog(p => [{
+        id: Date.now(),
+        ts: tShort(),
+        date: now(),
+        type: "clear",
+        label: `Cleared by ${by}`,
+        msg: c.problem || ""
+      }, ...p]);
+      setView("home");
+    }
   };
 
   // FULL SCREEN ALERT
@@ -1834,7 +1893,6 @@ DATE/TIME: ${now()}`;
       setTimeout(() => {
         const phones = getNotifyList("supplies");
         sendSMSList(phones, msg);
-        sendVoice(phones, `Supplies request at Fete de Marquette. ${prob}. Location: ${adminReqLoc}. Please respond.`);
       }, 100);
       setActivityLog(p => [{
         id: Date.now(),
@@ -1947,11 +2005,10 @@ DATE/TIME: ${now()}`;
         firedAt: Date.now()
       };
       setCalls(p => [call, ...p]);
-      sendGroupMe(msg, ["admin", "maintenance"]);
+      sendGroupMe("MAINTENANCE CONCERN 🔧\n" + msg, ["admin", "maintenance"]);
       setTimeout(() => {
         const phones = getNotifyList("maintenance");
         sendSMSList(phones, msg);
-        sendVoice(phones, `Maintenance request at Fete de Marquette. ${prob}. Location: ${adminMaintLoc}. Please respond.`);
       }, 100);
       setActivityLog(p => [{
         id: Date.now(),
@@ -2607,12 +2664,15 @@ DATE/TIME: ${now()}`;
         });
         sendGroupMe(`FDM 2026 — ${t.label}\n${_date} · ${_ts}\n\n${finalMsg}`, broadcastChannels);
         // SMS + Voice to all staff, SMS only to vendors
-        const bcastMsg = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
+        const isWeather = t.id && t.id.startsWith("weather");
+        const isEvent = ["event_delayed", "event_postponed", "event_cancelled", "all_clear"].includes(t.id);
+        const announcementHeader = isWeather ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nDANGEROUS WEATHER — ${t.label}` : isEvent ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nEVENT IS — ${t.label}` : `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\n${t.label}`;
+        const bcastMsg = `${announcementHeader}\n\n${finalMsg}`;
         const bcastPhones = getNotifyList("broadcast");
         const vendorPhones = getNotifyList("vendors_sms");
         // Async SMS + Voice to prevent UI freeze
         setTimeout(() => {
-          const bcastMsg2 = `FDM 2026 — ${t.label}\n\n${finalMsg}`;
+          const bcastMsg2 = bcastMsg;
           const bcastPhones2 = [...new Set([ADMIN2_PHONE, ...getNotifyList("broadcast")])];
           const vendorPhones2 = getNotifyList("vendors_sms");
           const vendorOnly2 = vendorPhones2.filter(p => !bcastPhones2.includes(p));
@@ -5186,7 +5246,8 @@ Reply YES to acknowledge.`
     setNewCallType: setNewCallType,
     setNewCallLocation: setNewCallLocation,
     setNewCallProblem: setNewCallProblem,
-    staffList: staffList
+    staffList: staffList,
+    setClearIncView: setClearIncView
   })));
 
   // ADMIN HOME
@@ -7901,7 +7962,8 @@ function MedHome({
   setNewCallType,
   setNewCallLocation,
   setNewCallProblem,
-  staffList
+  staffList,
+  setClearIncView
 }) {
   const [medReqView, setMedReqView] = useState(false);
   const [medReqType, setMedReqType] = useState("");
@@ -7964,8 +8026,7 @@ function MedHome({
       })
     }).catch(e => console.log(e));
     if (sendGroupMe) sendGroupMe(`🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails ? "\n" + wiDetails : ""}\nTIME: ${ts}`, ["admin", "medical"]);
-    // SMS + Voice to M1/M2/A1/A2
-    const wiMsg = `🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails ? "\n" + wiDetails : ""}\nTIME: ${ts}`;
+    const wiMsg = `MEDICAL ALERT 🩺\nWALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails ? "\n" + wiDetails : ""}\nTIME: ${ts}`;
     const wiPhones = [...new Set(["+16082289692", ...(staffList || []).filter(s => ["m1", "m2", "a1", "a2"].some(r => (s.role || "").toLowerCase().startsWith(r))).map(s => s.phone).filter(Boolean)])];
     setTimeout(() => {
       wiPhones.forEach(p => {
@@ -7988,7 +8049,7 @@ function MedHome({
           },
           body: JSON.stringify({
             to: fmt,
-            message: `Walk in patient at Fete de Marquette Medical Tent. Chief complaint: ${wiComplaint}. Please respond.`
+            message: `Walk in patient at Fete de Marquette Medical Tent. Chief complaint: ${wiComplaint}. Please respond immediately.`
           })
         }).catch(() => {});
       });
@@ -8426,12 +8487,21 @@ function MedHome({
     },
     onClick: () => {
       setCalls(p => p.filter(x => x.id !== c.id));
-      setCompleted(p => [{
-        ...c,
-        status: "cleared",
-        clearedBy: role,
-        clearedAt: new Date().toLocaleTimeString()
-      }, ...p]);
+      // Show quick incident form on clear for medical/security/fire
+      if (["medical", "walk_in", "fire", "security"].includes(c.type)) {
+        setClearIncView({
+          call: c,
+          by: role
+        });
+      } else {
+        setCompleted(p => [{
+          ...c,
+          status: "cleared",
+          clearedBy: role,
+          clearedAt: new Date().toLocaleTimeString()
+        }, ...p]);
+        setCalls(p => p.filter(x => x.id !== c.id));
+      }
       setMedSt(p => ({
         ...p,
         [role === "Med 1" ? "med1" : "med2"]: {

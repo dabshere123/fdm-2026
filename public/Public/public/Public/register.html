@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Staff Registration</title><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;font-family:"DM Sans",system-ui,sans-serif;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Staff Registration</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -317,7 +317,20 @@ function Register() {
       color: "#475569",
       marginTop: 8
     }
-  }, "F\xEAte de Marquette 2026")));
+  }, "F\xEAte de Marquette 2026"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      marginTop: 12,
+      padding: "12px 28px",
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "rgba(255,255,255,0.06)",
+      color: "#94a3b8",
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => setSubmitted(false)
+  }, "\u2190 Register Another Person")));
   return /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: "100vh",
@@ -914,5 +927,5 @@ function Register() {
     }
   }, "Your information is used only for F\xEAte de Marquette event operations and will not be shared."))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(RegisterApp,{}));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(RegisterApp));
 </script></body></html>

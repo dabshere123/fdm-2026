@@ -27,7 +27,7 @@ async function sendSMS(to, message) {
   await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
     method: 'POST',
     headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ To: to, From: TWILIO_FROM, Body: message }).toString()
+    body: new URLSearchParams({ To: to, MessagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID || TWILIO_FROM, Body: message }).toString()
   });
 }
 

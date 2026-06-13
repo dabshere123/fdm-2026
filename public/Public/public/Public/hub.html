@@ -1367,7 +1367,7 @@ function HubApp({
     const PRIORITY = ["lost_child", "medical", "walk_in", "fire", "security", "supplies", "maintenance"];
     let alertCall = null;
     for (const t of PRIORITY) {
-      alertCall = calls.find(c => c.type === t && !c.acknowledged);
+      alertCall = activeCalls.find(c => c.type === t && !c.acknowledged);
       if (alertCall) break;
     }
     if (alertCall && (isAdmin || isMed || alertCall.type === "lost_child")) {

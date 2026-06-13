@@ -4107,36 +4107,19 @@ Reply YES to acknowledge.`
         firedAt: Date.now()
       };
       setCalls(p => [newCall, ...p]);
-      sendGroupMe(lcMsg, ["all_staff", "admin", "medical", "bar_stage", "financial", "restock", "maintenance"]);
-      // Direct SMS + voice to admin immediately
-      fetch("/.netlify/functions/send-sms", {
+      // Use dedicated function — sends to ALL staff + all GroupMe channels
+      fetch("/.netlify/functions/send-lost-child", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          to: "+16082289692",
-          message: lcMsg
+          location: lcFields?.lastSeen || "Unknown",
+          description: `${lcFields?.gender || "Child"}, approx ${lcFields?.age}. ${lcFields?.hair || ""} ${lcFields?.top || ""} ${lcFields?.bottom || ""}`.trim(),
+          requestedBy: "Admin",
+          assemblyPoint: lcFields?.assembly || "Medical Tent"
         })
-      }).catch(e => console.log("LC SMS error:", e));
-      fetch("/.netlify/functions/send-voice", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          to: "+16082289692",
-          message: `Urgent. Lost child at Fete de Marquette. ${lcFields?.gender || "Child"}, approximately ${lcFields?.age} years old. Last seen near ${lcFields?.lastSeen}. Assembly point is ${lcFields?.assembly}. Parent name ${lcFields?.parentName || "unknown"}. All staff please be on alert immediately.`
-        })
-      }).catch(e => console.log("LC Voice error:", e));
-      // SMS + voice to all staff
-      setTimeout(() => {
-        const lcPhones = getNotifyList("lost_child");
-        if (lcPhones.length > 0) {
-          sendSMSList(lcPhones, lcMsg);
-          sendVoice(lcPhones, `Urgent. Lost child at Fete de Marquette. All staff please be on alert.`);
-        }
-      }, 200);
+      }).catch(e => console.log("LC send error:", e));
       fetch("/.netlify/functions/send-mpd", {
         method: "POST",
         headers: {

@@ -5574,7 +5574,33 @@ Reply YES to acknowledge.`
       gap: 6,
       padding: "8px"
     }
-  }, [{
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      padding: "10px",
+      borderRadius: 10,
+      border: "2px solid rgba(239,68,68,0.5)",
+      background: "rgba(239,68,68,0.1)",
+      color: "#fca5a5",
+      fontSize: 13,
+      fontWeight: 900,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      setNewCallType("");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 16
+    }
+  }, "\uD83D\uDEA8"), " New Call"), [{
     types: ["medical", "walk_in"],
     label: "Medical",
     icon: "🩺",
@@ -8247,7 +8273,33 @@ function MedHome({
       fontSize: 11,
       color: "#64748b"
     }
-  }, c.history?.[0]?.ts, " \xB7 ", c.status)))))), /*#__PURE__*/React.createElement("div", {
+  }, c.history?.[0]?.ts, " \xB7 ", c.status)))))), /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      padding: "16px",
+      borderRadius: 12,
+      border: "2px solid rgba(239,68,68,0.5)",
+      background: "rgba(239,68,68,0.1)",
+      color: "#fca5a5",
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      setNewCallType("");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 22
+    }
+  }, "\uD83D\uDEA8"), " New Call \u2014 Medical / Fire / Security"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "linear-gradient(160deg,rgba(168,85,247,0.08),rgba(37,99,235,0.08))",
       borderRadius: 14,
@@ -8265,36 +8317,6 @@ function MedHome({
       letterSpacing: "0.06em"
     }
   }, "\uD83E\uDE7A Medical & \uD83D\uDEE1 Security"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "10px 10px 4px"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      width: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-      padding: "14px",
-      borderRadius: 12,
-      border: "2px solid rgba(239,68,68,0.5)",
-      background: "rgba(239,68,68,0.1)",
-      color: "#fca5a5",
-      fontSize: 15,
-      fontWeight: 900,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      setNewCallType("");
-      setNewCallLocation("");
-      setNewCallProblem("");
-      setNewCallView(true);
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 20
-    }
-  }, "\uD83D\uDEA8"), " New Call \u2014 Medical / Fire / Security")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",

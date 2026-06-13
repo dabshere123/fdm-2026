@@ -3584,13 +3584,35 @@ Reply YES to acknowledge.`
       };
       setCalls(p => [newCall, ...p]);
       sendGroupMe(lcMsg, ["all_staff", "admin", "medical", "bar_stage", "financial", "restock", "maintenance"]);
+      // Direct SMS + voice to admin immediately
+      fetch("/.netlify/functions/send-sms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          to: "+16082289692",
+          message: lcMsg
+        })
+      }).catch(e => console.log("LC SMS error:", e));
+      fetch("/.netlify/functions/send-voice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          to: "+16082289692",
+          message: `Urgent. Lost child at Fete de Marquette. ${lcFields?.gender || "Child"}, approximately ${lcFields?.age} years old. Last seen near ${lcFields?.lastSeen}. Assembly point is ${lcFields?.assembly}. Parent name ${lcFields?.parentName || "unknown"}. All staff please be on alert immediately.`
+        })
+      }).catch(e => console.log("LC Voice error:", e));
+      // SMS + voice to all staff
       setTimeout(() => {
         const lcPhones = getNotifyList("lost_child");
-        const lcPhonesFinal = lcPhones.length > 0 ? lcPhones : [ADMIN2_PHONE];
-        const lcVoice = `Urgent. Lost child at Fete de Marquette. ${lcFields?.gender || "Child"}, approximately ${lcFields?.age} years old. Last seen near ${lcFields?.lastSeen}. Assembly point is ${lcFields?.assembly}. Parent name ${lcFields?.parentName || "unknown"}. All staff please be on alert immediately.`;
-        sendSMSList(lcPhonesFinal, lcMsg);
-        sendVoice(lcPhonesFinal, lcVoice);
-      }, 100);
+        if (lcPhones.length > 0) {
+          sendSMSList(lcPhones, lcMsg);
+          sendVoice(lcPhones, `Urgent. Lost child at Fete de Marquette. All staff please be on alert.`);
+        }
+      }, 200);
       fetch("/.netlify/functions/send-mpd", {
         method: "POST",
         headers: {

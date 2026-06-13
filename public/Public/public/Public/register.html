@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Registration</title><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -30,7 +30,19 @@ const EVENT_DAYS = [{
   end: "21:45"
 }];
 const ROLES = ["A1", "A2", "M1", "M2", "SBL", "SBR", "CB", "FF", "MB1", "MB2", "LB", "LGB", "ETEB", "SB", "CSB", "FSF", "MS", "LAF", "LAG", "MT", "20th", "MKT", "F1", "F2", "F3", "F4", "OC1", "OC2", "OC3", "OC4", "MPD1", "MPD2", "MPD3", "MPD4", "VEND"];
-const LOCATIONS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Moon Stage Manager", "Lagniappe Manager", "Lafayette Manager", "Sun Stage Manager", "Cabaret Manager", "Greeter — Few", "Greeter — Ingersoll Left", "Greeter — Ingersoll Right", "Med Unit 1", "Med Unit 2", "Admin", "Financial", "Marketing", "Merch Tent", "Hospitality", "Sun Stage Vendors", "Moon Stage Vendors", "Lafayette Vendors", "Other"];
+const LOCATION_GROUPS = [{
+  group: "🍺 Bars",
+  options: ["Moon Stage Bar 1", "Moon Stage Bar 2", "Cabaret Bar", "Everything Else Bar", "Sun Stage Bar Left", "Sun Stage Bar Right", "Lafayette Bar", "Lagniappe Bar", "Family Fete Bar"]
+}, {
+  group: "🎪 Stages",
+  options: ["Cabaret Stage", "Moon Stage", "Sun Stage", "Lafayette Stage", "Lagniappe Stage", "Family Fete Stage"]
+}, {
+  group: "🎉 Fest Grounds",
+  options: ["Med Unit 1", "Med Unit 2", "Admin", "Financial", "Marketing", "Merch Tent", "20th Year Tent", "Hospitality", "Overnight — Fest Grounds", "Other"]
+}, {
+  group: "👋 Greeters",
+  options: ["Greeter — Ingersoll Right", "Greeter — Ingersoll Left", "Greeter — Few"]
+}];
 function Bg() {
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -458,10 +470,13 @@ function Register() {
     onChange: e => setLocation(e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "Select your location..."), LOCATIONS.map(l => /*#__PURE__*/React.createElement("option", {
+  }, "Select your location..."), LOCATION_GROUPS.map(g => /*#__PURE__*/React.createElement("optgroup", {
+    key: g.group,
+    label: g.group
+  }, g.options.map(l => /*#__PURE__*/React.createElement("option", {
     key: l,
     value: l
-  }, l))), location === "Other" && /*#__PURE__*/React.createElement("input", {
+  }, l))))), location === "Other" && /*#__PURE__*/React.createElement("input", {
     style: {
       background: "rgba(255,255,255,0.06)",
       border: "1px solid rgba(255,255,255,0.12)",
@@ -487,7 +502,11 @@ function Register() {
     required: true,
     type: "tel"
   }), (() => {
-    const TIMES = ["6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM"];
+    // 24-hour format hours 0-24
+    const HOURS = Array.from({
+      length: 25
+    }, (_, i) => i);
+    const fmt24 = h => h === 0 ? "Midnight" : h === 12 ? "Noon" : h < 12 ? `${h}am` : h === 24 ? "Midnight" : h > 12 ? `${h - 12}pm` : `${h}`;
     return /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -580,7 +599,8 @@ function Register() {
         style: {
           display: "flex",
           gap: 8,
-          padding: "0 16px 14px"
+          padding: "0 16px 14px",
+          alignItems: "center"
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -597,13 +617,13 @@ function Register() {
           textTransform: "uppercase",
           letterSpacing: "0.06em"
         }
-      }, "My Start Time"), /*#__PURE__*/React.createElement("select", {
+      }, "Start (24h)"), /*#__PURE__*/React.createElement("select", {
         style: {
           background: "#1e293b",
           border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 8,
           padding: "10px",
-          color: shift.start ? "#f1f5f9" : "#475569",
+          color: shift.start !== undefined && shift.start !== "" ? "#f1f5f9" : "#475569",
           fontSize: 14,
           width: "100%",
           boxSizing: "border-box",
@@ -620,10 +640,16 @@ function Register() {
         }))
       }, /*#__PURE__*/React.createElement("option", {
         value: ""
-      }, "Start..."), TIMES.map(t => /*#__PURE__*/React.createElement("option", {
-        key: t,
-        value: t
-      }, t)))), /*#__PURE__*/React.createElement("div", {
+      }, "Start..."), HOURS.map(h => /*#__PURE__*/React.createElement("option", {
+        key: h,
+        value: h
+      }, h, " \u2014 ", fmt24(h))))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          color: "#64748b",
+          fontWeight: 900,
+          paddingTop: 18
+        }
+      }, "\u2013"), /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1,
           display: "flex",
@@ -638,13 +664,13 @@ function Register() {
           textTransform: "uppercase",
           letterSpacing: "0.06em"
         }
-      }, "My End Time"), /*#__PURE__*/React.createElement("select", {
+      }, "End (24h)"), /*#__PURE__*/React.createElement("select", {
         style: {
           background: "#1e293b",
           border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 8,
           padding: "10px",
-          color: shift.end ? "#f1f5f9" : "#475569",
+          color: shift.end !== undefined && shift.end !== "" ? "#f1f5f9" : "#475569",
           fontSize: 14,
           width: "100%",
           boxSizing: "border-box",
@@ -661,10 +687,18 @@ function Register() {
         }))
       }, /*#__PURE__*/React.createElement("option", {
         value: ""
-      }, "End..."), TIMES.map(t => /*#__PURE__*/React.createElement("option", {
-        key: t,
-        value: t
-      }, t))))));
+      }, "End..."), HOURS.map(h => /*#__PURE__*/React.createElement("option", {
+        key: h,
+        value: h
+      }, h, " \u2014 ", fmt24(h))))), shift.start !== undefined && shift.start !== "" && shift.end !== undefined && shift.end !== "" && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          fontWeight: 800,
+          color: "#f59e0b",
+          paddingTop: 18,
+          whiteSpace: "nowrap"
+        }
+      }, shift.start, "-", shift.end)));
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
@@ -917,5 +951,5 @@ function Register() {
     }
   }, "Your information is used only for F\xEAte de Marquette event operations and will not be shared."))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Register));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Register,{}));
 </script></body></html>

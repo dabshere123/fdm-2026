@@ -4,7 +4,7 @@
 // status: "Acknowledged" | "Cleared"
 
 const AIRTABLE_BASE = 'appUVEp7kO9NeeJh0';
-const AIRTABLE_TABLE = 'Calls';
+const AIRTABLE_TABLE = 'ActiveMedCalls';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 
 exports.handler = async (event) => {

@@ -5190,29 +5190,57 @@ Reply YES to acknowledge.`
       letterSpacing: "0.02em"
     },
     onClick: () => {
+      // Pull info directly from current active call
       const activeCall = myActive?.[0] || unassigned?.[0];
+      const callLoc = activeCall?.location || nineOneOne.info?.location || "Festival Grounds";
+      const callProblem = activeCall?.problem || nineOneOne.info?.nature || "";
+      const callType = activeCall?.type || "medical";
+      const callId = activeCall?.id;
+      // Activate 911 with call data
       set911({
         active: true,
         by: role,
         at: now(),
+        callId,
         info: {
-          location: activeCall?.location || "",
-          nature: activeCall?.problem || "",
-          patients: activeCall?.details || ""
+          location: callLoc,
+          nature: callProblem,
+          type: callType
         }
       });
-      setView("911");
-      sendGroupMe(`🚨 911 ACTIVATED by ${role}\nMFD / EMS has been called. Stand by.`, ["admin", "medical"]);
-      fetch("/.netlify/functions/send-sms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          to: "+16082289692",
-          message: `🚨 911 ACTIVATED by ${role} at Fete de Marquette.`
-        })
-      }).catch(e => console.log(e));
+      // Build message from call data
+      const msg911 = `🚨 911 ACTIVATED — ${role}\nLOCATION: ${callLoc}${callProblem ? "\nCALL: " + callProblem : ""}\nMADISON FIRE / EMS INBOUND\nTIME: ${new Date().toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit"
+      })}\nClear a path for emergency vehicles.`;
+      // Fire SMS + Voice + GroupMe immediately — no second tap
+      sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`, ["admin", "medical"]);
+      const phones = [...new Set(["+16082289692", ...(staffList || []).filter(s => ["m1", "m2", "a1", "a2"].some(r => (s.role || "").toLowerCase().startsWith(r))).map(s => s.phone).filter(Boolean)])];
+      phones.forEach(p => {
+        const d = p.replace(/\D/g, "");
+        const fmt = d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === "1" ? `+${d}` : p;
+        fetch("/.netlify/functions/send-sms", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: fmt,
+            message: msg911
+          })
+        }).catch(() => {});
+        fetch("/.netlify/functions/send-voice", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: fmt,
+            message: `911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Main Gate on Willy Street. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`
+          })
+        }).catch(() => {});
+      });
+      // No setView("911") — stay on call, form comes when call is cleared
     }
   }, "\uD83D\uDEA8 Tap to Notify of 911 Activation")), /*#__PURE__*/React.createElement(MedHome, {
     role: role,

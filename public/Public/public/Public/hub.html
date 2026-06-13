@@ -823,6 +823,7 @@ function HubApp({
   const [incidentView, setIncidentView] = useState(null); // holds call data for report form
   const [incFields, setIncFields] = useState({});
   const [clearIncView, setClearIncView] = useState(null);
+  const [medActiveCall, setMedActiveCall] = useState(null); // call detail view for Med
 
   // LOST & FOUND
   const [lfAddMode, setLfAddMode] = useState(false);
@@ -1137,11 +1138,24 @@ function HubApp({
           unit: by
         })
       }).catch(e => console.log(e));
+      // Immediately update liveCalls so Med unit sees the call right away
+      setLiveCalls(p => p.map(c => c.id !== id ? c : {
+        ...c,
+        acknowledged: true,
+        status: "acknowledged",
+        unit: by
+      }));
     }
     const call = activeCalls.find(c => c.id === id) || calls.find(c => c.id === id);
     if (call) addAckedBanner({
       ...call,
       unit: by
+    });
+    // If Med unit is acknowledging, go straight to call detail view
+    if (isMed && call) setMedActiveCall({
+      ...call,
+      unit: by,
+      acknowledgedAt: tShort()
     });
     // Send GroupMe notification to relevant channel
     if (call) {
@@ -1467,7 +1481,7 @@ function HubApp({
           borderRadius: 8,
           padding: "6px 14px"
         }
-      }, "+", activeCalls.filter(c => !c.acknowledged).length - 1, " more pending"), (alertCall.type === "medical" || alertCall.type === "walk_in") && isMed && /*#__PURE__*/React.createElement("div", {
+      }, "+", activeCalls.filter(c => !c.acknowledged).length - 1, " more pending"), (alertCall.type === "medical" || alertCall.type === "walk_in" || alertCall.type === "fire" || alertCall.type === "security") && isMed && /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
@@ -1499,7 +1513,7 @@ function HubApp({
           background: "rgba(5,150,105,0.5)"
         },
         onClick: () => ackCall(alertCall.id, role)
-      }, "\u2705 ", role), /*#__PURE__*/React.createElement("button", {
+      }, "\u2705 ", role, " \u2014 Go to Call"), /*#__PURE__*/React.createElement("button", {
         style: {
           flex: 1,
           border: "2px solid rgba(255,255,255,0.5)",
@@ -1512,7 +1526,67 @@ function HubApp({
           background: "rgba(5,150,105,0.5)"
         },
         onClick: () => ackCall(alertCall.id, "Both")
-      }, "\u2705 Both"))), isLC ? /*#__PURE__*/React.createElement("div", {
+      }, "\u2705 Both Units")), !nineOneOne.active && /*#__PURE__*/React.createElement("button", {
+        style: {
+          width: "100%",
+          border: "2px solid rgba(220,38,38,0.7)",
+          borderRadius: 12,
+          padding: "14px",
+          color: "#fca5a5",
+          fontSize: 14,
+          fontWeight: 900,
+          cursor: "pointer",
+          background: "rgba(180,0,0,0.2)"
+        },
+        onClick: () => {
+          const msg911 = `🚨 911 ACTIVATED — ${role}\nLOCATION: ${alertCall.location}\nCALL: ${alertCall.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
+          set911({
+            active: true,
+            by: role,
+            at: now(),
+            callId: alertCall.id,
+            info: {
+              location: alertCall.location,
+              nature: alertCall.problem
+            }
+          });
+          sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`, ["admin", "medical"]);
+          const phones = [...new Set([ADMIN2_PHONE, ...(staffList || []).filter(s => ["m1", "m2", "a1", "a2"].some(r => (s.role || "").toLowerCase().startsWith(r))).map(s => s.phone).filter(Boolean)])];
+          phones.forEach(p => {
+            const d = p.replace(/\D/g, "");
+            const fmt = d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === "1" ? `+${d}` : p;
+            fetch("/.netlify/functions/send-sms", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                to: fmt,
+                message: msg911
+              })
+            }).catch(() => {});
+            fetch("/.netlify/functions/send-voice", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                to: fmt,
+                message: `911 activated by ${role} at Fete de Marquette. Responding to ${alertCall.location}. ${alertCall.problem}. EMS inbound. Clear a path.`
+              })
+            }).catch(() => {});
+          });
+        }
+      }, "\uD83D\uDEA8 Activate 911 from This Call"), nineOneOne.active && /*#__PURE__*/React.createElement("div", {
+        style: {
+          textAlign: "center",
+          color: "#fca5a5",
+          fontWeight: 900,
+          padding: "10px",
+          background: "rgba(180,0,0,0.2)",
+          borderRadius: 10
+        }
+      }, "\uD83D\uDEA8 911 ACTIVE")), isLC ? /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
@@ -5166,6 +5240,208 @@ Reply YES to acknowledge.`
 
   // ACKS VIEW
 
+  // MED CALL DETAIL VIEW
+  if (medActiveCall && isMed) {
+    const mc = medActiveCall;
+    const typeColors = {
+      medical: "#be185d",
+      fire: "#dc2626",
+      security: "#1d4ed8",
+      walk_in: "#7c3aed"
+    };
+    const typeLabels = {
+      medical: "MEDICAL",
+      fire: "FIRE / LIFE SAFETY",
+      security: "SECURITY",
+      walk_in: "WALK-IN"
+    };
+    const color = typeColors[mc.type] || "#be185d";
+    return /*#__PURE__*/React.createElement("div", {
+      style: S.root
+    }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        background: color
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: S.panel
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: `linear-gradient(135deg,${color}22,${color}11)`,
+        border: `1px solid ${color}44`,
+        borderRadius: 14,
+        padding: "16px",
+        margin: "12px 0 8px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: color,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        marginBottom: 6
+      }
+    }, typeLabels[mc.type] || mc.type, " \u2014 ACTIVE CALL"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 20,
+        fontWeight: 900,
+        color: "#f1f5f9",
+        marginBottom: 4
+      }
+    }, "\uD83D\uDCCD ", mc.location), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        color: "#cbd5e1",
+        marginBottom: 4
+      }
+    }, "\uD83D\uDD0D ", mc.problem), mc.details && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#94a3b8"
+      }
+    }, "\u2139\uFE0F ", mc.details), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#64748b",
+        marginTop: 6
+      }
+    }, "Reported by ", mc.requestedBy, " \xB7 Acked by ", mc.unit, " \xB7 ", mc.acknowledgedAt)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        padding: "0 0 12px"
+      }
+    }, !nineOneOne.active && /*#__PURE__*/React.createElement("button", {
+      style: {
+        width: "100%",
+        padding: "16px",
+        borderRadius: 12,
+        border: "2px solid rgba(180,0,0,0.6)",
+        background: "rgba(180,0,0,0.1)",
+        color: "#f87171",
+        fontSize: 16,
+        fontWeight: 900,
+        cursor: "pointer"
+      },
+      onClick: () => {
+        set911({
+          active: true,
+          by: role,
+          at: now(),
+          callId: mc.id,
+          info: {
+            location: mc.location,
+            nature: mc.problem,
+            type: mc.type
+          }
+        });
+        const msg911 = `🚨 911 ACTIVATED — ${role}\nLOCATION: ${mc.location}\nCALL: ${mc.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
+        sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`, ["admin", "medical"]);
+        const phones = [...new Set([ADMIN2_PHONE, ...(staffList || []).filter(s => ["m1", "m2", "a1", "a2"].some(r => (s.role || "").toLowerCase().startsWith(r))).map(s => s.phone).filter(Boolean)])];
+        phones.forEach(p => {
+          const d = p.replace(/\D/g, "");
+          const fmt = d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === "1" ? `+${d}` : p;
+          fetch("/.netlify/functions/send-sms", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              to: fmt,
+              message: msg911
+            })
+          }).catch(() => {});
+          fetch("/.netlify/functions/send-voice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              to: fmt,
+              message: `911 activated by ${role} at Fete de Marquette. Responding to ${mc.location}. ${mc.problem}. EMS inbound. Clear a path.`
+            })
+          }).catch(() => {});
+        });
+      }
+    }, "\uD83D\uDEA8 Activate 911 \u2014 EMS to This Call"), nineOneOne.active && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(180,0,0,0.15)",
+        border: "2px solid rgba(180,0,0,0.5)",
+        borderRadius: 12,
+        padding: "14px",
+        textAlign: "center",
+        color: "#f87171",
+        fontWeight: 900
+      }
+    }, "\uD83D\uDEA8 911 ACTIVE \u2014 EMS INBOUND"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        width: "100%",
+        padding: "14px",
+        borderRadius: 12,
+        border: "2px solid rgba(245,158,11,0.5)",
+        background: "rgba(245,158,11,0.1)",
+        color: "#fbbf24",
+        fontSize: 14,
+        fontWeight: 800,
+        cursor: "pointer"
+      },
+      onClick: () => {
+        if (liveMode) fetch("/.netlify/functions/update-call", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id: mc.id,
+            status: "On Scene",
+            unit: mc.unit
+          })
+        }).catch(() => {});
+        setLiveCalls(p => p.map(c => c.id !== mc.id ? c : {
+          ...c,
+          status: "on_scene"
+        }));
+        setMedActiveCall(p => ({
+          ...p,
+          status: "on_scene"
+        }));
+      }
+    }, "\uD83D\uDCCD On Scene"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        width: "100%",
+        padding: "14px",
+        borderRadius: 12,
+        border: "2px solid rgba(16,185,129,0.5)",
+        background: "rgba(16,185,129,0.1)",
+        color: "#6ee7b7",
+        fontSize: 14,
+        fontWeight: 800,
+        cursor: "pointer"
+      },
+      onClick: () => {
+        clearCall(mc.id, role);
+        setMedActiveCall(null);
+      }
+    }, "\u2705 Clear Call \u2014 Generate Report"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        width: "100%",
+        padding: "12px",
+        borderRadius: 12,
+        border: "1px solid rgba(255,255,255,0.08)",
+        background: "none",
+        color: "#475569",
+        fontSize: 13,
+        cursor: "pointer"
+      },
+      onClick: () => setMedActiveCall(null)
+    }, "\u2190 Back to Med Hub"))));
+  }
   if (isMed) return /*#__PURE__*/React.createElement("div", {
     style: S.root
   }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
@@ -6560,7 +6836,7 @@ Reply YES to acknowledge.`
       textTransform: "uppercase",
       letterSpacing: "0.06em"
     }
-  }, "\uD83C\uDFAA Vendor Check-In"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDFAA Vendor Sign-Up"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,

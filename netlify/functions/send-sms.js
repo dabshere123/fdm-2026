@@ -24,7 +24,7 @@ exports.handler = async (event) => {
       {
         method: 'POST',
         headers: { 'Authorization': 'Basic ' + auth, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'To=' + encodeURIComponent(normalized) + '&From=' + encodeURIComponent(TWILIO_FROM) + '&Body=' + encodeURIComponent(message)
+        body: 'To=' + encodeURIComponent(normalized) + '&MessagingServiceSid=' + encodeURIComponent(process.env.TWILIO_MESSAGING_SERVICE_SID || TWILIO_FROM) + '&Body=' + encodeURIComponent(message)
       }
     );
 

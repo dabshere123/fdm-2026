@@ -303,6 +303,7 @@ function HubApp({onBack}){
   const [maintNarrativeForm,setMaintNarrativeForm]=useState(null); // {call} for maintenance clear narrative
   const [stagingLocation,setStagingLocation]=useState("Staging #1 — Ingersoll & Wilson"); // EMS staging pre-select
   const [activeBroadcastId,setActiveBroadcastId]=useState(null); // current tracked broadcast ID for stop button
+  const [adminCallDetail,setAdminCallDetail]=useState(null); // full call detail/override view for admin
 
   // LOST & FOUND
   const [lfAddMode,setLfAddMode]=useState(false);
@@ -1897,6 +1898,94 @@ Reply YES to acknowledge.`
 
   // ACKS VIEW
 
+  // ADMIN CALL DETAIL / OVERRIDE VIEW
+  if(adminCallDetail && isAdmin){
+    const ac=adminCallDetail;
+    const typeColors={medical:"#1e40af",fire:"#dc2626",security:"#1e1e2e",walk_in:"#7c3aed",maintenance:"#059669",supplies:"#d97706",lost_child:"#b45309"};
+    const typeLabels={medical:"MEDICAL ALERT",fire:"FIRE / LIFE SAFETY ALERT",security:"SECURITY ALERT",walk_in:"WALK-IN PATIENT",maintenance:"MAINTENANCE",supplies:"SUPPLY REQUEST",lost_child:"LOST CHILD"};
+    const bc=typeColors[ac.type]||"#1e40af";
+    const bl=typeLabels[ac.type]||ac.type.toUpperCase();
+    return(<div style={S.root}><Bg/>
+      <div style={{position:"fixed",top:0,left:0,right:0,height:4,background:bc}}/>
+      <div style={S.panel}>
+        <div style={{background:`linear-gradient(135deg,${bc}dd,${bc}99)`,padding:"14px 16px",margin:"0 0 4px"}}>
+          <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.7)",textTransform:"uppercase",letterSpacing:"0.1em"}}>Active Call — Admin View</div>
+          <div style={{fontSize:18,fontWeight:900,color:"#fff",marginTop:4}}>{bl}</div>
+          {nineOneOne.active&&nineOneOne.callId===ac.id&&(
+            <div style={{marginTop:8,background:"rgba(220,38,38,0.3)",border:"1px solid rgba(220,38,38,0.6)",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#fca5a5"}}>
+              🚨 911 ACTIVATED by {nineOneOne.by} · Staging: {nineOneOne.info?.staging||"Unknown"} · {nineOneOne.at}
+            </div>
+          )}
+        </div>
+        <div style={S.cWrap}>
+          {/* All call info — editable */}
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {[
+              {label:"Location",key:"location",val:ac.location},
+              {label:"Problem / Description",key:"problem",val:ac.problem},
+              {label:"Unit Assigned",key:"unit",val:ac.unit||"Unassigned"},
+              {label:"Reporting Party",key:"requestedBy",val:ac.requestedBy},
+              {label:"Details",key:"details",val:ac.details||""},
+            ].map(({label,key,val})=>(
+              <div key={key} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"10px 12px"}}>
+                <div style={{fontSize:10,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{label}</div>
+                <input style={{background:"transparent",border:"none",color:"#f1f5f9",fontSize:14,fontWeight:600,width:"100%",outline:"none",fontFamily:"inherit"}}
+                  defaultValue={val}
+                  onBlur={e=>{
+                    const updated={...ac,[key]:e.target.value};
+                    setAdminCallDetail(updated);
+                    setLiveCalls(p=>p.map(c=>c.id!==ac.id?c:{...c,[key]:e.target.value}));
+                    if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:ac.id,[key]:e.target.value})}).catch(()=>{});
+                  }}/>
+              </div>
+            ))}
+          </div>
+
+          {/* Timestamps */}
+          <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:10,padding:"12px 14px"}}>
+            <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Timeline</div>
+            {[
+              {label:"Time of Call",val:ac.timestamp||ac.firedAt?new Date(ac.firedAt||Date.now()).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}):"—"},
+              {label:"Acknowledged",val:ac.acknowledgedAt||"Not yet"},
+              {label:"On Scene",val:ac.status==="on_scene"?"✅ On Scene":"Not yet"},
+              {label:"Cleared",val:ac.clearedAt||"Active"},
+            ].map(({label,val})=>(
+              <div key={label} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",fontSize:13}}>
+                <span style={{color:"#64748b",fontWeight:600}}>{label}</span>
+                <span style={{color:"#f1f5f9",fontWeight:700}}>{val}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Admin actions */}
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <button style={{...S.sendBtn,background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.4)",color:"#fbbf24"}}
+              onClick={()=>{if(liveMode)fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:ac.id,status:"On Scene",unit:ac.unit})}).catch(()=>{});setLiveCalls(p=>p.map(c=>c.id!==ac.id?c:{...c,status:"on_scene"}));setAdminCallDetail(p=>({...p,status:"on_scene"}));}}>
+              📍 Mark On Scene
+            </button>
+            <button style={{...S.sendBtn,background:"rgba(29,78,216,0.15)",border:"1px solid rgba(59,130,246,0.4)",color:"#93c5fd"}}
+              onClick={()=>{
+                const mpdMsg=`👮 MPD REQUESTED — ${bl}\nLOCATION: ${ac.location}\nSITUATION: ${ac.problem}\nREQUESTED BY: ${role}\nTIME: ${tShort()}`;
+                fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"mpd_requested",officers:mpdOfficers,location:ac.location,situation:mpdMsg})}).catch(()=>{});
+                sendGroupMe(mpdMsg,["admin"]);
+                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"security",label:`MPD Notified — ${ac.location}`,msg:ac.problem},...p]);
+              }}>
+              👮 Notify MPD — Request Officer
+            </button>
+            <button style={{...S.sendBtn,background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.4)",color:"#6ee7b7"}}
+              onClick={()=>{clearCall(ac.id,role);setAdminCallDetail(null);}}>
+              ✅ Clear Call — Generate Report
+            </button>
+            <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}}
+              onClick={()=>setAdminCallDetail(null)}>
+              ← Back to Hub
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>);
+  }
+
   // MED CALL DETAIL VIEW
   if(medActiveCall && isMed){
     const mc=medActiveCall;
@@ -1930,6 +2019,14 @@ Reply YES to acknowledge.`
             {mc.status==="on_scene"?"✅ On Scene — Active":"📍 On Scene"}
           </button>
           {/* Clear / Close Call */}
+          <button style={{width:"100%",padding:"12px",borderRadius:12,border:"2px solid rgba(29,78,216,0.5)",background:"rgba(29,78,216,0.1)",color:"#93c5fd",fontSize:13,fontWeight:800,cursor:"pointer"}}
+            onClick={()=>{
+              const mpdMsg=`👮 MPD REQUESTED — ${mc.type.toUpperCase()}\nLOCATION: ${mc.location}\nSITUATION: ${mc.problem}\nREQUESTED BY: ${role}\nTIME: ${tShort()}`;
+              fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"mpd_requested",officers:mpdOfficers,location:mc.location,situation:mpdMsg})}).catch(()=>{});
+              sendGroupMe(mpdMsg,["admin","medical"]);
+            }}>
+            👮 Notify MPD — Request Officer
+          </button>
           <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:14,fontWeight:800,cursor:"pointer"}}
             onClick={()=>{clearCall(mc.id,role);setMedActiveCall(null);}}>
             ✅ Clear Call — Generate Report
@@ -2140,20 +2237,62 @@ Reply YES to acknowledge.`
         </div>
       )}
 
-      {/* ACTIVE CALLS — Admin homepage */}
-      {activeCalls.filter(c=>c.acknowledged&&c.status!=="cleared"&&c.type!=="lost_child").length>0&&(
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Active Calls</div>
-          {activeCalls.filter(c=>c.acknowledged&&c.status!=="cleared"&&c.type!=="lost_child").map(ac=>{
-            const tc={medical:"#be185d",fire:"#dc2626",security:"#1d4ed8",walk_in:"#7c3aed",supplies:"#d97706",maintenance:"#059669"}[ac.type]||"#6366f1";
-            return(<div key={ac.id} style={{background:`linear-gradient(135deg,${tc}18,${tc}08)`,border:`1px solid ${tc}44`,borderRadius:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>setView("callqueue")}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{fontSize:12,fontWeight:800,color:tc,textTransform:"uppercase"}}>{ac.type.replace(/_/g," ")}</div>
-                <div style={{fontSize:11,color:"#64748b"}}>{ac.unit||"Unassigned"}</div>
+      {/* ACTIVE CALLS — Colored boxes at top of Admin home */}
+      {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").length>0&&(
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Active Calls — Tap for Details</div>
+          {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").map(ac=>{
+            const colors={
+              medical:{bg:"rgba(30,64,175,0.15)",border:"rgba(59,130,246,0.6)",header:"#1e40af",text:"#93c5fd",label:"MEDICAL ALERT — ACTIVE CALL"},
+              fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(239,68,68,0.6)",header:"#dc2626",text:"#fca5a5",label:"FIRE / LIFE SAFETY — ACTIVE CALL"},
+              security:{bg:"rgba(15,15,20,0.6)",border:"rgba(100,116,139,0.5)",header:"#1e1e2e",text:"#94a3b8",label:"SECURITY — ACTIVE CALL"},
+              walk_in:{bg:"rgba(124,58,237,0.15)",border:"rgba(167,139,250,0.5)",header:"#7c3aed",text:"#c4b5fd",label:"WALK-IN PATIENT — ACTIVE CALL"},
+              maintenance:{bg:"rgba(5,150,105,0.12)",border:"rgba(16,185,129,0.5)",header:"#059669",text:"#6ee7b7",label:"MAINTENANCE — ACTIVE CALL"},
+              supplies:{bg:"rgba(217,119,6,0.12)",border:"rgba(245,158,11,0.5)",header:"#d97706",text:"#fcd34d",label:"SUPPLY REQUEST — ACTIVE CALL"},
+            };
+            const c2=colors[ac.type]||colors.medical;
+            const ts=ac.timestamp||new Date(ac.firedAt||Date.now()).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+            return(
+              <div key={ac.id} style={{background:c2.bg,border:`2px solid ${c2.border}`,borderRadius:14,overflow:"hidden",cursor:"pointer"}} onClick={()=>setAdminCallDetail(ac)}>
+                <div style={{background:c2.header,padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:12,fontWeight:900,color:"#fff",textTransform:"uppercase",letterSpacing:"0.06em"}}>{c2.label}</div>
+                  {!ac.acknowledged&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:800,borderRadius:6,padding:"2px 8px"}}>UNACK'D</div>}
+                  {ac.status==="on_scene"&&<div style={{background:"#10b981",color:"#fff",fontSize:10,fontWeight:800,borderRadius:6,padding:"2px 8px"}}>ON SCENE</div>}
+                </div>
+                <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:5}}>
+                  <div style={{display:"flex",gap:6,fontSize:13}}>
+                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>LOCATION:</span>
+                    <span style={{color:"#f1f5f9",fontWeight:600}}>{ac.location}</span>
+                  </div>
+                  <div style={{display:"flex",gap:6,fontSize:13}}>
+                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>PROBLEM:</span>
+                    <span style={{color:"#f1f5f9",fontWeight:600}}>{ac.problem}</span>
+                  </div>
+                  {ac.details&&<div style={{display:"flex",gap:6,fontSize:12}}>
+                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>DESCRIPTION:</span>
+                    <span style={{color:"#94a3b8"}}>{ac.details}</span>
+                  </div>}
+                  <div style={{display:"flex",gap:6,fontSize:12}}>
+                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>UNIT ASSIGNED:</span>
+                    <span style={{color:c2.text,fontWeight:700}}>{ac.unit||"Unassigned"}</span>
+                  </div>
+                  <div style={{display:"flex",gap:6,fontSize:12}}>
+                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>REPORTING PARTY:</span>
+                    <span style={{color:"#94a3b8"}}>{ac.requestedBy}</span>
+                  </div>
+                  <div style={{display:"flex",gap:16,fontSize:11,marginTop:4,flexWrap:"wrap"}}>
+                    <span style={{color:"#475569"}}>📞 Called: {ts}</span>
+                    {ac.acknowledgedAt&&<span style={{color:"#475569"}}>✅ Ack'd: {ac.acknowledgedAt}</span>}
+                    {ac.status==="on_scene"&&<span style={{color:"#10b981"}}>📍 On Scene</span>}
+                  </div>
+                  {nineOneOne.active&&nineOneOne.callId===ac.id&&(
+                    <div style={{marginTop:6,background:"rgba(220,38,38,0.2)",border:"1px solid rgba(220,38,38,0.5)",borderRadius:8,padding:"6px 10px",fontSize:11,fontWeight:700,color:"#fca5a5"}}>
+                      🚨 911 ACTIVATED by {nineOneOne.by} · Staging: {nineOneOne.info?.staging||"Unknown"}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9",marginTop:2}}>📍 {ac.location}</div>
-              <div style={{fontSize:12,color:"#94a3b8"}}>{ac.problem}</div>
-            </div>);
+            );
           })}
         </div>
       )}
@@ -2214,26 +2353,14 @@ Reply YES to acknowledge.`
         {/* SAFETY */}
         <div style={{background:"linear-gradient(160deg,rgba(220,38,38,0.15),rgba(37,99,235,0.15))",borderRadius:14,border:"1px solid rgba(220,38,38,0.3)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
           <div style={{...S.sectionHdr,background:"linear-gradient(135deg,rgba(220,38,38,0.3),rgba(37,99,235,0.3))",fontSize:16,fontWeight:900}}>🚨 Safety</div>
-          <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
-            <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px",borderRadius:10,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontSize:13,fontWeight:900,cursor:"pointer"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-              <span style={{fontSize:16}}>🚨</span> New Call
+          <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px",flex:1,justifyContent:"center"}}>
+            <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"16px",borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 0 12px rgba(239,68,68,0.4)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+              <span style={{fontSize:20}}>🚨</span>
+              <div style={{textAlign:"center"}}>
+                <div>New Call</div>
+                <div style={{fontSize:11,fontWeight:500,opacity:0.85}}>Medical · Fire/Life Safety · Security</div>
+              </div>
             </button>
-            {[
-              {types:["medical","walk_in"],label:"Medical",icon:"🩺",color:ALERT_COLORS.medical,calls:medCalls,title:"Medical Calls"},
-              {types:["fire"],label:"Fire/Life",icon:"🔥",color:ALERT_COLORS.fire,calls:fireCalls,title:"Fire / Life Safety"},
-              {types:["security"],label:"Security",icon:"🛡",color:ALERT_COLORS.security,calls:secCalls,title:"Security"},
-            ].map(({types,label,icon,color,calls:tc,title})=>(
-              <button key={label} style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:`1px solid ${color.border||"rgba(255,255,255,0.1)"}`,background:color.bg||"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",position:"relative"}}
-                onClick={()=>{setCallFilter(types);setCallFilterTitle(title);setCallTab("active");setView("callqueue");}}>
-                <span style={{fontSize:20}}>{icon}</span>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{label}</div>
-                  <div style={{fontSize:11,color:"#64748b"}}>{tc.length>0?`${tc.length} active`:"Clear"}</div>
-                </div>
-                {tc.filter(c=>!c.acknowledged).length>0&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{tc.filter(c=>!c.acknowledged).length}</div>}
-              </button>
-            ))}
-
           </div>
         </div>
 

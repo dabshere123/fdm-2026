@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -824,6 +824,7 @@ function HubApp({
   const [incFields, setIncFields] = useState({});
   const [clearIncView, setClearIncView] = useState(null);
   const [medActiveCall, setMedActiveCall] = useState(null); // call detail view for Med
+  const [stagingLocation, setStagingLocation] = useState("Staging #1 — Ingersoll & Wilson"); // EMS staging pre-select
 
   // LOST & FOUND
   const [lfAddMode, setLfAddMode] = useState(false);
@@ -1481,7 +1482,7 @@ function HubApp({
           borderRadius: 8,
           padding: "6px 14px"
         }
-      }, "+", activeCalls.filter(c => !c.acknowledged).length - 1, " more pending"), (alertCall.type === "medical" || alertCall.type === "walk_in" || alertCall.type === "fire" || alertCall.type === "security") && isMed && /*#__PURE__*/React.createElement("div", {
+      }, "+", activeCalls.filter(c => !c.acknowledged).length - 1, " more pending"), (alertCall.type === "medical" || alertCall.type === "walk_in" || alertCall.type === "fire" || alertCall.type === "security") && /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
@@ -1490,43 +1491,71 @@ function HubApp({
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          fontSize: 13,
-          color: "rgba(255,255,255,0.7)",
-          fontWeight: 600,
-          textAlign: "center"
+          fontSize: 12,
+          color: "rgba(255,255,255,0.6)",
+          fontWeight: 700,
+          textAlign: "center",
+          textTransform: "uppercase",
+          letterSpacing: "0.06em"
         }
-      }, "Who is responding?"), /*#__PURE__*/React.createElement("div", {
+      }, "Acknowledge"), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
-          gap: 8
+          gap: 6
         }
       }, /*#__PURE__*/React.createElement("button", {
         style: {
           flex: 1,
           border: "2px solid rgba(255,255,255,0.5)",
-          borderRadius: 12,
-          padding: "14px",
+          borderRadius: 10,
+          padding: "12px 6px",
           color: "#fff",
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 800,
           cursor: "pointer",
-          background: "rgba(5,150,105,0.5)"
+          background: "rgba(190,24,93,0.5)"
         },
-        onClick: () => ackCall(alertCall.id, role)
-      }, "\u2705 ", role, " \u2014 Go to Call"), /*#__PURE__*/React.createElement("button", {
+        onClick: () => ackCall(alertCall.id, "Med 1")
+      }, "\uD83E\uDE7A Med 1"), /*#__PURE__*/React.createElement("button", {
         style: {
           flex: 1,
           border: "2px solid rgba(255,255,255,0.5)",
-          borderRadius: 12,
-          padding: "14px",
+          borderRadius: 10,
+          padding: "12px 6px",
           color: "#fff",
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 800,
           cursor: "pointer",
-          background: "rgba(5,150,105,0.5)"
+          background: "rgba(190,24,93,0.5)"
+        },
+        onClick: () => ackCall(alertCall.id, "Med 2")
+      }, "\uD83E\uDE7A Med 2"), /*#__PURE__*/React.createElement("button", {
+        style: {
+          flex: 1,
+          border: "2px solid rgba(255,255,255,0.5)",
+          borderRadius: 10,
+          padding: "12px 6px",
+          color: "#fff",
+          fontSize: 13,
+          fontWeight: 800,
+          cursor: "pointer",
+          background: "rgba(245,158,11,0.4)"
         },
         onClick: () => ackCall(alertCall.id, "Both")
-      }, "\u2705 Both Units")), !nineOneOne.active && /*#__PURE__*/React.createElement("button", {
+      }, "\u2705 Both"), isAdmin && /*#__PURE__*/React.createElement("button", {
+        style: {
+          flex: 1,
+          border: "2px solid rgba(255,255,255,0.5)",
+          borderRadius: 10,
+          padding: "12px 6px",
+          color: "#fff",
+          fontSize: 13,
+          fontWeight: 800,
+          cursor: "pointer",
+          background: "rgba(99,102,241,0.4)"
+        },
+        onClick: () => ackCall(alertCall.id, role)
+      }, "\u26A1 Admin")), !nineOneOne.active && /*#__PURE__*/React.createElement("button", {
         style: {
           width: "100%",
           border: "2px solid rgba(220,38,38,0.7)",
@@ -5440,7 +5469,7 @@ Reply YES to acknowledge.`
         cursor: "pointer"
       },
       onClick: () => setMedActiveCall(null)
-    }, "\u2190 Back to Med Hub"))));
+    }, "\u2190 Back to Med Hub (call stays active)"))));
   }
   if (isMed) return /*#__PURE__*/React.createElement("div", {
     style: S.root
@@ -5648,7 +5677,7 @@ Reply YES to acknowledge.`
           },
           body: JSON.stringify({
             to: fmt,
-            message: `911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Main Gate on Willy Street. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`
+            message: `911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Staging 1, Ingersoll and Wilson. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`
           })
         }).catch(() => {});
       });
@@ -6180,6 +6209,70 @@ Reply YES to acknowledge.`
       border: "none"
     },
     title: "NWS Radar"
+  })), activeCalls.filter(c => c.acknowledged && c.status !== "cleared" && c.type !== "lost_child").length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.08em"
+    }
+  }, "Active Calls"), activeCalls.filter(c => c.acknowledged && c.status !== "cleared" && c.type !== "lost_child").map(ac => {
+    const tc = {
+      medical: "#be185d",
+      fire: "#dc2626",
+      security: "#1d4ed8",
+      walk_in: "#7c3aed",
+      supplies: "#d97706",
+      maintenance: "#059669"
+    }[ac.type] || "#6366f1";
+    return /*#__PURE__*/React.createElement("div", {
+      key: ac.id,
+      style: {
+        background: `linear-gradient(135deg,${tc}18,${tc}08)`,
+        border: `1px solid ${tc}44`,
+        borderRadius: 12,
+        padding: "12px 14px",
+        cursor: "pointer"
+      },
+      onClick: () => setView("callqueue")
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 800,
+        color: tc,
+        textTransform: "uppercase"
+      }
+    }, ac.type.replace(/_/g, " ")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b"
+      }
+    }, ac.unit || "Unassigned")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: "#f1f5f9",
+        marginTop: 2
+      }
+    }, "\uD83D\uDCCD ", ac.location), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#94a3b8"
+      }
+    }, ac.problem));
   })), vendorToasts.map(t => /*#__PURE__*/React.createElement("div", {
     key: t.id,
     style: {
@@ -6263,7 +6356,7 @@ Reply YES to acknowledge.`
         setTimeout(() => {
           const phones = [...new Set([ADMIN2_PHONE, ...getNotifyList("medical")])];
           sendSMSList(phones, msg);
-          sendVoice(phones, `911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location || "Festival Grounds"}. Clear a path for emergency vehicles. Responding to: ${nineOneOne.info?.location || "Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging || "Main Gate on Willy Street"}. Clear a path for emergency vehicles. 911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location || "Festival Grounds"}. Responding to: ${nineOneOne.info?.location || "Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging || "Main Gate on Willy Street"}. Clear a path for emergency vehicles.`);
+          sendVoice(phones, `911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location || "Festival Grounds"}. Clear a path for emergency vehicles. Responding to: ${nineOneOne.info?.location || "Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging || "Staging #1 — Ingersoll & Wilson"}. Clear a path for emergency vehicles. 911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location || "Festival Grounds"}. Responding to: ${nineOneOne.info?.location || "Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging || "Staging #1 — Ingersoll & Wilson"}. Clear a path for emergency vehicles.`);
         }, 100);
         fetch("/.netlify/functions/send-mpd", {
           method: "POST",

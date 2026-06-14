@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 const {
   useState,
   useEffect,
@@ -1118,6 +1118,25 @@ function HubApp({
       label: `Acknowledged by ${by}`,
       msg: activeCalls.find(c => c.id === id)?.problem || ""
     }, ...p]);
+    // Notify requester their call was acknowledged
+    const ackedCall = activeCalls.find(c => c.id === id) || calls.find(c => c.id === id);
+    if (ackedCall?.phone) {
+      const fmtP = p => {
+        const d = String(p).replace(/\D/g, "");
+        return d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === "1" ? `+${d}` : p;
+      };
+      const ackMsg = `✅ FDM 2026 — Your ${(ackedCall.type || "").replace(/_/g, " ").toUpperCase()} request at ${ackedCall.location} has been acknowledged by ${by}. Help is on the way.`;
+      fetch("/.netlify/functions/send-sms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          to: fmtP(ackedCall.phone),
+          message: ackMsg
+        })
+      }).catch(() => {});
+    }
   };
   const updCall = (id, status, unit = null) => setCalls(p => p.map(c => c.id !== id ? c : {
     ...c,

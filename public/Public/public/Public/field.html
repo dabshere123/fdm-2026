@@ -1,9 +1,9 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026 Worker App</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
-var useState = React.useState,
-  useEffect = React.useEffect,
-  useRef = React.useRef,
-  useCallback = React.useCallback,
-  useMemo = React.useMemo;
+const {
+  useState,
+  useRef,
+  useEffect
+} = React;
 function Bg() {
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -82,7 +82,7 @@ function Fld({
     onChange: onChange
   }));
 }
-function FieldApp() {
+export default function FieldApp() {
   const onBack = () => {};
 
   // OVERNIGHT STATES
@@ -103,6 +103,7 @@ function FieldApp() {
   const [roleType, setRoleType] = useState("bar_manager");
   const [name, setName] = useState("Moon Stage 1");
   const [staffName, setStaffName] = useState("");
+  const [currentStaff, setCurrentStaff] = useState(null);
   const [view, setView] = useState("home");
   const [roleLocked, setRoleLocked] = useState(false);
   const [reqType, setReqType] = useState(null);
@@ -289,7 +290,7 @@ function FieldApp() {
           location: fields.last_seen || name || "Festival Grounds",
           problem: `${fields.description || "Child"}. ${fields.clothing || ""}`.trim(),
           requestedBy: staffName || role || "Staff",
-          phone: ""
+          phone: currentStaff?.phone || ""
         })
       }).catch(() => {});
       setRadioScript(RADIO_SCRIPT_LOST_CHILD(fields));

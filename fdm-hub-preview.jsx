@@ -647,6 +647,13 @@ function HubApp({onBack}){
     }
     setCalls(p=>p.map(c=>c.id!==id?c:{...c,acknowledged:true,status:"acknowledged",history:[...c.history,{status:"acknowledged",ts:tShort(),unit:by}]}));
     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"ack",label:`Acknowledged by ${by}`,msg:activeCalls.find(c=>c.id===id)?.problem||""},...p]);
+    // Notify requester their call was acknowledged
+    const ackedCall=activeCalls.find(c=>c.id===id)||calls.find(c=>c.id===id);
+    if(ackedCall?.phone){
+      const fmtP=(p)=>{const d=String(p).replace(/\D/g,"");return d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;};
+      const ackMsg=`✅ FDM 2026 — Your ${(ackedCall.type||"").replace(/_/g," ").toUpperCase()} request at ${ackedCall.location} has been acknowledged by ${by}. Help is on the way.`;
+      fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmtP(ackedCall.phone),message:ackMsg})}).catch(()=>{});
+    }
   };
   const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
   const submitAndClearCall=(c,by,incidentData)=>{
@@ -2986,57 +2993,58 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
       {/* REQUEST */}
       <>
 
-      {/* LOST CHILD SECTION */}
-      <button style={{width:"100%",background:"linear-gradient(135deg,rgba(249,115,22,0.25),rgba(234,88,12,0.2))",borderRadius:14,border:"3px solid rgba(249,115,22,0.7)",padding:"20px",cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:8,boxShadow:"0 0 20px rgba(249,115,22,0.2)"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
-        <span style={{fontSize:48}}>🧒</span>
-        <div style={{fontSize:20,fontWeight:900,color:"#fdba74",textTransform:"uppercase",letterSpacing:"0.04em"}}>Report Lost Child</div>
-        <div style={{fontSize:12,color:"rgba(253,186,116,0.7)",fontWeight:600}}>Alerts ALL staff · GroupMe · SMS · Voice · MPD</div>
-      </button>
-
-      {/* WALK-IN PATIENT BUTTON */}
-      <div style={{background:"rgba(168,85,247,0.08)",borderRadius:14,border:"1px solid rgba(168,85,247,0.3)",overflow:"hidden"}}>
-        <div style={{background:"rgba(168,85,247,0.2)",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#d8b4fe",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span>🏥 Walk-In Patient{walkIns.length>0?` (${walkIns.length})`:""}</span>
-          <button style={{background:"rgba(168,85,247,0.2)",border:"1px solid rgba(168,85,247,0.4)",borderRadius:8,padding:"4px 12px",color:"#d8b4fe",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setShowWalkIn(p=>!p)}>{showWalkIn?"▲ Hide":"▼ Log Walk-In"}</button>
-        </div>
-        {showWalkIn&&(
-          <div style={{padding:"12px",display:"flex",flexDirection:"column",gap:10}}>
-            <Fld label="Chief Complaint *" value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)} ph="e.g. Heat exhaustion, laceration, chest pain" required large/>
-            <Fld label="Additional Details" value={wiDetails} onChange={e=>setWiDetails(e.target.value)} ph="Age, gender, condition, vitals..." multi/>
-            <button style={{background:"linear-gradient(135deg,#a855f7,#7c3aed)",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={()=>{doWalkIn();setShowWalkIn(false);}}>🏥 Log Walk-In Patient</button>
-          </div>
-        )}
-        {walkIns.length>0&&(
-          <div style={{padding:"0 12px 12px",display:"flex",flexDirection:"column",gap:6}}>
-            {walkIns.map(c=>(
-              <div key={c.id} style={{borderRadius:8,border:"1px solid rgba(168,85,247,0.2)",background:"rgba(168,85,247,0.05)",padding:"10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div><div style={{fontSize:13,fontWeight:700,color:"#d8b4fe"}}>{c.problem}</div><div style={{fontSize:11,color:"#64748b"}}>{c.history?.[0]?.ts} · {c.status}</div></div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* NEW CALL BUTTON */}
-      <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"16px",borderRadius:12,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontSize:15,fontWeight:900,cursor:"pointer"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-        <span style={{fontSize:22}}>🚨</span> New Call — Medical / Fire / Security
-      </button>
-
-      {/* MEDICAL & SECURITY SECTION */}
-      <div style={{background:"linear-gradient(160deg,rgba(168,85,247,0.08),rgba(37,99,235,0.08))",borderRadius:14,border:"1px solid rgba(168,85,247,0.25)",overflow:"hidden"}}>
-        <div style={{background:"linear-gradient(135deg,rgba(168,85,247,0.2),rgba(37,99,235,0.2))",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em"}}>🩺 Medical & 🛡 Security</div>
-
+      {/* MEDICAL · FIRE/LIFE SAFETY · SECURITY SECTION */}
+      <div style={{background:"linear-gradient(160deg,rgba(190,24,93,0.1),rgba(220,38,38,0.08),rgba(37,99,235,0.08))",borderRadius:14,border:"1px solid rgba(190,24,93,0.3)",overflow:"hidden"}}>
+        <div style={{background:"linear-gradient(135deg,rgba(190,24,93,0.25),rgba(220,38,38,0.2),rgba(37,99,235,0.15))",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#fda4af",textTransform:"uppercase",letterSpacing:"0.06em"}}>🩺 Medical · 🔥 Fire/Life Safety · 🛡 Security</div>
         <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
+
+          {/* NEW CALL — first item */}
+          <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"14px",borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,rgba(220,38,38,0.3),rgba(185,28,28,0.2))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 0 10px rgba(239,68,68,0.3)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+            <span style={{fontSize:20}}>🚨</span>
+            <div style={{textAlign:"center"}}>
+              <div>New Call</div>
+              <div style={{fontSize:11,fontWeight:500,opacity:0.85}}>Medical · Fire/Life Safety · Security</div>
+            </div>
+          </button>
+
+          {/* WALK-IN PATIENT — directly under New Call */}
+          <div style={{background:"rgba(168,85,247,0.06)",borderRadius:10,border:"1px solid rgba(168,85,247,0.25)",overflow:"hidden"}}>
+            <div style={{background:"rgba(168,85,247,0.15)",padding:"8px 12px",fontSize:12,fontWeight:900,color:"#d8b4fe",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <span>🏥 Walk-In Patient{walkIns.length>0?` (${walkIns.length})`:""}</span>
+              <button style={{background:"rgba(168,85,247,0.2)",border:"1px solid rgba(168,85,247,0.4)",borderRadius:6,padding:"3px 10px",color:"#d8b4fe",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>setShowWalkIn(p=>!p)}>{showWalkIn?"▲ Hide":"▼ Log"}</button>
+            </div>
+            {showWalkIn&&(
+              <div style={{padding:"10px",display:"flex",flexDirection:"column",gap:8}}>
+                <Fld label="Chief Complaint *" value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)} ph="e.g. Heat exhaustion, laceration, chest pain" required large/>
+                <Fld label="Additional Details" value={wiDetails} onChange={e=>setWiDetails(e.target.value)} ph="Age, gender, condition, vitals..." multi/>
+                <button style={{background:"linear-gradient(135deg,#a855f7,#7c3aed)",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={()=>{doWalkIn();setShowWalkIn(false);}}>🏥 Log Walk-In Patient</button>
+              </div>
+            )}
+            {walkIns.length>0&&(
+              <div style={{padding:"0 10px 10px",display:"flex",flexDirection:"column",gap:4}}>
+                {walkIns.map(c=>(
+                  <div key={c.id} style={{borderRadius:6,border:"1px solid rgba(168,85,247,0.2)",background:"rgba(168,85,247,0.05)",padding:"8px 10px"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#d8b4fe"}}>{c.problem}</div>
+                    <div style={{fontSize:10,color:"#64748b"}}>{c.history?.[0]?.ts} · {c.status}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ADDITIONAL MEDICAL UNITS */}
           <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(168,85,247,0.3)",background:"rgba(168,85,247,0.08)",cursor:"pointer",textAlign:"left"}} onClick={()=>{setMedReqType("medical");setMedReqView(true);}}>
-            <span style={{fontSize:20}}>🩺</span>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Additional Medical Units</div><div style={{fontSize:11,color:"#64748b"}}>Request more medical personnel</div></div>
+            <span style={{fontSize:18}}>🩺</span>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Additional Medical Units</div><div style={{fontSize:11,color:"#64748b"}}>Request more medical personnel</div></div>
           </button>
-          <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.08)",cursor:"pointer",textAlign:"left"}} onClick={()=>{setMedReqType("security");setMedReqView(true);}}>
-            <span style={{fontSize:20}}>🛡</span>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Security</div><div style={{fontSize:11,color:"#64748b"}}>Security assistance · MPD request inside</div></div>
-          </button>
+
         </div>
       </div>
+
+      {/* LOST CHILD — small, same size as Tap to Notify */}
+      <button style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"1px solid rgba(249,115,22,0.35)",background:"rgba(249,115,22,0.07)",color:"#fdba74",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
+        🧒 Report Lost Child
+      </button>
 
       {/* SUPPLIES & MAINTENANCE SECTION */}
       <div style={{background:"linear-gradient(160deg,rgba(120,53,15,0.1),rgba(16,185,129,0.08))",borderRadius:14,border:"1px solid rgba(120,53,15,0.3)",overflow:"hidden"}}>

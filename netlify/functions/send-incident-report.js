@@ -1,13 +1,15 @@
 // send-incident-report.js
 // Formats incident report as Google Doc-style HTML and emails to feteops@gmail.com
-// POST body: { callId, type, location, problem, patientDescription, respondingUnit,
+// POST body: { callId, type, location, problem, individualDescription, respondingUnit,
 //              interventions, disposition, narrative, notes, openedAt, incidentNumber }
 
 const SENDGRID_KEY = process.env.SENDGRID_API_KEY;
 const FROM_EMAIL   = 'feteops@gmail.com';
 const TO_EMAIL     = 'feteops@gmail.com';
-const AIRTABLE_BASE  = 'appUVEp7kO9NeeJh0';
-const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
+const AIRTABLE_BASE     = 'appUVEp7kO9NeeJh0';
+const AIRTABLE_TOKEN    = process.env.AIRTABLE_TOKEN;
+const GDRIVE_FOLDER_ID  = '1e7zlItB31We5BTRwCvjNYdUiFRqfHZTz';
+const GDRIVE_TOKEN      = process.env.GOOGLE_ACCESS_TOKEN; // set via OAuth or service account
 
 function formatDate(iso) {
   if (!iso) return new Date().toLocaleString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'numeric', minute:'2-digit' });
@@ -16,8 +18,21 @@ function formatDate(iso) {
 }
 
 function buildHTML(data) {
-  const typeColors = { medical:'#be185d', fire:'#dc2626', security:'#1d4ed8', walk_in:'#7c3aed' };
-  const typeLabels = { medical:'Medical Incident', fire:'Fire / Life Safety', security:'Security Incident', walk_in:'Walk-In Patient' };
+  const typeColors = {
+  medical:'#be185d', fire:'#dc2626', security:'#1d4ed8',
+  walk_in:'#7c3aed', maintenance:'#059669', supplies:'#d97706',
+  lost_child:'#b45309', general:'#6366f1',
+};
+  const typeLabels = {
+  medical:'Medical Incident',
+  fire:'Fire / Life Safety',
+  security:'Security Incident',
+  walk_in:'Walk-In Patient',
+  maintenance:'Maintenance Report',
+  supplies:'Supply Request',
+  lost_child:'Lost Child Report',
+  general:'General Incident',
+};
   const color = typeColors[data.type] || '#374151';
   const label = typeLabels[data.type] || 'Incident';
 
@@ -61,10 +76,10 @@ function buildHTML(data) {
       <div class="field"><div class="field-label">Responding Unit</div><div class="field-value">${data.respondingUnit || '—'}</div></div>
     </div>
 
-    ${data.patientDescription ? `
+    ${data.individualDescription ? `
     <div class="section">
       <div class="section-title">Patient / Person Description</div>
-      <div class="narrative">${data.patientDescription}</div>
+      <div class="narrative">${data.individualDescription}</div>
     </div>` : ''}
 
     ${data.interventions ? `
@@ -118,7 +133,7 @@ exports.handler = async (event) => {
         Type: data.type || '',
         Location: data.location || '',
         Problem: data.problem || '',
-        PatientDescription: data.patientDescription || '',
+        IndividualDescription: data.individualDescription || '',
         RespondingUnit: data.respondingUnit || '',
         Interventions: data.interventions || '',
         Disposition: data.disposition || '',
@@ -130,6 +145,63 @@ exports.handler = async (event) => {
       }})
     });
   } catch(e) { console.log('Airtable error:', e.message); }
+
+  // Create Google Doc in Drive folder
+  if (GDRIVE_TOKEN) {
+    try {
+      const docTitle = `${data.incidentNumber || 'INC'} — ${typeLabels[data.type]||'Incident'} — ${data.location || ''} — ${new Date().toLocaleDateString('en-US')}`;
+      const docBody = [
+        `FÊTE DE MARQUETTE 2026 — INCIDENT REPORT`,
+        `Incident Number: ${data.incidentNumber || ''}`,
+        `Date/Time: ${formatDate(data.openedAt)}`,
+        `Type: ${typeLabels[data.type] || data.type}`,
+        `Location: ${data.location || ''}`,
+        `Problem: ${data.problem || ''}`,
+        `Reported By: ${data.requestedBy || ''}`,
+        `Responding Unit: ${data.respondingUnit || ''}`,
+        ``,
+        `PATIENT / PERSON DESCRIPTION`,
+        data.individualDescription || 'N/A',
+        ``,
+        `INTERVENTIONS PERFORMED`,
+        data.interventions || 'N/A',
+        ``,
+        `DISPOSITION`,
+        data.disposition || 'N/A',
+        ``,
+        `NARRATIVE`,
+        data.narrative || 'N/A',
+        ``,
+        `ADDITIONAL NOTES`,
+        data.notes || 'N/A',
+        ``,
+        `Generated: ${new Date().toLocaleString()} by ${data.respondingUnit || 'Operations'}`,
+        `fdm2026.netlify.app/hub`,
+      ].join('
+');
+
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GDRIVE_TOKEN}`,
+          'Content-Type': 'multipart/related; boundary=boundary',
+        },
+        body: [
+          '--boundary',
+          'Content-Type: application/json; charset=UTF-8',
+          '',
+          JSON.stringify({ name: docTitle, mimeType: 'application/vnd.google-apps.document', parents: [GDRIVE_FOLDER_ID] }),
+          '--boundary',
+          'Content-Type: text/plain; charset=UTF-8',
+          '',
+          docBody,
+          '--boundary--'
+        ].join('
+')
+      });
+      console.log('Google Doc created:', docTitle);
+    } catch(e) { console.log('Google Doc error:', e.message); }
+  }
 
   // Send email via SendGrid
   if (!SENDGRID_KEY) {

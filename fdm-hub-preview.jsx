@@ -302,7 +302,10 @@ function HubApp({onBack}){
   const [lcFoundForm,setLcFoundForm]=useState(null); // {id} when marking child found
   const [maintNarrativeForm,setMaintNarrativeForm]=useState(null); // {call} for maintenance clear narrative
   const [stagingLocation,setStagingLocation]=useState("Staging #1 — Ingersoll & Wilson"); // EMS staging pre-select
-  const [activeBroadcastId,setActiveBroadcastId]=useState(null); // current tracked broadcast ID for stop button
+  const [activeBroadcastId,setActiveBroadcastId]=useState(null);
+  const [vendorRoster,setVendorRoster]=useState([]);
+  const [vendorRosterLoaded,setVendorRosterLoaded]=useState(false);
+  const [showVendorRoster,setShowVendorRoster]=useState(false); // current tracked broadcast ID for stop button
   const [adminCallDetail,setAdminCallDetail]=useState(null); // full call detail/override view for admin
 
   // LOST & FOUND
@@ -2443,54 +2446,33 @@ Reply YES to acknowledge.`
         </div>
       </div>
 
-      {/* VENDOR CHECK-IN MANAGEMENT */}
+      {/* VENDOR ROSTER */}
       <div style={{background:"rgba(16,185,129,0.05)",borderRadius:14,border:"1px solid rgba(16,185,129,0.25)",overflow:"hidden"}}>
         <div style={{background:"rgba(16,185,129,0.15)",padding:"10px 14px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{fontSize:13,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.06em"}}>🎪 Vendor Sign-Up</div>
+          <div style={{fontSize:13,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.06em"}}>🎪 Vendor Sign-Ups ({vendorRoster.length})</div>
           <div style={{display:"flex",gap:6,alignItems:"center"}}>
-            <span style={{fontSize:11,color:"#6ee7b7",fontWeight:700}}>{vendorPlots.filter(p=>p.checkedIn).length}/{vendorPlots.length} plots filled</span>
-            <button style={{background:"rgba(16,185,129,0.2)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:8,padding:"4px 12px",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setVendorView(p=>!p)}>{vendorView?"▲ Hide":"▼ Manage"}</button>
+            <a href="https://fdm2026.netlify.app/vendors" target="_blank" style={{fontSize:11,color:"#6ee7b7",fontWeight:700,textDecoration:"none",background:"rgba(16,185,129,0.15)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:6,padding:"3px 8px"}}>🔗 Sign-Up Link</a>
+            <button style={{background:"rgba(16,185,129,0.2)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:8,padding:"4px 12px",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{
+              if(!vendorRosterLoaded){
+                fetch("/.netlify/functions/get-vendors").then(r=>r.json()).then(d=>{setVendorRoster(d.vendors||[]);setVendorRosterLoaded(true);}).catch(()=>setVendorRosterLoaded(true));
+              }
+              setShowVendorRoster(p=>!p);
+            }}>{showVendorRoster?"▲ Hide":"▼ View All"}</button>
           </div>
         </div>
-        {vendorView&&<div style={{padding:"10px"}}>
-          {/* Lawn Access Toggle */}
-          <div style={{display:"flex",gap:6,marginBottom:10}}>
-            <button style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${lawnAccess==="lawn"?"rgba(16,185,129,0.7)":"rgba(255,255,255,0.08)"}`,background:lawnAccess==="lawn"?"rgba(16,185,129,0.15)":"transparent",color:lawnAccess==="lawn"?"#10b981":"#475569",fontWeight:800,fontSize:12,cursor:"pointer"}} onClick={()=>{setLawnAccess("lawn");localStorage.setItem('fdm-lawn-access','lawn');}}>🌿 Lawn OK<br/><span style={{fontSize:10,fontWeight:400}}>Drive on lawn</span></button>
-            <button style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${lawnAccess==="path"?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:lawnAccess==="path"?"rgba(245,158,11,0.15)":"transparent",color:lawnAccess==="path"?"#f59e0b":"#475569",fontWeight:800,fontSize:12,cursor:"pointer"}} onClick={()=>{setLawnAccess("path");localStorage.setItem('fdm-lawn-access','path');}}>🛑 Path Only<br/><span style={{fontSize:10,fontWeight:400}}>Unload then move car</span></button>
-          </div>
-          {/* Manual check-in */}
-          <div style={{background:"rgba(255,255,255,0.03)",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",padding:10,marginBottom:8}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#64748b",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.06em"}}>Manual Check-In</div>
-            <input style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none",marginBottom:5}} placeholder="Business name" value={manualBiz} onChange={e=>setManualBiz(e.target.value)}/>
-            <div style={{display:"flex",gap:5,marginBottom:5}}>
-              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none"}} placeholder="Contact name" value={manualContact} onChange={e=>setManualContact(e.target.value)}/>
-              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none"}} placeholder="Phone" value={manualPhone} onChange={e=>setManualPhone(e.target.value)}/>
-            </div>
-            <button style={{width:"100%",padding:"9px",borderRadius:8,border:"none",background:!manualBiz.trim()?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#10b981,#059669)",color:!manualBiz.trim()?"#475569":"#fff",fontWeight:700,fontSize:12,cursor:"pointer",opacity:!manualBiz.trim()?0.5:1}} disabled={!manualBiz.trim()} onClick={()=>{
-              const next=vendorPlots.find(p=>!p.checkedIn&&!p.preAssigned);
-              if(!next){alert("No plots available.");return;}
-              const checkin={business:manualBiz.trim(),contact:manualContact.trim(),phone:manualPhone.trim(),checkedInAt:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),status:"Checked In"};
-              setVendorPlots(p=>{const n=p.map(pl=>pl.id===next.id?{...pl,checkedIn:checkin}:pl);localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;});
-              fetch("/.netlify/functions/vendor-checkin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"checkin",business:manualBiz.trim(),contact:manualContact.trim(),phone:manualPhone.trim(),plot:next.id,day:"Event Day"})}).catch(()=>{});
-              setManualBiz("");setManualContact("");setManualPhone("");
-            }}>+ Check In to Next Available Plot</button>
-          </div>
-          {/* Plot grid */}
-          {vendorPlots.map(pl=>(
-            <div key={pl.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:`1px solid ${pl.checkedIn?.status==="Setup Complete"?"rgba(16,185,129,0.4)":pl.checkedIn?"rgba(245,158,11,0.3)":pl.preAssigned?"rgba(99,102,241,0.3)":"rgba(255,255,255,0.06)"}`,background:"rgba(255,255,255,0.02)",marginBottom:4}}>
-              <div style={{fontSize:13,fontWeight:800,color:pl.checkedIn?.status==="Setup Complete"?"#10b981":pl.checkedIn?"#fbbf24":pl.preAssigned?"#a5b4fc":"#475569",minWidth:46}}>P{pl.id}</div>
-              <div style={{flex:1,minWidth:0}}>
-                {pl.checkedIn&&<><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{pl.checkedIn.business}</div><div style={{fontSize:10,color:"#64748b"}}>{pl.checkedIn.contact}{pl.checkedIn.phone?` · ${pl.checkedIn.phone}`:""} · {pl.checkedIn.checkedInAt}</div></>}
-                {!pl.checkedIn&&pl.preAssigned&&<div style={{fontSize:12,color:"#a5b4fc"}}>Reserved: {pl.preAssigned}</div>}
-                {!pl.checkedIn&&!pl.preAssigned&&<div style={{fontSize:12,color:"#334155"}}>Available</div>}
+        {showVendorRoster&&<div style={{padding:"10px",display:"flex",flexDirection:"column",gap:6}}>
+          {!vendorRosterLoaded&&<div style={{fontSize:13,color:"#64748b",textAlign:"center",padding:8}}>Loading...</div>}
+          {vendorRosterLoaded&&vendorRoster.length===0&&<div style={{fontSize:13,color:"#475569",textAlign:"center",padding:8}}>No vendors signed up yet</div>}
+          {vendorRoster.map((v,i)=>(
+            <div key={v.id||i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(16,185,129,0.15)",borderRadius:10,padding:"10px 12px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                <div style={{fontSize:13,fontWeight:800,color:"#f1f5f9"}}>{v.BusinessName||v.businessName}</div>
+                <div style={{fontSize:10,color:"#6ee7b7",fontWeight:700,background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:4,padding:"2px 6px"}}>{v.Status||"Registered"}</div>
               </div>
-              <div style={{display:"flex",gap:4}}>
-                {pl.checkedIn&&<button style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"3px 8px",color:"#fca5a5",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setVendorPlots(p=>{const n=p.map(x=>x.id===pl.id?{...x,checkedIn:null}:x);localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;})}>Clear</button>}
-                {!pl.checkedIn&&<button style={{background:"rgba(99,102,241,0.12)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:6,padding:"3px 8px",color:"#a5b4fc",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>{const name=prompt("Pre-assign to business name:");if(name)setVendorPlots(p=>{const n=p.map(x=>x.id===pl.id?{...x,preAssigned:name.trim()||null}:x);localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;});}}>Reserve</button>}
-              </div>
+              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>👤 {v.ContactName||v.contactName} · 📞 {v.Phone||v.phone}</div>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>📍 {v.Location||v.location} · Signed up: {v.SignedUpAt||v.signedUpAt}</div>
             </div>
           ))}
-          <button style={{width:"100%",marginTop:6,padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>{if(window.confirm("Clear all plot assignments?")){setVendorPlots(p=>{const n=p.map(x=>({...x,checkedIn:null}));localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;});}}}>🔄 Reset All Plots</button>
         </div>}
       </div>
 

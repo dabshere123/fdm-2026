@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
 
 
 
@@ -21,21 +21,21 @@ const CANCEL_REASONS=["Weather","Safety Concern","Unforeseen Circumstances","Oth
 const BROADCAST_ALERTS=[
   {id:"weather_imminent",label:"⛈ Inclement Weather Imminent",color:"#dc2626",
    requiresWeatherType:true,
-   defaultMsg:"ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Please begin storm procedures and secure all items. Food, beverage, and merchandise sales are postponed until further notice. Additional information will be sent out once available.",
+   defaultMsg:"ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
    fields:[]},
   {id:"event_delayed",label:"⏰ Event Delayed",color:"#f59e0b",
-   defaultMsg:"Attention all staff and vendors — Fête de Marquette has been delayed. Further information will be provided via the festival app and messaging.",
+   defaultMsg:"Attention all staff and vendors — Fête de Marquette has been delayed. Expected resumption: [TIME]. Further information will be provided as it becomes available.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
    fields:[{key:"duration",label:"Estimated Delay",ph:"e.g. 30 minutes"}]},
   {id:"event_postponed",label:"🔄 Event Postponed",color:"#f97316",
    requiresReason:true,reasonType:"postpone",
-   defaultMsg:"Attention all staff and vendors — Fête de Marquette has been postponed due to [REASON]. Food, beverage, and merchandise sales should stop immediately and shutdown procedures should begin. Further information will be provided via the festival app and messaging.",
+   defaultMsg:"Attention all staff and vendors — Fête de Marquette has been postponed due to [REASON]. Food, beverage, and merchandise sales should stop immediately and shutdown procedures should begin.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
    fields:[]},
   {id:"event_resuming",label:"🔁 Event Resuming",color:"#10b981",
    defaultMsg:"Attention all staff — Fête de Marquette will be resuming shortly. Further information will be provided via the festival app and messaging.",
    fields:[]},
   {id:"event_cancelled_staff",label:"❌ Cancelled — Staff & Vendors",color:"#dc2626",
    requiresReason:true,reasonType:"cancel",
-   defaultMsg:"Attention all staff and vendors — due to [REASON], Fête de Marquette has been cancelled for today. Food, beverage, and merchandise sales should stop immediately. Please proceed with shutdown procedures. Further information will be provided via the festival app and messaging.",
+   defaultMsg:"Attention all staff and vendors — due to [REASON], Fête de Marquette has been cancelled for today. Food, beverage, and merchandise sales should stop immediately. Please proceed with shutdown procedures.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
    fields:[]},
 
   {id:"all_clear",label:"☀ All Clear",color:"#059669",
@@ -174,25 +174,18 @@ function HubApp({onBack}){
   const [view,setView]=useState("home");
   const [tick,setTick]=useState(0);
   const [lostChildBlink,setLostChildBlink]=useState(false);
+  const [newCallView,setNewCallView]=useState(false);
+  const [newCallType,setNewCallType]=useState("");
+  const [newCallLocation,setNewCallLocation]=useState("");
+  const [newCallProblem,setNewCallProblem]=useState("");
   const [lcFields,setLcFields]=useState({});
   const blinkRef=useRef(null);
   const [escalated,setEscalated]=useState({});
   const ESCALATION_MS={medical:30000,walk_in:30000,fire:30000,security:30000,supplies:60000,maintenance:60000};
 
-  const [calls,setCalls]=useState([
-    {id:1,type:"medical",location:"Moon Stage 1",problem:"Patron unresponsive near bar",details:"Male, 40s, sitting on ground",requestedBy:"Moon Stage 1",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:"4:33 PM"},{status:"acknowledged",ts:"4:34 PM",unit:"Med 1"}],unit:"Med 1",firedAt:Date.now()-300000},
-    {id:7,type:"medical",location:"Lagniappe Bar",problem:"Person down, possible heat exhaustion",details:"Female, 30s",requestedBy:"Lagniappe",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:35 PM"}],unit:null,firedAt:Date.now()-60000},
-    {id:2,type:"security",location:"Lafayette Bar",problem:"Altercation between two patrons",details:"Near east entrance",requestedBy:"Lafayette",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:28 PM"}],unit:null,firedAt:Date.now()-120000},
-    {id:3,type:"fire",location:"Sun Stage Vendor Area",problem:"Cooking flame too close to tent fabric",details:"Vendor unaware",requestedBy:"Sun Stage Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:20 PM"}],unit:null,firedAt:Date.now()-180000},
-    {id:4,type:"supplies",subtype:"restock",location:"Sun Left",problem:"Ice — 3 bags",requestedBy:"Sun Left",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:15 PM"}],unit:null,firedAt:Date.now()-240000,quantityRequested:"3 bags"},
-    {id:5,type:"maintenance",location:"Cabaret Stage",problem:"Generator tripped, no power to bar",requestedBy:"Cabaret Manager",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:"4:10 PM"}],unit:null,firedAt:Date.now()-300000},
-    {id:6,type:"lost_child",location:"Moon Stage Area",problem:"Girl, approx 6 · Brown pigtails · Red shirt · Blue shorts\nLast seen: 4:05 PM near Moon Stage 1 bar\nMeet Reporting Party / Parent: Medical Tent\nParent: Sarah Johnson · 608-555-1234",requestedBy:"Moon Stage Manager",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:"4:08 PM"},{status:"acknowledged",ts:"4:09 PM",unit:"Admin"}],unit:"Admin",firedAt:Date.now()-400000},
-  ]);
-  const [completed,setCompleted]=useState([
-    {id:99,type:"medical",location:"Lagniappe",problem:"Heat exhaustion",status:"cleared",clearedBy:"Med 1",clearedAt:"2:35 PM",history:[{status:"new_call",ts:"2:10 PM"},{status:"acknowledged",ts:"2:11 PM",unit:"Med 1"},{status:"on_scene",ts:"2:14 PM",unit:"Med 1"},{status:"cleared",ts:"2:35 PM",unit:"Med 1"}]},
-    {id:98,type:"security",location:"Moon Stage 2",problem:"Unruly patron",status:"cleared",clearedBy:"Admin",clearedAt:"3:15 PM",history:[{status:"new_call",ts:"3:05 PM"},{status:"cleared",ts:"3:15 PM",unit:"Admin"}]},
-  ]);
-  const [medSt,setMedSt]=useState({med1:{status:"available",since:null},med2:{status:"on_scene",since:"4:14 PM"}});
+  const [calls,setCalls]=useState([]);
+  const [completed,setCompleted]=useState([]);
+  const [medSt,setMedSt]=useState({med1:{status:"available",since:null},med2:{status:"available",since:null}});
   const [broadcastAlerts,setBroadcastAlerts]=useState([
     {id:10,label:"⛈ Inclement Weather Imminent",msg:"⛈ INCLEMENT WEATHER IMMINENT\nEstimated Arrival: 45 min\nShutdown: 7:45 PM",requiresAck:true,firedAt:Date.now()-120000,date:now(),acks:{"Moon Stage 1":"4:33 PM","Med 1":"4:33 PM","Med 2":"4:33 PM"},escalated:false},
   ]);
@@ -206,17 +199,110 @@ function HubApp({onBack}){
 
   // ADMIN REQUEST FORM
   const [adminReqView,setAdminReqView]=useState(false);
+  // NOTIFICATION ROSTER — Admin 2 hardcoded, others from Airtable
+  const ADMIN2_PHONE = "+16082289692";
+  const getNotifyList = (type) => {
+    // Get phones from staffList by role
+    const safeList = staffList || [];
+    const byRole = (roles) => safeList
+      .filter(s => roles.some(r => (s.role||"").toLowerCase().includes(r.toLowerCase())))
+      .map(s => s.phone).filter(Boolean);
+    
+    if(type==="lost_child"||type==="broadcast"){
+      return [...new Set([ADMIN2_PHONE, ...safeList.map(s=>s.phone).filter(Boolean)])];
+    }
+    if(type==="vendors_sms"){
+      // Combine staff vendors + checked-in food vendors from VendorCheckins
+      const staffVendors = safeList.filter(s=>(s.role||"").toLowerCase().includes("vendor")).map(s=>s.phone).filter(Boolean);
+      return [...new Set([...staffVendors,...vendorPhonesList])];
+    }
+    if(type==="medical"||type==="fire"){
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2","med unit 1","med 1","m1","med unit 2","med 2","m2"])])];
+    }
+    if(type==="security"){
+      const mpdPhones=mpdOfficers.filter(o=>o.phone).map(o=>o.phone);
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2"]), ...mpdPhones])];
+    }
+    if(type==="supplies"){
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2"])])];
+    }
+    if(type==="maintenance"){
+      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2","oc1","oc2","oc3","oc4"])])];
+    }
+    return [ADMIN2_PHONE];
+  };
+  const sendVoice = (phones, message) => {
+    phones.forEach(phone => {
+      fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message})}).catch(e=>console.log(e));
+    });
+  };
+  const fmtPhone = (p) => {
+    if(!p) return null;
+    const d = p.replace(/\D/g,"");
+    if(d.length===10) return `+1${d}`;
+    if(d.length===11&&d.startsWith("1")) return `+${d}`;
+    if(p.startsWith("+")) return p;
+    return null;
+  };
+  const sendSMSList = (phones, message) => {
+    phones.forEach(phone => {
+      const formatted = fmtPhone(phone);
+      if(!formatted) return;
+      fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:formatted,message})}).catch(e=>console.log(e));
+    });
+  };
   const [serialNums,setSerialNums]=useState(()=>{try{return JSON.parse(localStorage.getItem("fdm-serials")||"{}");}catch{return {};}});
   const [showSerials,setShowSerials]=useState(false);
+  const [showStaffMgmt,setShowStaffMgmt]=useState(false);
+
+  const [scheduledMsgs,setScheduledMsgs]=useState([]);
+  const [showScheduler,setShowScheduler]=useState(false);
+  const [broadcastSending,setBroadcastSending]=useState(false);
+  const [gmRoster,setGmRoster]=useState(()=>{try{return JSON.parse(localStorage.getItem('fdm-gm-roster')||'[]');}catch{return [];}});
+  const [gmNewName,setGmNewName]=useState("");
+  const [gmNewUsername,setGmNewUsername]=useState("");
+  const [gmNewChannels,setGmNewChannels]=useState([]);
+  const [gmEditId,setGmEditId]=useState(null);
+  const [broadcastSuccess,setBroadcastSuccess]=useState(null); // {label, channels}
+  const [staffList,setStaffList]=useState([]);
+  const [vendorPhonesList,setVendorPhonesList]=useState([]);
+  const [vendorCheckins,setVendorCheckins]=useState([]);
+  const [vendorToasts,setVendorToasts]=useState([]);
+  const [vendorSeenIds,setVendorSeenIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('fdm-vendor-seen')||'[]');}catch{return [];}});
+  const [vendorPlots,setVendorPlots]=useState(()=>{try{return JSON.parse(localStorage.getItem('fdm-hub-vendor-plots')||'null')||Array.from({length:10},(_,i)=>({id:i+1,checkedIn:null,preAssigned:null}));}catch{return Array.from({length:10},(_,i)=>({id:i+1,checkedIn:null,preAssigned:null}));}});
+  const [lawnAccess,setLawnAccess]=useState(()=>{try{return localStorage.getItem('fdm-lawn-access')||'lawn';}catch{return 'lawn';}});
+  const [vendorView,setVendorView]=useState(false);
+  const [manualBiz,setManualBiz]=useState("");
+  const [manualContact,setManualContact]=useState("");
+  const [manualPhone,setManualPhone]=useState("");
+  const [schedMsg,setSchedMsg]=useState("");
+  const [schedLabel,setSchedLabel]=useState("");
+  const [schedTime,setSchedTime]=useState("");
+  const [schedChannels,setSchedChannels]=useState(["all_staff"]);
+  const [schedPhones,setSchedPhones]=useState(["+16082289692"]);
+  const [schedSaving,setSchedSaving]=useState(false);
+  const [staffMgmtSearch,setStaffMgmtSearch]=useState("");
+  const [staffMgmtTab,setStaffMgmtTab]=useState("staff"); // staff | mpd
+  const [deletingId,setDeletingId]=useState(null);
   const saveSerial=(id,val)=>{const n={...serialNums,[id]:val};setSerialNums(n);try{localStorage.setItem("fdm-serials",JSON.stringify(n));}catch{}};
   const [adminReqType,setAdminReqType]=useState("");
   const [adminReqLoc,setAdminReqLoc]=useState("");
   const [adminReqProblem,setAdminReqProblem]=useState("");
   const [adminReqDetails,setAdminReqDetails]=useState("");
+  const [adminSupplyItem,setAdminSupplyItem]=useState("");
+  const [adminSupplyQty,setAdminSupplyQty]=useState("");
+  const [adminMaintProblem,setAdminMaintProblem]=useState("");
+  const [adminMaintLoc,setAdminMaintLoc]=useState("");
 
   // INCIDENT REPORT
   const [incidentView,setIncidentView]=useState(null); // holds call data for report form
   const [incFields,setIncFields]=useState({});
+  const [clearIncView,setClearIncView]=useState(null);
+  const [medActiveCall,setMedActiveCall]=useState(null); // call detail view for Med
+  const [lcFoundForm,setLcFoundForm]=useState(null); // {id} when marking child found
+  const [maintNarrativeForm,setMaintNarrativeForm]=useState(null); // {call} for maintenance clear narrative
+  const [stagingLocation,setStagingLocation]=useState("Staging #1 — Ingersoll & Wilson"); // EMS staging pre-select
+  const [activeBroadcastId,setActiveBroadcastId]=useState(null); // current tracked broadcast ID for stop button
 
   // LOST & FOUND
   const [lfAddMode,setLfAddMode]=useState(false);
@@ -284,11 +370,19 @@ function HubApp({onBack}){
     return()=>clearInterval(interval);
   },[liveMode]);
   // AUTO-LOGIN FROM URL PARAM (med1/med2 from field app)
+  // Auto-load staff list on hub mount so notifications work immediately
+  useEffect(()=>{
+    fetch("/.netlify/functions/get-staff-list")
+      .then(r=>r.json())
+      .then(d=>setStaffList(d.staff||d.members||[]))
+      .catch(()=>{});
+  },[]);
+
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
     const urlRole=params.get("role");
-    if(urlRole==="med1"){setRole("Med 1");setPin(PINS["Med 1"]||"0000");setLoggedIn(true);}
-    else if(urlRole==="med2"){setRole("Med 2");setPin(PINS["Med 2"]||"0000");setLoggedIn(true);}
+    if(urlRole==="med1"){setRole("Med 1");setLiveMode(true);}
+    else if(urlRole==="med2"){setRole("Med 2");setLiveMode(true);}
   },[]);
 
   // NWS Weather Alert System
@@ -371,7 +465,7 @@ function HubApp({onBack}){
   // Sound on new incoming calls
   const _lastSoundId = React.useRef(null);
   useEffect(()=>{
-    const unacked = calls.filter(c=>!c.acknowledged&&c.status==="new_call");
+    const unacked = activeCalls.filter(c=>!c.acknowledged&&c.status==="new_call");
     if(unacked.length===0)return;
     if(!liveMode)return; // No auto-alerts in demo mode
     const newest = unacked.reduce((a,b)=>b.firedAt>a.firedAt?b:a);
@@ -380,12 +474,14 @@ function HubApp({onBack}){
       playAlert(newest.type);
     }
   },[calls,liveMode]);
-  const [mpdOfficers,setMpdOfficers]=useState([
-    {id:"o1", name:"Officer Martinez", badge:"MPD-412", phone:"(608) 555-0101", status:"on_duty"},
-    {id:"o2", name:"Officer Chen",     badge:"MPD-387", phone:"(608) 555-0102", status:"on_duty"},
-    {id:"o3", name:"Officer Williams", badge:"MPD-455", phone:"(608) 555-0103", status:"on_duty"},
-    {id:"o4", name:"Officer Johnson",  badge:"MPD-391", phone:"(608) 555-0104", status:"on_duty"},
-  ]);
+  const [mpdOfficers,setMpdOfficers]=useState([]);
+  // Fetch MPD officers from Airtable
+  useEffect(()=>{
+    fetch("/.netlify/functions/get-mpd-officers")
+      .then(r=>r.json())
+      .then(d=>{ if(d.officers?.length) setMpdOfficers(d.officers); })
+      .catch(()=>{});
+  },[]);
   const [assignPanel,setAssignPanel]=useState(null); // callId being assigned
   const [lcForm,setLcForm]=useState({name:"",age:"",description:"",lastSeen:"",assemblyPoint:"Medical Tent",parentName:"",parentPhone:""});
   const [lcView,setLcView]=useState(false);
@@ -408,8 +504,8 @@ function HubApp({onBack}){
   const suppCalls=activeCalls.filter(c=>c.type==="supplies");
   const maintCalls=activeCalls.filter(c=>c.type==="maintenance");
   const lostChildCalls=activeCalls.filter(c=>c.type==="lost_child");
-  const myActive=isMed?calls.filter(c=>c.unit===role):[];
-  const unassigned=isMed?activeCalls.filter(c=>(c.type==="medical"||c.type==="walk_in")&&!c.unit&&c.status==="new_call"):[];
+  const myActive=isMed?activeCalls.filter(c=>c.unit===role):[];
+  const unassigned=isMed?activeCalls.filter(c=>(c.type==="medical"||c.type==="walk_in"||c.type==="fire"||c.type==="security")&&!c.unit&&(c.status==="new_call"||c.status==="pending")):[];
 
   // Tick for countdown
   useEffect(()=>{const id=setInterval(()=>setTick(p=>p+1),1000);return()=>clearInterval(id);},[]);
@@ -425,9 +521,15 @@ function HubApp({onBack}){
   },[lostChildCalls.length]);
 
   const ackCall=(id,by)=>{ playAlert("ack");
-    if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Acknowledged",unit:by})}).catch(e=>console.log(e)); }
-    const call=calls.find(c=>c.id===id);
+    if(liveMode){ 
+      fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Acknowledged",unit:by})}).catch(e=>console.log(e));
+      // Immediately update liveCalls so Med unit sees the call right away
+      setLiveCalls(p=>p.map(c=>c.id!==id?c:{...c,acknowledged:true,status:"acknowledged",unit:by}));
+    }
+    const call=activeCalls.find(c=>c.id===id)||calls.find(c=>c.id===id);
     if(call) addAckedBanner({...call,unit:by});
+    // If Med unit is acknowledging, go straight to call detail view
+    if(isMed && call) setMedActiveCall({...call,unit:by,acknowledgedAt:tShort()});
     // Send GroupMe notification to relevant channel
     if(call){
       const channelMap={medical:"medical",walk_in:"medical",fire:"medical",security:"admin",supplies:"restock",maintenance:"maintenance",lost_child:"admin"};
@@ -444,9 +546,13 @@ function HubApp({onBack}){
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
-        // SMS + Voice to Admin and Med units only
-        fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(e=>console.log(e));
-        fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Medical alert at Fete de Marquette. Location: ${call.location}. ${call.problem||""}. Please respond immediately.`})}).catch(e=>console.log(e));
+        // SMS + Voice to Admin + Med roster (async so UI doesn't freeze)
+        setTimeout(()=>{
+          const medPhones=getNotifyList("medical");
+          const medPhonesFinal=[...new Set([ADMIN2_PHONE,...medPhones])];
+          sendSMSList(medPhonesFinal,msg);
+          sendVoice(medPhonesFinal,`Medical alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond immediately.`);
+        },100);
       } else if(call.type==="fire"){
         msg=[
           `🔥 LIFE SAFETY ALERT 🔥`,
@@ -457,9 +563,13 @@ function HubApp({onBack}){
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
-        // SMS + Voice to Admin and Med units for fire/life safety
-        fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(e=>console.log(e));
-        fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Life safety alert at Fete de Marquette. Location: ${call.location}. ${call.problem||""}. Please respond immediately.`})}).catch(e=>console.log(e));
+        // SMS + Voice to Admin + Med roster for fire (async)
+        setTimeout(()=>{
+          const firePhones=getNotifyList("fire");
+          const firePhonesFinal=[...new Set([ADMIN2_PHONE,...firePhones])];
+          sendSMSList(firePhonesFinal,msg);
+          sendVoice(firePhonesFinal,`Life safety alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond immediately.`);
+        },100);
       } else if(call.type==="security"){
         msg=[
           `👮 SECURITY 👮`,
@@ -470,8 +580,13 @@ function HubApp({onBack}){
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
-        // SMS to Admin only for security (MPD only if manually requested)
-        fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(e=>console.log(e));
+        // SMS + Voice to Admin + Security roster (async)
+        setTimeout(()=>{
+          const secPhones=getNotifyList("security");
+          const secPhonesFinal=[...new Set([ADMIN2_PHONE,...secPhones])];
+          sendSMSList(secPhonesFinal,msg);
+          sendVoice(secPhonesFinal,`Security alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond.`);
+        },100);
       } else if(call.type==="supplies"){
         msg=[
           `📦 RESTOCK REQUEST 📦`,
@@ -482,9 +597,14 @@ function HubApp({onBack}){
           `REQUESTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
-        // Supplies go directly to Admin only
-        if(msg) sendGroupMe(msg,["admin"]);
-        msg=null; // prevent double-send below
+        const suppliesGmMsg="SUPPLY ALERT 📦\n"+msg;
+        sendGroupMe(suppliesGmMsg,["admin","restock"]);
+        setTimeout(()=>{
+          const phones=getNotifyList("supplies");
+          sendSMSList(phones,msg);
+          // No voice for supplies
+        },100);
+        msg=null;
       } else if(call.type==="maintenance"){
         msg=[
           `🔧 MAINTENANCE 🔧`,
@@ -494,6 +614,11 @@ function HubApp({onBack}){
           `REQUESTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
+        setTimeout(()=>{
+          const phones=getNotifyList("maintenance");
+          sendSMSList(phones,msg);
+          // No voice for maintenance
+        },100);
       } else if(call.type==="lost_child"){
         msg=[
           `🧒 LOST CHILD 🧒`,
@@ -504,10 +629,13 @@ function HubApp({onBack}){
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");
-        // Lost child — SMS + voice + MPD on acknowledge
-        fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({message:finalMsg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Lost child alert. ${call.problem||""}. Location: ${call.location}. All staff please be on alert.`})
-        }).catch(e=>console.log(e));
+        // Lost child — SMS + voice to ALL staff
+        setTimeout(()=>{
+          const lcPhones=getNotifyList("lost_child");
+          const lcPhonesFinal=lcPhones.length>0?lcPhones:[ADMIN2_PHONE];
+          sendSMSList(lcPhonesFinal,msg);
+          sendVoice(lcPhonesFinal,`Urgent. Lost child at Fete de Marquette. ${(call.problem||"").replace(/\n/g," ")}. Location: ${call.location}. All staff please be on alert immediately.`);
+        },100);
         fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({type:"lost_child",officers:mpdOfficers,location:call.location,situation:msg})
         }).catch(e=>console.log(e));
@@ -517,28 +645,64 @@ function HubApp({onBack}){
       if(msg) sendGroupMe(msg, [ch,"admin"]);
     }
     setCalls(p=>p.map(c=>c.id!==id?c:{...c,acknowledged:true,status:"acknowledged",history:[...c.history,{status:"acknowledged",ts:tShort(),unit:by}]}));
-    setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"ack",label:`Acknowledged by ${by}`,msg:calls.find(c=>c.id===id)?.problem||""},...p]);
+    setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"ack",label:`Acknowledged by ${by}`,msg:activeCalls.find(c=>c.id===id)?.problem||""},...p]);
   };
   const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
-  const clearCall=(id,by)=>{ playAlert("clear"); removeAckedBanner(id); setView("home");
-    if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Cleared",unit:by})}).catch(e=>console.log(e)); }
-    // Trigger incident report for medical/fire/security
-    const call=activeCalls.find(c=>c.id===id)||calls.find(c=>c.id===id);
-    if(call&&["medical","walk_in","fire","security"].includes(call.type)){
-      setIncidentView(call);
-      setIncFields({respondingUnit:by,disposition:"",interventions:"",narrative:"",notes:""});
+  const submitAndClearCall=(c,by,incidentData)=>{
+    playAlert("clear"); removeAckedBanner(c.id);
+    if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:by})}).catch(()=>{}); }
+    // Send incident report with provided data
+    if(["medical","walk_in","fire","security"].includes(c.type)){
+      const incNum=`FDM-${new Date().toLocaleDateString("en-US",{month:"2-digit",day:"2-digit"}).replace("/","")}${c.id.toString().slice(-4)}`;
+      fetch("/.netlify/functions/send-incident-report",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          incidentNumber:incNum,
+          type:c.type,
+          location:incidentData?.location||c.location||"",
+          problem:incidentData?.problem||c.problem||"",
+          requestedBy:c.requestedBy||"Staff",
+          respondingUnit:incidentData?.respondingUnit||by,
+          disposition:incidentData?.disposition||`Cleared by ${by} at ${tShort()}`,
+          narrative:incidentData?.narrative||`${c.type} call at ${c.location}. ${c.problem}. Cleared by ${by} at ${tShort()}.`,
+          individualDescription:incidentData?.individualDescription||"",
+          interventions:incidentData?.interventions||"",
+          notes:incidentData?.notes||"",
+          openedAt:c.firedAt?new Date(c.firedAt).toISOString():new Date().toISOString(),
+        })
+      }).catch(()=>{});
     }
-    const c=calls.find(x=>x.id===id);if(!c)return;
     setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
-    setCalls(p=>p.filter(x=>x.id!==id));
+    setCalls(p=>p.filter(x=>x.id!==c.id));
     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"clear",label:`Cleared by ${by}`,msg:c.problem||""},...p]);
+    setClearIncView(null);
+    setView("home");
+  };
+
+  const clearCall=(id,by)=>{
+    const c=activeCalls.find(x=>x.id===id)||calls.find(x=>x.id===id);if(!c)return;
+    if(["medical","walk_in","fire","security"].includes(c.type)){
+      // Show quick incident form before clearing
+      setClearIncView({call:c,by});
+    } else if(c.type==="maintenance"){
+      // Show small narrative form for maintenance
+      setMaintNarrativeForm({call:c,by});
+    } else {
+      // Non-medical/security — just clear immediately
+      playAlert("clear"); removeAckedBanner(id);
+      if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Cleared",unit:by})}).catch(()=>{}); }
+      setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
+      setCalls(p=>p.filter(x=>x.id!==id));
+      setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"clear",label:`Cleared by ${by}`,msg:c.problem||""},...p]);
+      setView("home");
+    }
   };
 
   // FULL SCREEN ALERT
   if(view==="home"){
     const PRIORITY=["lost_child","medical","walk_in","fire","security","supplies","maintenance"];
     let alertCall=null;
-    for(const t of PRIORITY){alertCall=calls.find(c=>c.type===t&&!c.acknowledged);if(alertCall)break;}
+    for(const t of PRIORITY){alertCall=activeCalls.find(c=>c.type===t&&!c.acknowledged);if(alertCall)break;}
     if(alertCall&&(isAdmin||isMed||alertCall.type==="lost_child")){
       const ac=ALERT_COLORS[alertCall.type]||ALERT_COLORS.medical;
       const bg=lostChildBlink?ac.full2:ac.full;
@@ -560,14 +724,25 @@ function HubApp({onBack}){
             </div>
             <div style={{height:4,background:"rgba(255,255,255,0.2)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",background:pct>66?"#ef4444":pct>33?"#f97316":"#10b981",borderRadius:2,width:`${pct}%`,transition:"width 1s"}}/></div>
           </div>
-          {calls.filter(c=>!c.acknowledged).length>1&&<div style={{fontSize:13,color:"rgba(255,255,255,0.7)",background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"6px 14px"}}>+{calls.filter(c=>!c.acknowledged).length-1} more pending</div>}
-          {(alertCall.type==="medical"||alertCall.type==="walk_in")&&isMed&&(
+          {activeCalls.filter(c=>!c.acknowledged).length>1&&<div style={{fontSize:13,color:"rgba(255,255,255,0.7)",background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"6px 14px"}}>+{activeCalls.filter(c=>!c.acknowledged).length-1} more pending</div>}
+          {(alertCall.type==="medical"||alertCall.type==="walk_in"||alertCall.type==="fire"||alertCall.type==="security")&&(
             <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
-              <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",fontWeight:600,textAlign:"center"}}>Who is responding?</div>
-              <div style={{display:"flex",gap:8}}>
-                <button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:12,padding:"14px",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",background:"rgba(5,150,105,0.5)"}} onClick={()=>ackCall(alertCall.id,role)}>✅ {role}</button>
-                <button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:12,padding:"14px",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",background:"rgba(5,150,105,0.5)"}} onClick={()=>ackCall(alertCall.id,"Both")}>✅ Both</button>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.6)",fontWeight:700,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.06em"}}>Acknowledge</div>
+              <div style={{display:"flex",gap:6}}>
+                <button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:10,padding:"12px 6px",color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",background:"rgba(190,24,93,0.5)"}} onClick={()=>ackCall(alertCall.id,"Med 1")}>🩺 Med 1</button>
+                <button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:10,padding:"12px 6px",color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",background:"rgba(190,24,93,0.5)"}} onClick={()=>ackCall(alertCall.id,"Med 2")}>🩺 Med 2</button>
+                <button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:10,padding:"12px 6px",color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",background:"rgba(245,158,11,0.4)"}} onClick={()=>ackCall(alertCall.id,"Both")}>✅ Both</button>
+                {isAdmin&&<button style={{flex:1,border:"2px solid rgba(255,255,255,0.5)",borderRadius:10,padding:"12px 6px",color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",background:"rgba(99,102,241,0.4)"}} onClick={()=>ackCall(alertCall.id,role)}>⚡ Admin</button>}
               </div>
+              {!nineOneOne.active&&<button style={{width:"100%",border:"2px solid rgba(220,38,38,0.7)",borderRadius:12,padding:"14px",color:"#fca5a5",fontSize:14,fontWeight:900,cursor:"pointer",background:"rgba(180,0,0,0.2)"}}
+                onClick={()=>{
+                  const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${alertCall.location}\nCALL: ${alertCall.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
+                  set911({active:true,by:role,at:now(),callId:alertCall.id,info:{location:alertCall.location,nature:alertCall.problem}});
+                  sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
+                  const phones=[...new Set([ADMIN2_PHONE,...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
+                  phones.forEach(p=>{const d=p.replace(/\D/g,"");const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 activated by ${role} at Fete de Marquette. Responding to ${alertCall.location}. ${alertCall.problem}. EMS inbound. Clear a path.`})}).catch(()=>{});});
+                }}>🚨 Activate 911 from This Call</button>}
+              {nineOneOne.active&&<div style={{textAlign:"center",color:"#fca5a5",fontWeight:900,padding:"10px",background:"rgba(180,0,0,0.2)",borderRadius:10}}>🚨 911 ACTIVE</div>}
             </div>
           )}
           {isLC?(
@@ -597,7 +772,7 @@ function HubApp({onBack}){
       <div style={{padding:"0 16px 6px",fontSize:12,color:"#64748b",fontWeight:600}}>Select your role:</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 16px 20px"}}>
         {[["ADMIN","⚡","Command / Admin · Full access","rgba(245,158,11,0.1)","#f59e0b"],["Med 1","🩺","Medical Unit 1","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"],["Med 2","🩺","Medical Unit 2","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"]].map(([r,em,tp,bg,bc])=>(
-          <button key={r} style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:`2px solid ${bc}`,background:bg,cursor:"pointer",textAlign:"left"}} onClick={()=>setRole(r)}>
+          <button key={r} style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:`2px solid ${bc}`,background:bg,cursor:"pointer",textAlign:"left"}} onClick={()=>{setRole(r);if(r==="Med 1"||r==="Med 2")setLiveMode(true);}}>
             <span style={{fontSize:24,minWidth:32}}>{em}</span><div><div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{r}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{tp}</div></div>
           </button>
         ))}
@@ -635,12 +810,82 @@ function HubApp({onBack}){
             <span style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>{RESOURCE_TYPES.find(t=>t.id===resourceType)?.label}</span>
             <button style={{marginLeft:"auto",background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer"}} onClick={()=>setResourceType(null)}>Change</button>
           </div>
+          {/* SUPPLIES — worker app style */}
+          {resourceType==="supplies"&&<>
+            <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>What do you need?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {[{id:"ice",label:"Ice",emoji:"🧊"},{id:"beer_cups",label:"Beer Cup Sleeves",emoji:"🍺"},{id:"wine_cups",label:"Wine Cup Sleeves",emoji:"🍷"},{id:"paper_towels",label:"Paper Towels",emoji:"🧻"},{id:"bar_towels",label:"Bar Towels",emoji:"🧼"},{id:"water",label:"Bottled Water (24-pack)",emoji:"💧"},{id:"other",label:"Other",emoji:"➕"}].map(item=>(
+                <button key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${adminSupplyItem===item.id?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:adminSupplyItem===item.id?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>{setAdminSupplyItem(item.id);setAdminSupplyQty("");}}>
+                  <span style={{fontSize:22,width:28}}>{item.emoji}</span>
+                  <span style={{fontSize:15,fontWeight:adminSupplyItem===item.id?800:500,color:adminSupplyItem===item.id?"#fcd34d":"#f1f5f9"}}>{item.label}</span>
+                  {adminSupplyItem===item.id&&<span style={{marginLeft:"auto",color:"#fcd34d",fontSize:18}}>✓</span>}
+                </button>
+              ))}
+            </div>
+            {adminSupplyItem&&adminSupplyItem!=="other"&&<>
+              <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Quantity?</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
+                {["1","2","3","4","5","6","7","8","9","10+"].map(q=>(
+                  <button key={q} style={{padding:"14px 0",borderRadius:10,border:`2px solid ${adminSupplyQty===q?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:adminSupplyQty===q?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",fontSize:16,fontWeight:adminSupplyQty===q?900:400,color:adminSupplyQty===q?"#fcd34d":"#f1f5f9",textAlign:"center"}} onClick={()=>setAdminSupplyQty(q)}>{q}</button>
+                ))}
+              </div>
+            </>}
+            {adminSupplyItem==="other"&&<input style={{...S.inp}} placeholder="What do you need?" value={adminReqProblem} onChange={e=>setAdminReqProblem(e.target.value)}/>}
+            <input style={{...S.inp}} placeholder="Location / Station *" value={adminReqLoc} onChange={e=>setAdminReqLoc(e.target.value)}/>
+            <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#0a0f1e",opacity:(!adminReqLoc||!adminSupplyItem||(adminSupplyItem!=="other"&&!adminSupplyQty))?0.5:1}} disabled={!adminReqLoc||!adminSupplyItem||(adminSupplyItem!=="other"&&!adminSupplyQty)} onClick={()=>{
+              const item=adminSupplyItem==="other"?adminReqProblem:adminSupplyItem.replace(/_/g," ");
+              const prob=`Restock: ${item}${adminSupplyQty?" x"+adminSupplyQty:""}`;
+              const msg=`📦 RESTOCK REQUEST — Admin
+LOCATION: ${adminReqLoc}
+WHAT'S NEEDED: ${prob}
+DATE/TIME: ${now()}`;
+              const call={id:Date.now(),type:"supplies",location:adminReqLoc,problem:prob,requestedBy:"Admin",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:tShort()},{status:"acknowledged",ts:tShort(),unit:"Admin"}],unit:"Admin",firedAt:Date.now()};
+              setCalls(p=>[call,...p]);
+              sendGroupMe(msg,["admin","restock"]);
+              setTimeout(()=>{const phones=getNotifyList("supplies");sendSMSList(phones,msg);},100);
+              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"supplies",label:`Supplies: ${prob}`,msg:adminReqLoc},...p]);
+              setAdminSupplyItem("");setAdminSupplyQty("");setAdminReqLoc("");setAdminReqProblem("");
+              setResourceView(false);setResourceType(null);setResourceFields({});
+            }}>📦 Send Supplies Request</button>
+          </>}
+
+          {/* MAINTENANCE — nice form */}
+          {resourceType==="maintenance"&&<>
+            <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>What's the issue?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {["Generator / Power","Sound / PA System","Lighting","Tent / Structure","Plumbing / Water","Trash / Cleanup","Equipment Breakdown","Other"].map(item=>(
+                <button key={item} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${adminMaintProblem===item?"rgba(16,185,129,0.7)":"rgba(255,255,255,0.08)"}`,background:adminMaintProblem===item?"rgba(16,185,129,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setAdminMaintProblem(item)}>
+                  <span style={{fontSize:14,fontWeight:adminMaintProblem===item?800:500,color:adminMaintProblem===item?"#6ee7b7":"#f1f5f9"}}>{item}</span>
+                  {adminMaintProblem===item&&<span style={{marginLeft:"auto",color:"#6ee7b7",fontSize:18}}>✓</span>}
+                </button>
+              ))}
+            </div>
+            {adminMaintProblem==="Other"&&<input style={{...S.inp}} placeholder="Describe the issue..." value={adminReqProblem} onChange={e=>setAdminReqProblem(e.target.value)}/>}
+            <input style={{...S.inp}} placeholder="Location *" value={adminMaintLoc} onChange={e=>setAdminMaintLoc(e.target.value)}/>
+            <input style={{...S.inp}} placeholder="Additional details (optional)" value={adminReqDetails} onChange={e=>setAdminReqDetails(e.target.value)}/>
+            <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",opacity:(!adminMaintLoc||!adminMaintProblem)?0.5:1}} disabled={!adminMaintLoc||!adminMaintProblem} onClick={()=>{
+              const prob=adminMaintProblem==="Other"?adminReqProblem:adminMaintProblem;
+              const msg=`🔧 MAINTENANCE REQUEST — Admin
+LOCATION: ${adminMaintLoc}
+ISSUE: ${prob}${adminReqDetails?"\n"+adminReqDetails:""}
+DATE/TIME: ${now()}`;
+              const call={id:Date.now(),type:"maintenance",location:adminMaintLoc,problem:prob,requestedBy:"Admin",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:tShort()},{status:"acknowledged",ts:tShort(),unit:"Admin"}],unit:"Admin",firedAt:Date.now()};
+              setCalls(p=>[call,...p]);
+              sendGroupMe("MAINTENANCE CONCERN 🔧\n"+msg,["admin","maintenance"]);
+              setTimeout(()=>{const phones=getNotifyList("maintenance");sendSMSList(phones,msg);},100);
+              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"maintenance",label:`Maintenance: ${prob}`,msg:adminMaintLoc},...p]);
+              setAdminMaintProblem("");setAdminMaintLoc("");setAdminReqDetails("");setAdminReqProblem("");
+              setResourceView(false);setResourceType(null);setResourceFields({});
+            }}>🔧 Send Maintenance Request</button>
+          </>}
+
+          {/* ALL OTHER TYPES — generic form */}
+          {resourceType!=="supplies"&&resourceType!=="maintenance"&&<>
           <Fld label="Location / Where needed" value={resourceFields.location||""} onChange={e=>setResourceFields(p=>({...p,location:e.target.value}))} ph="e.g. Moon Stage 1 area" required/>
           <Fld label="What's needed" value={resourceFields.reason||""} onChange={e=>setResourceFields(p=>({...p,reason:e.target.value}))} ph="e.g. 2 additional officers for crowd control" required/>
           <Fld label="Additional Info" value={resourceFields.notes||""} onChange={e=>setResourceFields(p=>({...p,notes:e.target.value}))} ph="Optional" multi/>
           <button style={{...S.sendBtn,opacity:(!resourceFields.location||!resourceFields.reason)?0.5:1}} disabled={!resourceFields.location||!resourceFields.reason} onClick={()=>{
             setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"resource",label:`Resource Request: ${RESOURCE_TYPES.find(t=>t.id===resourceType)?.label}`,msg:`${resourceFields.reason} — ${resourceFields.location}`},...p]);
-            // MFD + Madison Fire Medics auto-trigger 911 activation
             if(resourceType==="mfd"||resourceType==="ems_mfd"){
               set911({active:true,info:{location:resourceFields.location,nature:resourceFields.reason},by:"Resource Request",at:tShort()});
               playAlert("fire");
@@ -648,6 +893,7 @@ function HubApp({onBack}){
             setResourceView(false);setResourceType(null);setResourceFields({});
             if(resourceType==="mfd"||resourceType==="ems_mfd") setView("911");
           }}>📋 SUBMIT RESOURCE REQUEST</button>
+          </>}
         </>)}
       </div>
     </div></div>
@@ -669,7 +915,7 @@ function HubApp({onBack}){
       ):(()=>{
         const t=BROADCAST_ALERTS.find(x=>x.id===alertView);
         const selectedReason=alertFields._reason||"";
-        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]");
+        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD");
         const preview=editedMsg||msgBase;
         return(<><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 8px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.95)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
             <div style={{display:"inline-flex",padding:"4px 12px",borderRadius:20,fontSize:13,fontWeight:600,color:"#fff",background:t?.color}}>{t?.label}</div>
@@ -846,7 +1092,7 @@ function HubApp({onBack}){
               </div>
             </div>
           )}
-          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]"));}}/>
+          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[TIME]",alertFields.eta||"time TBD"));}}/>
           {editedMsg&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{
@@ -865,35 +1111,216 @@ function HubApp({onBack}){
     else areasStr="\nAFFECTED: "+effectiveAreas.join(", ");
   }
   const finalMsg=msg+(areasStr?areasStr:"");
+  setBroadcastSending(true);
   setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:finalMsg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
   setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:finalMsg},...p]);
   // GroupMe
   const broadcastChannels=alertFields._gmChannels||(t.defaultChannels||["all_staff","admin"]);
-  sendGroupMe(`FDM 2026 — ${t.label}\n\n${finalMsg}`, broadcastChannels);
-  // SMS + Voice to selected recipients
-  const smsRecs=alertFields._smsRecipients||["admin"];
-  const phoneMap={"admin":"+16082289692","med1":medSt?.med1?.phone||"+16082289692","med2":medSt?.med2?.phone||"+16082289692"};
-  if(smsRecs.includes("admin")||smsRecs.includes("med1")||smsRecs.includes("med2")){
-    const uniquePhones=[...new Set(smsRecs.filter(r=>phoneMap[r]).map(r=>phoneMap[r]))];
-    uniquePhones.forEach(phone=>fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message:`FDM 2026 — ${t.label}\n\n${finalMsg}`})}).catch(e=>console.log(e)));
-  }
-  // SMS + Voice to Admin only
-  if(alertFields._smsChannels?.includes("sms_all")){
-    fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:msg,recipients:[{name:"Admin",phone:"+16082289692"}],
-        includeVoice:true,voiceScript:msg.replace(/[*#]/g,"")})
-    }).catch(e=>console.log("SMS broadcast error:",e));
-  }
+  const _ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  const _date=new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  sendGroupMe(`FDM 2026 — ${t.label}\n${_date} · ${_ts}\n\n${finalMsg}`, broadcastChannels);
+  // SMS + Voice to all staff, SMS only to vendors
+  const isWeather=t.id&&t.id.startsWith("weather");
+  const isEvent=["event_delayed","event_postponed","event_cancelled","all_clear"].includes(t.id);
+  const announcementHeader=isWeather?`Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nDANGEROUS WEATHER — ${t.label}`:isEvent?`Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nEVENT IS — ${t.label}`:`Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\n${t.label}`;
+  const bcastMsg=`${announcementHeader}\n\n${finalMsg}`;
+  const bcastPhones=getNotifyList("broadcast");
+  const vendorPhones=getNotifyList("vendors_sms");
+  // Async SMS + Voice to prevent UI freeze
+  setTimeout(()=>{
+    const bcastMsg2=bcastMsg;
+    const bcastPhones2=[...new Set([ADMIN2_PHONE,...getNotifyList("broadcast")])];
+    const vendorPhones2=getNotifyList("vendors_sms");
+    const vendorOnly2=vendorPhones2.filter(p=>!bcastPhones2.includes(p));
+    sendSMSList(bcastPhones2,bcastMsg2);
+    sendVoice(bcastPhones2,`Fete de Marquette announcement. ${finalMsg.replace(/\n/g," ")}`);
+    sendSMSList(vendorOnly2,bcastMsg2);
+  },100);
   playAlert("broadcast");
-  setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
-}}>🚀 SEND NOW</button>
+  setBroadcastSending(false);
+  const _successData={label:t.label, channels:broadcastChannels, count:bcastPhones.length};
+  setTimeout(()=>{
+    setBroadcastSuccess(_successData);
+    setTimeout(()=>{
+      setBroadcastSuccess(null);
+      setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
+    },4000);
+  },50);
+}}>
+  {broadcastSending?"⏳ Sending...":"🚀 SEND NOW"}
+</button>
+        {broadcastSuccess&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:"32px"}}>
+          <div style={{fontSize:72}}>✅</div>
+          <div style={{fontSize:24,fontWeight:900,color:"#10b981",textAlign:"center"}}>Broadcast Sent!</div>
+          <div style={{background:"rgba(16,185,129,0.12)",border:"2px solid rgba(16,185,129,0.4)",borderRadius:14,padding:"20px 24px",textAlign:"center",maxWidth:340,width:"100%"}}>
+            <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",marginBottom:8}}>{broadcastSuccess.label}</div>
+            <div style={{fontSize:13,color:"#6ee7b7",marginBottom:4}}>✓ GroupMe — {broadcastSuccess.channels.length} channels</div>
+            <div style={{fontSize:13,color:"#6ee7b7",marginBottom:4}}>✓ SMS — {broadcastSuccess.count} recipients</div>
+            <div style={{fontSize:13,color:"#6ee7b7"}}>✓ Voice calls firing</div>
+          </div>
+          <div style={{fontSize:12,color:"#475569"}}>Returning to home in 4 seconds...</div>
+        </div>}
         </div></>);
       })()}
     </div></div>
   );
 
+  // NEW CALL VIEW (Admin initiated)
+  if(newCallView) return(
+    <div style={{display:"flex",flexDirection:"column",gap:0,height:"100vh",background:"#0d0d0d",overflowY:"auto"}}>
+      <div style={{...S.panelHdr,position:"sticky",top:0,zIndex:10}}>
+        <BB onClick={()=>setNewCallView(false)}/>
+        <span style={{...S.panelTitle}}>➕ New Call</span>
+      </div>
+      <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Call Type</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {[
+            {type:"medical",label:"🩺 Medical",color:"#a855f7"},
+            {type:"fire",label:"🔥 Fire / Life Safety",color:"#ef4444"},
+            {type:"security",label:"🛡️ Security",color:"#3b82f6"},
+          ].map(({type,label,color})=>(
+            <button key={type} style={{padding:"14px",borderRadius:10,border:`2px solid ${newCallType===type?color:color+"44"}`,background:newCallType===type?color+"22":"rgba(255,255,255,0.03)",color:newCallType===type?"#f1f5f9":"#64748b",fontWeight:800,fontSize:14,cursor:"pointer",textAlign:"left"}} onClick={()=>setNewCallType(type)}>{label}</button>
+          ))}
+        </div>
+        <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Location *</div>
+        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none"}} placeholder="e.g. Sun Stage · Moon Bar · Medical Tent" value={newCallLocation} onChange={e=>setNewCallLocation(e.target.value)}/>
+        <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>Problem / Description *</div>
+        <textarea style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none",minHeight:80,resize:"none",fontFamily:"inherit"}} placeholder="What's happening?" value={newCallProblem} onChange={e=>setNewCallProblem(e.target.value)}/>
+        <button style={{padding:"16px",borderRadius:12,border:"none",background:(!newCallType||!newCallLocation||!newCallProblem)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#ef4444,#dc2626)",color:(!newCallType||!newCallLocation||!newCallProblem)?"#475569":"#fff",fontWeight:800,fontSize:16,cursor:"pointer",opacity:(!newCallType||!newCallLocation||!newCallProblem)?0.5:1}}
+          disabled={!newCallType||!newCallLocation||!newCallProblem}
+          onClick={()=>{
+            const call={id:Date.now(),type:newCallType,location:newCallLocation,problem:newCallProblem,requestedBy:"Admin",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
+            setCalls(p=>[call,...p]);
+            // Fire alerts same as incoming call
+            const msg=`🚨 FDM ALERT — ${newCallType.toUpperCase()}\nLOCATION: ${newCallLocation}\n${newCallProblem}\nReported by: Admin\nDATE/TIME: ${now()}`;
+            const channelMap={medical:"medical",fire:"medical",security:"admin"};
+            sendGroupMe(msg,[channelMap[newCallType]||"admin","admin"]);
+            setTimeout(()=>{
+              if(newCallType==="medical"||newCallType==="fire"){
+                const phones=getNotifyList("medical");
+                sendSMSList(phones,msg);
+                sendVoice(phones,`${newCallType==="fire"?"Life safety":"Medical"} alert at Fete de Marquette. ${newCallProblem}. Location: ${newCallLocation}. Please respond immediately.`);
+              } else if(newCallType==="security"){
+                const phones=getNotifyList("security");
+                sendSMSList(phones,msg);
+                sendVoice(phones,`Security alert at Fete de Marquette. ${newCallProblem}. Location: ${newCallLocation}. Please respond.`);
+              }
+            },100);
+            playAlert(newCallType);
+            setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:newCallType,label:`${newCallType} call initiated by Admin`,msg:newCallProblem},...p]);
+            setNewCallView(false);setNewCallType("");setNewCallLocation("");setNewCallProblem("");
+          }}>🚨 Submit & Alert Staff</button>
+      </div>
+    </div>
+  );
+
   // CALL QUEUE VIEW
   
+  // MAINTENANCE NARRATIVE FORM
+  if(maintNarrativeForm){
+    const mc2=maintNarrativeForm.call;
+    const clearBy2=maintNarrativeForm.by;
+    const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+    return(<div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><span style={S.panelTitle}>🔧 Maintenance — What Was Done?</span></div>
+      <div style={S.cWrap}>
+        <div style={{background:"rgba(5,150,105,0.08)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:10,padding:"12px",fontSize:13}}>
+          <div style={{fontWeight:800,color:"#6ee7b7",marginBottom:2}}>🔧 {mc2.location}</div>
+          <div style={{color:"#94a3b8"}}>{mc2.problem}</div>
+        </div>
+        <Fld label="What was done? *" value={incFields.maintNarrative||""} onChange={e=>setIncFields(p=>({...p,maintNarrative:e.target.value}))} ph="e.g. Replaced fuse, cleared drain, fixed sound cable..." multi/>
+        <Fld label="Resolved by" value={incFields.maintBy||clearBy2||""} onChange={e=>setIncFields(p=>({...p,maintBy:e.target.value}))} ph="Name or role"/>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px",fontSize:12,color:"#64748b"}}>📅 {ts}</div>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#059669,#047857)",opacity:!incFields.maintNarrative?0.5:1}} disabled={!incFields.maintNarrative} onClick={()=>{
+          const ts2=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+          const maintMsg=`🔧 MAINTENANCE CLEARED\nLOCATION: ${mc2.location}\nISSUE: ${mc2.problem}\nWHAT WAS DONE: ${incFields.maintNarrative}\nCLEARED BY: ${incFields.maintBy||clearBy2}\nDATE/TIME: ${ts2}`;
+          sendGroupMe(maintMsg,["admin","maintenance"]);
+          // Email report
+          fetch("/.netlify/functions/send-incident-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+            incidentNumber:`MAINT-${Date.now().toString().slice(-6)}`,type:"maintenance",location:mc2.location,problem:mc2.problem,
+            requestedBy:mc2.requestedBy,respondingUnit:incFields.maintBy||clearBy2,
+            disposition:"Resolved",narrative:incFields.maintNarrative,openedAt:new Date().toISOString(),
+          })}).catch(()=>{});
+          // Clear the call
+          playAlert("clear");removeAckedBanner(mc2.id);
+          if(liveMode)fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:mc2.id,status:"Cleared",unit:clearBy2})}).catch(()=>{});
+          setCompleted(p=>[{...mc2,status:"cleared",clearedBy:clearBy2,clearedAt:tShort()},...p]);
+          setLiveCalls(p=>p.filter(c=>c.id!==mc2.id));
+          setCalls(p=>p.filter(c=>c.id!==mc2.id));
+          setMaintNarrativeForm(null);setIncFields({});setView("home");
+        }}>✅ Submit & Clear Maintenance Call</button>
+        <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}} onClick={()=>setMaintNarrativeForm(null)}>← Back to Call</button>
+      </div>
+    </div></div>);
+  }
+
+  // LOST CHILD FOUND FORM
+  if(lcFoundForm){
+    const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+    return(<div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><span style={S.panelTitle}>🧒 Child Found — Enter Details</span></div>
+      <div style={S.cWrap}>
+        <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:10,padding:"12px",fontSize:13,color:"#6ee7b7",fontWeight:700,textAlign:"center"}}>✅ Child has been located — please record details</div>
+        <Fld label="Found Location *" value={incFields.foundLocation||""} onChange={e=>setIncFields(p=>({...p,foundLocation:e.target.value}))} ph="e.g. Near Moon Stage, Main Gate area..."/>
+        <Fld label="Found By" value={incFields.foundBy||""} onChange={e=>setIncFields(p=>({...p,foundBy:e.target.value}))} ph="Name of staff member who found child"/>
+        <Fld label="Reunited With" value={incFields.reunitedWith||""} onChange={e=>setIncFields(p=>({...p,reunitedWith:e.target.value}))} ph="Parent/guardian name"/>
+        <Fld label="Additional Notes" value={incFields.foundNotes||""} onChange={e=>setIncFields(p=>({...p,foundNotes:e.target.value}))} ph="Any other details..." multi/>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px",fontSize:12,color:"#64748b"}}>
+          📅 Date/Time: {ts}
+        </div>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{
+          const foundTs=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+          // Send all-clear GroupMe
+          sendGroupMe(`🧒 LOST CHILD — FOUND ✅\nChild has been located.\nFound at: ${incFields.foundLocation||""}\nFound by: ${incFields.foundBy||""}\nReunited with: ${incFields.reunitedWith||""}\nTime: ${foundTs}`,["all_staff","admin","medical","bar_stage","financial","restock","maintenance"]);
+          // Clear the call
+          clearCall(lcFoundForm.id,role||"Admin");
+          setLcFoundForm(null);
+          setIncFields({});
+        }}>✅ Confirm Child Found & Send All-Clear</button>
+        <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}} onClick={()=>setLcFoundForm(null)}>← Back</button>
+      </div>
+    </div></div>);
+  }
+
+  // QUICK CLEAR INCIDENT FORM
+  if(clearIncView){
+    const cc=clearIncView.call;
+    const clearBy=clearIncView.by;
+    const typeLabels={medical:"Medical",fire:"Fire / Life Safety",security:"Security",walk_in:"Walk-In"};
+    const DISPOSITIONS=["Patient Released — No Transport","Patient Transported via EMS","Patient Refused Care","Patron Removed","PD Took Over","Medically Cleared","No Patient Found","False Alarm","Other"];
+    return(<div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><span style={S.panelTitle}>📋 Close Call — Incident Report</span></div>
+      <div style={S.cWrap}>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px 14px",fontSize:13}}>
+          <div style={{fontWeight:800,color:"#f59e0b",marginBottom:4}}>{typeLabels[cc.type]||cc.type}</div>
+          <div style={{color:"#94a3b8"}}>📍 {cc.location}</div>
+          <div style={{color:"#94a3b8"}}>🔍 {cc.problem}</div>
+        </div>
+        <Fld label="Responding Unit" value={incFields.respondingUnit||clearBy||""} onChange={e=>setIncFields(p=>({...p,respondingUnit:e.target.value}))} ph="Med 1, Admin, etc."/>
+        <Fld label="Individual Description" value={incFields.individualDescription||""} onChange={e=>setIncFields(p=>({...p,individualDescription:e.target.value}))} ph="Age, appearance..." multi/>
+        <Fld label="Interventions" value={incFields.interventions||""} onChange={e=>setIncFields(p=>({...p,interventions:e.target.value}))} ph="Vitals, AED, oxygen..." multi/>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <label style={{fontSize:12,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700}}>Disposition</label>
+          <select style={{...S.sel}} value={incFields.disposition||""} onChange={e=>setIncFields(p=>({...p,disposition:e.target.value}))}>
+            <option value="">Select disposition...</option>
+            {DISPOSITIONS.map(d=><option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+        <Fld label="Narrative" value={incFields.narrative||""} onChange={e=>setIncFields(p=>({...p,narrative:e.target.value}))} ph="What happened, timeline, outcome..." multi/>
+        <Fld label="Additional Notes" value={incFields.notes||""} onChange={e=>setIncFields(p=>({...p,notes:e.target.value}))} ph="Optional"/>
+        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>submitAndClearCall(cc,clearBy,{...incFields,respondingUnit:incFields.respondingUnit||clearBy})}>
+          📋 Submit Report & Clear Call
+        </button>
+        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#64748b",border:"1px solid rgba(255,255,255,0.1)",fontSize:13}} onClick={()=>submitAndClearCall(cc,clearBy,{respondingUnit:clearBy})}>
+          ⏭ Skip — Auto Report
+        </button>
+        <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}} onClick={()=>{setClearIncView(null);setIncFields({});}}>
+          ← Back to Call
+        </button>
+      </div>
+    </div></div>);
+  }
   if(incidentView) return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>
@@ -908,7 +1335,7 @@ function HubApp({onBack}){
           {incidentView.details&&<div style={{fontSize:12,color:"#64748b"}}>{incidentView.details}</div>}
           <div style={{fontSize:12,color:"#64748b"}}>Reported by: {incidentView.requestedBy} · Unit: {incFields.respondingUnit}</div>
         </div>
-        <Fld label="Patient / Person Description" value={incFields.patientDescription||""} onChange={e=>setIncFields(p=>({...p,patientDescription:e.target.value}))} ph="Age, gender, appearance, condition" multi/>
+        <Fld label="Individual Description" value={incFields.individualDescription||""} onChange={e=>setIncFields(p=>({...p,individualDescription:e.target.value}))} ph="Age, gender, appearance, condition" multi/>
         <Fld label="Interventions Performed" value={incFields.interventions||""} onChange={e=>setIncFields(p=>({...p,interventions:e.target.value}))} ph="e.g. CPR, AED, oxygen, bandaging, verbal de-escalation" multi/>
         <label style={S.lbl}>Disposition *</label>
         <select style={S.sel} value={incFields.disposition||""} onChange={e=>setIncFields(p=>({...p,disposition:e.target.value}))}>
@@ -932,7 +1359,7 @@ function HubApp({onBack}){
           onClick={async()=>{
             try{
               const res=await fetch("/.netlify/functions/submit-incident",{method:"POST",headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({callId:incidentView.id,type:incidentView.type,location:incidentView.location,problem:incidentView.problem,patientDescription:incFields.patientDescription||"",requestedBy:incidentView.requestedBy,respondingUnit:incFields.respondingUnit||role,interventions:incFields.interventions||"",disposition:incFields.disposition==="Other"?(incFields.dispositionOther||"Other"):incFields.disposition,notes:incFields.narrative||"",openedAt:incidentView.timestamp||new Date().toISOString()})});
+                body:JSON.stringify({callId:incidentView.id,type:incidentView.type,location:incidentView.location,problem:incidentView.problem,individualDescription:incFields.individualDescription||"",requestedBy:incidentView.requestedBy,respondingUnit:incFields.respondingUnit||role,interventions:incFields.interventions||"",disposition:incFields.disposition==="Other"?(incFields.dispositionOther||"Other"):incFields.disposition,notes:incFields.narrative||"",openedAt:incidentView.timestamp||new Date().toISOString()})});
               const data=await res.json();
               if(data.success){
                 setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"incident",label:`Incident Report: ${data.incidentNumber}`,msg:`${incidentView.type} — ${incidentView.location}`},...p]);
@@ -949,7 +1376,7 @@ function HubApp({onBack}){
 
 
   if(view==="callqueue"){
-    const qCalls=callFilter?calls.filter(c=>callFilter.includes(c.type)):calls;
+    const qCalls=callFilter?activeCalls.filter(c=>callFilter.includes(c.type)):activeCalls;
     const unacked=qCalls.filter(c=>!c.acknowledged);
     const acked=qCalls.filter(c=>c.acknowledged);
     const compQ=callFilter?completed.filter(c=>callFilter.includes(c.type)):completed;
@@ -1178,8 +1605,13 @@ Reply YES to acknowledge.`
             const lcMsg=`🧒 LOST CHILD 🧒\n\nLOCATION: ${lcFields?.lastSeen}\nDESCRIPTION: ${lcFields?.gender||"Child"}, approx ${lcFields?.age}${lcFields?.hair?" · "+lcFields.hair:""}${lcFields?.top?" · "+lcFields.top:""}\nLast seen: ${lcFields?.lastSeenTime||""}\nMeet Reporting Party / Parent: ${lcFields?.assembly}\nParent: ${lcFields?.parentName||"Unknown"} · ${lcFields?.parentPhone||""}\nDATE/TIME: ${new Date().toLocaleString()}`;
             const newCall={id:Date.now(),type:"lost_child",location:lcFields?.lastSeen,problem:`${lcFields?.gender||"Child"}, approx ${lcFields?.age}. ${lcFields?.hair||""} ${lcFields?.top||""} ${lcFields?.bottom||""}. Last seen: ${lcFields?.lastSeenTime} near ${lcFields?.lastSeen}. Assembly: ${lcFields?.assembly}. Parent: ${lcFields?.parentName||"Unknown"} ${lcFields?.parentPhone||""}`,requestedBy:"Admin",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
             setCalls(p=>[newCall,...p]);
-            sendGroupMe(lcMsg,["all_staff","admin","medical","bar_stage","financial","restock","maintenance"]);
-            fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:lcMsg,recipients:[{name:"Admin",phone:"+16082289692"}],includeVoice:true,voiceScript:`Lost child alert at Fete de Marquette. ${lcFields?.gender||"Child"}, approximately ${lcFields?.age} years old. Last seen near ${lcFields?.lastSeen}. Assembly point is ${lcFields?.assembly}. Parent name ${lcFields?.parentName||"unknown"}. All staff please be on alert.`})}).catch(e=>console.log(e));
+            // Use dedicated function — sends to ALL staff + all GroupMe channels
+            fetch("/.netlify/functions/send-lost-child",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+              location:lcFields?.lastSeen||"Unknown",
+              description:`${lcFields?.gender||"Child"}, approx ${lcFields?.age}. ${lcFields?.hair||""} ${lcFields?.top||""} ${lcFields?.bottom||""}`.trim(),
+              requestedBy:"Admin",
+              assemblyPoint:lcFields?.assembly||"Medical Tent",
+            })}).catch(e=>console.log("LC send error:",e));
             fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"lost_child",officers:mpdOfficers,location:lcFields?.lastSeen,situation:lcMsg})}).catch(e=>console.log(e));
             playAlert("lost_child");
             setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lost_child",label:"Lost Child Reported",msg:lcMsg},...p]);
@@ -1356,7 +1788,13 @@ Reply YES to acknowledge.`
 
         <Fld label="Additional Notes for Report" value={endOfNightNotes||""} onChange={e=>setEndOfNightNotes(e.target.value)} ph="Any additional notes for tonight's summary..." multi/>
 
-        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#6366f1,#4f46e5)"}}
+        {endOfNightSent&&<div style={{background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:12,padding:"16px",textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:8}}>✅</div>
+          <div style={{fontSize:16,fontWeight:900,color:"#10b981"}}>Report Submitted!</div>
+          <div style={{fontSize:13,color:"#64748b",marginTop:4}}>Saved to Airtable · SMS sent to Admin</div>
+          <button style={{...S.sendBtn,background:"rgba(99,102,241,0.2)",color:"#a5b4fc",border:"1px solid rgba(99,102,241,0.3)",fontSize:13,padding:"10px",marginTop:12}} onClick={()=>{setEndOfNightSent(false);setView("home");}}>← Back to Home</button>
+        </div>}
+        {!endOfNightSent&&<button style={{...S.sendBtn,background:"linear-gradient(135deg,#6366f1,#4f46e5)"}}
           onClick={async()=>{
             const report={
               date:new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}),
@@ -1379,12 +1817,22 @@ Reply YES to acknowledge.`
             const summary=`🌙 END OF NIGHT REPORT\n${report.date}\n\nCalls: ${report.totalCalls}\nMedical: ${report.callBreakdown.medical}\nSecurity: ${report.callBreakdown.security}\nL&F Items: ${lfItems.length}\nBroadcasts: ${broadcastAlerts.length}\n\nGenerated by ${role}`;
             // Send email to Admin
             const emailBody=`END OF NIGHT REPORT — ${report.date}\n\nTOTAL CALLS: ${report.totalCalls}\nMedical: ${report.callBreakdown.medical}\nFire/Safety: ${report.callBreakdown.fire}\nSecurity: ${report.callBreakdown.security}\nSupplies: ${report.callBreakdown.supplies}\nMaintenance: ${report.callBreakdown.maintenance}\nLost Child: ${report.callBreakdown.lostChild}\n\nLOST & FOUND (${lfItems.length} items):\n${lfItems.map(i=>`#${i.itemNumber}: ${i.description} (${i.status})`).join("\n")||"None"}\n\nBROADCASTS (${broadcastAlerts.length}):\n${broadcastAlerts.map(b=>b.label).join("\n")||"None"}\n\nNOTES:\n${endOfNightNotes||"None"}\n\nGenerated by ${role} at ${new Date().toLocaleString()}`;
-            fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:emailBody.slice(0,1600)})}).catch(e=>console.log(e));
+            // Save to Airtable + SMS via dedicated function
+            fetch("/.netlify/functions/send-eod-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+              date:report.date,
+              totalCalls:report.totalCalls,
+              callBreakdown:report.callBreakdown,
+              lostFound:report.lostFound,
+              broadcasts:report.broadcasts,
+              notes:report.notes,
+              generatedBy:role,
+              generatedAt:report.generatedAt,
+            })}).catch(e=>console.log(e));
             setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"report",label:"End of Night Report Generated",msg:`${report.totalCalls} calls · ${lfItems.length} L&F items`},...p]);
             setEndOfNightSent(true);
           }}>
           📧 Generate & Send Report
-        </button>
+        </button>}
       </div>
     </div></div>
   );
@@ -1394,7 +1842,7 @@ Reply YES to acknowledge.`
       {/* FULL SCREEN ALERT HEADER */}
       <div style={{background:"linear-gradient(135deg,#dc2626,#991b1b)",padding:"16px",display:"flex",flexDirection:"column",gap:4,textAlign:"center",boxShadow:"0 0 24px rgba(239,68,68,0.4)"}}>
         <div style={{fontSize:40}}>🚨</div>
-        <div style={{fontSize:20,fontWeight:900,color:"#fff",letterSpacing:"0.04em"}}>EMS INBOUND</div>
+        <div style={{fontSize:20,fontWeight:900,color:"#fff",letterSpacing:"0.04em"}}>MFD / EMS INBOUND</div>
         <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>911 Active · Initiated by {nineOneOne.by} · {nineOneOne.at}</div>
       </div>
 
@@ -1420,9 +1868,9 @@ Reply YES to acknowledge.`
         {/* ACKNOWLEDGE BUTTON — marks EMS as inbound, shows banner on home until cleared */}
         {!emsAcked
           ?<button style={{...S.sendBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",fontSize:16,fontWeight:900}} onClick={()=>{setEmsAcked(true);setEmsAlertDismissed(false);setView("home");}}>
-            ✅ ACKNOWLEDGE — EMS INBOUND
+            ✅ ACKNOWLEDGE — MFD / EMS INBOUND
           </button>
-          :<div style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.4)",borderRadius:10,padding:"12px",fontSize:13,color:"#f59e0b",fontWeight:700}}>✅ Acknowledged — EMS Inbound banner active on home screen</div>
+          :<div style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.4)",borderRadius:10,padding:"12px",fontSize:13,color:"#f59e0b",fontWeight:700}}>✅ Acknowledged — MFD / EMS Inbound banner active on home screen</div>
         }
 
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{
@@ -1449,6 +1897,52 @@ Reply YES to acknowledge.`
 
   // ACKS VIEW
 
+  // MED CALL DETAIL VIEW
+  if(medActiveCall && isMed){
+    const mc=medActiveCall;
+    const typeColors={medical:"#be185d",fire:"#dc2626",security:"#1d4ed8",walk_in:"#7c3aed"};
+    const typeLabels={medical:"MEDICAL",fire:"FIRE / LIFE SAFETY",security:"SECURITY",walk_in:"WALK-IN"};
+    const color=typeColors[mc.type]||"#be185d";
+    return(<div style={S.root}><Bg/>
+      <div style={{position:"fixed",top:0,left:0,right:0,height:4,background:color}}/>
+      <div style={S.panel}>
+        <div style={{background:`linear-gradient(135deg,${color}22,${color}11)`,border:`1px solid ${color}44`,borderRadius:14,padding:"16px",margin:"12px 0 8px"}}>
+          <div style={{fontSize:11,fontWeight:800,color:color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{typeLabels[mc.type]||mc.type} — ACTIVE CALL</div>
+          <div style={{fontSize:20,fontWeight:900,color:"#f1f5f9",marginBottom:4}}>📍 {mc.location}</div>
+          <div style={{fontSize:15,color:"#cbd5e1",marginBottom:4}}>🔍 {mc.problem}</div>
+          {mc.details&&<div style={{fontSize:13,color:"#94a3b8"}}>ℹ️ {mc.details}</div>}
+          <div style={{fontSize:12,color:"#64748b",marginTop:6}}>Reported by {mc.requestedBy} · Acked by {mc.unit} · {mc.acknowledgedAt}</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 0 12px"}}>
+          {/* 911 button - auto-pulls from this call */}
+          {!nineOneOne.active&&<button style={{width:"100%",padding:"16px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"rgba(180,0,0,0.1)",color:"#f87171",fontSize:16,fontWeight:900,cursor:"pointer"}}
+            onClick={()=>{
+              set911({active:true,by:role,at:now(),callId:mc.id,info:{location:mc.location,nature:mc.problem,type:mc.type}});
+              const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${mc.location}\nCALL: ${mc.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
+              sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
+              const phones=[...new Set([ADMIN2_PHONE,...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
+              phones.forEach(p=>{const d=p.replace(/\D/g,"");const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 activated by ${role} at Fete de Marquette. Responding to ${mc.location}. ${mc.problem}. EMS inbound. Clear a path.`})}).catch(()=>{});});
+            }}>🚨 Activate 911 — EMS to This Call</button>}
+          {nineOneOne.active&&<div style={{background:"rgba(180,0,0,0.15)",border:"2px solid rgba(180,0,0,0.5)",borderRadius:12,padding:"14px",textAlign:"center",color:"#f87171",fontWeight:900}}>🚨 911 ACTIVE — EMS INBOUND</div>}
+          {/* On Scene button */}
+          <button style={{width:"100%",padding:"14px",borderRadius:12,border:`2px solid ${mc.status==="on_scene"?"rgba(16,185,129,0.8)":"rgba(245,158,11,0.5)"}`,background:mc.status==="on_scene"?"rgba(16,185,129,0.15)":"rgba(245,158,11,0.1)",color:mc.status==="on_scene"?"#6ee7b7":"#fbbf24",fontSize:14,fontWeight:800,cursor:"pointer"}}
+            onClick={()=>{if(liveMode)fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:mc.id,status:"On Scene",unit:mc.unit})}).catch(()=>{});setLiveCalls(p=>p.map(c=>c.id!==mc.id?c:{...c,status:"on_scene"}));setMedActiveCall(p=>({...p,status:"on_scene"}));}}>
+            {mc.status==="on_scene"?"✅ On Scene — Active":"📍 On Scene"}
+          </button>
+          {/* Clear / Close Call */}
+          <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:14,fontWeight:800,cursor:"pointer"}}
+            onClick={()=>{clearCall(mc.id,role);setMedActiveCall(null);}}>
+            ✅ Clear Call — Generate Report
+          </button>
+          <button style={{width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",background:"none",color:"#475569",fontSize:13,cursor:"pointer"}}
+            onClick={()=>setMedActiveCall(null)}>
+            ← Back to Med Hub (call stays active)
+          </button>
+        </div>
+      </div>
+    </div>);
+  }
+
   if(isMed) return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 16px 8px"}}>
@@ -1464,7 +1958,7 @@ Reply YES to acknowledge.`
         {nineOneOne.active?(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             <div style={{borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,rgba(180,0,0,0.3),rgba(120,0,0,0.15))",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8,boxShadow:"0 0 16px rgba(239,68,68,0.3)"}}>
-              <div style={{fontSize:15,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em",textTransform:"uppercase"}}>🚨 EMS INBOUND — ACTIVE</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em",textTransform:"uppercase"}}>🚨 MFD / EMS INBOUND — ACTIVE</div>
               {nineOneOne.info?.location&&<div style={{fontSize:14,fontWeight:700,color:"#fff"}}>📍 {nineOneOne.info.location}</div>}
               {nineOneOne.info?.nature&&<div style={{fontSize:13,color:"#fca5a5"}}>{nineOneOne.info.nature}</div>}
               <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>Initiated by {nineOneOne.by}{nineOneOne.info?.activatedBy?" · "+nineOneOne.info.activatedBy:""} · {nineOneOne.at}</div>
@@ -1476,7 +1970,7 @@ Reply YES to acknowledge.`
                 setNineOneOneHistory(p=>[...p,{...nineOneOne,closedAt:now()}]);
                 set911({active:true,by:role,at:now(),info:{}});
                 setView("911");
-                sendGroupMe(`🚨 ADDITIONAL 911 INCIDENT by ${role}\nNew EMS activation — separate incident.`,["admin","medical"]);
+                sendGroupMe(`🚨 ADDITIONAL 911 INCIDENT by ${role}\nNew MFD / EMS activation — separate incident.`,["admin","medical"]);
                 fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 ADDITIONAL 911 INCIDENT by ${role} at Fete de Marquette. New separate incident.`})}).catch(e=>console.log(e));
               }}>
               ➕ New Separate 911 Incident
@@ -1485,17 +1979,32 @@ Reply YES to acknowledge.`
         ):(
           <button style={{width:"100%",padding:"18px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"rgba(180,0,0,0.08)",color:"#f87171",fontSize:16,fontWeight:900,cursor:"pointer",textAlign:"center",letterSpacing:"0.02em"}}
             onClick={()=>{
+              // Pull info directly from current active call
               const activeCall=myActive?.[0]||unassigned?.[0];
-              set911({active:true,by:role,at:now(),info:{location:activeCall?.location||"",nature:activeCall?.problem||"",patients:activeCall?.details||""}});
-              setView("911");
-              sendGroupMe(`🚨 911 ACTIVATED by ${role}\nEMS/Fire has been called. Stand by.`,["admin","medical"]);
-              fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 911 ACTIVATED by ${role} at Fete de Marquette.`})}).catch(e=>console.log(e));
+              const callLoc=activeCall?.location||nineOneOne.info?.location||"Festival Grounds";
+              const callProblem=activeCall?.problem||nineOneOne.info?.nature||"";
+              const callType=activeCall?.type||"medical";
+              const callId=activeCall?.id;
+              // Activate 911 with call data
+              set911({active:true,by:role,at:now(),callId,info:{location:callLoc,nature:callProblem,type:callType}});
+              // Build message from call data
+              const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${callLoc}${callProblem?"\nCALL: "+callProblem:""}\nMADISON FIRE / EMS INBOUND\nTIME: ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}\nClear a path for emergency vehicles.`;
+              // Fire SMS + Voice + GroupMe immediately — no second tap
+              sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
+              const phones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
+              phones.forEach(p=>{
+                const d=p.replace(/\D/g,"");
+                const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});
+                fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Staging 1, Ingersoll and Wilson. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`})}).catch(()=>{});
+              });
+              // No setView("911") — stay on call, form comes when call is cleared
             }}>
             🚨 Tap to Notify of 911 Activation
           </button>
         )}
       </div>
-      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne} triggerIncident={(call)=>{setIncidentView(call);setIncFields({respondingUnit:role,disposition:"",interventions:"",narrative:"",notes:""});}} sendGroupMe={sendGroupMe} liveMode={liveMode} openLostChild={()=>setLcView(true)}/>
+      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne} triggerIncident={(call)=>{setIncidentView(call);setIncFields({respondingUnit:role,disposition:"",interventions:"",narrative:"",notes:""});}} sendGroupMe={sendGroupMe} liveMode={liveMode} openLostChild={()=>setLcView(true)} setNewCallView={setNewCallView} setNewCallType={setNewCallType} setNewCallLocation={setNewCallLocation} setNewCallProblem={setNewCallProblem} staffList={staffList} setClearIncView={setClearIncView}/>
     </div></div>
   );
 
@@ -1519,7 +2028,7 @@ Reply YES to acknowledge.`
       {nineOneOne?.active&&emsAcked&&(
         <div style={{borderRadius:12,border:"2px solid rgba(239,68,68,0.8)",background:"linear-gradient(135deg,rgba(180,0,0,0.28),rgba(120,0,0,0.15))",padding:"16px",display:"flex",flexDirection:"column",gap:8,boxShadow:"0 0 20px rgba(239,68,68,0.3)"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{fontSize:13,fontWeight:900,color:"#ef4444",letterSpacing:"0.08em",textTransform:"uppercase"}}>🚨 EMS INBOUND — ACTIVE INCIDENT</div>
+            <div style={{fontSize:13,fontWeight:900,color:"#ef4444",letterSpacing:"0.08em",textTransform:"uppercase"}}>🚨 MFD / EMS INBOUND — ACTIVE INCIDENT</div>
             <button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer",fontWeight:600}} onClick={()=>setView("911")}>Details →</button>
           </div>
           {nineOneOne.info?.location&&<div style={{fontSize:22,fontWeight:900,color:"#fff"}}>📍 {nineOneOne.info.location}</div>}
@@ -1631,7 +2140,37 @@ Reply YES to acknowledge.`
         </div>
       )}
 
-      {/* SECTION 1: COMMAND */}
+      {/* ACTIVE CALLS — Admin homepage */}
+      {activeCalls.filter(c=>c.acknowledged&&c.status!=="cleared"&&c.type!=="lost_child").length>0&&(
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Active Calls</div>
+          {activeCalls.filter(c=>c.acknowledged&&c.status!=="cleared"&&c.type!=="lost_child").map(ac=>{
+            const tc={medical:"#be185d",fire:"#dc2626",security:"#1d4ed8",walk_in:"#7c3aed",supplies:"#d97706",maintenance:"#059669"}[ac.type]||"#6366f1";
+            return(<div key={ac.id} style={{background:`linear-gradient(135deg,${tc}18,${tc}08)`,border:`1px solid ${tc}44`,borderRadius:12,padding:"12px 14px",cursor:"pointer"}} onClick={()=>setView("callqueue")}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{fontSize:12,fontWeight:800,color:tc,textTransform:"uppercase"}}>{ac.type.replace(/_/g," ")}</div>
+                <div style={{fontSize:11,color:"#64748b"}}>{ac.unit||"Unassigned"}</div>
+              </div>
+              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9",marginTop:2}}>📍 {ac.location}</div>
+              <div style={{fontSize:12,color:"#94a3b8"}}>{ac.problem}</div>
+            </div>);
+          })}
+        </div>
+      )}
+
+      {/* VENDOR CHECK-IN TOASTS */}
+    {vendorToasts.map(t=>(
+      <div key={t.id} style={{background:"linear-gradient(135deg,rgba(16,185,129,0.25),rgba(5,150,105,0.2))",borderBottom:"2px solid rgba(16,185,129,0.6)",padding:"12px 16px",display:"flex",alignItems:"center",gap:12,animation:"pulse 2s infinite"}}>
+        <span style={{fontSize:24}}>🎪</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:900,color:"#6ee7b7"}}>Vendor Checked In</div>
+          <div style={{fontSize:12,color:"rgba(110,231,183,0.8)"}}>{t.business} — Plot {t.plot} · {t.contact}</div>
+        </div>
+        <button style={{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"rgba(255,255,255,0.7)",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:700}} onClick={()=>setVendorToasts(p=>p.filter(x=>x.id!==t.id))}>✕</button>
+      </div>
+    ))}
+
+    {/* SECTION 1: COMMAND */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
         <div style={{...S.sectionHdr,fontSize:13,fontWeight:900,padding:"8px 12px 6px"}}>📡 Command</div>
         {/* ROW 1: 911 Activation Notify + Lost Child */}
@@ -1639,9 +2178,13 @@ Reply YES to acknowledge.`
           <button style={{width:"100%",display:"flex",alignItems:"center",gap:16,padding:"22px",borderRadius:14,border:`3px solid ${nineOneOne.active?"rgba(239,68,68,0.95)":"rgba(180,0,0,0.6)"}`,background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.4),rgba(180,0,0,0.3))":"rgba(180,0,0,0.1)",cursor:"pointer",boxShadow:nineOneOne.active?"0 0 28px rgba(239,68,68,0.6)":"0 0 8px rgba(180,0,0,0.2)"}}
             onClick={()=>{
               if(nineOneOne.active){
-                const msg=`🚨 911 ACTIVE 🚨\n\nEMS/Fire has been called.\nLOCATION: ${nineOneOne.info?.location||"Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature||""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
+                const msg=`🚨 911 ACTIVE 🚨\n\nMadison Fire / EMS has been called.\nLOCATION: ${nineOneOne.info?.location||"Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature||""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
                 sendGroupMe(msg,["admin","medical"]);
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(e=>console.log(e));
+                setTimeout(()=>{
+                  const phones=[...new Set([ADMIN2_PHONE,...getNotifyList("medical")])];
+                  sendSMSList(phones,msg);
+                  sendVoice(phones,`911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location||"Festival Grounds"}. Clear a path for emergency vehicles. Responding to: ${nineOneOne.info?.location||"Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging||"Staging #1 — Ingersoll & Wilson"}. Clear a path for emergency vehicles. 911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location||"Festival Grounds"}. Responding to: ${nineOneOne.info?.location||"Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging||"Staging #1 — Ingersoll & Wilson"}. Clear a path for emergency vehicles.`);
+                },100);
                 fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"911_active",officers:mpdOfficers,location:nineOneOne.info?.location||"Festival Grounds",situation:msg})}).catch(e=>console.log(e));
                 setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"911",label:"911 Alert — Admin/Med/MPD",msg},...p]);
               } else {
@@ -1662,6 +2205,7 @@ Reply YES to acknowledge.`
               {lostChildCalls.length>0&&<div style={{position:"absolute",top:6,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{lostChildCalls.length}</div>}
             </button>
             <button style={{padding:"7px",borderRadius:8,border:"1px solid rgba(234,179,8,0.4)",background:"rgba(234,179,8,0.08)",color:"#fcd34d",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLcView(true)}>➕ Report Lost Child</button>
+
           </div>
         </div>
 
@@ -1671,6 +2215,9 @@ Reply YES to acknowledge.`
         <div style={{background:"linear-gradient(160deg,rgba(220,38,38,0.15),rgba(37,99,235,0.15))",borderRadius:14,border:"1px solid rgba(220,38,38,0.3)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
           <div style={{...S.sectionHdr,background:"linear-gradient(135deg,rgba(220,38,38,0.3),rgba(37,99,235,0.3))",fontSize:16,fontWeight:900}}>🚨 Safety</div>
           <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
+            <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px",borderRadius:10,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontSize:13,fontWeight:900,cursor:"pointer"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+              <span style={{fontSize:16}}>🚨</span> New Call
+            </button>
             {[
               {types:["medical","walk_in"],label:"Medical",icon:"🩺",color:ALERT_COLORS.medical,calls:medCalls,title:"Medical Calls"},
               {types:["fire"],label:"Fire/Life",icon:"🔥",color:ALERT_COLORS.fire,calls:fireCalls,title:"Fire / Life Safety"},
@@ -1760,6 +2307,236 @@ Reply YES to acknowledge.`
             </button>
           </div>
         </div>
+      </div>
+
+      {/* VENDOR CHECK-IN MANAGEMENT */}
+      <div style={{background:"rgba(16,185,129,0.05)",borderRadius:14,border:"1px solid rgba(16,185,129,0.25)",overflow:"hidden"}}>
+        <div style={{background:"rgba(16,185,129,0.15)",padding:"10px 14px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{fontSize:13,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.06em"}}>🎪 Vendor Sign-Up</div>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            <span style={{fontSize:11,color:"#6ee7b7",fontWeight:700}}>{vendorPlots.filter(p=>p.checkedIn).length}/{vendorPlots.length} plots filled</span>
+            <button style={{background:"rgba(16,185,129,0.2)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:8,padding:"4px 12px",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setVendorView(p=>!p)}>{vendorView?"▲ Hide":"▼ Manage"}</button>
+          </div>
+        </div>
+        {vendorView&&<div style={{padding:"10px"}}>
+          {/* Lawn Access Toggle */}
+          <div style={{display:"flex",gap:6,marginBottom:10}}>
+            <button style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${lawnAccess==="lawn"?"rgba(16,185,129,0.7)":"rgba(255,255,255,0.08)"}`,background:lawnAccess==="lawn"?"rgba(16,185,129,0.15)":"transparent",color:lawnAccess==="lawn"?"#10b981":"#475569",fontWeight:800,fontSize:12,cursor:"pointer"}} onClick={()=>{setLawnAccess("lawn");localStorage.setItem('fdm-lawn-access','lawn');}}>🌿 Lawn OK<br/><span style={{fontSize:10,fontWeight:400}}>Drive on lawn</span></button>
+            <button style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${lawnAccess==="path"?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:lawnAccess==="path"?"rgba(245,158,11,0.15)":"transparent",color:lawnAccess==="path"?"#f59e0b":"#475569",fontWeight:800,fontSize:12,cursor:"pointer"}} onClick={()=>{setLawnAccess("path");localStorage.setItem('fdm-lawn-access','path');}}>🛑 Path Only<br/><span style={{fontSize:10,fontWeight:400}}>Unload then move car</span></button>
+          </div>
+          {/* Manual check-in */}
+          <div style={{background:"rgba(255,255,255,0.03)",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",padding:10,marginBottom:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#64748b",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.06em"}}>Manual Check-In</div>
+            <input style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none",marginBottom:5}} placeholder="Business name" value={manualBiz} onChange={e=>setManualBiz(e.target.value)}/>
+            <div style={{display:"flex",gap:5,marginBottom:5}}>
+              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none"}} placeholder="Contact name" value={manualContact} onChange={e=>setManualContact(e.target.value)}/>
+              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none"}} placeholder="Phone" value={manualPhone} onChange={e=>setManualPhone(e.target.value)}/>
+            </div>
+            <button style={{width:"100%",padding:"9px",borderRadius:8,border:"none",background:!manualBiz.trim()?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#10b981,#059669)",color:!manualBiz.trim()?"#475569":"#fff",fontWeight:700,fontSize:12,cursor:"pointer",opacity:!manualBiz.trim()?0.5:1}} disabled={!manualBiz.trim()} onClick={()=>{
+              const next=vendorPlots.find(p=>!p.checkedIn&&!p.preAssigned);
+              if(!next){alert("No plots available.");return;}
+              const checkin={business:manualBiz.trim(),contact:manualContact.trim(),phone:manualPhone.trim(),checkedInAt:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),status:"Checked In"};
+              setVendorPlots(p=>{const n=p.map(pl=>pl.id===next.id?{...pl,checkedIn:checkin}:pl);localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;});
+              fetch("/.netlify/functions/vendor-checkin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"checkin",business:manualBiz.trim(),contact:manualContact.trim(),phone:manualPhone.trim(),plot:next.id,day:"Event Day"})}).catch(()=>{});
+              setManualBiz("");setManualContact("");setManualPhone("");
+            }}>+ Check In to Next Available Plot</button>
+          </div>
+          {/* Plot grid */}
+          {vendorPlots.map(pl=>(
+            <div key={pl.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:`1px solid ${pl.checkedIn?.status==="Setup Complete"?"rgba(16,185,129,0.4)":pl.checkedIn?"rgba(245,158,11,0.3)":pl.preAssigned?"rgba(99,102,241,0.3)":"rgba(255,255,255,0.06)"}`,background:"rgba(255,255,255,0.02)",marginBottom:4}}>
+              <div style={{fontSize:13,fontWeight:800,color:pl.checkedIn?.status==="Setup Complete"?"#10b981":pl.checkedIn?"#fbbf24":pl.preAssigned?"#a5b4fc":"#475569",minWidth:46}}>P{pl.id}</div>
+              <div style={{flex:1,minWidth:0}}>
+                {pl.checkedIn&&<><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{pl.checkedIn.business}</div><div style={{fontSize:10,color:"#64748b"}}>{pl.checkedIn.contact}{pl.checkedIn.phone?` · ${pl.checkedIn.phone}`:""} · {pl.checkedIn.checkedInAt}</div></>}
+                {!pl.checkedIn&&pl.preAssigned&&<div style={{fontSize:12,color:"#a5b4fc"}}>Reserved: {pl.preAssigned}</div>}
+                {!pl.checkedIn&&!pl.preAssigned&&<div style={{fontSize:12,color:"#334155"}}>Available</div>}
+              </div>
+              <div style={{display:"flex",gap:4}}>
+                {pl.checkedIn&&<button style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"3px 8px",color:"#fca5a5",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setVendorPlots(p=>{const n=p.map(x=>x.id===pl.id?{...x,checkedIn:null}:x);localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;})}>Clear</button>}
+                {!pl.checkedIn&&<button style={{background:"rgba(99,102,241,0.12)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:6,padding:"3px 8px",color:"#a5b4fc",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>{const name=prompt("Pre-assign to business name:");if(name)setVendorPlots(p=>{const n=p.map(x=>x.id===pl.id?{...x,preAssigned:name.trim()||null}:x);localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;});}}>Reserve</button>}
+              </div>
+            </div>
+          ))}
+          <button style={{width:"100%",marginTop:6,padding:"8px",borderRadius:8,border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>{if(window.confirm("Clear all plot assignments?")){setVendorPlots(p=>{const n=p.map(x=>({...x,checkedIn:null}));localStorage.setItem('fdm-hub-vendor-plots',JSON.stringify(n));return n;});}}}>🔄 Reset All Plots</button>
+        </div>}
+      </div>
+
+      {/* STAFF MANAGEMENT SECTION */}
+      <div style={{background:"rgba(99,102,241,0.08)",borderRadius:14,border:"1px solid rgba(99,102,241,0.3)",overflow:"hidden"}}>
+        <div style={{background:"rgba(99,102,241,0.15)",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{fontSize:13,fontWeight:900,color:"#a5b4fc",textTransform:"uppercase",letterSpacing:"0.06em"}}>👥 Staff Management</span>
+          <button style={{background:"rgba(99,102,241,0.2)",border:"1px solid rgba(99,102,241,0.4)",color:"#a5b4fc",padding:"4px 12px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700}} onClick={()=>{setShowStaffMgmt(p=>!p);if(!showStaffMgmt){fetch("/.netlify/functions/get-staff-list").then(r=>r.json()).then(d=>setStaffList(d.staff||d.members||[])).catch(()=>{});}}}>{showStaffMgmt?"▲ Hide":"▼ Manage"}</button>
+        </div>
+        {showStaffMgmt&&<>
+          {/* Tabs */}
+          <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+            {[["staff","👤 Staff"],["mpd","👮 MPD Officers"]].map(([id,label])=>(
+              <button key={id} style={{flex:1,padding:"10px",border:"none",background:"none",color:staffMgmtTab===id?"#a5b4fc":"#64748b",fontWeight:staffMgmtTab===id?700:400,fontSize:13,cursor:"pointer",borderBottom:staffMgmtTab===id?"2px solid #a5b4fc":"2px solid transparent",marginBottom:-1}} onClick={()=>{setStaffMgmtTab(id);setStaffMgmtSearch("");}}>{label}</button>
+            ))}
+          </div>
+          <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
+            <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px",color:"#f1f5f9",fontSize:13,fontFamily:"inherit",outline:"none"}} placeholder={staffMgmtTab==="staff"?"Search staff by name...":"Search officers..."} value={staffMgmtSearch} onChange={e=>setStaffMgmtSearch(e.target.value)}/>
+            
+            {/* Staff list */}
+            {staffMgmtTab==="staff"&&(()=>{
+              const filtered=(staffList||[]).filter(s=>s&&(!staffMgmtSearch||(s.name||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())||(s.role||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())));
+              if(filtered.length===0) return <div style={{fontSize:12,color:"#475569",padding:"8px 0",textAlign:"center"}}>No staff found</div>;
+              return filtered.map(s=>(
+                <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</div>
+                    <div style={{fontSize:11,color:"#64748b"}}>{s.role} {s.location?`· ${s.location}`:""}</div>
+                  </div>
+                  <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:deletingId===s.id?0.5:1}}
+                    disabled={deletingId===s.id}
+                    onClick={async()=>{
+                      if(!window.confirm(`Remove ${s.name} from staff?`)) return;
+                      setDeletingId(s.id);
+                      try{
+                        await fetch("/.netlify/functions/delete-staff",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:s.id,table:"staff"})});
+                        setStaffList(p=>p.filter(x=>x.id!==s.id));
+                      }catch(e){console.log(e);}
+                      setDeletingId(null);
+                    }}>{deletingId===s.id?"...":"✕ Remove"}</button>
+                </div>
+              ));
+            })()}
+
+            {/* MPD Officers list */}
+            {staffMgmtTab==="mpd"&&(()=>{
+              const filtered=(mpdOfficers||[]).filter(o=>o&&(!staffMgmtSearch||(o.name||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())||(o.badge||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())));
+              if(filtered.length===0) return <div style={{fontSize:12,color:"#475569",padding:"8px 0",textAlign:"center"}}>No officers loaded — add them in Airtable MPDOfficers table</div>;
+              return filtered.map(o=>(
+                <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{o.name}</div>
+                    <div style={{fontSize:11,color:"#64748b"}}>{o.badge} {o.phone?`· ${o.phone}`:""}</div>
+                  </div>
+                  <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.1)",color:"#fbbf24",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}
+                    onClick={async()=>{
+                      if(!window.confirm(`Remove ${o.name} from on-duty officers?`)) return;
+                      setDeletingId(o.id);
+                      try{
+                        await fetch("/.netlify/functions/delete-staff",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,table:"mpd"})});
+                        setMpdOfficers(p=>p.filter(x=>x.id!==o.id));
+                      }catch(e){console.log(e);}
+                      setDeletingId(null);
+                    }}>{deletingId===o.id?"...":"✕ Off Duty"}</button>
+                </div>
+              ));
+            })()}
+            {/* GroupMe Channels + Roster tab */}
+            {staffMgmtTab==="groupme"&&(()=>{
+              const CHANNELS=[
+                {id:"all_staff",name:"All Staff",color:"#f59e0b",emoji:"📢"},
+                {id:"admin",name:"Admin",color:"#6366f1",emoji:"⚡"},
+                {id:"medical",name:"Medical / Life Safety",color:"#ef4444",emoji:"🩺"},
+                {id:"bar_stage",name:"Bar / Stage / Greeter",color:"#10b981",emoji:"🎪"},
+                {id:"financial",name:"Financial",color:"#3b82f6",emoji:"💰"},
+                {id:"restock",name:"Restock",color:"#8b5cf6",emoji:"📦"},
+                {id:"maintenance",name:"Maintenance",color:"#f97316",emoji:"🔧"},
+              ];
+              const [gmView,setGmView]=React.useState("roster"); // roster | channels
+              const editing = gmEditId ? gmRoster.find(r=>r.id===gmEditId) : null;
+              return(<>
+                {/* View toggle */}
+                <div style={{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:8,padding:2,gap:2,marginBottom:8}}>
+                  {[["roster","👥 Roster"],["channels","📢 Channels"]].map(([v,l])=>(
+                    <button key={v} style={{flex:1,padding:"7px",border:"none",borderRadius:6,background:gmView===v?"rgba(245,158,11,0.2)":"transparent",color:gmView===v?"#fbbf24":"#64748b",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setGmView(v)}>{l}</button>
+                  ))}
+                </div>
+
+                {/* ── ROSTER VIEW ── */}
+                {gmView==="roster"&&<>
+                  {/* Add / Edit form */}
+                  <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:12,marginBottom:8}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",marginBottom:8}}>{gmEditId?"✏️ Edit Member":"➕ Add Member"}</div>
+                    <div style={{display:"flex",gap:6,marginBottom:6}}>
+                      <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none"}} placeholder="Full name (e.g. John Doe)" value={gmEditId?editing?.name||"":gmNewName} onChange={e=>gmEditId?setGmRoster(p=>p.map(r=>r.id===gmEditId?{...r,name:e.target.value}:r)):setGmNewName(e.target.value)}/>
+                      <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
+                <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none",width:"100%"}} placeholder="GroupMe display name (e.g. Moon Stage Joe)" value={gmEditId?editing?.username||"":gmNewUsername} onChange={e=>gmEditId?setGmRoster(p=>p.map(r=>r.id===gmEditId?{...r,username:e.target.value}:r)):setGmNewUsername(e.target.value)}/>
+                {!gmEditId&&gmNewName&&<div style={{fontSize:10,color:"#475569"}}>This is how they appear in GroupMe channels</div>}
+              </div>
+                    </div>
+                    <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>Assign to channels:</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
+                      {CHANNELS.map(ch=>{
+                        const active=gmEditId?(editing?.channels||[]).includes(ch.id):gmNewChannels.includes(ch.id);
+                        return(<button key={ch.id} style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${active?ch.color:ch.color+"44"}`,background:active?ch.color+"22":"transparent",color:active?ch.color:"#475569",fontSize:11,fontWeight:700,cursor:"pointer"}}
+                          onClick={()=>{
+                            if(gmEditId){
+                              setGmRoster(p=>p.map(r=>r.id===gmEditId?{...r,channels:active?(r.channels||[]).filter(c=>c!==ch.id):[...(r.channels||[]),ch.id]}:r));
+                            } else {
+                              setGmNewChannels(p=>active?p.filter(c=>c!==ch.id):[...p,ch.id]);
+                            }
+                          }}>{ch.emoji} {ch.name}</button>);
+                      })}
+                    </div>
+                    <div style={{display:"flex",gap:6}}>
+                      {gmEditId
+                        ? <>
+                            <button style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setGmEditId(null)}>✅ Done</button>
+                            <button style={{padding:"8px 14px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>{setGmRoster(p=>p.filter(r=>r.id!==gmEditId));setGmEditId(null);}}>🗑 Delete</button>
+                          </>
+                        : <button style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:(!gmNewName.trim()||!gmNewUsername.trim())?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#f59e0b,#d97706)",color:(!gmNewName.trim()||!gmNewUsername.trim())?"#475569":"#0a0f1e",fontWeight:700,fontSize:12,cursor:"pointer",opacity:(!gmNewName.trim()||!gmNewUsername.trim())?0.5:1}}
+                            disabled={!gmNewName.trim()||!gmNewUsername.trim()}
+                            onClick={()=>{
+                              setGmRoster(p=>[...p,{id:Date.now().toString(),name:gmNewName.trim(),username:gmNewUsername.trim(),channels:gmNewChannels}]);
+                              setGmNewName("");setGmNewUsername("");setGmNewChannels([]);
+                            }}>+ Add</button>
+                      }
+                    </div>
+                  </div>
+                  {/* Roster list */}
+                  {gmRoster.length===0&&<div style={{fontSize:12,color:"#475569",textAlign:"center",padding:"12px"}}>No members added yet</div>}
+                  {gmRoster.map(m=>(
+                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)",marginBottom:4}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{m.name}</div>
+                        <div style={{fontSize:11,color:"#f59e0b",fontFamily:"monospace"}}>@{m.username}</div>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:4}}>
+                          {(m.channels||[]).map(cid=>{
+                            const ch=CHANNELS.find(c=>c.id===cid);
+                            return ch?<span key={cid} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:ch.color+"22",color:ch.color,border:`1px solid ${ch.color}44`}}>{ch.emoji} {ch.name}</span>:null;
+                          })}
+                          {(!m.channels||m.channels.length===0)&&<span style={{fontSize:10,color:"#475569"}}>No channels assigned</span>}
+                        </div>
+                      </div>
+                      <button style={{background:"rgba(99,102,241,0.15)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:6,padding:"5px 10px",color:"#a5b4fc",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>setGmEditId(m.id)}>✏️ Edit</button>
+                    </div>
+                  ))}
+                </>}
+
+                {/* ── CHANNELS VIEW ── */}
+                {gmView==="channels"&&CHANNELS.map(ch=>{
+                  const members=gmRoster.filter(m=>(m.channels||[]).includes(ch.id));
+                  return(
+                    <div key={ch.id} style={{borderRadius:10,border:`1px solid ${ch.color}33`,overflow:"hidden",marginBottom:6}}>
+                      <div style={{background:`${ch.color}15`,padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:16}}>{ch.emoji}</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,fontWeight:800,color:"#f1f5f9"}}>{ch.name}</div>
+                          <div style={{fontSize:11,color:"#64748b"}}>{members.length} member{members.length!==1?"s":""}</div>
+                        </div>
+                      </div>
+                      {members.length===0
+                        ?<div style={{padding:"8px 14px",fontSize:12,color:"#475569"}}>No members assigned</div>
+                        :<div style={{padding:"6px 8px",display:"flex",flexDirection:"column",gap:3}}>
+                          {members.map(m=>(
+                            <div key={m.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 8px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}>
+                              <span style={{fontSize:12,fontWeight:600,color:"#f1f5f9"}}>{m.name}</span>
+                              <span style={{fontSize:11,fontFamily:"monospace",color:ch.color}}>@{m.username}</span>
+                            </div>
+                          ))}
+                        </div>
+                      }
+                    </div>
+                  );
+                })}
+              </>);
+            })()}
+
+          </div>
+        </>}
       </div>
 
       {/* SECTION 4: EQUIPMENT TRACKER */}
@@ -1882,8 +2659,7 @@ Reply YES to acknowledge.`
         </div>
       </div>
 
-    </div>
-  </div></div>);
+  </div></div></div></div>);
 }
 
 
@@ -1917,7 +2693,7 @@ function SecurityAckPanel({alertCall,role,ackCall,tick}){
   </div>);
 }
 
-function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild}){
+function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild,setNewCallView,setNewCallType,setNewCallLocation,setNewCallProblem,staffList,setClearIncView}){
   const [medReqView,setMedReqView]=useState(false);
   const [medReqType,setMedReqType]=useState("");
   const [medReqLocation,setMedReqLocation]=useState("");
@@ -1930,7 +2706,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [wiComplaint,setWiComplaint]=useState("");
   const [wiDetails,setWiDetails]=useState("");
   const walkIns=(calls||[]).filter(c=>c.type==="walk_in"&&c.unit===role);
-  const allActive=[...myActive];
+  const allActive=[...myActive,...(calls||[]).filter(c=>c.unit===role&&c.status!=="cleared"&&!myActive.find(m=>m.id===c.id))];
 
   const doWalkIn=()=>{
     if(!wiComplaint)return;
@@ -1940,6 +2716,16 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
     setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:ts}}));
     if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role})}).catch(e=>console.log(e));
     if(sendGroupMe) sendGroupMe(`🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails?"\n"+wiDetails:""}\nTIME: ${ts}`,["admin","medical"]);
+    const wiMsg=`MEDICAL ALERT 🩺\nWALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails?"\n"+wiDetails:""}\nTIME: ${ts}`;
+    const wiPhones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
+    setTimeout(()=>{
+      wiPhones.forEach(p=>{
+        const d=p.replace(/\D/g,"");
+        const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;
+        fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:wiMsg})}).catch(()=>{});
+        fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`Walk in patient at Fete de Marquette Medical Tent. Chief complaint: ${wiComplaint}. Please respond immediately.`})}).catch(()=>{});
+      });
+    },100);
     setWiComplaint("");setWiDetails("");
   };
 
@@ -2038,7 +2824,13 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
               <button style={{flex:1,padding:"10px",borderRadius:8,border:"2px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:13,fontWeight:800,cursor:"pointer"}}
                 onClick={()=>{
                   setCalls(p=>p.filter(x=>x.id!==c.id));
-                  setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);
+                  // Show quick incident form on clear for medical/security/fire
+                  if(["medical","walk_in","fire","security"].includes(c.type)){
+                    setClearIncView({call:c,by:role});
+                  } else {
+                    setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);
+                    setCalls(p=>p.filter(x=>x.id!==c.id));
+                  }
                   setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));
                   if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:role})}).catch(e=>console.log(e));
                   if(["medical","walk_in","fire","security"].includes(c.type)&&triggerIncident) triggerIncident({...c,timestamp:c.history?.[0]?.ts||new Date().toISOString()});
@@ -2064,6 +2856,16 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
       </>
 
+      {/* REQUEST */}
+      <>
+
+      {/* LOST CHILD SECTION */}
+      <button style={{width:"100%",background:"linear-gradient(135deg,rgba(249,115,22,0.25),rgba(234,88,12,0.2))",borderRadius:14,border:"3px solid rgba(249,115,22,0.7)",padding:"20px",cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:8,boxShadow:"0 0 20px rgba(249,115,22,0.2)"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
+        <span style={{fontSize:48}}>🧒</span>
+        <div style={{fontSize:20,fontWeight:900,color:"#fdba74",textTransform:"uppercase",letterSpacing:"0.04em"}}>Report Lost Child</div>
+        <div style={{fontSize:12,color:"rgba(253,186,116,0.7)",fontWeight:600}}>Alerts ALL staff · GroupMe · SMS · Voice · MPD</div>
+      </button>
+
       {/* WALK-IN PATIENT BUTTON */}
       <div style={{background:"rgba(168,85,247,0.08)",borderRadius:14,border:"1px solid rgba(168,85,247,0.3)",overflow:"hidden"}}>
         <div style={{background:"rgba(168,85,247,0.2)",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#d8b4fe",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -2088,26 +2890,15 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         )}
       </div>
 
-      {/* REQUEST */}
-      <>
-
-      {/* LOST CHILD SECTION */}
-      <div style={{background:"rgba(249,115,22,0.08)",borderRadius:14,border:"1px solid rgba(249,115,22,0.3)",overflow:"hidden"}}>
-        <div style={{background:"rgba(249,115,22,0.2)",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#fdba74",textTransform:"uppercase",letterSpacing:"0.06em"}}>🧒 Lost Child</div>
-        <div style={{padding:"8px"}}>
-          <button style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:10,border:"1px solid rgba(249,115,22,0.4)",background:"rgba(249,115,22,0.1)",cursor:"pointer",textAlign:"left"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
-            <span style={{fontSize:22}}>🧒</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Report Lost Child</div>
-              <div style={{fontSize:11,color:"#64748b"}}>Alerts all staff, GroupMe + SMS + MPD</div>
-            </div>
-          </button>
-        </div>
-      </div>
+      {/* NEW CALL BUTTON */}
+      <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"16px",borderRadius:12,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontSize:15,fontWeight:900,cursor:"pointer"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+        <span style={{fontSize:22}}>🚨</span> New Call — Medical / Fire / Security
+      </button>
 
       {/* MEDICAL & SECURITY SECTION */}
       <div style={{background:"linear-gradient(160deg,rgba(168,85,247,0.08),rgba(37,99,235,0.08))",borderRadius:14,border:"1px solid rgba(168,85,247,0.25)",overflow:"hidden"}}>
         <div style={{background:"linear-gradient(135deg,rgba(168,85,247,0.2),rgba(37,99,235,0.2))",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em"}}>🩺 Medical & 🛡 Security</div>
+
         <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
           <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(168,85,247,0.3)",background:"rgba(168,85,247,0.08)",cursor:"pointer",textAlign:"left"}} onClick={()=>{setMedReqType("medical");setMedReqView(true);}}>
             <span style={{fontSize:20}}>🩺</span>

@@ -3,9 +3,6 @@
   publish = "public/Public/public/Public"
   functions = "netlify/functions"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
 [functions]
   node_bundler = "esbuild"
 
@@ -24,7 +21,7 @@
   name = "weather-monitor"
   cron = "*/10 * * * *"
 
-# Send scheduled messages
+# Send scheduled messages every 5 minutes
 [[scheduled_functions]]
   name = "send-scheduled"
   cron = "*/5 * * * *"

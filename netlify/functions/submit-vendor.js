@@ -39,7 +39,12 @@ exports.handler = async(event)=>{
     }})
   });
   const data=await res.json();
-  if(data.error)return{statusCode:500,headers,body:JSON.stringify({error:data.error.message})};
+  if(data.error){
+    const msg=data.error?.type==="TABLE_NOT_FOUND"
+      ?"Vendor sign-up is not yet active. Please try again shortly or contact festival operations."
+      :data.error.message||"Submission failed. Please try again.";
+    return{statusCode:500,headers,body:JSON.stringify({error:msg})};
+  }
 
   // Confirmation SMS to vendor
   const fmt=fmtPhone(phone);

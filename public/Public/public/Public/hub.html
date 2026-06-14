@@ -1,9 +1,11 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
-var useState = React.useState,
-  useEffect = React.useEffect,
-  useRef = React.useRef,
-  useCallback = React.useCallback,
-  useMemo = React.useMemo;
+const {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo
+} = React;
 const ALL_LOCS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Financial 1", "Greeter Head Ingersoll Left", "Greeter Head Ingersoll Right", "Greeter Head Few", "Moon Stage Manager", "Lagniappe Manager", "Lafayette Manager", "Sun Stage Manager", "Cabaret Manager", "Med 1", "Med 2", "Hospitality", "Medical Tent", "Merch Tent", "Sun Stage Vendors", "Moon Stage Vendors", "Lafayette Vendors"];
 const ALERT_COLORS = {
   medical: {

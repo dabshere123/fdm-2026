@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM Operations Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 const {
   useState,
   useEffect,
@@ -9666,54 +9666,79 @@ function MedHome({
       padding: "16px 0",
       fontSize: 14
     }
-  }, "No active calls \u2014 standing by")), /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, "No active calls \u2014 standing by")), /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: "100%",
-      background: "linear-gradient(135deg,rgba(249,115,22,0.25),rgba(234,88,12,0.2))",
+      background: "linear-gradient(160deg,rgba(190,24,93,0.1),rgba(220,38,38,0.08),rgba(37,99,235,0.08))",
       borderRadius: 14,
-      border: "3px solid rgba(249,115,22,0.7)",
-      padding: "20px",
-      cursor: "pointer",
-      textAlign: "center",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 8,
-      boxShadow: "0 0 20px rgba(249,115,22,0.2)"
-    },
-    onClick: () => {
-      if (openLostChild) openLostChild();
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 48
-    }
-  }, "\uD83E\uDDD2"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 20,
-      fontWeight: 900,
-      color: "#fdba74",
-      textTransform: "uppercase",
-      letterSpacing: "0.04em"
-    }
-  }, "Report Lost Child"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "rgba(253,186,116,0.7)",
-      fontWeight: 600
-    }
-  }, "Alerts ALL staff \xB7 GroupMe \xB7 SMS \xB7 Voice \xB7 MPD")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "rgba(168,85,247,0.08)",
-      borderRadius: 14,
-      border: "1px solid rgba(168,85,247,0.3)",
+      border: "1px solid rgba(190,24,93,0.3)",
       overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "rgba(168,85,247,0.2)",
+      background: "linear-gradient(135deg,rgba(190,24,93,0.25),rgba(220,38,38,0.2),rgba(37,99,235,0.15))",
       padding: "10px 14px 8px",
       fontSize: 13,
+      fontWeight: 900,
+      color: "#fda4af",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "\uD83E\uDE7A Medical \xB7 \uD83D\uDD25 Fire/Life Safety \xB7 \uD83D\uDEE1 Security"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      padding: "8px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      padding: "14px",
+      borderRadius: 12,
+      border: "2px solid #ef4444",
+      background: "linear-gradient(135deg,rgba(220,38,38,0.3),rgba(185,28,28,0.2))",
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 900,
+      cursor: "pointer",
+      boxShadow: "0 0 10px rgba(239,68,68,0.3)"
+    },
+    onClick: () => {
+      setNewCallType("");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20
+    }
+  }, "\uD83D\uDEA8"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, "New Call"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 500,
+      opacity: 0.85
+    }
+  }, "Medical \xB7 Fire/Life Safety \xB7 Security"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(168,85,247,0.06)",
+      borderRadius: 10,
+      border: "1px solid rgba(168,85,247,0.25)",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(168,85,247,0.15)",
+      padding: "8px 12px",
+      fontSize: 12,
       fontWeight: 900,
       color: "#d8b4fe",
       textTransform: "uppercase",
@@ -9726,20 +9751,20 @@ function MedHome({
     style: {
       background: "rgba(168,85,247,0.2)",
       border: "1px solid rgba(168,85,247,0.4)",
-      borderRadius: 8,
-      padding: "4px 12px",
+      borderRadius: 6,
+      padding: "3px 10px",
       color: "#d8b4fe",
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: 700,
       cursor: "pointer"
     },
     onClick: () => setShowWalkIn(p => !p)
-  }, showWalkIn ? "▲ Hide" : "▼ Log Walk-In")), showWalkIn && /*#__PURE__*/React.createElement("div", {
+  }, showWalkIn ? "▲ Hide" : "▼ Log")), showWalkIn && /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "12px",
+      padding: "10px",
       display: "flex",
       flexDirection: "column",
-      gap: 10
+      gap: 8
     }
   }, /*#__PURE__*/React.createElement(Fld, {
     label: "Chief Complaint *",
@@ -9758,10 +9783,10 @@ function MedHome({
     style: {
       background: "linear-gradient(135deg,#a855f7,#7c3aed)",
       border: "none",
-      borderRadius: 12,
-      padding: "14px",
+      borderRadius: 10,
+      padding: "12px",
       color: "#fff",
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: 800,
       cursor: "pointer",
       opacity: !wiComplaint ? 0.5 : 1
@@ -9773,84 +9798,31 @@ function MedHome({
     }
   }, "\uD83C\uDFE5 Log Walk-In Patient")), walkIns.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "0 12px 12px",
+      padding: "0 10px 10px",
       display: "flex",
       flexDirection: "column",
-      gap: 6
+      gap: 4
     }
   }, walkIns.map(c => /*#__PURE__*/React.createElement("div", {
     key: c.id,
     style: {
-      borderRadius: 8,
+      borderRadius: 6,
       border: "1px solid rgba(168,85,247,0.2)",
       background: "rgba(168,85,247,0.05)",
-      padding: "10px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center"
+      padding: "8px 10px"
     }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: 700,
       color: "#d8b4fe"
     }
   }, c.problem), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
+      fontSize: 10,
       color: "#64748b"
     }
-  }, c.history?.[0]?.ts, " \xB7 ", c.status)))))), /*#__PURE__*/React.createElement("button", {
-    style: {
-      width: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-      padding: "16px",
-      borderRadius: 12,
-      border: "2px solid rgba(239,68,68,0.5)",
-      background: "rgba(239,68,68,0.1)",
-      color: "#fca5a5",
-      fontSize: 15,
-      fontWeight: 900,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      setNewCallType("");
-      setNewCallLocation("");
-      setNewCallProblem("");
-      setNewCallView(true);
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 22
-    }
-  }, "\uD83D\uDEA8"), " New Call \u2014 Medical / Fire / Security"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "linear-gradient(160deg,rgba(168,85,247,0.08),rgba(37,99,235,0.08))",
-      borderRadius: 14,
-      border: "1px solid rgba(168,85,247,0.25)",
-      overflow: "hidden"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "linear-gradient(135deg,rgba(168,85,247,0.2),rgba(37,99,235,0.2))",
-      padding: "10px 14px 8px",
-      fontSize: 13,
-      fontWeight: 900,
-      color: "#c4b5fd",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em"
-    }
-  }, "\uD83E\uDE7A Medical & \uD83D\uDEE1 Security"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-      padding: "8px"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, c.history?.[0]?.ts, " \xB7 ", c.status))))), /*#__PURE__*/React.createElement("button", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -9868,7 +9840,7 @@ function MedHome({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 20
+      fontSize: 18
     }
   }, "\uD83E\uDE7A"), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9876,7 +9848,7 @@ function MedHome({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: 700,
       color: "#f1f5f9"
     }
@@ -9885,42 +9857,26 @@ function MedHome({
       fontSize: 11,
       color: "#64748b"
     }
-  }, "Request more medical personnel"))), /*#__PURE__*/React.createElement("button", {
+  }, "Request more medical personnel"))))), /*#__PURE__*/React.createElement("button", {
     style: {
+      width: "100%",
+      padding: "10px 14px",
+      borderRadius: 10,
+      border: "1px solid rgba(249,115,22,0.35)",
+      background: "rgba(249,115,22,0.07)",
+      color: "#fdba74",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer",
       display: "flex",
       alignItems: "center",
-      gap: 10,
-      padding: "12px",
-      borderRadius: 10,
-      border: "1px solid rgba(37,99,235,0.3)",
-      background: "rgba(37,99,235,0.08)",
-      cursor: "pointer",
-      textAlign: "left"
+      gap: 8,
+      justifyContent: "center"
     },
     onClick: () => {
-      setMedReqType("security");
-      setMedReqView(true);
+      if (openLostChild) openLostChild();
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 20
-    }
-  }, "\uD83D\uDEE1"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: "#f1f5f9"
-    }
-  }, "Security"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#64748b"
-    }
-  }, "Security assistance \xB7 MPD request inside"))))), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD2 Report Lost Child"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "linear-gradient(160deg,rgba(120,53,15,0.1),rgba(16,185,129,0.08))",
       borderRadius: 14,

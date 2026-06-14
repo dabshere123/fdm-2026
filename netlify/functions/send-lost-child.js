@@ -94,14 +94,14 @@ exports.handler = async (event) => {
         headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ To: phone, MessagingServiceSid: MESSAGING_SID, Body: msg }).toString()
       });
-      // Voice
+      // Voice call — Male voice, repeats 3x
       await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
         method: 'POST',
         headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           To: phone,
           From: TWILIO_FROM,
-          Twiml: `<Response><Say voice="alice" loop="2">${voiceMsg}</Say></Response>`
+          Twiml: `<Response><Say voice="man" loop="3">${voiceMsg}</Say></Response>`
         }).toString()
       });
     } catch(e) { console.log(`Error for ${phone}:`, e.message); }

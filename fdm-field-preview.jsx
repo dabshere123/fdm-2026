@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+const {useState,useRef,useEffect}=React;
 
 function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)",overflow:"hidden",pointerEvents:"none"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px",pointerEvents:"none"}}/></div>);}
 function BB({onClick,label="← Back"}){return(<button style={{background:"rgba(255,255,255,0.1)",border:"2px solid rgba(255,255,255,0.25)",color:"#f1f5f9",padding:"10px 18px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800}} onClick={onClick}>{label}</button>);}
@@ -25,6 +25,7 @@ export default function FieldApp(){
   const [roleType,setRoleType]=useState("bar_manager");
   const [name,setName]=useState("Moon Stage 1");
   const [staffName,setStaffName]=useState("");
+  const [currentStaff,setCurrentStaff]=useState(null);
   const [view,setView]=useState("home");
   const [roleLocked,setRoleLocked]=useState(false);
   const [reqType,setReqType]=useState(null);
@@ -100,7 +101,24 @@ export default function FieldApp(){
 
   const doSubmit=async()=>{
     setRoleLocked(true);
-    if(reqType==="lost_child"){setRadioScript(RADIO_SCRIPT_LOST_CHILD(fields));setView("radio");return;}
+    if(reqType==="lost_child"){
+      // Fire notifications BEFORE showing radio script
+      fetch("/.netlify/functions/send-lost-child",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+        location:fields.last_seen||name||"Festival Grounds",
+        description:`${fields.description||"Child"}. ${fields.clothing||""}`.trim(),
+        requestedBy:staffName||role||"Staff",
+        assemblyPoint:fields.assembly_point||"Medical Tent",
+      })}).catch(()=>{});
+      // Also save to Airtable
+      fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+        type:"lost_child",
+        location:fields.last_seen||name||"Festival Grounds",
+        problem:`${fields.description||"Child"}. ${fields.clothing||""}`.trim(),
+        requestedBy:staffName||role||"Staff",
+        phone:currentStaff?.phone||"",
+      })}).catch(()=>{});
+      setRadioScript(RADIO_SCRIPT_LOST_CHILD(fields));setView("radio");return;
+    }
     // Lost & Found
     if(reqType==="lost_found"){
       try{
@@ -122,6 +140,23 @@ export default function FieldApp(){
     try{
       await fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(callData)});
     }catch(e){console.log("submit-call error:",e.message);}
+
+    // SMS + GroupMe + Voice notifications
+    const callType=callData.type;
+    const emoji={medical:"🩺",fire:"🔥",security:"🛡",restock:"📦",maintenance:"🔧",general:"📋"}[callType]||"📋";
+    const gmChannel={medical:"medical",fire:"medical",security:"admin",restock:"restock",maintenance:"maintenance",general:"admin"}[callType]||"admin";
+    const gmHeaders={medical:"MEDICAL ALERT 🩺",fire:"LIFE SAFETY / FIRE ALERT 🔥",security:"SECURITY CONCERN 🛡",restock:"SUPPLY ALERT 📦",maintenance:"MAINTENANCE CONCERN 🔧",general:"GENERAL REQUEST 📋"};
+    const gmHeader=gmHeaders[callType]||"REQUEST 📋";
+    const notifMsg=`${gmHeader}\nFROM: ${callData.requestedBy}\nLOCATION: ${callData.location}\nPROBLEM: ${callData.problem}${callData.details?"\n"+callData.details:""}\nDATE/TIME: ${new Date().toLocaleString()}`;
+    // GroupMe
+    fetch("/.netlify/functions/send-groupme",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:notifMsg,channels:[gmChannel,"admin"]})}).catch(()=>{});
+    // SMS to admin
+    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:notifMsg})}).catch(()=>{});
+    // Voice for medical/fire/security only
+    if(callType==="medical"||callType==="fire"||callType==="security"){
+      fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`${callType==="fire"?"Fire or life safety":"Medical"} request at Fete de Marquette. Location: ${callData.location}. ${callData.problem}. Please respond.`})}).catch(()=>{});
+    }
+
     setDone(true);setReqType(null);setFields({});setRestockItem(null);setRestockQty(null);setRestockOther("");
     setTimeout(()=>{setDone(false);setView("home");},2500);
   };
@@ -179,11 +214,11 @@ export default function FieldApp(){
             return matches.map(s=>(
               <button key={s.id} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 20px",borderRadius:14,border:"2px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.08)",cursor:"pointer",textAlign:"left",width:"100%"}}
                 onClick={()=>{
-                  const role=s.role.toLowerCase();
-                  if(role.includes("admin")){window.location.href="/hub";return;}
-                  if(role.includes("med unit 1")||role.includes("med 1")){window.location.href="/hub?role=med1";return;}
-                  if(role.includes("med unit 2")||role.includes("med 2")){window.location.href="/hub?role=med2";return;}
-                  if(role.includes("overnight")||role.includes("cleaning")||role.includes("night crew")){
+                  const role=s.role.toLowerCase().trim();
+                  if(role==="a1"||role==="a2"||role.includes("admin")){window.location.href="/hub";return;}
+                  if(role==="m1"||role.includes("med unit 1")||role.includes("med 1")){window.location.href="/hub?role=med1";return;}
+                  if(role==="m2"||role.includes("med unit 2")||role.includes("med 2")){window.location.href="/hub?role=med2";return;}
+                  if(role==="oc1"||role==="oc2"||role==="oc3"||role==="oc4"||role.includes("overnight")){
                     setStaffName(s.name);setRoleType("overnight");setName(s.location||"Festival Grounds");setLoggedIn(true);return;
                   }
                   setStaffName(s.name);
@@ -324,7 +359,7 @@ export default function FieldApp(){
         <div style={{fontSize:13,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",fontWeight:700}}>Item Number</div>
         <div style={{fontSize:36,fontWeight:900,color:"#a78bfa"}}>{fields._lfNumber}</div>
       </div>
-      <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",textAlign:"center"}}>Tag item and bring to Festival Office in the morning.</div>
+      <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",textAlign:"center"}}>Please place the item in the Lost & Found box. Operations will come and take possession of it shortly.</div>
       <button style={{...S.sendBtn,background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",width:"100%",maxWidth:320}} onClick={()=>{setView("home");setReqType(null);setFields({});}}>Done</button>
     </div></div>
   );
@@ -345,13 +380,15 @@ export default function FieldApp(){
                 const res=await fetch("/.netlify/functions/overnight-checkin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({crewMember:staffName,eventDay:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})})});
                 const data=await res.json();
                 if(data.success){setOvernightRecordId(data.id);setOvernightCheckedIn(true);}
+                // Alert admin on check-in
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🌙 OVERNIGHT CREW CHECK-IN\n${staffName||"Crew Member"} has arrived at Fest Grounds.\nTIME: ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`})}).catch(()=>{});
               }catch(e){console.log(e);}
             }}>
             🌙 I'M HERE — Check In
           </button>
         ):(
           <>
-            <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:12,padding:"12px 16px",fontSize:14,color:"#10b981",fontWeight:700}}>✅ Checked in — Admin has been notified</div>
+            <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:12,padding:"12px 16px",fontSize:14,color:"#10b981",fontWeight:700}}>✅ Checked in — Admin has been notified. Good luck tonight!</div>
 
             <div style={{fontSize:13,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Incident Log</div>
             {overnightIncidents.map((inc,i)=>(
@@ -401,7 +438,7 @@ export default function FieldApp(){
                       setOvernightSubmitted(true);
                     }catch(e){console.log(e);}
                   }}>
-                  ☀️ Submit Nightly Report
+                  📋 Submit End of Night Report
                 </button>
                 <button style={{...S.sendBtn,background:"linear-gradient(135deg,#ef4444,#b91c1c)",padding:"14px",fontSize:15,fontWeight:900}}
                   onClick={async()=>{
@@ -415,7 +452,7 @@ export default function FieldApp(){
                       setOvernightSubmitted(true);
                     }catch(e){console.log(e);}
                   }}>
-                  🚪 Check Out & Submit Report
+                  🚪 Submit End of Night Report — Check Out
                 </button>
               </div>
             ):(
@@ -522,8 +559,11 @@ export default function FieldApp(){
       <div style={{fontSize:13,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700}}>Item Number</div>
       <div style={{fontSize:36,fontWeight:900,color:"#a78bfa"}}>{fields._lfNumber}</div>
     </div>
-    <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9",textAlign:"center"}}>Tag this item with the number above and bring it to the Festival Office.</div>
-    <div style={{fontSize:13,color:"#64748b",textAlign:"center"}}>Admin has been notified.</div>
+    <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9",textAlign:"center"}}>Please place this item in the Lost &amp; Found box.</div>
+    <div style={{background:"rgba(139,92,246,0.12)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:12,padding:"14px 16px",textAlign:"center",width:"100%",maxWidth:320}}>
+      <div style={{fontSize:14,color:"#c4b5fd",lineHeight:1.6}}>Operations has been notified and will come to take possession of the item shortly. Write the item number on a tag and attach it to the item before placing it in the box.</div>
+    </div>
+    <div style={{fontSize:13,color:"#64748b",textAlign:"center"}}>📱 Admin notified via SMS</div>
     <button style={{...S.sendBtn,background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",width:"100%",maxWidth:320,marginTop:8}} onClick={()=>{setView("home");setReqType(null);setFields({});}}>Done</button>
   </div></div>);
 

@@ -12,7 +12,7 @@ exports.handler = async (event) => {
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch(e) {}
 
-  const { type, location, problem, patientDescription, requestedBy, respondingUnit, interventions, disposition, notes, openedAt } = body;
+  const { type, location, problem, individualDescription, requestedBy, respondingUnit, interventions, disposition, notes, openedAt } = body;
 
   if (!disposition) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing disposition' }) };
 
@@ -40,7 +40,7 @@ exports.handler = async (event) => {
     Type: type || '',
     Location: location || '',
     Problem: problem || '',
-    PatientDescription: patientDescription || '',
+    IndividualDescription: individualDescription || '',
     RequestedBy: requestedBy || '',
     RespondingUnit: respondingUnit || '',
     Interventions: interventions || '',
@@ -67,14 +67,14 @@ exports.handler = async (event) => {
   }
 
   // Trigger incident report email for medical/security/fire incidents
-  if (['medical','walk_in','fire','security'].includes(type)) {
+  if (type) { // Send email report for ALL call types
     try {
       const baseUrl = `https://${event.headers.host || 'fdm2026.netlify.app'}`;
       fetch(`${baseUrl}/.netlify/functions/send-incident-report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          incidentNumber, type, location, problem, patientDescription,
+          incidentNumber, type, location, problem, individualDescription,
           respondingUnit, interventions, disposition, narrative: notes,
           notes: '', requestedBy, openedAt,
         })

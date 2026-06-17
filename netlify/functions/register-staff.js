@@ -116,6 +116,46 @@ exports.handler = async (event) => {
       console.log('SMS skipped — consent:', smsConsent, 'phone:', normalizedPhone);
     }
 
+    // Notify admin — SMS + Email
+    const adminMsg = `✅ NEW REGISTRATION — FDM 2026\n\nName: ${name}\nRole: ${role}\nLocation: ${normalizedLocation||'Not specified'}\nPhone: ${phone}\nDays: ${normalizedDays||'Not specified'}\nTime: ${new Date().toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`;
+
+    // SMS to admin
+    try {
+      const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
+      await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ To: '+16082289692', MessagingServiceSid: MESSAGING_SID, Body: adminMsg }).toString()
+      });
+      console.log('Admin SMS sent');
+    } catch(e) { console.log('Admin SMS error:', e.message); }
+
+    // Email to admin via SendGrid
+    try {
+      await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: [{ email: 'feteops@gmail.com' }],
+          from: { email: 'feteops@gmail.com', name: 'FDM 2026 Operations' },
+          subject: `✅ New Registration — ${name} (${role})`,
+          text: adminMsg,
+          html: `<div style="font-family:sans-serif;max-width:500px;padding:24px;">
+            <h2 style="color:#f59e0b;margin:0 0 16px;">✅ New Staff Registration</h2>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr><td style="padding:8px 0;color:#64748b;font-weight:700;">Name</td><td style="padding:8px 0;">${name}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-weight:700;">Role</td><td style="padding:8px 0;">${role}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-weight:700;">Location</td><td style="padding:8px 0;">${normalizedLocation||'Not specified'}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-weight:700;">Phone</td><td style="padding:8px 0;">${phone}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-weight:700;">Days</td><td style="padding:8px 0;">${normalizedDays||'Not specified'}</td></tr>
+            </table>
+            <p style="font-size:12px;color:#94a3b8;margin-top:20px;">Fête de Marquette 2026 Operations · fdm2026.netlify.app</p>
+          </div>`
+        })
+      });
+      console.log('Admin email sent');
+    } catch(e) { console.log('Admin email error:', e.message); }
+
     return { statusCode: 200, headers, body: JSON.stringify({ success: true, approved: true, recordId: record.id }) };
   } catch (err) {
     console.error('Error:', err.message);

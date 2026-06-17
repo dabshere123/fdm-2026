@@ -106,7 +106,7 @@ exports.handler = async (event) => {
           body: new URLSearchParams({
             To: normalizedPhone,
             MessagingServiceSid: MESSAGING_SID,
-            Body: approvalSMS(name)
+            Body: approvalSMS(name, role, lastName)
           }).toString()
         });
       } catch(e) {

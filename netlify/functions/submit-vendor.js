@@ -53,7 +53,7 @@ exports.handler = async(event)=>{
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,{
       method:'POST',
       headers:{'Authorization':`Basic ${auth}`,'Content-Type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams({To:fmt,MessagingServiceSid:MESSAGING_SID,Body:`✅ Fête de Marquette 2026 — You're registered, ${contactName||businessName}! We have ${businessName} at ${location||'your location'} on file. You'll receive festival broadcasts and emergency alerts at this number. See you July 10-12!`}).toString()
+      body:new URLSearchParams({To:fmt,MessagingServiceSid:MESSAGING_SID,Body:`✅ Fête de Marquette 2026 — You're registered, ${contactName||businessName}! We have ${businessName} at ${location||'your location'} on file. You'll receive festival broadcasts and emergency alerts at this number. See you July 9–12!`}).toString()
     }).catch(()=>{});
   }
 

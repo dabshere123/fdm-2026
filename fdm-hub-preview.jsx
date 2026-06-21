@@ -2,7 +2,7 @@ const {useState,useEffect,useRef,useCallback,useMemo}=React;
 
 
 
-const ALL_LOCS=["Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe","Sun Left","Sun Right","Cabaret","Financial 1","Greeter Head Ingersoll Left","Greeter Head Ingersoll Right","Greeter Head Few","Moon Stage Manager","Lagniappe Manager","Lafayette Manager","Sun Stage Manager","Cabaret Manager","Med 1","Med 2","Hospitality","Medical Tent","Merch Tent","Sun Stage Vendors","Moon Stage Vendors","Lafayette Vendors"];
+const ALL_LOCS=["Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe","Sun Left","Sun Right","Cabaret","Financial 1","Greeter Head Ingersoll Left","Greeter Head Ingersoll Right","Greeter Head Few","Moon Stage Manager","Lagniappe Manager","Lafayette Manager","Sun Stage Manager","Cabaret Manager","Med 1","Med 2","Hospitality","First Aid","Merch Tent","Sun Stage Vendors","Moon Stage Vendors","Lafayette Vendors"];
 
 
 const ALERT_COLORS={
@@ -487,7 +487,7 @@ function HubApp({onBack}){
       .catch(()=>{});
   },[]);
   const [assignPanel,setAssignPanel]=useState(null); // callId being assigned
-  const [lcForm,setLcForm]=useState({name:"",age:"",description:"",lastSeen:"",assemblyPoint:"Medical Tent",parentName:"",parentPhone:""});
+  const [lcForm,setLcForm]=useState({name:"",age:"",description:"",lastSeen:"",assemblyPoint:"First Aid",parentName:"",parentPhone:""});
   const [lcView,setLcView]=useState(false);
   // Per-call officer notifications: {callId: {officerId: {notified, acked, cancelled}}}
   const [officerNotifs,setOfficerNotifs]=useState({});
@@ -1195,7 +1195,7 @@ DATE/TIME: ${now()}`;
           ))}
         </div>
         <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Location *</div>
-        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none"}} placeholder="e.g. Sun Stage · Moon Bar · Medical Tent" value={newCallLocation} onChange={e=>setNewCallLocation(e.target.value)}/>
+        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none"}} placeholder="e.g. Sun Stage · Moon Bar · First Aid" value={newCallLocation} onChange={e=>setNewCallLocation(e.target.value)}/>
         <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>Problem / Description *</div>
         <textarea style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none",minHeight:80,resize:"none",fontFamily:"inherit"}} placeholder="What's happening?" value={newCallProblem} onChange={e=>setNewCallProblem(e.target.value)}/>
         <button style={{padding:"16px",borderRadius:12,border:"none",background:(!newCallType||!newCallLocation||!newCallProblem)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#ef4444,#dc2626)",color:(!newCallType||!newCallLocation||!newCallProblem)?"#475569":"#fff",fontWeight:800,fontSize:16,cursor:"pointer",opacity:(!newCallType||!newCallLocation||!newCallProblem)?0.5:1}}
@@ -1607,7 +1607,7 @@ Reply YES to acknowledge.`
         <Fld label="Bottom / Pants" value={lcFields?.bottom||""} onChange={e=>setLcFields(p=>({...p,bottom:e.target.value}))} ph="e.g. Blue shorts"/>
         <Fld label="Last Seen Location *" value={lcFields?.lastSeen||""} onChange={e=>setLcFields(p=>({...p,lastSeen:e.target.value}))} ph="e.g. Near Moon Stage 1 bar" required large/>
         <Fld label="Last Seen Time" value={lcFields?.lastSeenTime||""} onChange={e=>setLcFields(p=>({...p,lastSeenTime:e.target.value}))} ph="e.g. 5:30 PM"/>
-        <Fld label="Meet Reporting Party / Parent *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. Medical Tent, Moon Stage entrance" required large/>
+        <Fld label="Meet Reporting Party / Parent *" value={lcFields?.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. First Aid, Moon Stage entrance" required large/>
         <Fld label="Parent / Guardian Name" value={lcFields?.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Sarah Johnson"/>
         <Fld label="Parent / Guardian Phone" value={lcFields?.parentPhone||""} onChange={e=>setLcFields(p=>({...p,parentPhone:e.target.value}))} ph="(608) 555-1234"/>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly)?0.5:1}}
@@ -1621,7 +1621,7 @@ Reply YES to acknowledge.`
               location:lcFields?.lastSeen||"Unknown",
               description:`${lcFields?.gender||"Child"}, approx ${lcFields?.age}. ${lcFields?.hair||""} ${lcFields?.top||""} ${lcFields?.bottom||""}`.trim(),
               requestedBy:"Admin",
-              assemblyPoint:lcFields?.assembly||"Medical Tent",
+              assemblyPoint:lcFields?.assembly||"First Aid",
             })}).catch(e=>console.log("LC send error:",e));
             fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"lost_child",officers:mpdOfficers,location:lcFields?.lastSeen,situation:lcMsg})}).catch(e=>console.log(e));
             playAlert("lost_child");
@@ -2666,7 +2666,7 @@ Reply YES to acknowledge.`
             <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Radio Serial Numbers</div>
             {Array.from({length:25},(_,i)=>{
               const id=`R${String(i+1).padStart(2,"0")}`;
-              const loc=["Sun Left","Sun Right","Cabaret","Lafayette","Lagniappe","Moon Stage 1","Moon Stage 2","Kids/Family Fete","Merch Tent","Cabaret Stage","Lafayette Stage","Lagniappe Stage","Moon Stage","First Aid 1","First Aid 2","Medical Tent","Devin","Marketing","MPD 1","MPD 2","MPD 3","MPD 4","Extra 1","Extra 2","Extra 3"][i];
+              const loc=["Sun Left","Sun Right","Cabaret","Lafayette","Lagniappe","Moon Stage 1","Moon Stage 2","Kids/Family Fete","Merch Tent","Cabaret Stage","Lafayette Stage","Lagniappe Stage","Moon Stage","First Aid 1","First Aid 2","First Aid","Devin","Marketing","MPD 1","MPD 2","MPD 3","MPD 4","Extra 1","Extra 2","Extra 3"][i];
               return(
                 <div key={id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                   <div style={{fontSize:12,fontWeight:700,color:"#fcd34d",minWidth:36}}>{id}</div>
@@ -2827,10 +2827,10 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const doWalkIn=()=>{
     if(!wiComplaint)return;
     const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-    const c={id:Date.now(),type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role,status:"on_scene",acknowledged:true,history:[{status:"walk_in",ts},{status:"on_scene",ts,unit:role}],unit:role,firedAt:Date.now()};
+    const c={id:Date.now(),type:"walk_in",location:"First Aid",problem:wiComplaint,details:wiDetails,requestedBy:role,status:"on_scene",acknowledged:true,history:[{status:"walk_in",ts},{status:"on_scene",ts,unit:role}],unit:role,firedAt:Date.now()};
     setCalls(p=>[c,...p]);
     setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:ts}}));
-    if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"walk_in",location:"Medical Tent",problem:wiComplaint,details:wiDetails,requestedBy:role})}).catch(e=>console.log(e));
+    if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"walk_in",location:"First Aid",problem:wiComplaint,details:wiDetails,requestedBy:role})}).catch(e=>console.log(e));
     if(sendGroupMe) sendGroupMe(`🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails?"\n"+wiDetails:""}\nTIME: ${ts}`,["admin","medical"]);
     const wiMsg=`MEDICAL ALERT 🩺\nWALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails?"\n"+wiDetails:""}\nTIME: ${ts}`;
     const wiPhones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
@@ -2839,7 +2839,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         const d=p.replace(/\D/g,"");
         const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;
         fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:wiMsg})}).catch(()=>{});
-        fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`Walk in patient at Fete de Marquette Medical Tent. Chief complaint: ${wiComplaint}. Please respond immediately.`})}).catch(()=>{});
+        fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`Walk in patient at Fete de Marquette First Aid. Chief complaint: ${wiComplaint}. Please respond immediately.`})}).catch(()=>{});
       });
     },100);
     setWiComplaint("");setWiDetails("");

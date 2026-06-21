@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+  <title>FDM 2026 — Lost & Found</title>
+  <meta name="theme-color" content="#0d0d0d"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#0d0d1a;font-family:'DM Sans',sans-serif;color:#f1f5f9;padding-bottom:60px;}
+    .header{background:linear-gradient(135deg,#0a0f1e,#111827);border-bottom:1px solid rgba(139,92,246,0.2);padding:20px;}
+    h1{font-size:22px;font-weight:900;color:#c4b5fd;margin-bottom:4px;}
+    .subtitle{font-size:13px;color:#64748b;}
+    .content{max-width:520px;margin:0 auto;padding:16px;}
+    .search{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 16px;color:#f1f5f9;font-size:15px;font-family:inherit;outline:none;margin-bottom:16px;}
+    .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .filter-btn{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .filter-btn.active{border-color:rgba(139,92,246,0.6);background:rgba(139,92,246,0.12);color:#c4b5fd;}
+    .item-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;margin-bottom:12px;}
+    .item-card.claimed{opacity:0.5;}
+    .item-num{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+    .item-desc{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:8px;}
+    .item-meta{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#64748b;margin-bottom:12px;}
+    .item-meta span{display:flex;align-items:center;gap:6px;}
+    .day-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-bottom:8px;}
+    .status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+    .btn-pickup{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(139,92,246,0.5);background:rgba(139,92,246,0.1);color:#c4b5fd;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;}
+    .btn-pickup:disabled{opacity:0.5;cursor:not-allowed;}
+    .empty{text-align:center;padding:40px 20px;color:#475569;font-size:14px;}
+    .loading{text-align:center;padding:40px;color:#64748b;}
+    .section-header{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin:20px 0 8px;}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#8b5cf6;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:700;z-index:999;animation:fadeIn 0.3s;}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .day-Thu{background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3);}
+    .day-Fri{background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3);}
+    .day-Sat{background:rgba(245,158,11,0.15);color:#fcd34d;border:1px solid rgba(245,158,11,0.3);}
+    .day-Sun{background:rgba(16,185,129,0.15);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3);}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Fête de Marquette 2026 · July 9–12 · McPike Park</div>
+  <h1>📦 Lost & Found</h1>
+  <div class="subtitle">All items found at the festival — updated in real time</div>
+</div>
+
+<div class="content">
+  <input class="search" type="text" id="searchInput" placeholder="Search by description, location..." oninput="filterItems()"/>
+
+  <div class="filter-row" id="dayFilters">
+    <button class="filter-btn active" onclick="setDay('all')" id="filter-all">All Days</button>
+    <button class="filter-btn" onclick="setDay('Thursday')" id="filter-Thursday">Thursday</button>
+    <button class="filter-btn" onclick="setDay('Friday')" id="filter-Friday">Friday</button>
+    <button class="filter-btn" onclick="setDay('Saturday')" id="filter-Saturday">Saturday</button>
+    <button class="filter-btn" onclick="setDay('Sunday')" id="filter-Sunday">Sunday</button>
+  </div>
+
+  <div id="itemList"><div class="loading">Loading items...</div></div>
+</div>
+
+<script>
+let allItems = [];
+let activeDay = 'all';
+
+const dayAbbr = {'Thursday':'Thu','Friday':'Fri','Saturday':'Sat','Sunday':'Sun'};
+const dayClass = {'Thursday':'day-Thu','Friday':'day-Fri','Saturday':'day-Sat','Sunday':'day-Sun'};
+
+async function loadItems() {
+  try {
+    const res = await fetch('/.netlify/functions/get-lost-found');
+    const data = await res.json();
+    allItems = data.items || [];
+    renderItems();
+  } catch(e) {
+    document.getElementById('itemList').innerHTML = '<div class="empty">Could not load items. Please refresh.</div>';
+  }
+}
+
+function setDay(day) {
+  activeDay = day;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('filter-' + day)?.classList.add('active');
+  filterItems();
+}
+
+function filterItems() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = allItems;
+  if (activeDay !== 'all') filtered = filtered.filter(i => i.DayFound === activeDay);
+  if (q) filtered = filtered.filter(i =>
+    (i.Description||'').toLowerCase().includes(q) ||
+    (i.Location||'').toLowerCase().includes(q) ||
+    (i.CurrentLocation||'').toLowerCase().includes(q) ||
+    (i.ItemNumber||'').toLowerCase().includes(q)
+  );
+  renderItems(filtered);
+}
+
+function renderItems(items) {
+  items = items || allItems;
+  const el = document.getElementById('itemList');
+  if (!items.length) {
+    el.innerHTML = '<div class="empty">No items found matching your search.</div>';
+    return;
+  }
+
+  // Group by day
+  const grouped = {};
+  items.forEach(item => {
+    const day = item.DayFound || 'Unknown';
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push(item);
+  });
+
+  const dayOrder = ['Thursday','Friday','Saturday','Sunday','Unknown'];
+  let html = '';
+
+  dayOrder.forEach(day => {
+    if (!grouped[day]) return;
+    html += `<div class="section-header">${day} (${grouped[day].length} item${grouped[day].length!==1?'s':''})</div>`;
+    grouped[day].forEach(item => {
+      const claimed = item.Status === 'Claimed' || item.Status === 'Returned';
+      const inBox = item.Status === 'In Box' || item.Status === 'at_office';
+      const dc = dayClass[day] || 'day-Thu';
+      const da = dayAbbr[day] || day;
+      html += `
+        <div class="item-card ${claimed?'claimed':''}">
+          <div class="item-num">#${item.ItemNumber||'?'} · Found by ${item.FoundBy||'Staff'}</div>
+          <div class="item-desc">${item.Description||'No description'}</div>
+          <div style="margin-bottom:8px;">
+            <span class="day-badge ${dc}">${da}</span>
+            ${inBox?'<span class="status-badge" style="background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3);margin-left:6px;">📦 In L&F Box</span>':''}
+            ${claimed?'<span class="status-badge" style="background:rgba(100,116,139,0.12);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);margin-left:6px;">✅ Claimed</span>':''}
+          </div>
+          <div class="item-meta">
+            <span>📍 Found at: <strong style="color:#f1f5f9;">${item.Location||'Unknown'}</strong></span>
+            <span>📌 Currently: <strong style="color:#f1f5f9;">${item.CurrentLocation||item.Location||'Unknown'}</strong></span>
+            <span>🕐 ${item.FoundAt||''}</span>
+          </div>
+          ${!claimed?`<button class="btn-pickup" onclick="requestPickup('${item.id}','${(item.ItemNumber||'').replace(/'/g,"\\'")}','${(item.Description||'').replace(/'/g,"\\'")}')">
+            📞 Request Pickup — Contact Admin
+          </button>`:'<div style="font-size:12px;color:#475569;text-align:center;padding:6px;">This item has been claimed</div>'}
+        </div>`;
+    });
+  });
+
+  el.innerHTML = html;
+}
+
+async function requestPickup(id, itemNum, desc) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Sending request...';
+  try {
+    await fetch('/.netlify/functions/request-lf-pickup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, itemNumber: itemNum, description: desc, requestedBy: 'Staff — L&F Page' })
+    });
+    btn.textContent = '✅ Admin has been notified';
+    showToast('Admin notified — they will retrieve item #' + itemNum);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '📞 Request Pickup — Contact Admin';
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+loadItems();
+setInterval(loadItems, 30000); // refresh every 30 seconds
+</script>
+</body>
+</html>

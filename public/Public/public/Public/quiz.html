@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+  <title>FDM 2026 — Knowledge Check</title>
+  <meta name="theme-color" content="#0d0d0d"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{width:100%;background:#0d0d1a;font-family:'DM Sans',sans-serif;color:#f1f5f9;padding-bottom:60px;}
+    .header{background:linear-gradient(135deg,#0a0f1e,#111827);border-bottom:1px solid rgba(245,158,11,0.2);padding:24px 20px;}
+    .badge{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;}
+    h1{font-size:22px;font-weight:900;color:#f59e0b;margin-bottom:4px;}
+    .subtitle{font-size:13px;color:#64748b;}
+    .content{max-width:520px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;gap:20px;}
+    .progress-bar{background:rgba(255,255,255,0.06);border-radius:10px;height:6px;overflow:hidden;}
+    .progress-fill{height:100%;background:linear-gradient(90deg,#f59e0b,#d97706);border-radius:10px;transition:width 0.4s ease;}
+    .progress-label{font-size:11px;color:#64748b;margin-top:6px;text-align:right;}
+    .question-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;}
+    .q-num{font-size:10px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+    .q-text{font-size:16px;font-weight:700;color:#f1f5f9;line-height:1.5;margin-bottom:16px;}
+    .options{display:flex;flex-direction:column;gap:8px;}
+    .option{padding:13px 16px;border-radius:10px;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:#94a3b8;font-size:14px;font-weight:500;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+    .option:hover{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.06);color:#fcd34d;}
+    .option.selected{border-color:rgba(245,158,11,0.7);background:rgba(245,158,11,0.12);color:#fcd34d;font-weight:700;}
+    .option.correct{border-color:rgba(34,197,94,0.7);background:rgba(34,197,94,0.12);color:#86efac;font-weight:700;}
+    .option.wrong{border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.08);color:#fca5a5;}
+    .option.show-correct{border-color:rgba(34,197,94,0.5);background:rgba(34,197,94,0.08);color:#86efac;}
+    .feedback{font-size:13px;line-height:1.6;padding:12px 14px;border-radius:10px;margin-top:12px;}
+    .feedback.correct{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#86efac;}
+    .feedback.wrong{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;}
+    .btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .btn-primary{background:linear-gradient(135deg,#f59e0b,#d97706);color:#0a0f1e;}
+    .btn-disabled{background:rgba(255,255,255,0.06);color:#475569;cursor:not-allowed;}
+    .score-card{background:rgba(245,158,11,0.08);border:2px solid rgba(245,158,11,0.3);border-radius:14px;padding:24px;text-align:center;}
+    .score-num{font-size:56px;font-weight:900;color:#f59e0b;}
+    .score-label{font-size:14px;color:#94a3b8;margin-top:4px;}
+    .result-msg{font-size:16px;font-weight:700;color:#f1f5f9;margin-top:16px;line-height:1.5;}
+    .retry-btn{width:100%;padding:14px;border-radius:12px;border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.1);color:#fcd34d;font-size:14px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:12px;}
+  
+@media(min-width:768px){
+  body{font-size:17px;}
+  input,select,textarea{font-size:17px !important;padding:16px 18px;}
+  button{font-size:16px;}
+}
+@media(min-width:1024px){
+  body{font-size:18px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="badge">Fête de Marquette 2026 · July 9–12 · McPike Park</div>
+  <h1>Knowledge Check</h1>
+  <div class="subtitle">7 questions · ~5 minutes · Make sure you're ready</div>
+</div>
+
+<div class="content" id="app"></div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "Where do you go to access the Worker App?",
+    options: ["fdm2026.netlify.app/field","fdm2026.netlify.app/hub","fdm2026.netlify.app/register","fdm2026.netlify.app/guide"],
+    correct: 0,
+    feedback: "The Worker App is at fdm2026.netlify.app/field. Sign in with your last name."
+  },
+  {
+    q: "A patron near your bar collapses and is unresponsive. What do you do in the app?",
+    options: ["Tap Maintenance","Tap Emergency / Medical and submit your location and a description","Text the Admin directly","Wait for someone else to handle it"],
+    correct: 1,
+    feedback: "Tap Emergency / Medical, enter the location and describe the situation. Operations is notified immediately by text, voice, and GroupMe."
+  },
+  {
+    q: "You submit a request. How do you know it was received?",
+    options: ["You see a green checkmark in the app and receive a confirmation text","You don't — just hope for the best","A siren goes off","Someone calls you within 5 minutes"],
+    correct: 0,
+    feedback: "You'll see a success screen in the app and receive a text message confirming your request was received by operations."
+  },
+  {
+    q: "A child approaches you saying they can't find their parents. What is your FIRST action?",
+    options: ["Call 911","Walk around the festival to look for the parents","Keep the child with you and tap Report Lost Child in the app","Announce it over your bar's PA system immediately"],
+    correct: 2,
+    feedback: "Keep the child with you and tap Report Lost Child in the Worker App. The app will alert all staff and provide you with a radio script to read over your PA."
+  },
+  {
+    q: "After submitting a lost child report, a script appears on your screen. What do you do with it?",
+    options: ["Screenshot it and text it to the operations team","Ignore it — operations will handle it","Read it word for word over your venue's PA system","Wait for Admin to arrive before doing anything"],
+    correct: 2,
+    feedback: "Read the radio script word for word over your PA system immediately. All staff are already being alerted via text and voice at the same time."
+  },
+  {
+    q: "Your bar is running low on ice. Which request type do you use?",
+    options: ["Maintenance","Emergency / Medical","Supplies / Restock","Security"],
+    correct: 2,
+    feedback: "Tap Supplies / Restock for ice, cups, napkins, or any other supplies. Operations will coordinate delivery to your location."
+  },
+  {
+    q: "You receive a text that says your request has been acknowledged. What does this mean?",
+    options: ["Your request was received but no one is available","A unit is on the way to your location","Your request was cancelled","You need to re-submit the request"],
+    correct: 1,
+    feedback: "Acknowledged means a unit has seen your request and is responding. You'll receive another text when the issue is resolved."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+const userAnswers = new Array(QUESTIONS.length).fill(null);
+
+function render() {
+  const app = document.getElementById('app');
+  if (current >= QUESTIONS.length) {
+    renderResults(app);
+    return;
+  }
+  const q = QUESTIONS[current];
+  const pct = Math.round((current / QUESTIONS.length) * 100);
+  app.innerHTML = `
+    <div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-label">Question ${current+1} of ${QUESTIONS.length}</div>
+    </div>
+    <div class="question-card">
+      <div class="q-num">Question ${current+1}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">
+        ${q.options.map((opt,i)=>`<button class="option" id="opt${i}" onclick="select(${i})">${opt}</button>`).join('')}
+      </div>
+      <div id="feedback"></div>
+    </div>
+    <button class="btn btn-disabled" id="nextBtn" onclick="next()" disabled>
+      ${current === QUESTIONS.length-1 ? 'See Results →' : 'Next Question →'}
+    </button>
+  `;
+}
+
+function select(idx) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[current];
+  const isCorrect = idx === q.correct;
+  if (isCorrect) score++;
+  userAnswers[current] = idx;
+
+  q.options.forEach((_,i) => {
+    const btn = document.getElementById('opt'+i);
+    btn.onclick = null;
+    if (i === idx && isCorrect) btn.className = 'option correct';
+    else if (i === idx && !isCorrect) btn.className = 'option wrong';
+    else if (i === q.correct) btn.className = 'option show-correct';
+  });
+
+  document.getElementById('feedback').innerHTML = `
+    <div class="feedback ${isCorrect?'correct':'wrong'}">
+      ${isCorrect ? '✅ Correct! ' : '❌ Not quite. '}${q.feedback}
+    </div>`;
+
+  const nb = document.getElementById('nextBtn');
+  nb.className = 'btn btn-primary';
+  nb.disabled = false;
+}
+
+function next() {
+  if (!answered) return;
+  current++;
+  answered = false;
+  render();
+}
+
+function renderResults(app) {
+  const pct = Math.round((score / QUESTIONS.length) * 100);
+  const passed = score >= 6;
+  app.innerHTML = `
+    <div class="score-card">
+      <div class="score-num">${score}/${QUESTIONS.length}</div>
+      <div class="score-label">${pct}% correct</div>
+      <div class="result-msg">${passed
+        ? "✅ You're ready for the festival. Great work!"
+        : "📚 Review the guide and try again — you'll need at least 6/7 to be cleared."
+      }</div>
+    </div>
+    ${!passed ? `<a href="https://fdm2026.netlify.app/guide"><button class="btn btn-primary" style="margin-top:0;">Review the Guide →</button></a>` : ''}
+    <a href="https://fdm2026.netlify.app/field"><button class="btn btn-primary" style="margin-top:0;">Open Worker App →</button></a>
+    <button class="retry-btn" onclick="restart()">↩ Retake Quiz</button>
+    <div style="text-align:center;font-size:11px;color:#374151;margin-top:8px;">
+      Fête de Marquette 2026 · McPike Park · Madison, WI · July 9–12, 2026
+    </div>
+  `;
+}
+
+function restart() {
+  current = 0; score = 0; answered = false;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

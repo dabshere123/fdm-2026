@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+  <title>FDM 2026 — Worker App Guide</title>
+  <meta name="theme-color" content="#0d0d0d"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{width:100%;background:#0d0d1a;font-family:'DM Sans',sans-serif;color:#f1f5f9;padding-bottom:48px;}
+    .header{background:linear-gradient(135deg,#0a0f1e,#111827);border-bottom:1px solid rgba(245,158,11,0.2);padding:24px 20px;}
+    .badge{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;}
+    h1{font-size:22px;font-weight:900;color:#f59e0b;margin-bottom:4px;}
+    .subtitle{font-size:13px;color:#64748b;}
+    .content{max-width:520px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;gap:20px;}
+    .section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;}
+    .section-header{padding:12px 16px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;}
+    .section-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+    .step{display:flex;gap:12px;align-items:flex-start;}
+    .step-num{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#f59e0b;flex-shrink:0;margin-top:1px;}
+    .step-text{font-size:14px;color:#cbd5e1;line-height:1.6;}
+    .step-text strong{color:#f1f5f9;}
+    .tip{background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:10px 14px;font-size:13px;color:#a5b4fc;line-height:1.6;}
+    .link-btn{display:block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#0a0f1e;text-decoration:none;font-weight:900;font-size:15px;padding:14px 20px;border-radius:12px;text-align:center;margin-top:4px;}
+    .request-type{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+    .request-type:last-child{border-bottom:none;}
+    .emoji{font-size:20px;width:28px;text-align:center;}
+    .req-info{flex:1;}
+    .req-name{font-size:13px;font-weight:700;color:#f1f5f9;}
+    .req-desc{font-size:11px;color:#64748b;margin-top:2px;}
+    .alert-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;font-size:13px;color:#fca5a5;line-height:1.6;}
+  
+@media(min-width:768px){
+  body{font-size:17px;}
+  input,select,textarea{font-size:17px !important;padding:16px 18px;}
+  button{font-size:16px;}
+}
+@media(min-width:1024px){
+  body{font-size:18px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="badge">Fête de Marquette 2026 · July 9–12 · McPike Park</div>
+  <h1>Worker App Guide</h1>
+  <div class="subtitle">Everything you need to know before your shift</div>
+</div>
+
+<div class="content">
+
+  <!-- Getting Started -->
+  <div class="section">
+    <div class="section-header" style="background:rgba(245,158,11,0.15);color:#f59e0b;">🚀 Getting Started</div>
+    <div class="section-body">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Open the Worker App</strong> on your phone's browser:<br/>
+          <span style="font-family:monospace;font-size:13px;color:#818cf8;">fdm2026.netlify.app/field</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Sign in with your last name.</strong> Your name must match exactly what you registered with.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Add to your home screen</strong> for quick access.<br/>
+          <span style="font-size:12px;color:#64748b;">iPhone: Share → Add to Home Screen &nbsp;|&nbsp; Android: Menu → Add to Home Screen</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Keep the app open</strong> throughout your entire shift.</div>
+      </div>
+      <a href="https://fdm2026.netlify.app/field" class="link-btn">Open Worker App →</a>
+    </div>
+  </div>
+
+  <!-- What You Can Do -->
+  <div class="section">
+    <div class="section-header" style="background:rgba(99,102,241,0.15);color:#a5b4fc;">📲 Submitting a Request</div>
+    <div class="section-body">
+      <div class="tip">When something needs attention, open the app and tap the relevant request type. Operations will be notified immediately by text, voice call, and GroupMe.</div>
+      <div class="request-type">
+        <div class="emoji">🚨</div>
+        <div class="req-info"><div class="req-name">Medical Emergency</div><div class="req-desc">Any medical situation — injury, illness, unresponsive patron</div></div>
+      </div>
+      <div class="request-type">
+        <div class="emoji">🛡</div>
+        <div class="req-info"><div class="req-name">Security</div><div class="req-desc">Altercation, threat, patron removal needed</div></div>
+      </div>
+      <div class="request-type">
+        <div class="emoji">🔥</div>
+        <div class="req-info"><div class="req-name">Fire / Life Safety</div><div class="req-desc">Fire, hazard, or life safety concern</div></div>
+      </div>
+      <div class="request-type">
+        <div class="emoji">📦</div>
+        <div class="req-info"><div class="req-name">Supplies / Restock</div><div class="req-desc">Ice, cups, napkins, supplies running low</div></div>
+      </div>
+      <div class="request-type">
+        <div class="emoji">🔧</div>
+        <div class="req-info"><div class="req-name">Maintenance</div><div class="req-desc">Equipment failure, generator, structural issue</div></div>
+      </div>
+      <div class="tip">Once your request is acknowledged, you'll receive a text confirmation. You'll receive another text when the issue is resolved.</div>
+    </div>
+  </div>
+
+  <!-- Lost Child -->
+  <div class="section">
+    <div class="section-header" style="background:rgba(249,115,22,0.15);color:#fdba74;">🧒 Lost Child Protocol</div>
+    <div class="section-body">
+      <div class="alert-box">If you encounter a lost child, act immediately. Do not leave the child unattended.</div>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Tap "Report Lost Child"</strong> in the Worker App.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Fill in the details</strong> — child's description, last known location, and assembly point.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Read the radio script</strong> that appears on your screen word for word over your venue's PA system.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>All staff are alerted immediately</strong> by text and voice call. Keep the child calm and stay with them until operations arrives.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Important Notes -->
+  <div class="section">
+    <div class="section-header" style="background:rgba(16,185,129,0.12);color:#6ee7b7;">✅ Important Reminders</div>
+    <div class="section-body">
+      <div class="step">
+        <div class="step-num" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#6ee7b7;">!</div>
+        <div class="step-text">You must be <strong>registered in the system</strong> before you can log in. If you have trouble signing in, see Admin 1 or Admin 2 on the grounds.</div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#6ee7b7;">!</div>
+        <div class="step-text">You will receive <strong>weather and emergency broadcasts</strong> by text throughout the festival. Reply YES when prompted to confirm receipt.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:12px;color:#374151;line-height:1.8;">
+    Fête de Marquette 2026 · McPike Park · Madison, WI<br/>
+    July 9–12, 2026 · fdm2026.netlify.app
+  </div>
+
+</div>
+</body>
+</html>

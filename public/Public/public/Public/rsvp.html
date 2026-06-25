@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026 — Staff Confirmation</title>
+<meta name="theme-color" content="#0a0a14"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;}
+  .card{width:100%;max-width:480px;}
+  .header{text-align:center;margin-bottom:28px;}
+  .logo{font-size:32px;margin-bottom:8px;}
+  .title{font-size:22px;font-weight:900;color:#f1f5f9;margin-bottom:4px;}
+  .sub{font-size:14px;color:#64748b;line-height:1.5;}
+  .name-box{background:rgba(14,165,233,0.08);border:2px solid rgba(14,165,233,0.3);border-radius:14px;padding:18px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+  .avatar{width:48px;height:48px;border-radius:12px;background:rgba(14,165,233,0.2);border:1px solid rgba(14,165,233,0.4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#38bdf8;flex-shrink:0;}
+  .name-text{font-size:18px;font-weight:800;color:#f1f5f9;}
+  .name-sub{font-size:12px;color:#64748b;margin-top:2px;}
+  .section-label{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+  .role-group{margin-bottom:20px;}
+  .group-title{font-size:12px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;padding-left:2px;}
+  .roles{display:flex;flex-direction:column;gap:6px;}
+  .role-btn{padding:13px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;transition:all 0.15s;}
+  .role-btn:hover{border-color:rgba(14,165,233,0.4);background:rgba(14,165,233,0.06);color:#f1f5f9;}
+  .role-btn.selected{border:2px solid rgba(14,165,233,0.6);background:rgba(14,165,233,0.12);color:#38bdf8;font-weight:700;}
+  .submit-btn{width:100%;padding:16px;border-radius:12px;border:none;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:8px;opacity:0.4;transition:opacity 0.2s;}
+  .submit-btn.active{opacity:1;}
+  .success{text-align:center;padding:40px 20px;}
+  .success .icon{font-size:56px;margin-bottom:16px;}
+  .success .msg{font-size:20px;font-weight:900;color:#f1f5f9;margin-bottom:8px;}
+  .success .detail{font-size:14px;color:#64748b;line-height:1.5;}
+  .not-you{font-size:12px;color:#475569;text-align:center;margin-top:16px;}
+  .not-you a{color:#38bdf8;cursor:pointer;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="card" id="app">
+
+  <div id="form-view">
+    <div class="header">
+      <div class="logo">🎶</div>
+      <div class="title">Fête de Marquette 2026</div>
+      <div class="sub">July 9–12 · McPike Park · Madison, WI<br/>Please confirm your festival role below</div>
+    </div>
+
+    <div class="name-box" id="name-box">
+      <div class="avatar" id="avatar">?</div>
+      <div>
+        <div class="name-text" id="display-name">Loading...</div>
+        <div class="name-sub">FDM 2026 Staff</div>
+      </div>
+    </div>
+
+    <div class="section-label">Select Your Role</div>
+
+    <div class="role-group">
+      <div class="group-title">🍺 Bars</div>
+      <div class="roles" id="bars">
+        <button class="role-btn" data-role="Bar Manager – Moon Bar">Bar Manager – Moon Bar</button>
+        <button class="role-btn" data-role="Bar Manager – Sun Bar Left">Bar Manager – Sun Bar Left</button>
+        <button class="role-btn" data-role="Bar Manager – Sun Bar Right">Bar Manager – Sun Bar Right</button>
+        <button class="role-btn" data-role="Bar Manager – Lafayette Bar">Bar Manager – Lafayette Bar</button>
+        <button class="role-btn" data-role="Bar Manager – Lagniappe Bar">Bar Manager – Lagniappe Bar</button>
+        <button class="role-btn" data-role="Bar Manager – Family Fete Bar">Bar Manager – Family Fete Bar</button>
+        <button class="role-btn" data-role="Bar Manager – Cabaret Bar">Bar Manager – Cabaret Bar</button>
+        <button class="role-btn" data-role="Bar Manager – Everything Else Cafe">Bar Manager – Everything Else Cafe</button>
+      </div>
+    </div>
+
+    <div class="role-group">
+      <div class="group-title">🎤 Stages</div>
+      <div class="roles">
+        <button class="role-btn" data-role="Stage Manager – Moon Stage">Stage Manager – Moon Stage</button>
+        <button class="role-btn" data-role="Stage Manager – Sun Stage">Stage Manager – Sun Stage</button>
+        <button class="role-btn" data-role="Stage Manager – Lafayette Stage">Stage Manager – Lafayette Stage</button>
+        <button class="role-btn" data-role="Stage Manager – Lagniappe Stage">Stage Manager – Lagniappe Stage</button>
+      </div>
+    </div>
+
+    <div class="role-group">
+      <div class="group-title">🏷 Other</div>
+      <div class="roles">
+        <button class="role-btn" data-role="Greeter – Main Entrance Left">Greeter – Main Entrance Left</button>
+        <button class="role-btn" data-role="Greeter – Main Entrance Right">Greeter – Main Entrance Right</button>
+        <button class="role-btn" data-role="Greeter – Few Street Entrance">Greeter – Few Street Entrance</button>
+        <button class="role-btn" data-role="Merch Tent">Merch Tent</button>
+        <button class="role-btn" data-role="Overnight Security">Overnight Security</button>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" disabled onclick="submitRole()">Confirm My Role →</button>
+    <div class="not-you">Not you? <a onclick="clearName()">Tap here</a> to enter your name.</div>
+
+    <!-- Manual name input (hidden by default) -->
+    <div id="manual-name" style="display:none;margin-top:16px;">
+      <input id="name-input" type="text" placeholder="Your full name" style="width:100%;padding:13px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;margin-bottom:8px;"/>
+      <input id="phone-input" type="tel" placeholder="Your phone number (optional)" style="width:100%;padding:13px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;"/>
+    </div>
+  </div>
+
+  <div id="success-view" class="success" style="display:none">
+    <div class="icon">✅</div>
+    <div class="msg">You're confirmed!</div>
+    <div class="detail" id="success-detail"></div>
+    <div style="margin-top:24px;padding:16px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;">
+      <div style="font-size:13px;font-weight:700;color:#38bdf8;margin-bottom:6px;">Next steps:</div>
+      <div style="font-size:13px;color:#94a3b8;line-height:1.7;">
+        📱 <a href="https://fdm2026.netlify.app/field" style="color:#38bdf8;font-weight:700;">Open the Worker App</a><br/>
+        📖 <a href="https://fdm2026.netlify.app/guide" style="color:#38bdf8;font-weight:700;">Read the Staff Guide</a><br/>
+        ✅ <a href="https://fdm2026.netlify.app/quiz" style="color:#38bdf8;font-weight:700;">Take the Quiz</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+// Read name from URL
+const params = new URLSearchParams(window.location.search);
+let staffName = decodeURIComponent(params.get('name') || '').trim();
+let selectedRole = '';
+
+function init() {
+  if (staffName) {
+    const initials = staffName.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('avatar').textContent = initials;
+    document.getElementById('display-name').textContent = staffName;
+  } else {
+    document.getElementById('display-name').textContent = 'Your Name';
+    clearName();
+  }
+}
+
+function clearName() {
+  staffName = '';
+  document.getElementById('manual-name').style.display = 'block';
+  document.getElementById('display-name').textContent = 'Enter your name below';
+  document.getElementById('avatar').textContent = '✏️';
+  document.getElementById('name-input').addEventListener('input', function() {
+    staffName = this.value.trim();
+    const initials = staffName.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()||'?';
+    document.getElementById('avatar').textContent = initials || '✏️';
+    document.getElementById('display-name').textContent = staffName || 'Your name';
+    updateBtn();
+  });
+}
+
+// Role selection
+document.querySelectorAll('.role-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+    this.classList.add('selected');
+    selectedRole = this.dataset.role;
+    updateBtn();
+  });
+});
+
+function updateBtn() {
+  const ready = selectedRole && staffName;
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = !ready;
+  btn.className = 'submit-btn' + (ready ? ' active' : '');
+}
+
+async function submitRole() {
+  if (!selectedRole || !staffName) return;
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+
+  const phone = document.getElementById('phone-input') ? document.getElementById('phone-input').value.trim() : '';
+
+  try {
+    await fetch('/.netlify/functions/send-rsvp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: staffName, role: selectedRole, phone })
+    });
+    document.getElementById('form-view').style.display = 'none';
+    document.getElementById('success-view').style.display = 'block';
+    document.getElementById('success-detail').textContent =
+      `${staffName} — ${selectedRole}\n\nDevin has been notified. See you July 9–12!`;
+  } catch(e) {
+    btn.textContent = 'Confirm My Role →';
+    btn.disabled = false;
+    alert('Something went wrong. Please try again.');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

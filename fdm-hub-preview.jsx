@@ -2434,6 +2434,39 @@ Reply YES to acknowledge.`
         <button style={{padding:"10px 20px",borderRadius:10,border:`1px solid ${liveMode?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:liveMode?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.06)",color:liveMode?"#4ade80":"#94a3b8",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>setLiveMode(p=>!p)}>{liveMode?"Turn Off":"Go Live"}</button>
       </div>
 
+    {/* ===== ACTIVE CALLS SUMMARY ===== */}
+      <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",padding:"10px 12px"}}>
+        <div style={{fontSize:11,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
+          Active Calls
+          {activeCalls.length>0&&<span style={{background:"#ef4444",color:"#fff",fontSize:9,borderRadius:20,padding:"1px 7px",fontWeight:900}}>{activeCalls.length}</span>}
+        </div>
+        {activeCalls.length===0&&<div style={{fontSize:12,color:"#374151",padding:"4px 0"}}>No active calls</div>}
+        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+          {activeCalls.map(call=>{
+            const colors={
+              medical:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
+              walk_in:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
+              fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(220,38,38,0.5)",text:"#fca5a5",emoji:"🔥"},
+              maintenance:{bg:"rgba(22,163,74,0.12)",border:"rgba(22,163,74,0.4)",text:"#86efac",emoji:"🔧"},
+              security:{bg:"rgba(37,99,235,0.15)",border:"rgba(37,99,235,0.5)",text:"#93c5fd",emoji:"🛡"},
+              supplies:{bg:"rgba(120,53,15,0.2)",border:"rgba(180,83,9,0.5)",text:"#d97706",emoji:"📦"},
+              lost_child:{bg:"rgba(234,179,8,0.15)",border:"rgba(234,179,8,0.5)",text:"#fcd34d",emoji:"🧒"},
+            };
+            const c=colors[call.type]||{bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.15)",text:"#94a3b8",emoji:"📋"};
+            return(
+              <button key={call.id} style={{width:"100%",padding:"7px 10px",borderRadius:10,border:`1px solid ${c.border}`,background:c.bg,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:8}} onClick={()=>setAdminCallDetail(call)}>
+                <span style={{fontSize:14}}>{c.emoji}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:800,color:c.text,textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.location}</div>
+                  <div style={{fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.problem}</div>
+                </div>
+                <div style={{fontSize:9,fontWeight:700,color:c.text,background:`${c.border}33`,borderRadius:6,padding:"2px 5px",whiteSpace:"nowrap"}}>{call.status==="acknowledged"?"ACK":"NEW"}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
     {/* ===== CHAT BOX ===== */}
       <button style={{width:"100%",background:"rgba(14,165,233,0.06)",borderRadius:14,border:"1px solid rgba(14,165,233,0.2)",padding:"14px 16px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>{setView("chat");setChatUnread(0);fetchHubChat();}}>
         <div style={{background:"rgba(14,165,233,0.15)",borderRadius:10,padding:"10px",fontSize:20}}>💬</div>
@@ -2484,35 +2517,6 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             </button>
           </div>
 
-          {/* ACTIVE CALLS */}
-          <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",padding:"10px",display:"flex",flexDirection:"column",gap:6}}>
-            <div style={{fontSize:12,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",paddingBottom:6,borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-              Active Calls {activeCalls.length>0&&<span style={{background:"#ef4444",color:"#fff",fontSize:9,borderRadius:20,padding:"1px 6px",marginLeft:4}}>{activeCalls.length}</span>}
-            </div>
-            {activeCalls.length===0&&<div style={{fontSize:12,color:"#374151",textAlign:"center",padding:"12px 0"}}>No active calls</div>}
-            {activeCalls.map(call=>{
-              const colors={
-                medical:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
-                walk_in:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
-                fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(220,38,38,0.5)",text:"#fca5a5",emoji:"🔥"},
-                maintenance:{bg:"rgba(22,163,74,0.12)",border:"rgba(22,163,74,0.4)",text:"#86efac",emoji:"🔧"},
-                security:{bg:"rgba(37,99,235,0.15)",border:"rgba(37,99,235,0.5)",text:"#93c5fd",emoji:"🛡"},
-                supplies:{bg:"rgba(120,53,15,0.2)",border:"rgba(180,83,9,0.5)",text:"#d97706",emoji:"📦"},
-                lost_child:{bg:"rgba(234,179,8,0.15)",border:"rgba(234,179,8,0.5)",text:"#fcd34d",emoji:"🧒"},
-              };
-              const c=colors[call.type]||{bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.15)",text:"#94a3b8",emoji:"📋"};
-              return(
-                <button key={call.id} style={{width:"100%",padding:"8px 10px",borderRadius:10,border:`1px solid ${c.border}`,background:c.bg,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:8}} onClick={()=>{setAdminCallDetail(call);}}>
-                  <span style={{fontSize:16}}>{c.emoji}</span>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:800,color:c.text,textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.location}</div>
-                    <div style={{fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.problem}</div>
-                  </div>
-                  <div style={{fontSize:9,fontWeight:700,color:c.text,background:`${c.border}33`,borderRadius:6,padding:"2px 5px",whiteSpace:"nowrap"}}>{call.status==="acknowledged"?"ACK":"NEW"}</div>
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         {/* BROADCAST COLUMN */}
@@ -2544,25 +2548,25 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
 
         {/* EQUIPMENT TRACKER */}
-        <div style={{background:"rgba(6,182,212,0.06)",borderRadius:14,border:"1px solid rgba(6,182,212,0.2)",overflow:"hidden"}}>
-          <div style={{background:"rgba(6,182,212,0.12)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#67e8f9",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment","_blank")}>
+        <div style={{background:"rgba(234,179,8,0.06)",borderRadius:14,border:"1px solid rgba(234,179,8,0.3)",overflow:"hidden"}}>
+          <div style={{background:"rgba(234,179,8,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment","_blank")}>
             <span>⚙️ Equipment</span>
-            <span style={{fontSize:11,color:"#67e8f9",fontWeight:400}}>Open →</span>
+            <span style={{fontSize:11,color:"#fcd34d",fontWeight:400}}>Open →</span>
           </div>
           <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Track radios, readers and all festival gear.</div>
         </div>
 
         {/* LOST & FOUND */}
-        <div style={{background:"rgba(139,92,246,0.06)",borderRadius:14,border:"1px solid rgba(139,92,246,0.2)",overflow:"hidden"}}>
-          <div style={{background:"rgba(139,92,246,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{background:"rgba(249,115,22,0.06)",borderRadius:14,border:"1px solid rgba(249,115,22,0.25)",overflow:"hidden"}}>
+          <div style={{background:"rgba(249,115,22,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fdba74",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span>📦 Lost & Found</span>
-            {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(139,92,246,0.4)",color:"#e9d5ff",fontSize:10,fontWeight:800,borderRadius:20,padding:"1px 7px"}}>{lfItems.filter(i=>i.status!=="Claimed").length}</div>}
+            {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(249,115,22,0.4)",color:"#fed7aa",fontSize:10,fontWeight:800,borderRadius:20,padding:"1px 7px"}}>{lfItems.filter(i=>i.status!=="Claimed").length}</div>}
           </div>
           <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:5}}>
-            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",textDecoration:"none",cursor:"pointer"}}>
+            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",textDecoration:"none",cursor:"pointer"}}>
               <span style={{fontSize:14}}>🔍</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup →</div>
             </a>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
               <span style={{fontSize:14}}>📋</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Manage Items →</div>
             </button>
           </div>
@@ -2573,10 +2577,10 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
 
         {/* VENDOR CHECK-IN */}
-        <div style={{background:"rgba(20,184,166,0.06)",borderRadius:14,border:"1px solid rgba(20,184,166,0.2)",overflow:"hidden"}}>
-          <div style={{background:"rgba(20,184,166,0.12)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#5eead4",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("vendors")}>
+        <div style={{background:"rgba(139,92,246,0.06)",borderRadius:14,border:"1px solid rgba(139,92,246,0.25)",overflow:"hidden"}}>
+          <div style={{background:"rgba(139,92,246,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("vendors")}>
             <span>🏪 Vendors</span>
-            <span style={{fontSize:11,color:"#5eead4",fontWeight:400}}>Manage →</span>
+            <span style={{fontSize:11,color:"#c4b5fd",fontWeight:400}}>Manage →</span>
           </div>
           <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Check in vendors, view roster.</div>
         </div>

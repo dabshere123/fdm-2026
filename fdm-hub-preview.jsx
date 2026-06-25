@@ -161,6 +161,138 @@ const sendGroupMe = async (message, channels) => {
 };
 
 
+
+// ============================================================
+// MED HOME COMPONENT
+// ============================================================
+function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,resourceView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild,setNewCallView,setNewCallType,setNewCallLocation,setNewCallProblem,staffList,setClearIncView,lfItems}){
+  const [tab,setTab]=React.useState("calls"); // calls | unassigned | lf
+  const myStatus=medSt[role==="Med 1"?"med1":"med2"]||{status:"available"};
+
+  const CALL_COLORS={
+    medical:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",icon:"🏥",label:"Medical"},
+    walk_in:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",icon:"🏥",label:"Walk-In"},
+    fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(220,38,38,0.5)",text:"#fca5a5",icon:"🔥",label:"Fire/Safety"},
+    security:{bg:"rgba(37,99,235,0.15)",border:"rgba(37,99,235,0.5)",text:"#93c5fd",icon:"🛡",label:"Security"},
+    supplies:{bg:"rgba(120,53,15,0.2)",border:"rgba(180,83,9,0.5)",text:"#d97706",icon:"📦",label:"Supplies"},
+    maintenance:{bg:"rgba(22,163,74,0.12)",border:"rgba(22,163,74,0.4)",text:"#86efac",icon:"🔧",label:"Maintenance"},
+    lost_child:{bg:"rgba(234,179,8,0.15)",border:"rgba(234,179,8,0.5)",text:"#fcd34d",icon:"🧒",label:"Lost Child"},
+  };
+
+  function setMedStatus(status){
+    const key=role==="Med 1"?"med1":"med2";
+    setMedSt(p=>({...p,[key]:{status,since:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}}));
+  }
+
+  function ackCall(callId){
+    setCalls(p=>p.map(c=>c.id===callId?{...c,acknowledged:true,unit:role,status:"pending"}:c));
+    if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:callId,status:"Pending",unit:role})}).catch(()=>{});
+    setMedStatus("on_call");
+  }
+
+  function clearCall(callId){
+    const call=calls.find(c=>c.id===callId);
+    if(call) setClearIncView(call);
+    setCalls(p=>p.map(c=>c.id===callId?{...c,status:"cleared",clearedBy:role}:c));
+    setCompleted(p=>[...p,{...call,clearedBy:role,clearedAt:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}]);
+    setMedStatus("available");
+  }
+
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:0,flex:1,overflowY:"auto"}}>
+
+      {/* STATUS BAR */}
+      <div style={{padding:"8px 16px",display:"flex",gap:8}}>
+        {[["available","⚪ Available"],["on_call","🟣 On Call"],["cleared","🟢 Cleared"]].map(([s,l])=>(
+          <button key={s} style={{flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${myStatus.status===s?"rgba(245,158,11,0.6)":"rgba(255,255,255,0.1)"}`,background:myStatus.status===s?"rgba(245,158,11,0.12)":"rgba(255,255,255,0.03)",color:myStatus.status===s?"#fcd34d":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>setMedStatus(s)}>{l}</button>
+        ))}
+      </div>
+
+      {/* TABS */}
+      <div style={{display:"flex",gap:0,borderBottom:"1px solid rgba(255,255,255,0.08)",margin:"0 16px"}}>
+        {[["calls",`My Calls (${myActive.length})`],["unassigned",`Unassigned (${unassigned.length})`],["lf","L&F"]].map(([t,l])=>(
+          <button key={t} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`2px solid ${tab===t?"#a855f7":"transparent"}`,color:tab===t?"#d8b4fe":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setTab(t)}>{l}</button>
+        ))}
+      </div>
+
+      <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:8,flex:1,overflowY:"auto"}}>
+
+        {/* MY ACTIVE CALLS */}
+        {tab==="calls"&&(
+          <>
+            {myActive.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No calls assigned to {role} yet</div>}
+            {myActive.map(call=>{
+              const c=CALL_COLORS[call.type]||CALL_COLORS.medical;
+              return(
+                <div key={call.id} style={{borderRadius:14,border:`2px solid ${c.border}`,background:c.bg,padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div style={{fontSize:13,fontWeight:900,color:c.text,textTransform:"uppercase",letterSpacing:"0.06em"}}>{c.icon} {c.label}</div>
+                    <div style={{fontSize:11,fontWeight:700,color:call.status==="on_scene"?"#10b981":"#f59e0b",background:call.status==="on_scene"?"rgba(16,185,129,0.15)":"rgba(245,158,11,0.12)",borderRadius:20,padding:"2px 8px"}}>{call.status==="on_scene"?"On Scene":"Active"}</div>
+                  </div>
+                  <div style={{fontSize:18,fontWeight:900,color:"#f1f5f9"}}>📍 {call.location}</div>
+                  <div style={{fontSize:14,color:"#e2e8f0"}}>{call.problem}</div>
+                  {call.details&&<div style={{fontSize:12,color:"#94a3b8"}}>{call.details}</div>}
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {call.status!=="on_scene"&&(
+                      <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.12)",color:"#6ee7b7",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{
+                        setCalls(p=>p.map(c2=>c2.id===call.id?{...c2,status:"on_scene"}:c2));
+                        if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:call.id,status:"On Scene",unit:role})}).catch(()=>{});
+                      }}>✅ On Scene</button>
+                    )}
+                    <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:call.id,info:{location:call.location,nature:call.problem}})}>🚨 Activate 911</button>
+                    <button style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(100,116,139,0.4)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>clearCall(call.id)}>Clear Call →</button>
+                  </div>
+                </div>
+              );
+            })}
+            {/* Quick actions */}
+            <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:8,display:"flex",gap:8}}>
+              <button style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",color:"#fcd34d",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={openLostChild}>🧒 Lost Child</button>
+              <button style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",color:"#c4b5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setNewCallType("medical");setNewCallView(true);}}>🏥 New Call</button>
+            </div>
+          </>
+        )}
+
+        {/* UNASSIGNED CALLS */}
+        {tab==="unassigned"&&(
+          <>
+            {unassigned.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No unassigned calls</div>}
+            {unassigned.map(call=>{
+              const c=CALL_COLORS[call.type]||CALL_COLORS.medical;
+              return(
+                <div key={call.id} style={{borderRadius:12,border:`1px solid ${c.border}`,background:c.bg,padding:"12px",display:"flex",flexDirection:"column",gap:6}}>
+                  <div style={{fontSize:12,fontWeight:900,color:c.text,textTransform:"uppercase"}}>{c.icon} {c.label} — UNASSIGNED</div>
+                  <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>📍 {call.location}</div>
+                  <div style={{fontSize:13,color:"#e2e8f0"}}>{call.problem}</div>
+                  <button style={{padding:"10px",borderRadius:8,border:"none",background:`${c.border}`,color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>ackCall(call.id)}>Acknowledge — Take This Call</button>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* LOST & FOUND */}
+        {tab==="lf"&&(
+          <>
+            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",textDecoration:"none",marginBottom:4}}>
+              <span style={{fontSize:18}}>🔍</span><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup Page →</div>
+            </a>
+            {(lfItems||[]).filter(i=>i.status!=="Claimed").slice(0,10).map(item=>(
+              <div key={item.id} style={{borderRadius:10,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",padding:"10px 12px"}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#c4b5fd",marginBottom:2}}>{item.itemNumber||"—"}</div>
+                <div style={{fontSize:13,color:"#f1f5f9"}}>{item.description}</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>📍 {item.location} · {item.status}</div>
+              </div>
+            ))}
+            {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No active L&F items</div>}
+          </>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 function HubApp({onBack}){
   const [role,setRole]=useState(()=>{
     if(typeof window!=="undefined"){

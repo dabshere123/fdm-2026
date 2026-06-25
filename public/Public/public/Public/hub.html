@@ -6496,7 +6496,35 @@ Reply YES to acknowledge.`
       gap: 10,
       padding: "0 16px 24px"
     }
-  }, nineOneOne?.active && emsAcked && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      background: liveMode ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
+      border: `1px solid ${liveMode ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)"}`,
+      borderRadius: 10,
+      padding: "10px 14px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: liveMode ? "#10b981" : "#f59e0b"
+    }
+  }, liveMode ? "⚡ LIVE MODE — Real calls from staff" : "🎭 DEMO MODE — Showing sample data"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "none",
+      border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: 6,
+      padding: "4px 10px",
+      color: "#64748b",
+      fontSize: 11,
+      cursor: "pointer",
+      fontWeight: 600
+    },
+    onClick: () => setLiveMode(p => !p)
+  }, "Switch")), nineOneOne?.active && emsAcked && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       border: "2px solid rgba(239,68,68,0.8)",
@@ -6735,35 +6763,7 @@ Reply YES to acknowledge.`
       color: "#fbbf24",
       fontWeight: 700
     }
-  }, "⚠ Tap to view full details and acknowledge")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      background: liveMode ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
-      border: `1px solid ${liveMode ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)"}`,
-      borderRadius: 10,
-      padding: "10px 14px"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700,
-      color: liveMode ? "#10b981" : "#f59e0b"
-    }
-  }, liveMode ? "⚡ LIVE MODE — Real calls from staff" : "🎭 DEMO MODE — Showing sample data"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: "none",
-      border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: 6,
-      padding: "4px 10px",
-      color: "#64748b",
-      fontSize: 11,
-      cursor: "pointer",
-      fontWeight: 600
-    },
-    onClick: () => setLiveMode(p => !p)
-  }, "Switch")), weatherAlertBanner && isAdmin && /*#__PURE__*/React.createElement("div", {
+  }, "⚠ Tap to view full details and acknowledge")), weatherAlertBanner && isAdmin && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       border: "3px solid #ef4444",
@@ -7188,40 +7188,6 @@ Reply YES to acknowledge.`
     onClick: () => setVendorToasts(p => p.filter(x => x.id !== t.id))
   }, "✕"))), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      background: "rgba(255,255,255,0.03)",
-      borderRadius: 12,
-      border: "1px solid rgba(255,255,255,0.08)",
-      padding: "12px 16px"
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 800,
-      color: "#f1f5f9"
-    }
-  }, liveMode ? "🟢 LIVE MODE" : "⚪ DEMO MODE"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#64748b",
-      marginTop: 2
-    }
-  }, liveMode ? "Connected to Airtable · Pulling live data" : "Using sample data only")), /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "10px 20px",
-      borderRadius: 10,
-      border: `1px solid ${liveMode ? "rgba(34,197,94,0.5)" : "rgba(255,255,255,0.15)"}`,
-      background: liveMode ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)",
-      color: liveMode ? "#4ade80" : "#94a3b8",
-      fontSize: 13,
-      fontWeight: 800,
-      cursor: "pointer"
-    },
-    onClick: () => setLiveMode(p => !p)
-  }, liveMode ? "Turn Off" : "Go Live")), /*#__PURE__*/React.createElement("div", {
-    style: {
       background: "rgba(255,255,255,0.02)",
       borderRadius: 14,
       border: "1px solid rgba(255,255,255,0.08)",
@@ -7491,18 +7457,113 @@ Reply YES to acknowledge.`
       borderRadius: 20,
       padding: "1px 6px"
     }
-  }, lostChildCalls.length)), /*#__PURE__*/React.createElement("button", {
+  }, lostChildCalls.length)), /*#__PURE__*/React.createElement("div", {
     style: {
-      width: "100%",
-      display: "flex",
-      alignItems: "center",
-      gap: 16,
-      padding: "22px 18px",
-      borderRadius: 14,
-      border: "3px solid rgba(239,68,68,0.8)",
-      background: "linear-gradient(135deg,rgba(239,68,68,0.35),rgba(180,0,0,0.25))",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "14px 8px",
+      borderRadius: 12,
+      border: "2px solid rgba(147,51,234,0.7)",
+      background: "linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",
       cursor: "pointer",
-      boxShadow: "0 0 24px rgba(239,68,68,0.35)"
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 4,
+      boxShadow: "0 0 12px rgba(147,51,234,0.2)"
+    },
+    onClick: () => {
+      setNewCallType("medical");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 22
+    }
+  }, "🏥"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: "#d8b4fe",
+      letterSpacing: "0.04em"
+    }
+  }, "MEDICAL")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "14px 8px",
+      borderRadius: 12,
+      border: "2px solid rgba(220,38,38,0.7)",
+      background: "linear-gradient(135deg,rgba(220,38,38,0.25),rgba(180,0,0,0.15))",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 4,
+      boxShadow: "0 0 12px rgba(220,38,38,0.2)"
+    },
+    onClick: () => {
+      setNewCallType("fire");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 22
+    }
+  }, "🔥"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: "#fca5a5",
+      letterSpacing: "0.04em"
+    }
+  }, "FIRE / LIFE SAFETY")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "14px 8px",
+      borderRadius: 12,
+      border: "2px solid rgba(37,99,235,0.7)",
+      background: "linear-gradient(135deg,rgba(37,99,235,0.25),rgba(29,78,216,0.15))",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 4,
+      boxShadow: "0 0 12px rgba(37,99,235,0.2)"
+    },
+    onClick: () => {
+      setNewCallType("security");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 22
+    }
+  }, "🛡"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: "#93c5fd",
+      letterSpacing: "0.04em"
+    }
+  }, "SECURITY")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "14px 8px",
+      borderRadius: 12,
+      border: "2px solid rgba(100,116,139,0.5)",
+      background: "rgba(255,255,255,0.04)",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 4
     },
     onClick: () => {
       setNewCallType("");
@@ -7512,27 +7573,16 @@ Reply YES to acknowledge.`
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 28
+      fontSize: 22
     }
-  }, "🚨"), /*#__PURE__*/React.createElement("div", {
+  }, "📋"), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1,
-      textAlign: "left"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 18,
+      fontSize: 11,
       fontWeight: 900,
-      color: "#ef4444",
+      color: "#94a3b8",
       letterSpacing: "0.04em"
     }
-  }, "NEW CALL"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "#94a3b8",
-      marginTop: 2
-    }
-  }, "Admin · submit to all units"))), /*#__PURE__*/React.createElement("button", {
+  }, "OTHER"))), /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "10px",
@@ -7727,36 +7777,12 @@ Clear a path for emergency vehicles.`;
       flexDirection: "column",
       gap: 5
     }
-  }, /*#__PURE__*/React.createElement("a", {
-    href: "https://fdm2026.netlify.app/lostfound",
-    target: "_blank",
+  }, /*#__PURE__*/React.createElement("button", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 8,
-      padding: "8px 10px",
-      borderRadius: 8,
-      border: "1px solid rgba(249,115,22,0.2)",
-      background: "rgba(249,115,22,0.06)",
-      textDecoration: "none",
-      cursor: "pointer"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14
-    }
-  }, "🔍"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#f1f5f9"
-    }
-  }, "Staff Lookup →")), /*#__PURE__*/React.createElement("button", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "8px 10px",
+      padding: "10px 12px",
       borderRadius: 8,
       border: "1px solid rgba(249,115,22,0.2)",
       background: "rgba(249,115,22,0.06)",
@@ -7766,15 +7792,48 @@ Clear a path for emergency vehicles.`;
     onClick: () => setView("lostfound")
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 14
+      fontSize: 16
     }
-  }, "📋"), /*#__PURE__*/React.createElement("div", {
+  }, "📋"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: 700,
       color: "#f1f5f9"
     }
-  }, "Manage Items →"))))), /*#__PURE__*/React.createElement("div", {
+  }, "Manage Items"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#64748b"
+    }
+  }, "Log, box, mark claimed"))), /*#__PURE__*/React.createElement("button", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "10px 12px",
+      borderRadius: 8,
+      border: "1px solid rgba(249,115,22,0.2)",
+      background: "rgba(249,115,22,0.06)",
+      cursor: "pointer",
+      textAlign: "left"
+    },
+    onClick: () => setView("lostfound")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 16
+    }
+  }, "📷"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#f1f5f9"
+    }
+  }, "Log Found Item"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#64748b"
+    }
+  }, "Photo · AI description")))))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -7814,7 +7873,83 @@ Clear a path for emergency vehicles.`;
       fontSize: 12,
       color: "#64748b"
     }
-  }, "Check in vendors, view roster.")), /*#__PURE__*/React.createElement("div", {
+  }, "Check in vendors, view plot roster.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(16,185,129,0.06)",
+      borderRadius: 14,
+      border: "1px solid rgba(16,185,129,0.25)",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(16,185,129,0.12)",
+      padding: "10px 14px",
+      fontSize: 12,
+      fontWeight: 900,
+      color: "#6ee7b7",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "👥 Staff"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "8px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "https://fdm2026.netlify.app/lostfound",
+    target: "_blank",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "9px 12px",
+      borderRadius: 8,
+      border: "1px solid rgba(16,185,129,0.2)",
+      background: "rgba(16,185,129,0.06)",
+      textDecoration: "none"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14
+    }
+  }, "🔍"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#f1f5f9"
+    }
+  }, "Staff Lookup")), /*#__PURE__*/React.createElement("a", {
+    href: "https://fdm2026.netlify.app/register",
+    target: "_blank",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "9px 12px",
+      borderRadius: 8,
+      border: "1px solid rgba(16,185,129,0.2)",
+      background: "rgba(16,185,129,0.06)",
+      textDecoration: "none"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14
+    }
+  }, "📝"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#f1f5f9"
+    }
+  }, "Register Staff"))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(99,102,241,0.06)",
       borderRadius: 14,
@@ -7836,7 +7971,7 @@ Clear a path for emergency vehicles.`;
       justifyContent: "space-between"
     },
     onClick: () => setView("endofnight")
-  }, /*#__PURE__*/React.createElement("span", null, "🌙 EOD Report"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "🌙 EOD"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#a5b4fc",
@@ -7848,7 +7983,7 @@ Clear a path for emergency vehicles.`;
       fontSize: 12,
       color: "#64748b"
     }
-  }, "All calls, incidents, L&F, broadcasts."))), /*#__PURE__*/React.createElement("div", {
+  }, "All calls, incidents, L&F, broadcasts.")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(255,255,255,0.02)",
       borderRadius: 14,
@@ -7861,8 +7996,7 @@ Clear a path for emergency vehicles.`;
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
-      justifyContent: "space-between",
-      borderBottom: "1px solid rgba(255,255,255,0.06)"
+      justifyContent: "space-between"
     },
     onClick: () => setView("log")
   }, /*#__PURE__*/React.createElement("div", {
@@ -7873,40 +8007,44 @@ Clear a path for emergency vehicles.`;
       textTransform: "uppercase",
       letterSpacing: "0.06em"
     }
-  }, "📋 Activity Log"), /*#__PURE__*/React.createElement("span", {
+  }, "📋 Log"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#64748b"
     }
-  }, activityLog.length, " entries →")), /*#__PURE__*/React.createElement("div", {
+  }, activityLog.length, " →")), /*#__PURE__*/React.createElement("div", {
     style: {
-      maxHeight: 120,
-      overflowY: "auto",
-      padding: "6px 10px",
+      padding: "4px 8px",
       display: "flex",
       flexDirection: "column",
-      gap: 4
+      gap: 3
     }
-  }, activityLog.slice(0, 5).map(e => /*#__PURE__*/React.createElement("div", {
+  }, activityLog.slice(0, 3).map(e => /*#__PURE__*/React.createElement("div", {
     key: e.id,
     style: {
-      fontSize: 11,
+      fontSize: 10,
       color: "#475569",
       display: "flex",
-      gap: 6
+      gap: 5
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#374151",
       flexShrink: 0
     }
-  }, e.ts), /*#__PURE__*/React.createElement("span", null, e.label))), activityLog.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, e.ts), /*#__PURE__*/React.createElement("span", {
+    style: {
+      textOverflow: "ellipsis",
+      overflow: "hidden",
+      whiteSpace: "nowrap"
+    }
+  }, e.label))), activityLog.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#374151",
-      padding: "6px 0"
+      padding: "4px 0"
     }
-  }, "No activity yet"))))));
+  }, "No activity yet")))))));
 }
 const S = {
   root: {

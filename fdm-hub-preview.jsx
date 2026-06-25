@@ -2237,6 +2237,12 @@ Reply YES to acknowledge.`
 
     <div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 16px 24px"}}>
 
+      {/* LIVE/DEMO MODE INDICATOR */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:liveMode?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)",border:`1px solid ${liveMode?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.3)"}`,borderRadius:10,padding:"10px 14px"}}>
+        <div style={{fontSize:13,fontWeight:700,color:liveMode?"#10b981":"#f59e0b"}}>{liveMode?"⚡ LIVE MODE — Real calls from staff":"🎭 DEMO MODE — Showing sample data"}</div>
+        <button style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px",color:"#64748b",fontSize:11,cursor:"pointer",fontWeight:600}} onClick={()=>setLiveMode(p=>!p)}>Switch</button>
+      </div>
+
       {/* 911 INBOUND BANNER — Admin home — shows full info when acknowledged, stays until incident closed */}
       {nineOneOne?.active&&emsAcked&&(
         <div style={{borderRadius:12,border:"2px solid rgba(239,68,68,0.8)",background:"linear-gradient(135deg,rgba(180,0,0,0.28),rgba(120,0,0,0.15))",padding:"16px",display:"flex",flexDirection:"column",gap:8,boxShadow:"0 0 20px rgba(239,68,68,0.3)"}}>
@@ -2295,12 +2301,6 @@ Reply YES to acknowledge.`
           <div style={{fontSize:13,color:"#fbbf24",fontWeight:700}}>⚠ Tap to view full details and acknowledge</div>
         </div>
       )}
-
-      {/* LIVE/DEMO MODE INDICATOR */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:liveMode?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)",border:`1px solid ${liveMode?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.3)"}`,borderRadius:10,padding:"10px 14px"}}>
-        <div style={{fontSize:13,fontWeight:700,color:liveMode?"#10b981":"#f59e0b"}}>{liveMode?"⚡ LIVE MODE — Real calls from staff":"🎭 DEMO MODE — Showing sample data"}</div>
-        <button style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px",color:"#64748b",fontSize:11,cursor:"pointer",fontWeight:600}} onClick={()=>setLiveMode(p=>!p)}>Switch</button>
-      </div>
 
       {/* NWS WEATHER ALERT BANNER */}
       {weatherAlertBanner&&isAdmin&&(
@@ -2425,15 +2425,6 @@ Reply YES to acknowledge.`
       </div>
     ))}
 
-    {/* ===== LIVE/DEMO TOGGLE ===== */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",padding:"12px 16px"}}>
-        <div>
-          <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>{liveMode?"🟢 LIVE MODE":"⚪ DEMO MODE"}</div>
-          <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{liveMode?"Connected to Airtable · Pulling live data":"Using sample data only"}</div>
-        </div>
-        <button style={{padding:"10px 20px",borderRadius:10,border:`1px solid ${liveMode?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:liveMode?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.06)",color:liveMode?"#4ade80":"#94a3b8",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>setLiveMode(p=>!p)}>{liveMode?"Turn Off":"Go Live"}</button>
-      </div>
-
     {/* ===== ACTIVE CALLS SUMMARY ===== */}
       <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",padding:"10px 12px"}}>
         <div style={{fontSize:11,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
@@ -2499,14 +2490,25 @@ Reply YES to acknowledge.`
               {lostChildCalls.length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{lostChildCalls.length}</div>}
             </button>
 
-            {/* NEW CALL BUTTON */}
-            <button style={{width:"100%",display:"flex",alignItems:"center",gap:16,padding:"22px 18px",borderRadius:14,border:"3px solid rgba(239,68,68,0.8)",background:"linear-gradient(135deg,rgba(239,68,68,0.35),rgba(180,0,0,0.25))",cursor:"pointer",boxShadow:"0 0 24px rgba(239,68,68,0.35)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-              <span style={{fontSize:28}}>🚨</span>
-              <div style={{flex:1,textAlign:"left"}}>
-                <div style={{fontSize:18,fontWeight:900,color:"#ef4444",letterSpacing:"0.04em"}}>NEW CALL</div>
-                <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Admin · submit to all units</div>
-              </div>
-            </button>
+            {/* QUICK CALL TILES */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(147,51,234,0.7)",background:"linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:"0 0 12px rgba(147,51,234,0.2)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+                <span style={{fontSize:22}}>🏥</span>
+                <div style={{fontSize:11,fontWeight:900,color:"#d8b4fe",letterSpacing:"0.04em"}}>MEDICAL</div>
+              </button>
+              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(220,38,38,0.7)",background:"linear-gradient(135deg,rgba(220,38,38,0.25),rgba(180,0,0,0.15))",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:"0 0 12px rgba(220,38,38,0.2)"}} onClick={()=>{setNewCallType("fire");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+                <span style={{fontSize:22}}>🔥</span>
+                <div style={{fontSize:11,fontWeight:900,color:"#fca5a5",letterSpacing:"0.04em"}}>FIRE / LIFE SAFETY</div>
+              </button>
+              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(37,99,235,0.7)",background:"linear-gradient(135deg,rgba(37,99,235,0.25),rgba(29,78,216,0.15))",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:"0 0 12px rgba(37,99,235,0.2)"}} onClick={()=>{setNewCallType("security");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+                <span style={{fontSize:22}}>🛡</span>
+                <div style={{fontSize:11,fontWeight:900,color:"#93c5fd",letterSpacing:"0.04em"}}>SECURITY</div>
+              </button>
+              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(100,116,139,0.5)",background:"rgba(255,255,255,0.04)",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+                <span style={{fontSize:22}}>📋</span>
+                <div style={{fontSize:11,fontWeight:900,color:"#94a3b8",letterSpacing:"0.04em"}}>OTHER</div>
+              </button>
+            </div>
 
             {/* 911 COMPACT BUTTON */}
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨
@@ -2567,17 +2569,17 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(249,115,22,0.4)",color:"#fed7aa",fontSize:10,fontWeight:800,borderRadius:20,padding:"1px 7px"}}>{lfItems.filter(i=>i.status!=="Claimed").length}</div>}
           </div>
           <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:5}}>
-            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",textDecoration:"none",cursor:"pointer"}}>
-              <span style={{fontSize:14}}>🔍</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup →</div>
-            </a>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
-              <span style={{fontSize:14}}>📋</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Manage Items →</div>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
+              <span style={{fontSize:16}}>📋</span><div><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Manage Items</div><div style={{fontSize:11,color:"#64748b"}}>Log, box, mark claimed</div></div>
+            </button>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
+              <span style={{fontSize:16}}>📷</span><div><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Log Found Item</div><div style={{fontSize:11,color:"#64748b"}}>Photo · AI description</div></div>
             </button>
           </div>
         </div>
       </div>
 
-    {/* ===== ROW 3: VENDOR CHECK-IN | EOD REPORT ===== */}
+    {/* ===== ROW 3: VENDOR | STAFF ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
 
         {/* VENDOR CHECK-IN */}
@@ -2586,33 +2588,52 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             <span>🏪 Vendors</span>
             <span style={{fontSize:11,color:"#c4b5fd",fontWeight:400}}>Manage →</span>
           </div>
-          <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Check in vendors, view roster.</div>
+          <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Check in vendors, view plot roster.</div>
         </div>
+
+        {/* STAFF MANAGEMENT */}
+        <div style={{background:"rgba(16,185,129,0.06)",borderRadius:14,border:"1px solid rgba(16,185,129,0.25)",overflow:"hidden"}}>
+          <div style={{background:"rgba(16,185,129,0.12)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.06em"}}>
+            👥 Staff
+          </div>
+          <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:5}}>
+            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
+              <span style={{fontSize:14}}>🔍</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup</div>
+            </a>
+            <a href="https://fdm2026.netlify.app/register" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
+              <span style={{fontSize:14}}>📝</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Register Staff</div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    {/* ===== ROW 4: EOD | ACTIVITY LOG ===== */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
 
         {/* EOD REPORT */}
         <div style={{background:"rgba(99,102,241,0.06)",borderRadius:14,border:"1px solid rgba(99,102,241,0.2)",overflow:"hidden"}}>
           <div style={{background:"rgba(99,102,241,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#a5b4fc",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("endofnight")}>
-            <span>🌙 EOD Report</span>
+            <span>🌙 EOD</span>
             <span style={{fontSize:11,color:"#a5b4fc",fontWeight:400}}>Generate →</span>
           </div>
           <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>All calls, incidents, L&F, broadcasts.</div>
         </div>
-      </div>
 
-    {/* ===== ROW 4: ACTIVITY LOG ===== */}
-      <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
-        <div style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.06)"}} onClick={()=>setView("log")}>
-          <div style={{fontSize:12,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>📋 Activity Log</div>
-          <span style={{fontSize:11,color:"#64748b"}}>{activityLog.length} entries →</span>
-        </div>
-        <div style={{maxHeight:120,overflowY:"auto",padding:"6px 10px",display:"flex",flexDirection:"column",gap:4}}>
-          {activityLog.slice(0,5).map(e=>(
-            <div key={e.id} style={{fontSize:11,color:"#475569",display:"flex",gap:6}}>
-              <span style={{color:"#374151",flexShrink:0}}>{e.ts}</span>
-              <span>{e.label}</span>
-            </div>
-          ))}
-          {activityLog.length===0&&<div style={{fontSize:11,color:"#374151",padding:"6px 0"}}>No activity yet</div>}
+        {/* ACTIVITY LOG */}
+        <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
+          <div style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("log")}>
+            <div style={{fontSize:12,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>📋 Log</div>
+            <span style={{fontSize:11,color:"#64748b"}}>{activityLog.length} →</span>
+          </div>
+          <div style={{padding:"4px 8px",display:"flex",flexDirection:"column",gap:3}}>
+            {activityLog.slice(0,3).map(e=>(
+              <div key={e.id} style={{fontSize:10,color:"#475569",display:"flex",gap:5}}>
+                <span style={{color:"#374151",flexShrink:0}}>{e.ts}</span>
+                <span style={{textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{e.label}</span>
+              </div>
+            ))}
+            {activityLog.length===0&&<div style={{fontSize:11,color:"#374151",padding:"4px 0"}}>No activity yet</div>}
+          </div>
         </div>
       </div>
     </div>

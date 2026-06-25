@@ -2054,6 +2054,137 @@ Reply YES to acknowledge.`
 
 
   // ─── LOST & FOUND VIEW ────────────────────────────────────────────────────────
+
+  if(view==="chat") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>setView("home")}/>
+        <span style={S.panelTitle}>💬 Festival Chat</span>
+        <button style={{marginLeft:"auto",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#64748b",fontSize:11,fontWeight:700,cursor:"pointer",padding:"5px 10px"}} onClick={()=>fetchHubChat(chatChannel)}>Refresh</button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
+
+        {/* Tab bar */}
+        <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+          {[["channels","💬 Channels"],["dms","📨 DMs"],["alerts","🚨 Alerts"]].map(([t,l])=>(
+            <button key={t} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`2px solid ${chatChannel===t?"#38bdf8":"transparent"}`,color:chatChannel===t?"#38bdf8":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setChatChannel(t);fetchHubChat(t);}}>{l}</button>
+          ))}
+        </div>
+
+        {/* CHANNELS TAB */}
+        {chatChannel!=="dms"&&chatChannel!=="alerts"&&(
+          <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
+            {/* Channel group picker */}
+            <div style={{overflowY:"auto",borderBottom:"1px solid rgba(255,255,255,0.06)",maxHeight:160}}>
+              {[
+                {label:"General",channels:[{id:"all",label:"All Channels",emoji:"📢"},{id:"AllStaff",label:"All Staff",emoji:"📢"}]},
+                {label:"Bars",channels:[{id:"Bars",label:"All Bars",emoji:"🍺"},{id:"MoonBar",label:"Moon Bar",emoji:"🌙"},{id:"SunBarL",label:"Sun Bar L",emoji:"☀️"},{id:"SunBarR",label:"Sun Bar R",emoji:"☀️"},{id:"LafBar",label:"Lafayette Bar",emoji:"🎸"},{id:"LagBar",label:"Lagniappe Bar",emoji:"🎺"},{id:"FamilyBar",label:"Family Bar",emoji:"👨‍👩‍👧"},{id:"CabBar",label:"Cabaret Bar",emoji:"🎭"},{id:"EverythingBar",label:"EEC",emoji:"☕"}]},
+                {label:"Stages",channels:[{id:"MoonST",label:"Moon Stage",emoji:"🌙"},{id:"SunST",label:"Sun Stage",emoji:"☀️"},{id:"LafST",label:"Laf Stage",emoji:"🎸"},{id:"LagST",label:"Lag Stage",emoji:"🎺"}]},
+                {label:"Admin & Med",channels:[{id:"Admin",label:"Admin",emoji:"⚡"},{id:"AdminMed",label:"Medical",emoji:"🏥"}]},
+              ].map(group=>(
+                <div key={group.label} style={{padding:"6px 14px 4px"}}>
+                  <div style={{fontSize:10,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>{group.label}</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:4}}>
+                    {group.channels.map(ch=>{
+                      const active=chatChannel===ch.id;
+                      return <button key={ch.id} style={{padding:"4px 10px",borderRadius:14,border:`1px solid ${active?"rgba(14,165,233,0.5)":"rgba(255,255,255,0.08)"}`,background:active?"rgba(14,165,233,0.1)":"rgba(255,255,255,0.02)",color:active?"#38bdf8":"#64748b",fontSize:11,fontWeight:active?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.emoji} {ch.label}</button>;
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Messages */}
+            <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
+              {chatMessages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:30}}>No messages in this channel</div>}
+              {chatMessages.map(msg=>{
+                const isAdmin=msg.fromName==="Admin";
+                const isAlert=msg.isAlert;
+                const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
+                if(isAlert) return(
+                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"8px 12px"}}>
+                    <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:2}}>🚨 ALERT · {time}</div>
+                    <div style={{fontSize:13,color:"#fecaca"}}>{msg.message}</div>
+                  </div>
+                );
+                return(
+                  <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isAdmin?"flex-end":"flex-start",gap:2}}>
+                    {!isAdmin&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromName} · {time}</div>}
+                    <div style={{maxWidth:"80%",background:isAdmin?"rgba(14,165,233,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isAdmin?"rgba(14,165,233,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:isAdmin?"12px 12px 3px 12px":"12px 12px 12px 3px",padding:"8px 12px"}}>
+                      <div style={{fontSize:14,color:"#f1f5f9"}}>{msg.message}</div>
+                    </div>
+                    {isAdmin&&<div style={{fontSize:10,color:"#374151",marginRight:4}}>You · {time}</div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Input */}
+            <div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.06)",display:"flex",gap:8,background:"rgba(10,10,20,0.8)"}}>
+              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder={`Message ${chatChannel==="all"?"All Staff":chatChannel}...`} value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendHubMessage();}}}/>
+              <button style={{padding:"11px 18px",borderRadius:10,border:"none",background:chatInput.trim()?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.06)",color:chatInput.trim()?"#fff":"#475569",fontSize:14,fontWeight:800,cursor:chatInput.trim()?"pointer":"not-allowed",flexShrink:0}} onClick={sendHubMessage} disabled={!chatInput.trim()||chatSending}>{chatSending?"...":"Send"}</button>
+            </div>
+          </div>
+        )}
+
+        {/* DMS TAB */}
+        {chatChannel==="dms"&&(
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto",padding:"12px 16px",gap:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Message any staff member directly</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {staffList.map(s=>(
+                <button key={s.id} style={{padding:"6px 13px",borderRadius:20,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:12,cursor:"pointer"}} onClick={()=>{
+                  const tid=`DM_${["Admin",s.name].sort().join("_")}`;
+                  setChatChannel(`DM:${s.name}:${tid}`);
+                  fetchHubChat(`DM:${s.name}:${tid}`);
+                }}>{s.name}</button>
+              ))}
+            </div>
+            {chatChannel.startsWith("DM:")&&(
+              <>
+                <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:6,maxHeight:300}}>
+                  {chatMessages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:20}}>Start the conversation</div>}
+                  {chatMessages.map(msg=>{
+                    const isAdmin=msg.fromName==="Admin";
+                    const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
+                    return(
+                      <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isAdmin?"flex-end":"flex-start",gap:2}}>
+                        {!isAdmin&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromName} · {time}</div>}
+                        <div style={{maxWidth:"80%",background:isAdmin?"rgba(14,165,233,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isAdmin?"rgba(14,165,233,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:"12px",padding:"8px 12px"}}>
+                          <div style={{fontSize:13,color:"#f1f5f9"}}>{msg.message}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder={`Message ${chatChannel.split(":")[1]}...`} value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendHubMessage();}}}/>
+                  <button style={{padding:"11px 18px",borderRadius:10,border:"none",background:chatInput.trim()?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.06)",color:chatInput.trim()?"#fff":"#475569",fontSize:14,fontWeight:800,cursor:chatInput.trim()?"pointer":"not-allowed"}} onClick={sendHubMessage} disabled={!chatInput.trim()||chatSending}>{chatSending?"...":"Send"}</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ALERTS TAB */}
+        {chatChannel==="alerts"&&(
+          <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
+            {chatMessages.filter(m=>m.isAlert).length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:30}}>No alerts yet</div>}
+            {chatMessages.filter(m=>m.isAlert).map(msg=>{
+              const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
+              return(
+                <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"12px 14px"}}>
+                  <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:4}}>🚨 {msg.channel} · {time}</div>
+                  <div style={{fontSize:14,color:"#fecaca"}}>{msg.message}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div></div>
+  );
+
   if(view==="lostfound") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>

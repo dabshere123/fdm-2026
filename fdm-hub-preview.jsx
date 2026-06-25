@@ -2458,6 +2458,27 @@ Reply YES to acknowledge.`
         </div>
       </div>
 
+    {/* ===== MED STATUS ===== */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        {[["med1","Med 1"],["med2","Med 2"]].map(([key,label])=>{
+          const st=medSt[key]||{status:"available"};
+          const isAvail=st.status==="available";
+          const isOnCall=st.status==="on_call";
+          const isClear=st.status==="cleared";
+          const color=isOnCall?"rgba(147,51,234,0.4)":isClear?"rgba(16,185,129,0.2)":"rgba(255,255,255,0.04)";
+          const border=isOnCall?"rgba(147,51,234,0.7)":isClear?"rgba(16,185,129,0.5)":"rgba(255,255,255,0.12)";
+          const textColor=isOnCall?"#d8b4fe":isClear?"#6ee7b7":"#64748b";
+          const statusLabel=isOnCall?"🟣 On Call":isClear?"🟢 Cleared":"⚪ Available";
+          return(
+            <div key={key} style={{background:color,borderRadius:12,border:`1px solid ${border}`,padding:"10px 12px"}}>
+              <div style={{fontSize:13,fontWeight:900,color:"#f1f5f9",marginBottom:3}}>🩺 {label}</div>
+              <div style={{fontSize:11,fontWeight:700,color:textColor}}>{statusLabel}</div>
+              {st.since&&<div style={{fontSize:10,color:"#374151",marginTop:2}}>{st.since}</div>}
+            </div>
+          );
+        })}
+      </div>
+
     {/* ===== CHAT BOX ===== */}
       <button style={{width:"100%",background:"rgba(14,165,233,0.06)",borderRadius:14,border:"1px solid rgba(14,165,233,0.2)",padding:"14px 16px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>{setView("chat");setChatUnread(0);fetchHubChat();}}>
         <div style={{background:"rgba(14,165,233,0.15)",borderRadius:10,padding:"10px",fontSize:20}}>💬</div>
@@ -2491,22 +2512,20 @@ Reply YES to acknowledge.`
             </button>
 
             {/* QUICK CALL TILES */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(147,51,234,0.7)",background:"linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:"0 0 12px rgba(147,51,234,0.2)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(147,51,234,0.6)",background:"linear-gradient(135deg,rgba(147,51,234,0.2),rgba(220,38,38,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(147,51,234,0.15)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
                 <span style={{fontSize:22}}>🏥</span>
-                <div style={{fontSize:11,fontWeight:900,color:"#d8b4fe",letterSpacing:"0.04em"}}>MEDICAL</div>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontSize:13,fontWeight:900,color:"#d8b4fe"}}>MEDICAL / LIFE SAFETY</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Medical emergency · Fire · Unresponsive</div>
+                </div>
               </button>
-              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(220,38,38,0.7)",background:"linear-gradient(135deg,rgba(220,38,38,0.25),rgba(180,0,0,0.15))",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:"0 0 12px rgba(220,38,38,0.2)"}} onClick={()=>{setNewCallType("fire");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-                <span style={{fontSize:22}}>🔥</span>
-                <div style={{fontSize:11,fontWeight:900,color:"#fca5a5",letterSpacing:"0.04em"}}>FIRE / LIFE SAFETY</div>
-              </button>
-              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(37,99,235,0.7)",background:"linear-gradient(135deg,rgba(37,99,235,0.25),rgba(29,78,216,0.15))",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:"0 0 12px rgba(37,99,235,0.2)"}} onClick={()=>{setNewCallType("security");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+              <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(37,99,235,0.6)",background:"linear-gradient(135deg,rgba(37,99,235,0.2),rgba(29,78,216,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(37,99,235,0.15)"}} onClick={()=>{setNewCallType("security");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
                 <span style={{fontSize:22}}>🛡</span>
-                <div style={{fontSize:11,fontWeight:900,color:"#93c5fd",letterSpacing:"0.04em"}}>SECURITY</div>
-              </button>
-              <button style={{padding:"14px 8px",borderRadius:12,border:"2px solid rgba(100,116,139,0.5)",background:"rgba(255,255,255,0.04)",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-                <span style={{fontSize:22}}>📋</span>
-                <div style={{fontSize:11,fontWeight:900,color:"#94a3b8",letterSpacing:"0.04em"}}>OTHER</div>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontSize:13,fontWeight:900,color:"#93c5fd"}}>SECURITY</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Disturbance · Ejection · Suspicious</div>
+                </div>
               </button>
             </div>
 

@@ -110,10 +110,14 @@ function LoginView({onLogin}){
           }
           {matches.map(s=>(
             <button key={s.id} style={{...card,padding:'14px 16px',border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:12}} onClick={()=>{
-              // Med units go to hub
+              // Admin + Med go to hub
               const r=(s.role||'').toLowerCase();
               if(r==='m1'||r==='m2'){
                 window.location.href=`/hub?role=${r==='m1'?'med1':'med2'}`;
+                return;
+              }
+              if(r==='a1'||r==='a2'){
+                window.location.href='/hub';
                 return;
               }
               onLogin(s);
@@ -345,25 +349,34 @@ function LFView({user,onBack}){
   const [day,setDay]=useState('');
   const [sending,setSending]=useState(false);
   const [sent,setSent]=useState(false);
+  const [itemNumber,setItemNumber]=useState('');
 
   async function submit(){
     if(!description||!location) return;
     setSending(true);
     try{
-      await fetch(`${API}/submit-lost-found`,{
+      const res=await fetch(`${API}/submit-lost-found`,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({description,foundAt:location,currentLocation:currentLoc,dayFound:day,foundBy:user.name,role:user.role})
       });
+      const data=await res.json();
+      setItemNumber(data.itemNumber||data.id||'');
       setSent(true);
-      setTimeout(onBack,2000);
     }catch(e){setSending(false);}
   }
 
   if(sent) return(
-    <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12}}>
+    <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:32}}>
       <div style={{fontSize:48}}>📦</div>
       <div style={{fontSize:20,fontWeight:900,color:'#f1f5f9'}}>Item Logged</div>
-      <div style={{fontSize:14,color:'#64748b'}}>Lost & Found updated</div>
+      {itemNumber&&(
+        <div style={{background:'rgba(249,115,22,0.12)',border:'2px solid rgba(249,115,22,0.5)',borderRadius:14,padding:'18px 28px',textAlign:'center'}}>
+          <div style={{fontSize:12,fontWeight:700,color:'#94a3b8',letterSpacing:'0.08em',marginBottom:6}}>ITEM NUMBER</div>
+          <div style={{fontSize:32,fontWeight:900,color:'#fb923c',letterSpacing:'0.05em'}}>{itemNumber}</div>
+          <div style={{fontSize:12,color:'#64748b',marginTop:6}}>Write this on the tag and attach to item</div>
+        </div>
+      )}
+      <div style={{fontSize:14,color:'#64748b'}}>Lost & Found updated · Hub notified</div>
     </div>
   );
 

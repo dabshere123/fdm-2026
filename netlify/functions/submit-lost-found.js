@@ -7,13 +7,35 @@ const TWILIO_TOKEN   = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_FROM    = process.env.TWILIO_PHONE_NUMBER;
 const ADMIN2_PHONE   = '+16082289692';
 
-function generateItemNumber() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day   = String(now.getDate()).padStart(2, '0');
-  const year  = String(now.getFullYear()).slice(2);
-  const seq   = Math.floor(Math.random() * 900) + 100;
-  return `${month}${day}${year}-${seq}`;
+function generateItemNumber(dayFound, foundAt) {
+  // Day prefix: THU FRI SAT SUN
+  const d = (dayFound || '').toUpperCase();
+  const dayCode = d.startsWith('TH') ? 'THU' :
+                  d.startsWith('FR') ? 'FRI' :
+                  d.startsWith('SA') ? 'SAT' :
+                  d.startsWith('SU') ? 'SUN' :
+                  d.slice(0,3) || 'FRI';
+
+  // Location code from foundAt
+  const loc = (foundAt || '').toLowerCase();
+  const locCode = loc.includes('moon')&&loc.includes('bar') ? 'MOON' :
+                  loc.includes('moon')&&loc.includes('stage') ? 'MOONST' :
+                  loc.includes('moon') ? 'MOON' :
+                  loc.includes('sun')&&loc.includes('left') ? 'SUNL' :
+                  loc.includes('sun')&&loc.includes('right') ? 'SUNR' :
+                  loc.includes('sun')&&loc.includes('stage') ? 'SUNST' :
+                  loc.includes('sun') ? 'SUN' :
+                  loc.includes('lafayette')||loc.includes('laf') ? 'LAF' :
+                  loc.includes('lagniappe')||loc.includes('lag') ? 'LAG' :
+                  loc.includes('family') ? 'FAM' :
+                  loc.includes('cabaret') ? 'CAB' :
+                  loc.includes('everything')||loc.includes('eec') ? 'EEC' :
+                  loc.includes('merch') ? 'MERCH' :
+                  loc.includes('medical')||loc.includes('first aid') ? 'MED' :
+                  'FEST';
+
+  const seq = String(Math.floor(Math.random() * 99) + 1).padStart(2, '0');
+  return `${dayCode}-${locCode}-${seq}`;
 }
 
 async function sendSMS(to, message) {
@@ -38,7 +60,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing description or location' }) };
   }
 
-  const itemNumber  = generateItemNumber();
+  const itemNumber  = generateItemNumber(body.dayFound, body.foundAt || body.location);
   const now         = new Date();
   const eventDay    = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const foundAtDate = now.toISOString().split('T')[0];

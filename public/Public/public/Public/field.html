@@ -1,32 +1,1246 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
 <title>FDM 2026 — Worker App</title>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0a0a14;color:#f1f5f9;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}</style>
-</head>
-<body>
-<div id="root"><div style="text-align:center;padding:40px"><div style="font-size:24px;font-weight:900;margin-bottom:8px">🎶 FDM 2026</div><div style="color:#64748b;font-size:14px">Loading Worker App...</div></div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"
-  onerror="document.getElementById('root').innerHTML='<div style=color:#ef4444;padding:20px>❌ React failed to load from CDN</div>'">
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
-  onerror="document.getElementById('root').innerHTML='<div style=color:#ef4444;padding:20px>❌ ReactDOM failed to load from CDN</div>'">
-</script>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0a14"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-try {
-  function App() {
-    return React.createElement('div', {style:{textAlign:'center',padding:40}},
-      React.createElement('div', {style:{fontSize:24,fontWeight:900,marginBottom:8}}, '🎶 FDM 2026'),
-      React.createElement('div', {style:{color:'#64748b',fontSize:14,marginBottom:24}}, 'Worker App — React loaded OK'),
-      React.createElement('div', {style:{color:'#22c55e',fontSize:16,fontWeight:700}}, '✅ If you see this, React is working')
-    );
-  }
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
-} catch(e) {
-  document.getElementById('root').innerHTML = '<div style="color:#ef4444;padding:20px;font-family:monospace"><b>JS Error:</b><br>' + e.message + '</div>';
+const {
+  useState,
+  useEffect,
+  useRef
+} = React;
+
+// ─── CONSTANTS ───────────────────────────────────────────────
+const API = '/.netlify/functions';
+const CHANNELS = [{
+  id: 'AllStaff',
+  label: 'All Staff',
+  emoji: '📢'
+}, {
+  id: 'AdminMed',
+  label: 'Admin & Med',
+  emoji: '🏥'
+}, {
+  id: 'Bars',
+  label: 'All Bars',
+  emoji: '🍺'
+}, {
+  id: 'MoonBar',
+  label: 'Moon Bar',
+  emoji: '🌙'
+}, {
+  id: 'SunBarL',
+  label: 'Sun Bar Left',
+  emoji: '☀️'
+}, {
+  id: 'SunBarR',
+  label: 'Sun Bar Right',
+  emoji: '☀️'
+}, {
+  id: 'LafBar',
+  label: 'Lafayette Bar',
+  emoji: '🎸'
+}, {
+  id: 'LagBar',
+  label: 'Lagniappe Bar',
+  emoji: '🎺'
+}, {
+  id: 'FamilyBar',
+  label: 'Family Bar',
+  emoji: '👨‍👩‍👧'
+}, {
+  id: 'CabBar',
+  label: 'Cabaret Bar',
+  emoji: '🎭'
+}, {
+  id: 'EverythingBar',
+  label: 'EEC',
+  emoji: '☕'
+}, {
+  id: 'MoonST',
+  label: 'Moon Stage',
+  emoji: '🌙'
+}, {
+  id: 'SunST',
+  label: 'Sun Stage',
+  emoji: '☀️'
+}, {
+  id: 'LafST',
+  label: 'Lafayette Stage',
+  emoji: '🎸'
+}, {
+  id: 'LagST',
+  label: 'Lagniappe Stage',
+  emoji: '🎺'
+}];
+const CALL_TYPES = [{
+  id: 'medical',
+  label: 'Medical',
+  emoji: '🏥',
+  color: 'rgba(147,51,234,0.8)'
+}, {
+  id: 'security',
+  label: 'Security',
+  emoji: '🛡',
+  color: 'rgba(37,99,235,0.8)'
+}, {
+  id: 'maintenance',
+  label: 'Maintenance',
+  emoji: '🔧',
+  color: 'rgba(22,163,74,0.8)'
+}, {
+  id: 'supplies',
+  label: 'Supplies',
+  emoji: '📦',
+  color: 'rgba(120,53,15,0.9)'
+}, {
+  id: 'fire',
+  label: 'Fire/Life Safety',
+  emoji: '🔥',
+  color: 'rgba(220,38,38,0.8)'
+}];
+const ROLE_CHANNEL = {
+  a1: 'Admin',
+  a2: 'Admin',
+  m1: 'AdminMed',
+  m2: 'AdminMed',
+  msb1: 'MoonBar',
+  msb2: 'MoonBar',
+  ssbl: 'SunBarL',
+  ssbr: 'SunBarR',
+  lafb: 'LafBar',
+  lagb: 'LagBar',
+  ffb: 'FamilyBar',
+  cb: 'CabBar',
+  etecm: 'EverythingBar',
+  msm: 'MoonST',
+  ssm: 'SunST',
+  lafm: 'LafST',
+  lagm: 'LagST',
+  mtm: 'EverythingBar'
+};
+function roleChannel(r) {
+  return ROLE_CHANNEL[(r || '').toLowerCase()] || 'AllStaff';
 }
-</script>
-</body>
-</html>
+
+// ─── STYLES ──────────────────────────────────────────────────
+const bg = '#0a0a14';
+const card = {
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 14
+};
+const S = {
+  root: {
+    minHeight: '100vh',
+    background: bg,
+    fontFamily: "'DM Sans',sans-serif",
+    color: '#f1f5f9'
+  },
+  hdr: {
+    background: 'rgba(10,10,20,0.95)',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    padding: '14px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    position: 'sticky',
+    top: 0,
+    zIndex: 10
+  },
+  body: {
+    padding: '12px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10
+  },
+  btn: (c = '#0ea5e9') => ({
+    padding: '14px',
+    borderRadius: 12,
+    border: 'none',
+    background: c,
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 800,
+    cursor: 'pointer',
+    width: '100%'
+  }),
+  outBtn: (c = 'rgba(255,255,255,0.08)') => ({
+    padding: '12px',
+    borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: c,
+    color: '#f1f5f9',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+    width: '100%'
+  }),
+  inp: {
+    width: '100%',
+    padding: '12px 14px',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 10,
+    color: '#f1f5f9',
+    fontSize: 16,
+    fontFamily: 'inherit',
+    outline: 'none'
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    marginBottom: 4
+  },
+  section: {
+    ...card,
+    overflow: 'hidden'
+  },
+  sectionHdr: {
+    padding: '10px 14px',
+    fontSize: 12,
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    borderBottom: '1px solid rgba(255,255,255,0.06)'
+  }
+};
+
+// ─── SMALL COMPONENTS ────────────────────────────────────────
+function Spinner() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: 40,
+      color: '#475569'
+    }
+  }, "Loading...");
+}
+function BackBtn({
+  onBack,
+  label = '← Back'
+}) {
+  return /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: 'none',
+      border: 'none',
+      color: '#38bdf8',
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: 'pointer',
+      padding: 0
+    },
+    onClick: onBack
+  }, label);
+}
+
+// ─── LOGIN VIEW ──────────────────────────────────────────────
+function LoginView({
+  onLogin
+}) {
+  const [query, setQuery] = useState('');
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    fetch(`${API}/get-staff-list`).then(r => r.json()).then(d => setStaff(d.staff || [])).catch(() => setError('Could not load staff list. Check connection.')).finally(() => setLoading(false));
+  }, []);
+  const matches = query.length >= 2 ? staff.filter(s => (s.name || '').toLowerCase().includes(query.toLowerCase())) : [];
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.hdr,
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, "🎶 FDM 2026")), /*#__PURE__*/React.createElement("div", {
+    style: S.body
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '24px 0 8px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 900,
+      color: '#f1f5f9',
+      marginBottom: 4
+    }
+  }, "Staff Sign In"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: '#64748b'
+    }
+  }, "Enter your last name to find your account")), loading && /*#__PURE__*/React.createElement(Spinner, null), error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(239,68,68,0.1)',
+      border: '1px solid rgba(239,68,68,0.3)',
+      borderRadius: 10,
+      padding: 14,
+      color: '#fca5a5',
+      fontSize: 14
+    }
+  }, error), !loading && !error && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp,
+      fontSize: 18,
+      padding: '14px'
+    },
+    placeholder: "Last name...",
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    autoFocus: true
+  }), query.length >= 2 && matches.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      color: '#475569',
+      fontSize: 14,
+      padding: '12px 0'
+    }
+  }, "No staff found for \"", query, "\""), matches.map(s => /*#__PURE__*/React.createElement("button", {
+    key: s.id,
+    style: {
+      ...card,
+      padding: '14px 16px',
+      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(255,255,255,0.04)',
+      cursor: 'pointer',
+      textAlign: 'left',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12
+    },
+    onClick: () => {
+      // Admin + Med go to hub
+      const r = (s.role || '').toLowerCase();
+      if (r === 'm1' || r === 'm2') {
+        window.location.href = `/hub?role=${r === 'm1' ? 'med1' : 'med2'}`;
+        return;
+      }
+      if (r === 'a1' || r === 'a2') {
+        window.location.href = '/hub';
+        return;
+      }
+      onLogin(s);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      background: 'rgba(14,165,233,0.15)',
+      border: '1px solid rgba(14,165,233,0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#38bdf8',
+      flexShrink: 0
+    }
+  }, (s.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 700,
+      color: '#f1f5f9'
+    }
+  }, s.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#64748b'
+    }
+  }, s.role, " · ", s.location)))))));
+}
+
+// ─── NEW CALL VIEW ───────────────────────────────────────────
+function NewCallView({
+  user,
+  onBack,
+  onSubmit
+}) {
+  const [type, setType] = useState('');
+  const [location, setLocation] = useState(user.location || '');
+  const [problem, setProblem] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  async function submit() {
+    if (!type || !location || !problem) return;
+    setSending(true);
+    try {
+      await fetch(`${API}/submit-call`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type,
+          location,
+          problem,
+          submittedBy: user.name,
+          role: user.role
+        })
+      });
+      setSent(true);
+      setTimeout(onBack, 2000);
+    } catch (e) {
+      setSending(false);
+    }
+  }
+  if (sent) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.root,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48
+    }
+  }, "✅"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, "Call Submitted"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: '#64748b'
+    }
+  }, "Admin and med units have been notified"));
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement(BackBtn, {
+    onBack: onBack
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, "New Call")), /*#__PURE__*/React.createElement("div", {
+    style: S.body
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Call Type"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 8
+    }
+  }, CALL_TYPES.map(ct => /*#__PURE__*/React.createElement("button", {
+    key: ct.id,
+    style: {
+      padding: '14px 8px',
+      borderRadius: 12,
+      border: `2px solid ${type === ct.id ? ct.color : 'rgba(255,255,255,0.08)'}`,
+      background: type === ct.id ? `${ct.color}22` : 'rgba(255,255,255,0.03)',
+      cursor: 'pointer',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 4
+    },
+    onClick: () => setType(ct.id)
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 22
+    }
+  }, ct.emoji), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: type === ct.id ? '#f1f5f9' : '#64748b'
+    }
+  }, ct.label))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Location"), /*#__PURE__*/React.createElement("input", {
+    style: S.inp,
+    placeholder: "Where is this happening?",
+    value: location,
+    onChange: e => setLocation(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "What's happening?"), /*#__PURE__*/React.createElement("textarea", {
+    style: {
+      ...S.inp,
+      minHeight: 90,
+      resize: 'none'
+    },
+    placeholder: "Describe the situation...",
+    value: problem,
+    onChange: e => setProblem(e.target.value)
+  })), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.btn('rgba(220,38,38,0.9)'),
+      opacity: !type || !location || !problem || sending ? 0.5 : 1
+    },
+    disabled: !type || !location || !problem || sending,
+    onClick: submit
+  }, sending ? 'Submitting...' : '🚨 Submit Call')));
+}
+
+// ─── CHAT VIEW ───────────────────────────────────────────────
+function ChatView({
+  user,
+  onBack
+}) {
+  const [tab, setTab] = useState('channels'); // channels | dms
+  const [channel, setChannel] = useState(roleChannel(user.role));
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [dmThread, setDmThread] = useState(null); // {otherName, threadId}
+  const [dmList, setDmList] = useState([]);
+  const [staffList, setStaffList] = useState([]);
+  const msgEnd = useRef(null);
+  useEffect(() => {
+    fetch(`${API}/get-staff-list`).then(r => r.json()).then(d => setStaffList(d.staff || [])).catch(() => {});
+  }, []);
+  useEffect(() => {
+    fetchMessages();
+    const iv = setInterval(fetchMessages, 6000);
+    return () => clearInterval(iv);
+  }, [channel, dmThread]);
+  async function fetchMessages() {
+    try {
+      let url;
+      if (dmThread) url = `${API}/get-messages?dmThread=${encodeURIComponent(dmThread.threadId)}`;else url = `${API}/get-messages?channel=${channel}&myName=${encodeURIComponent(user.name)}&limit=60`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.messages) setMessages(data.messages);
+      if (data.dmThreads) setDmList(data.dmThreads);
+      setTimeout(() => msgEnd.current?.scrollIntoView({
+        behavior: 'smooth'
+      }), 100);
+    } catch (e) {}
+  }
+  async function send() {
+    if (!input.trim() || sending) return;
+    setSending(true);
+    try {
+      const body = dmThread ? {
+        fromName: user.name,
+        fromRole: user.role,
+        channel: `DM_${[user.name, dmThread.otherName].sort().join('_')}`,
+        message: input.trim(),
+        isDM: true,
+        toName: dmThread.otherName,
+        threadId: dmThread.threadId
+      } : {
+        fromName: user.name,
+        fromRole: user.role,
+        channel,
+        message: input.trim()
+      };
+      await fetch(`${API}/send-message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      setInput('');
+      await fetchMessages();
+    } catch (e) {}
+    setSending(false);
+  }
+  function startDM(s) {
+    const threadId = `DM_${[user.name, s.name].sort().join('_')}`;
+    setDmThread({
+      otherName: s.name,
+      threadId
+    });
+    setMessages([]);
+  }
+  const chanObj = CHANNELS.find(c => c.id === channel);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.root,
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement(BackBtn, {
+    onBack: () => {
+      if (dmThread) {
+        setDmThread(null);
+        setMessages([]);
+      } else onBack();
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: 800,
+      color: '#f1f5f9'
+    }
+  }, dmThread ? `💬 ${dmThread.otherName}` : `💬 ${chanObj ? chanObj.emoji + ' ' + chanObj.label : channel}`)), !dmThread && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      borderBottom: '1px solid rgba(255,255,255,0.06)'
+    }
+  }, [['channels', 'Channels'], ['dms', 'Direct Messages']].map(([t, l]) => /*#__PURE__*/React.createElement("button", {
+    key: t,
+    style: {
+      flex: 1,
+      padding: '10px',
+      background: 'none',
+      border: 'none',
+      borderBottom: `2px solid ${tab === t ? '#38bdf8' : 'transparent'}`,
+      color: tab === t ? '#38bdf8' : '#64748b',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer'
+    },
+    onClick: () => setTab(t)
+  }, l))), !dmThread && tab === 'channels' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 12px',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap'
+    }
+  }, CHANNELS.map(ch => /*#__PURE__*/React.createElement("button", {
+    key: ch.id,
+    style: {
+      padding: '4px 10px',
+      borderRadius: 16,
+      border: `1px solid ${channel === ch.id ? 'rgba(14,165,233,0.5)' : 'rgba(255,255,255,0.08)'}`,
+      background: channel === ch.id ? 'rgba(14,165,233,0.1)' : 'rgba(255,255,255,0.02)',
+      color: channel === ch.id ? '#38bdf8' : '#64748b',
+      fontSize: 11,
+      fontWeight: 600,
+      cursor: 'pointer'
+    },
+    onClick: () => {
+      setChannel(ch.id);
+      setMessages([]);
+    }
+  }, ch.emoji, " ", ch.label))), !dmThread && tab === 'dms' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '10px 14px',
+      borderBottom: '1px solid rgba(255,255,255,0.06)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: '#64748b',
+      marginBottom: 8
+    }
+  }, "START A NEW MESSAGE"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginBottom: dmList.length > 0 ? 12 : 0
+    }
+  }, staffList.filter(s => s.name !== user.name).map(s => /*#__PURE__*/React.createElement("button", {
+    key: s.id,
+    style: {
+      padding: '4px 10px',
+      borderRadius: 16,
+      border: '1px solid rgba(255,255,255,0.1)',
+      background: 'rgba(255,255,255,0.03)',
+      color: '#94a3b8',
+      fontSize: 11,
+      cursor: 'pointer'
+    },
+    onClick: () => startDM(s)
+  }, s.name))), dmList.map(dm => /*#__PURE__*/React.createElement("button", {
+    key: dm.threadId,
+    style: {
+      width: '100%',
+      padding: '10px 0',
+      background: 'none',
+      border: 'none',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      cursor: 'pointer',
+      textAlign: 'left',
+      display: 'flex',
+      gap: 10,
+      alignItems: 'center'
+    },
+    onClick: () => setDmThread({
+      otherName: dm.otherName,
+      threadId: dm.threadId
+    })
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 32,
+      height: 32,
+      borderRadius: '50%',
+      background: 'rgba(14,165,233,0.15)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 12,
+      fontWeight: 800,
+      color: '#38bdf8',
+      flexShrink: 0
+    }
+  }, dm.otherName.split(' ').map(n => n[0]).join('').slice(0, 2)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: '#f1f5f9'
+    }
+  }, dm.otherName), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#64748b',
+      textOverflow: 'ellipsis',
+      overflow: 'hidden',
+      whiteSpace: 'nowrap'
+    }
+  }, dm.lastMessage))))), (tab === 'channels' || dmThread) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '12px 14px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
+    }
+  }, messages.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      color: '#374151',
+      fontSize: 13,
+      padding: '24px 0'
+    }
+  }, "No messages yet"), messages.map(msg => {
+    const isMe = msg.fromName === user.name;
+    const isAlert = msg.isAlert;
+    const time = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'America/Chicago'
+    }) : '';
+    if (isAlert) return /*#__PURE__*/React.createElement("div", {
+      key: msg.id,
+      style: {
+        background: 'rgba(239,68,68,0.1)',
+        border: '1px solid rgba(239,68,68,0.3)',
+        borderRadius: 10,
+        padding: '8px 12px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        color: '#fca5a5',
+        marginBottom: 2
+      }
+    }, "🚨 ALERT · ", time), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: '#fecaca'
+      }
+    }, msg.message));
+    return /*#__PURE__*/React.createElement("div", {
+      key: msg.id,
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isMe ? 'flex-end' : 'flex-start',
+        gap: 2
+      }
+    }, !isMe && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: '#64748b',
+        marginLeft: 4
+      }
+    }, msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxWidth: '82%',
+        background: isMe ? 'rgba(14,165,233,0.2)' : 'rgba(255,255,255,0.06)',
+        border: `1px solid ${isMe ? 'rgba(14,165,233,0.4)' : 'rgba(255,255,255,0.08)'}`,
+        borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+        padding: '9px 13px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: '#f1f5f9',
+        lineHeight: 1.5
+      }
+    }, msg.message)), isMe && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: '#374151',
+        marginRight: 4
+      }
+    }, time));
+  }), /*#__PURE__*/React.createElement("div", {
+    ref: msgEnd
+  })), (tab === 'channels' || dmThread) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '10px 14px',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      display: 'flex',
+      gap: 8,
+      background: 'rgba(10,10,20,0.95)'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp,
+      flex: 1
+    },
+    placeholder: dmThread ? `Message ${dmThread.otherName}...` : `Message ${chanObj ? chanObj.label : channel}...`,
+    value: input,
+    onChange: e => setInput(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        send();
+      }
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: '10px 16px',
+      borderRadius: 10,
+      border: 'none',
+      background: input.trim() ? 'linear-gradient(135deg,#0ea5e9,#0284c7)' : 'rgba(255,255,255,0.06)',
+      color: input.trim() ? '#fff' : '#475569',
+      fontSize: 14,
+      fontWeight: 800,
+      cursor: input.trim() ? 'pointer' : 'not-allowed',
+      flexShrink: 0
+    },
+    onClick: send,
+    disabled: !input.trim() || sending
+  }, sending ? '...' : 'Send')));
+}
+
+// ─── LOST & FOUND FORM ───────────────────────────────────────
+function LFView({
+  user,
+  onBack
+}) {
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [currentLoc, setCurrentLoc] = useState(user.location || '');
+  const [day, setDay] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [itemNumber, setItemNumber] = useState('');
+  async function submit() {
+    if (!description || !location) return;
+    setSending(true);
+    try {
+      const res = await fetch(`${API}/submit-lost-found`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          description,
+          foundAt: location,
+          currentLocation: currentLoc,
+          dayFound: day,
+          foundBy: user.name,
+          role: user.role
+        })
+      });
+      const data = await res.json();
+      setItemNumber(data.itemNumber || data.id || '');
+      setSent(true);
+    } catch (e) {
+      setSending(false);
+    }
+  }
+  if (sent) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.root,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: 16,
+      padding: 32
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48
+    }
+  }, "📦"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, "Item Logged"), itemNumber && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(249,115,22,0.12)',
+      border: '2px solid rgba(249,115,22,0.5)',
+      borderRadius: 14,
+      padding: '18px 28px',
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: '#94a3b8',
+      letterSpacing: '0.08em',
+      marginBottom: 6
+    }
+  }, "ITEM NUMBER"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 32,
+      fontWeight: 900,
+      color: '#fb923c',
+      letterSpacing: '0.05em'
+    }
+  }, itemNumber), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#64748b',
+      marginTop: 6
+    }
+  }, "Write this on the tag and attach to item")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: '#64748b'
+    }
+  }, "Lost & Found updated · Hub notified"));
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement(BackBtn, {
+    onBack: onBack
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, "Log Lost Item")), /*#__PURE__*/React.createElement("div", {
+    style: S.body
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Day Found"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6
+    }
+  }, [['Thu', '🔵 Thu'], ['Fri', '🟠 Fri'], ['Sat', '🟢 Sat'], ['Sun', '🟣 Sun']].map(([v, l]) => /*#__PURE__*/React.createElement("button", {
+    key: v,
+    style: {
+      flex: 1,
+      padding: '10px 4px',
+      borderRadius: 8,
+      border: `1px solid ${day === v ? 'rgba(14,165,233,0.5)' : 'rgba(255,255,255,0.1)'}`,
+      background: day === v ? 'rgba(14,165,233,0.1)' : 'rgba(255,255,255,0.03)',
+      color: day === v ? '#38bdf8' : '#64748b',
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: 'pointer'
+    },
+    onClick: () => setDay(v)
+  }, l)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Where was it found?"), /*#__PURE__*/React.createElement("input", {
+    style: S.inp,
+    placeholder: "e.g. Near Moon Stage Left",
+    value: location,
+    onChange: e => setLocation(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Where is it now?"), /*#__PURE__*/React.createElement("input", {
+    style: S.inp,
+    placeholder: "e.g. Behind Moon Bar counter",
+    value: currentLoc,
+    onChange: e => setCurrentLoc(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Description"), /*#__PURE__*/React.createElement("textarea", {
+    style: {
+      ...S.inp,
+      minHeight: 80,
+      resize: 'none'
+    },
+    placeholder: "Describe the item...",
+    value: description,
+    onChange: e => setDescription(e.target.value)
+  })), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.btn('rgba(249,115,22,0.9)'),
+      opacity: !description || !location || sending ? 0.5 : 1
+    },
+    disabled: !description || !location || sending,
+    onClick: submit
+  }, sending ? 'Logging...' : '📦 Log Item')));
+}
+
+// ─── HOME VIEW ───────────────────────────────────────────────
+function HomeView({
+  user,
+  onLogout
+}) {
+  const [view, setView] = useState('home'); // home | call | chat | lf
+
+  if (view === 'call') return /*#__PURE__*/React.createElement(NewCallView, {
+    user: user,
+    onBack: () => setView('home'),
+    onSubmit: () => setView('home')
+  });
+  if (view === 'chat') return /*#__PURE__*/React.createElement(ChatView, {
+    user: user,
+    onBack: () => setView('home')
+  });
+  if (view === 'lf') return /*#__PURE__*/React.createElement(LFView, {
+    user: user,
+    onBack: () => setView('home')
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, "👋 ", user.name.split(' ')[0]), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#64748b'
+    }
+  }, user.role, " · ", user.location)), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 8,
+      color: '#64748b',
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: 'pointer',
+      padding: '6px 12px'
+    },
+    onClick: onLogout
+  }, "Sign Out")), /*#__PURE__*/React.createElement("div", {
+    style: S.body
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#64748b',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 8
+    }
+  }, "Submit a Call"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 8
+    }
+  }, CALL_TYPES.map(ct => /*#__PURE__*/React.createElement("button", {
+    key: ct.id,
+    style: {
+      padding: '16px 8px',
+      borderRadius: 14,
+      border: `2px solid ${ct.color}`,
+      background: `${ct.color}18`,
+      cursor: 'pointer',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 5
+    },
+    onClick: () => setView('call')
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24
+    }
+  }, ct.emoji), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: '#f1f5f9',
+      textAlign: 'center',
+      lineHeight: 1.2
+    }
+  }, ct.label))))), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.section,
+      padding: '14px 16px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      textAlign: 'left'
+    },
+    onClick: () => setView('chat')
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      background: 'rgba(14,165,233,0.15)',
+      border: '1px solid rgba(14,165,233,0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 22,
+      flexShrink: 0
+    }
+  }, "💬"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: '#38bdf8'
+    }
+  }, "Festival Chat"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#64748b',
+      marginTop: 2
+    }
+  }, "Groups · Direct Messages · Alerts")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginLeft: 'auto',
+      color: '#38bdf8',
+      fontSize: 16
+    }
+  }, "→")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.section,
+      padding: '14px 16px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      textAlign: 'left'
+    },
+    onClick: () => setView('lf')
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      background: 'rgba(249,115,22,0.15)',
+      border: '1px solid rgba(249,115,22,0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 22,
+      flexShrink: 0
+    }
+  }, "📦"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: '#fb923c'
+    }
+  }, "Lost & Found"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#64748b',
+      marginTop: 2
+    }
+  }, "Log a found item")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginLeft: 'auto',
+      color: '#fb923c',
+      fontSize: 16
+    }
+  }, "→")), /*#__PURE__*/React.createElement("a", {
+    href: "https://fdm2026.netlify.app/lostfound",
+    target: "_blank",
+    style: {
+      ...S.section,
+      padding: '14px 16px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      textDecoration: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      background: 'rgba(139,92,246,0.15)',
+      border: '1px solid rgba(139,92,246,0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 22,
+      flexShrink: 0
+    }
+  }, "🔍"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: '#c4b5fd'
+    }
+  }, "L&F Lookup"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#64748b',
+      marginTop: 2
+    }
+  }, "Search all logged items")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginLeft: 'auto',
+      color: '#c4b5fd',
+      fontSize: 16
+    }
+  }, "→"))));
+}
+
+// ─── MAIN APP ────────────────────────────────────────────────
+function FieldApp() {
+  const [user, setUser] = useState(null);
+  return user ? /*#__PURE__*/React.createElement(HomeView, {
+    user: user,
+    onLogout: () => setUser(null)
+  }) : /*#__PURE__*/React.createElement(LoginView, {
+    onLogin: setUser
+  });
+}
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));
+</script></body></html>

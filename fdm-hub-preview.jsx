@@ -324,7 +324,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
       {/* TABS */}
       <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.08)",margin:"0 16px"}}>
-        {[["mycalls",`${role} Calls (${myActive.length})`],["unassigned",`Unassigned (${unassigned.length})`],["resources","Additional Resources"]].map(([t,l])=>(
+        {[["mycalls",`${role} Calls (${myActive.length})`],["unassigned",`Unassigned (${unassigned.length})`],["resources","Additional Resources"],["lf","L&F"]].map(([t,l])=>(
           <button key={t} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`2px solid ${tab===t?"#a855f7":"transparent"}`,color:tab===t?"#d8b4fe":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer",lineHeight:1.3}} onClick={()=>setTab(t)}>{l}</button>
         ))}
       </div>
@@ -409,6 +409,23 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
               </div>
             </button>
           </div>
+        )}
+
+        {/* L&F TAB */}
+        {tab==="lf"&&(
+          <>
+            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",textDecoration:"none",marginBottom:4}}>
+              <span style={{fontSize:18}}>🔍</span><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup Page →</div>
+            </a>
+            {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"20px 0"}}>No active L&F items</div>}
+            {(lfItems||[]).filter(i=>i.status!=="Claimed").slice(0,15).map(item=>(
+              <div key={item.id} style={{borderRadius:10,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",padding:"10px 12px"}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#c4b5fd",marginBottom:2}}>{item.itemNumber||"—"}</div>
+                <div style={{fontSize:13,color:"#f1f5f9"}}>{item.description}</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>📍 {item.location} · {item.status}</div>
+              </div>
+            ))}
+          </>
         )}
 
       </div>

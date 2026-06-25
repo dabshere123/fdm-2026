@@ -171,21 +171,49 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [medChatInput,setMedChatInput]=React.useState("");
   const [medChatSending,setMedChatSending]=React.useState(false);
   const [chatExpanded,setChatExpanded]=React.useState(false);
+  const [medChatChannel,setMedChatChannel]=React.useState("AdminMed");
+  const [medDMThread,setMedDMThread]=React.useState(null);
+  const [medDMList,setMedDMList]=React.useState([]);
+  const [medChatTab,setMedChatTab]=React.useState("channels");
   const myStatus=medSt[role==="Med 1"?"med1":"med2"]||{status:"available"};
   const myKey=role==="Med 1"?"med1":"med2";
   const otherRole=role==="Med 1"?"Med 2":"Med 1";
+
+  const MED_CHANNELS=[
+    {id:"AdminMed",label:"Admin & Med",emoji:"🏥"},
+    {id:"AllStaff",label:"All Staff",emoji:"📢"},
+    {id:"MoonBar",label:"Moon Bar",emoji:"🌙"},
+    {id:"SunBarL",label:"Sun Bar L",emoji:"☀️"},
+    {id:"SunBarR",label:"Sun Bar R",emoji:"☀️"},
+    {id:"LafBar",label:"Lafayette Bar",emoji:"🎸"},
+    {id:"LagBar",label:"Lagniappe Bar",emoji:"🎺"},
+    {id:"FamilyBar",label:"Family Bar",emoji:"👨‍👩‍👧"},
+    {id:"CabBar",label:"Cabaret Bar",emoji:"🎭"},
+    {id:"EverythingBar",label:"EEC",emoji:"☕"},
+    {id:"MoonST",label:"Moon Stage",emoji:"🌙"},
+    {id:"SunST",label:"Sun Stage",emoji:"☀️"},
+    {id:"LafST",label:"Laf Stage",emoji:"🎸"},
+    {id:"LagST",label:"Lag Stage",emoji:"🎺"},
+  ];
 
   React.useEffect(()=>{
     fetchMedChat();
     const iv=setInterval(fetchMedChat,8000);
     return()=>clearInterval(iv);
-  },[]);
+  },[medChatChannel,medDMThread]);
 
   async function fetchMedChat(){
     try{
-      const res=await fetch("/.netlify/functions/get-messages?channel=AdminMed&limit=40");
-      const data=await res.json();
-      if(data.messages) setMedChatMessages(data.messages);
+      if(medDMThread){
+        const res=await fetch(`/.netlify/functions/get-messages?dmThread=${encodeURIComponent(medDMThread.threadId)}`);
+        const data=await res.json();
+        if(data.messages) setMedChatMessages(data.messages);
+      } else {
+        const res=await fetch(`/.netlify/functions/get-messages?channel=${medChatChannel}&limit=50`);
+        const data=await res.json();
+        if(data.messages) setMedChatMessages(data.messages);
+        if(data.dmThreads) setMedDMList(data.dmThreads);
+      }
     }catch(e){}
   }
 
@@ -193,12 +221,24 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
     if(!medChatInput.trim()||medChatSending) return;
     setMedChatSending(true);
     try{
-      await fetch("/.netlify/functions/send-message",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({fromName:role,fromRole:role,channel:"AdminMed",message:medChatInput.trim()})});
+      if(medDMThread){
+        const target=staffList.find(s=>s.name===medDMThread.otherName);
+        await fetch("/.netlify/functions/send-message",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({fromName:role,fromRole:role,channel:`DM_${[role,medDMThread.otherName].sort().join("_")}`,message:medChatInput.trim(),isDM:true,toName:medDMThread.otherName,toPhone:target?.phone||"",threadId:medDMThread.threadId})});
+      } else {
+        await fetch("/.netlify/functions/send-message",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({fromName:role,fromRole:role,channel:medChatChannel,message:medChatInput.trim()})});
+      }
       setMedChatInput("");
       await fetchMedChat();
     }catch(e){}
     setMedChatSending(false);
+  }
+
+  function startMedDM(targetStaff){
+    const threadId=`DM_${[role,targetStaff.name].sort().join("_")}`;
+    setMedDMThread({otherName:targetStaff.name,threadId});
+    setMedChatMessages([]);
   }
 
   function setMedStatus(status){
@@ -257,47 +297,75 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         ))}
       </div>
 
-      {/* CHAT — always visible, collapsible */}
+      {/* CHAT — collapsible, full access */}
       <div style={{margin:"6px 16px",background:"rgba(147,51,234,0.06)",border:"1px solid rgba(147,51,234,0.2)",borderRadius:12,overflow:"hidden"}}>
         <button style={{width:"100%",padding:"10px 14px",background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setChatExpanded(p=>!p)}>
-          <div style={{fontSize:13,fontWeight:800,color:"#c4b5fd"}}>💬 Admin & Med Chat</div>
-          <div style={{fontSize:11,color:"#64748b"}}>{chatExpanded?"▲ Collapse":"▼ Expand"}{medChatMessages.filter(m=>m.isAlert).length>0&&<span style={{marginLeft:6,background:"#ef4444",color:"#fff",fontSize:9,borderRadius:20,padding:"1px 6px"}}>!</span>}</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#c4b5fd"}}>
+            💬 {medDMThread?`DM: ${medDMThread.otherName}`:MED_CHANNELS.find(c=>c.id===medChatChannel)?.label||medChatChannel}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            {medDMThread&&<button style={{fontSize:10,color:"#64748b",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"2px 7px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setMedDMThread(null);setMedChatMessages([]);}}>← Channels</button>}
+            <span style={{fontSize:11,color:"#64748b"}}>{chatExpanded?"▲":"▼"}</span>
+          </div>
         </button>
         {chatExpanded&&(
           <div style={{borderTop:"1px solid rgba(147,51,234,0.15)",padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
-            <div style={{maxHeight:160,overflowY:"auto",display:"flex",flexDirection:"column",gap:5}}>
-              {medChatMessages.length===0&&<div style={{fontSize:12,color:"#374151",textAlign:"center",padding:"8px 0"}}>No messages yet</div>}
+            {/* Channel / DM tabs */}
+            {!medDMThread&&<div style={{display:"flex",gap:4,marginBottom:4}}>
+              <button style={{flex:1,padding:"5px",borderRadius:6,border:`1px solid ${medChatTab==="channels"?"rgba(147,51,234,0.5)":"rgba(255,255,255,0.08)"}`,background:medChatTab==="channels"?"rgba(147,51,234,0.12)":"rgba(255,255,255,0.03)",color:medChatTab==="channels"?"#c4b5fd":"#64748b",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setMedChatTab("channels")}>Channels</button>
+              <button style={{flex:1,padding:"5px",borderRadius:6,border:`1px solid ${medChatTab==="dms"?"rgba(147,51,234,0.5)":"rgba(255,255,255,0.08)"}`,background:medChatTab==="dms"?"rgba(147,51,234,0.12)":"rgba(255,255,255,0.03)",color:medChatTab==="dms"?"#c4b5fd":"#64748b",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setMedChatTab("dms")}>Direct Messages</button>
+            </div>}
+            {/* Channel picker */}
+            {!medDMThread&&medChatTab==="channels"&&<div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:4}}>
+              {MED_CHANNELS.map(ch=>(
+                <button key={ch.id} style={{padding:"3px 8px",borderRadius:12,border:`1px solid ${medChatChannel===ch.id?"rgba(147,51,234,0.6)":"rgba(255,255,255,0.08)"}`,background:medChatChannel===ch.id?"rgba(147,51,234,0.15)":"rgba(255,255,255,0.03)",color:medChatChannel===ch.id?"#c4b5fd":"#64748b",fontSize:10,fontWeight:600,cursor:"pointer"}} onClick={()=>{setMedChatChannel(ch.id);setMedChatMessages([]);}}>{ch.emoji} {ch.label}</button>
+              ))}
+            </div>}
+            {/* DM list */}
+            {!medDMThread&&medChatTab==="dms"&&<div style={{marginBottom:4}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                {staffList.filter(s=>s.name!==role).slice(0,12).map(s=>(
+                  <button key={s.id} style={{padding:"3px 8px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:10,cursor:"pointer"}} onClick={()=>startMedDM(s)}>{s.name}</button>
+                ))}
+              </div>
+              {medDMList.map(dm=>(
+                <button key={dm.threadId} style={{width:"100%",padding:"6px 8px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",display:"flex",gap:8,alignItems:"center"}} onClick={()=>{setMedDMThread({otherName:dm.otherName,threadId:dm.threadId});setMedChatMessages([]);}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#f1f5f9",flex:1}}>{dm.otherName}</div>
+                  <div style={{fontSize:10,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap",maxWidth:120}}>{dm.lastMessage}</div>
+                </button>
+              ))}
+            </div>}
+            {/* Messages */}
+            {(medChatTab==="channels"||medDMThread)&&<div style={{maxHeight:150,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
+              {medChatMessages.length===0&&<div style={{fontSize:11,color:"#374151",textAlign:"center",padding:"8px 0"}}>No messages yet</div>}
               {medChatMessages.map(msg=>{
                 const isMe=msg.fromName===role;
                 const isAlert=msg.isAlert;
                 const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
                 if(isAlert) return(
-                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"5px 8px"}}>
-                    <div style={{fontSize:9,fontWeight:800,color:"#fca5a5"}}>🚨 ALERT · {time}</div>
+                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"4px 8px"}}>
+                    <div style={{fontSize:9,fontWeight:800,color:"#fca5a5"}}>🚨 {time}</div>
                     <div style={{fontSize:11,color:"#fecaca"}}>{msg.message}</div>
                   </div>
                 );
                 return(
                   <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:1}}>
                     {!isMe&&<div style={{fontSize:9,color:"#64748b",marginLeft:3}}>{msg.fromName} · {time}</div>}
-                    <div style={{maxWidth:"85%",background:isMe?"rgba(147,51,234,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(147,51,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:"10px",padding:"6px 10px"}}>
+                    <div style={{maxWidth:"85%",background:isMe?"rgba(147,51,234,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(147,51,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:"10px",padding:"5px 9px"}}>
                       <div style={{fontSize:12,color:"#f1f5f9"}}>{msg.message}</div>
                     </div>
                   </div>
                 );
               })}
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"8px 11px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Message Admin & Med..." value={medChatInput} onChange={e=>setMedChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendMedChat();}}}/>
+            </div>}
+            {/* Input */}
+            {(medChatTab==="channels"||medDMThread)&&<div style={{display:"flex",gap:6}}>
+              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"8px 11px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder={medDMThread?`Message ${medDMThread.otherName}...`:`Message ${MED_CHANNELS.find(c=>c.id===medChatChannel)?.label||medChatChannel}...`} value={medChatInput} onChange={e=>setMedChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendMedChat();}}}/>
               <button style={{padding:"8px 14px",borderRadius:8,border:"none",background:medChatInput.trim()?"linear-gradient(135deg,#7c3aed,#6d28d9)":"rgba(255,255,255,0.06)",color:medChatInput.trim()?"#fff":"#475569",fontSize:12,fontWeight:800,cursor:medChatInput.trim()?"pointer":"not-allowed"}} onClick={sendMedChat} disabled={!medChatInput.trim()||medChatSending}>{medChatSending?"...":"Send"}</button>
-            </div>
+            </div>}
           </div>
         )}
-        {!chatExpanded&&lastMsg&&(
-          <div style={{padding:"0 14px 8px",fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>
-            {lastMsg.fromName}: {lastMsg.message.slice(0,60)}{lastMsg.message.length>60?"...":""}
-          </div>
-        )}
+        {!chatExpanded&&medChatMessages.length>0&&(()=>{const lm=medChatMessages[medChatMessages.length-1];return<div style={{padding:"0 14px 8px",fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{lm.fromName}: {lm.message.slice(0,60)}{lm.message.length>60?"...":""}</div>;})()}
       </div>
 
       {/* NEW CALL BUTTON */}

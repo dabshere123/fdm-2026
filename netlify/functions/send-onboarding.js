@@ -27,7 +27,7 @@ exports.handler = async (event) => {
     // Accept data either directly or from Airtable Automation webhook format
     const name  = body.name  || body.fields?.Name  || body.fields?.Name  || '';
     const role  = body.role  || body.fields?.Role   || '';
-    const phone = body.phone || body.fields?.Phone  || '';
+    const phone = String(body.phone || body.fields?.Phone || '').replace(/[^0-9]/g,'');
     const smsConsent = body.smsConsent ?? body.fields?.SMSConsent ?? 'Yes';
 
     if (!name || !phone) {

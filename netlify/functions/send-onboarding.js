@@ -25,7 +25,7 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || '{}');
 
     // Accept data either directly or from Airtable Automation webhook format
-    const name  = body.name  || body.fields?.Name1  || body.fields?.Name  || '';
+    const name  = body.name  || body.fields?.Name  || body.fields?.Name  || '';
     const role  = body.role  || body.fields?.Role   || '';
     const phone = body.phone || body.fields?.Phone  || '';
     const smsConsent = body.smsConsent ?? body.fields?.SMSConsent ?? 'Yes';
@@ -45,34 +45,8 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid phone number' }) };
     }
 
-    const message = `Hi ${name}, welcome to the FDM 2026 team! 🎶
-
-You are registered as: ${role || 'Staff Member'}
-
-━━━━━━━━━━━━━━━
-📱 WORKER APP
-https://fdm2026.netlify.app/field
-Sign in with your last name: ${lastName}
-Add to your home screen for quick access
-
-━━━━━━━━━━━━━━━
-📖 WORKER GUIDE
-https://fdm2026.netlify.app/guide
-Read before July 9 — covers everything
-
-━━━━━━━━━━━━━━━
-✅ KNOWLEDGE QUIZ
-https://fdm2026.netlify.app/quiz
-7 questions · Complete before July 9
-
-━━━━━━━━━━━━━━━
-📦 LOST & FOUND
-https://fdm2026.netlify.app/lostfound
-
-See you at McPike Park, July 9–12! 🎪
-— Fête de Marquette 2026 Operations
-
-Reply STOP to unsubscribe.`;
+    const encodedName = encodeURIComponent(name.trim());
+    const message = `Fete de Marquette Operations 2026 — STAFF MESSAGE\n(This is Devin Abshere / Fête de Marquette Operations)\n\nYou\'re getting this because you\'re part of the crew making Fête de Marquette 2026 happen July 9–12 at McPike Park in Madison.\n\nBefore our meeting Tuesday at Giant Jones, please tap the link below to confirm your festival role — takes 10 seconds:\n\n👉 fdm2026.netlify.app/rsvp?name=${encodedName}\n\nThen explore:\n📱 Worker App: fdm2026.netlify.app/field\n📖 Staff Guide: fdm2026.netlify.app/guide\n✅ Quiz: fdm2026.netlify.app/quiz\n\nPlease reply by 6/26/2026.\n\n— Devin / Fete 2026`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
 

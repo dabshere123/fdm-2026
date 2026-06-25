@@ -1847,6 +1847,8 @@ function HubApp({
   const [lfItems, setLfItems] = useState([]);
   const [lfLoading, setLfLoading] = useState(false);
   const [lfClaimView, setLfClaimView] = useState(null);
+  const [lfNewItem, setLfNewItem] = useState(false);
+  const [lfNewFields, setLfNewFields] = useState({});
   const [lfClaimBy, setLfClaimBy] = useState("");
   const [lfClaimID, setLfClaimID] = useState("");
   const [lfClaimPhone, setLfClaimPhone] = useState("");
@@ -5744,7 +5746,148 @@ Reply YES to acknowledge.`
       borderRadius: 6,
       padding: "4px 10px"
     }
-  }, "🔗 Staff Lookup Page")), lfLoading && /*#__PURE__*/React.createElement("div", {
+  }, "🔗 Staff Lookup")), lfNewItem ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(249,115,22,0.06)",
+      border: "1px solid rgba(249,115,22,0.25)",
+      borderRadius: 14,
+      padding: "16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 900,
+      color: "#fb923c"
+    }
+  }, "📦 Log New Item"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, [["Thu", "🔵"], ["Fri", "🟠"], ["Sat", "🟢"], ["Sun", "🟣"]].map(([d, e]) => /*#__PURE__*/React.createElement("button", {
+    key: d,
+    style: {
+      flex: 1,
+      padding: "8px 4px",
+      borderRadius: 8,
+      border: `1px solid ${lfNewFields.day === d ? "rgba(249,115,22,0.6)" : "rgba(255,255,255,0.1)"}`,
+      background: lfNewFields.day === d ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.03)",
+      color: lfNewFields.day === d ? "#fb923c" : "#64748b",
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => setLfNewFields(p => ({
+      ...p,
+      day: d
+    }))
+  }, e, " ", d))), /*#__PURE__*/React.createElement(Fld, {
+    label: "Where found",
+    value: lfNewFields.foundAt || "",
+    onChange: e => setLfNewFields(p => ({
+      ...p,
+      foundAt: e.target.value
+    })),
+    ph: "e.g. Near Moon Stage Left"
+  }), /*#__PURE__*/React.createElement(Fld, {
+    label: "Where is it now",
+    value: lfNewFields.nowAt || "",
+    onChange: e => setLfNewFields(p => ({
+      ...p,
+      nowAt: e.target.value
+    })),
+    ph: "e.g. Festival Office"
+  }), /*#__PURE__*/React.createElement(Fld, {
+    label: "Description",
+    value: lfNewFields.description || "",
+    onChange: e => setLfNewFields(p => ({
+      ...p,
+      description: e.target.value
+    })),
+    ph: "Describe the item...",
+    multi: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      flex: 1,
+      padding: "12px",
+      borderRadius: 10,
+      border: "none",
+      background: "linear-gradient(135deg,rgba(249,115,22,0.8),rgba(234,88,12,0.9))",
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 800,
+      cursor: "pointer",
+      opacity: !lfNewFields.description || !lfNewFields.foundAt ? 0.5 : 1
+    },
+    disabled: !lfNewFields.description || !lfNewFields.foundAt,
+    onClick: async () => {
+      const res = await fetch("/.netlify/functions/submit-lost-found", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          description: lfNewFields.description,
+          foundAt: lfNewFields.foundAt,
+          currentLocation: lfNewFields.nowAt || lfNewFields.foundAt,
+          dayFound: lfNewFields.day || "",
+          foundBy: "Admin",
+          role: "Admin"
+        })
+      });
+      const data = await res.json();
+      setLfNewItem(false);
+      setLfNewFields({});
+      if (data.itemNumber) setActivityLog(p => [{
+        id: Date.now(),
+        ts: tShort(),
+        date: now(),
+        type: "lf",
+        label: `L&F Logged — #${data.itemNumber}: ${lfNewFields.description.slice(0, 30)}`
+      }, ...p]);
+      fetchLostFound();
+    }
+  }, "Log Item"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "12px 18px",
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.1)",
+      background: "rgba(255,255,255,0.04)",
+      color: "#64748b",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      setLfNewItem(false);
+      setLfNewFields({});
+    }
+  }, "Cancel"))) : /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "12px 16px",
+      borderRadius: 12,
+      border: "1px solid rgba(249,115,22,0.4)",
+      background: "rgba(249,115,22,0.08)",
+      color: "#fb923c",
+      fontSize: 14,
+      fontWeight: 800,
+      cursor: "pointer",
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8
+    },
+    onClick: () => setLfNewItem(true)
+  }, "+ Log New Found Item"), lfLoading && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       color: "#64748b",

@@ -90,7 +90,7 @@ const S={
 function Spinner(){return <div style={{textAlign:'center',padding:40,color:'#475569'}}>Loading...</div>;}
 
 function BackBtn({onBack,label='← Back'}){
-  return <button style={{background:'none',border:'none',color:'#38bdf8',fontSize:14,fontWeight:700,cursor:'pointer',padding:0}} onClick={onBack}>{label}</button>;
+  return <button style={{background:'rgba(14,165,233,0.08)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:8,color:'#38bdf8',fontSize:14,fontWeight:700,cursor:'pointer',padding:'6px 14px'}} onClick={onBack}>{label}</button>;
 }
 
 // ─── LOGIN VIEW ──────────────────────────────────────────────

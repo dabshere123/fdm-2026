@@ -669,6 +669,8 @@ function HubApp({onBack}){
   const [lfItems,setLfItems]=useState([]);
   const [lfLoading,setLfLoading]=useState(false);
   const [lfClaimView,setLfClaimView]=useState(null);
+  const [lfNewItem,setLfNewItem]=useState(false);
+  const [lfNewFields,setLfNewFields]=useState({});
   const [lfClaimBy,setLfClaimBy]=useState("");
   const [lfClaimID,setLfClaimID]=useState("");
   const [lfClaimPhone,setLfClaimPhone]=useState("");
@@ -2079,8 +2081,37 @@ Reply YES to acknowledge.`
           <>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
               <div style={{fontSize:13,color:"#64748b"}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed</div>
-              <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 Staff Lookup Page</a>
+              <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 Staff Lookup</a>
             </div>
+
+            {/* LOG NEW ITEM FORM */}
+            {lfNewItem?(
+              <div style={{background:"rgba(249,115,22,0.06)",border:"1px solid rgba(249,115,22,0.25)",borderRadius:14,padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{fontSize:14,fontWeight:900,color:"#fb923c"}}>📦 Log New Item</div>
+                <div style={{display:"flex",gap:6}}>
+                  {[["Thu","🔵"],["Fri","🟠"],["Sat","🟢"],["Sun","🟣"]].map(([d,e])=>(
+                    <button key={d} style={{flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${lfNewFields.day===d?"rgba(249,115,22,0.6)":"rgba(255,255,255,0.1)"}`,background:lfNewFields.day===d?"rgba(249,115,22,0.15)":"rgba(255,255,255,0.03)",color:lfNewFields.day===d?"#fb923c":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfNewFields(p=>({...p,day:d}))}>{e} {d}</button>
+                  ))}
+                </div>
+                <Fld label="Where found" value={lfNewFields.foundAt||""} onChange={e=>setLfNewFields(p=>({...p,foundAt:e.target.value}))} ph="e.g. Near Moon Stage Left"/>
+                <Fld label="Where is it now" value={lfNewFields.nowAt||""} onChange={e=>setLfNewFields(p=>({...p,nowAt:e.target.value}))} ph="e.g. Festival Office"/>
+                <Fld label="Description" value={lfNewFields.description||""} onChange={e=>setLfNewFields(p=>({...p,description:e.target.value}))} ph="Describe the item..." multi/>
+                <div style={{display:"flex",gap:8}}>
+                  <button style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,rgba(249,115,22,0.8),rgba(234,88,12,0.9))",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",opacity:(!lfNewFields.description||!lfNewFields.foundAt)?0.5:1}} disabled={!lfNewFields.description||!lfNewFields.foundAt} onClick={async()=>{
+                    const res=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:lfNewFields.description,foundAt:lfNewFields.foundAt,currentLocation:lfNewFields.nowAt||lfNewFields.foundAt,dayFound:lfNewFields.day||"",foundBy:"Admin",role:"Admin"})});
+                    const data=await res.json();
+                    setLfNewItem(false);setLfNewFields({});
+                    if(data.itemNumber) setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lf",label:`L&F Logged — #${data.itemNumber}: ${lfNewFields.description.slice(0,30)}`},...p]);
+                    fetchLostFound();
+                  }}>Log Item</button>
+                  <button style={{padding:"12px 18px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setLfNewItem(false);setLfNewFields({});}}>Cancel</button>
+                </div>
+              </div>
+            ):(
+              <button style={{padding:"12px 16px",borderRadius:12,border:"1px solid rgba(249,115,22,0.4)",background:"rgba(249,115,22,0.08)",color:"#fb923c",fontSize:14,fontWeight:800,cursor:"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>setLfNewItem(true)}>
+                + Log New Found Item
+              </button>
+            )}
             {lfLoading&&<div style={{textAlign:"center",color:"#64748b",padding:"20px"}}>Loading...</div>}
             {!lfLoading&&lfItems.length===0&&<div style={{textAlign:"center",color:"#64748b",padding:"20px"}}>No lost & found items yet.</div>}
             {lfItems.map(item=>(

@@ -25,9 +25,10 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || '{}');
 
     // Accept data either directly or from Airtable Automation webhook format
-    const name  = body.name  || body.fields?.Name  || body.fields?.Name  || '';
-    const role  = body.role  || body.fields?.Role   || '';
-    const phone = String(body.phone || body.fields?.Phone || '').replace(/[^0-9]/g,'');
+    const name  = (body.name && body.name !== 'null') ? body.name : (body.fields?.Name || '');
+    const role  = (body.role && body.role !== 'null') ? body.role : (body.fields?.Role || '');
+    const rawPhone = body.phone || body.fields?.Phone || '';
+    const phone = String(rawPhone).replace(/[^0-9]/g,'');
     const smsConsent = body.smsConsent ?? body.fields?.SMSConsent ?? 'Yes';
 
     if (!name || !phone) {

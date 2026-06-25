@@ -210,7 +210,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
       {/* TABS */}
       <div style={{display:"flex",gap:0,borderBottom:"1px solid rgba(255,255,255,0.08)",margin:"0 16px"}}>
-        {[["calls",`My Calls (${myActive.length})`],["unassigned",`Unassigned (${unassigned.length})`],["lf","L&F"]].map(([t,l])=>(
+        {[["calls",`My Calls (${myActive.length})`],["unassigned",`Unassigned (${unassigned.length})`],["lf","L&F"],["chat","💬 Chat"]].map(([t,l])=>(
           <button key={t} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`2px solid ${tab===t?"#a855f7":"transparent"}`,color:tab===t?"#d8b4fe":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setTab(t)}>{l}</button>
         ))}
       </div>
@@ -246,9 +246,28 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
               );
             })}
             {/* Quick actions */}
-            <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:8,display:"flex",gap:8}}>
-              <button style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",color:"#fcd34d",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={openLostChild}>🧒 Lost Child</button>
-              <button style={{flex:1,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",color:"#c4b5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setNewCallType("medical");setNewCallView(true);}}>🏥 New Call</button>
+            <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
+              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",color:"#fcd34d",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={openLostChild}>🧒 Lost Child</button>
+              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",color:"#c4b5fd",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{setNewCallType("medical");setNewCallView(true);}}>🏥 New Call</button>
+              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(147,51,234,0.4)",background:"rgba(147,51,234,0.08)",color:"#d8b4fe",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{
+                const other=role==="Med 1"?"Med 2":"Med 1";
+                const msg=`🩺 RESOURCE REQUEST — ${role} requesting ${other} assistance.
+Please respond on radio or report to staging.`;
+                sendGroupMe(msg,["admin","medical"]);
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
+              }}>🩺 Request {role==="Med 1"?"Med 2":"Med 1"}</button>
+              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",color:"#fcd34d",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{
+                const msg=`📢 RESOURCE REQUEST — ${role} requesting Admin support.
+Please respond.`;
+                sendGroupMe(msg,["admin","medical"]);
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
+              }}>📢 Request Admin</button>
+              <button style={{flex:1,minWidth:"100%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{
+                const msg=`🚔 MPD REQUESTED — ${role} requesting police assistance at festival grounds.
+Fête de Marquette, McPike Park, Madison WI.`;
+                sendGroupMe(msg,["admin","medical"]);
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
+              }}>🚔 Request MPD</button>
             </div>
           </>
         )}
@@ -286,6 +305,39 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
             ))}
             {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No active L&F items</div>}
           </>
+        )}
+
+        {/* CHAT TAB */}
+        {tab==="chat"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:0,flex:1}}>
+            <div style={{flex:1,overflowY:"auto",maxHeight:380,display:"flex",flexDirection:"column",gap:6,marginBottom:8}}>
+              {medChatMessages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"20px 0"}}>No messages yet in Admin & Med channel</div>}
+              {medChatMessages.map(msg=>{
+                const isMe=msg.fromName===role;
+                const isAlert=msg.isAlert;
+                const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
+                if(isAlert) return(
+                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"7px 10px"}}>
+                    <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:2}}>🚨 ALERT · {time}</div>
+                    <div style={{fontSize:12,color:"#fecaca"}}>{msg.message}</div>
+                  </div>
+                );
+                return(
+                  <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
+                    {!isMe&&<div style={{fontSize:10,color:"#64748b",marginLeft:3}}>{msg.fromName} · {time}</div>}
+                    <div style={{maxWidth:"85%",background:isMe?"rgba(147,51,234,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(147,51,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:isMe?"12px 12px 3px 12px":"12px 12px 12px 3px",padding:"8px 11px"}}>
+                      <div style={{fontSize:13,color:"#f1f5f9"}}>{msg.message}</div>
+                    </div>
+                    {isMe&&<div style={{fontSize:10,color:"#374151",marginRight:3}}>{time}</div>}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:8,borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:8}}>
+              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Message Admin & Med channel..." value={medChatInput} onChange={e=>setMedChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendMedChat();}}}/>
+              <button style={{padding:"10px 16px",borderRadius:10,border:"none",background:medChatInput.trim()?"linear-gradient(135deg,#7c3aed,#6d28d9)":"rgba(255,255,255,0.06)",color:medChatInput.trim()?"#fff":"#475569",fontSize:13,fontWeight:800,cursor:medChatInput.trim()?"pointer":"not-allowed"}} onClick={sendMedChat} disabled={!medChatInput.trim()||medChatSending}>{medChatSending?"...":"Send"}</button>
+            </div>
+          </div>
         )}
 
       </div>

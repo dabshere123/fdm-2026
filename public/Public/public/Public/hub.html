@@ -5130,17 +5130,46 @@ Reply YES to acknowledge.`
       gap: 6,
       alignItems: "center"
     }
-  }, item.dayFound && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 800,
-      background: "rgba(245,158,11,0.12)",
-      border: "1px solid rgba(245,158,11,0.3)",
-      color: "#fcd34d",
-      borderRadius: 6,
-      padding: "2px 8px"
-    }
-  }, (item.dayFound || "").slice(0, 3).toUpperCase()), item.status === "In Box" && /*#__PURE__*/React.createElement("div", {
+  }, item.dayFound && (() => {
+    const d = (item.dayFound || '').toLowerCase();
+    const dc = d.includes('thu') ? {
+      bg: "rgba(59,130,246,0.25)",
+      br: "rgba(59,130,246,0.6)",
+      tx: "#bfdbfe",
+      lb: "THU"
+    } : d.includes('fri') ? {
+      bg: "rgba(251,146,60,0.25)",
+      br: "rgba(251,146,60,0.6)",
+      tx: "#fed7aa",
+      lb: "FRI"
+    } : d.includes('sat') ? {
+      bg: "rgba(22,163,74,0.25)",
+      br: "rgba(22,163,74,0.6)",
+      tx: "#bbf7d0",
+      lb: "SAT"
+    } : d.includes('sun') ? {
+      bg: "rgba(139,92,246,0.25)",
+      br: "rgba(139,92,246,0.6)",
+      tx: "#e9d5ff",
+      lb: "SUN"
+    } : {
+      bg: "rgba(245,158,11,0.15)",
+      br: "rgba(245,158,11,0.4)",
+      tx: "#fcd34d",
+      lb: (item.dayFound || '').slice(0, 3).toUpperCase()
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        background: dc.bg,
+        border: `1px solid ${dc.br}`,
+        color: dc.tx,
+        borderRadius: 6,
+        padding: "2px 8px"
+      }
+    }, dc.lb);
+  })(), item.status === "In Box" && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       fontWeight: 800,

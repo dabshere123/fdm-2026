@@ -1879,7 +1879,15 @@ Reply YES to acknowledge.`
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
                   <div style={{fontSize:15,fontWeight:900,color:item.status==="Claimed"?"#10b981":"#c4b5fd",fontFamily:"monospace",letterSpacing:"0.05em"}}>{item.itemNumber||"#?"}</div>
                   <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                    {item.dayFound&&<div style={{fontSize:10,fontWeight:800,background:"rgba(245,158,11,0.12)",border:"1px solid rgba(245,158,11,0.3)",color:"#fcd34d",borderRadius:6,padding:"2px 8px"}}>{(item.dayFound||"").slice(0,3).toUpperCase()}</div>}
+                    {item.dayFound&&(()=>{
+                      const d=(item.dayFound||'').toLowerCase();
+                      const dc=d.includes('thu')?{bg:"rgba(59,130,246,0.25)",br:"rgba(59,130,246,0.6)",tx:"#bfdbfe",lb:"THU"}:
+                               d.includes('fri')?{bg:"rgba(251,146,60,0.25)",br:"rgba(251,146,60,0.6)",tx:"#fed7aa",lb:"FRI"}:
+                               d.includes('sat')?{bg:"rgba(22,163,74,0.25)",br:"rgba(22,163,74,0.6)",tx:"#bbf7d0",lb:"SAT"}:
+                               d.includes('sun')?{bg:"rgba(139,92,246,0.25)",br:"rgba(139,92,246,0.6)",tx:"#e9d5ff",lb:"SUN"}:
+                               {bg:"rgba(245,158,11,0.15)",br:"rgba(245,158,11,0.4)",tx:"#fcd34d",lb:(item.dayFound||'').slice(0,3).toUpperCase()};
+                      return <div style={{fontSize:10,fontWeight:800,background:dc.bg,border:`1px solid ${dc.br}`,color:dc.tx,borderRadius:6,padding:"2px 8px"}}>{dc.lb}</div>;
+                    })()}
                     {item.status==="In Box"&&<div style={{fontSize:10,fontWeight:800,background:"rgba(139,92,246,0.15)",border:"1px solid rgba(139,92,246,0.4)",color:"#c4b5fd",borderRadius:6,padding:"2px 8px"}}>📦 IN BOX</div>}
                     {item.status==="Claimed"&&<div style={{fontSize:10,fontWeight:800,background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.3)",color:"#6ee7b7",borderRadius:6,padding:"2px 8px"}}>✅ CLAIMED</div>}
                     {item.status!=="Claimed"&&item.status!=="In Box"&&<div style={{fontSize:10,fontWeight:800,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",color:"#fcd34d",borderRadius:6,padding:"2px 8px"}}>UNCLAIMED</div>}

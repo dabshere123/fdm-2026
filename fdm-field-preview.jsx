@@ -2,23 +2,52 @@ const {useState,useEffect,useRef}=React;
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const API='/.netlify/functions';
-const CHANNELS=[
-  {id:'AllStaff',label:'All Staff',emoji:'📢'},
-  {id:'AdminMed',label:'Admin & Med',emoji:'🏥'},
-  {id:'Bars',label:'All Bars',emoji:'🍺'},
-  {id:'MoonBar',label:'Moon Bar',emoji:'🌙'},
-  {id:'SunBarL',label:'Sun Bar Left',emoji:'☀️'},
-  {id:'SunBarR',label:'Sun Bar Right',emoji:'☀️'},
-  {id:'LafBar',label:'Lafayette Bar',emoji:'🎸'},
-  {id:'LagBar',label:'Lagniappe Bar',emoji:'🎺'},
-  {id:'FamilyBar',label:'Family Bar',emoji:'👨‍👩‍👧'},
-  {id:'CabBar',label:'Cabaret Bar',emoji:'🎭'},
-  {id:'EverythingBar',label:'EEC',emoji:'☕'},
-  {id:'MoonST',label:'Moon Stage',emoji:'🌙'},
-  {id:'SunST',label:'Sun Stage',emoji:'☀️'},
-  {id:'LafST',label:'Lafayette Stage',emoji:'🎸'},
-  {id:'LagST',label:'Lagniappe Stage',emoji:'🎺'},
+const CHANNEL_GROUPS=[
+  {
+    id:'general',label:'General',
+    channels:[
+      {id:'AllStaff',label:'All Staff',emoji:'📢'},
+    ]
+  },
+  {
+    id:'bars',label:'Bars',
+    channels:[
+      {id:'Bars',label:'All Bars',emoji:'🍺'},
+      {id:'MoonBar',label:'Moon Bar',emoji:'🌙'},
+      {id:'SunBarL',label:'Sun Bar Left',emoji:'☀️'},
+      {id:'SunBarR',label:'Sun Bar Right',emoji:'☀️'},
+      {id:'LafBar',label:'Lafayette Bar',emoji:'🎸'},
+      {id:'LagBar',label:'Lagniappe Bar',emoji:'🎺'},
+      {id:'FamilyBar',label:'Family Bar',emoji:'👨‍👩‍👧'},
+      {id:'CabBar',label:'Cabaret Bar',emoji:'🎭'},
+      {id:'EverythingBar',label:'EEC',emoji:'☕'},
+    ]
+  },
+  {
+    id:'stages',label:'Stages',
+    channels:[
+      {id:'MoonST',label:'Moon Stage',emoji:'🌙'},
+      {id:'SunST',label:'Sun Stage',emoji:'☀️'},
+      {id:'LafST',label:'Lafayette Stage',emoji:'🎸'},
+      {id:'LagST',label:'Lagniappe Stage',emoji:'🎺'},
+    ]
+  },
+  {
+    id:'admin',label:'Admin',
+    channels:[
+      {id:'Admin',label:'Admin',emoji:'⚡'},
+    ]
+  },
+  {
+    id:'medical',label:'Medical',
+    channels:[
+      {id:'AdminMed',label:'Medical',emoji:'🏥'},
+    ]
+  },
 ];
+
+// Flat list for lookups
+const CHANNELS=CHANNEL_GROUPS.flatMap(g=>g.channels);
 
 const CALL_TYPES=[
   {id:'medical',label:'Medical',emoji:'🏥',color:'rgba(147,51,234,0.8)'},
@@ -274,13 +303,23 @@ function ChatView({user,onBack}){
         ))}
       </div>}
 
-      {/* Channel picker */}
+      {/* Channel picker — grouped sections */}
       {!dmThread&&tab==='channels'&&(
-        <div style={{padding:'8px 12px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:6,flexWrap:'wrap'}}>
-          {CHANNELS.map(ch=>(
-            <button key={ch.id} style={{padding:'4px 10px',borderRadius:16,border:`1px solid ${channel===ch.id?'rgba(14,165,233,0.5)':'rgba(255,255,255,0.08)'}`,background:channel===ch.id?'rgba(14,165,233,0.1)':'rgba(255,255,255,0.02)',color:channel===ch.id?'#38bdf8':'#64748b',fontSize:11,fontWeight:600,cursor:'pointer'}} onClick={()=>{setChannel(ch.id);setMessages([]);}}>
-              {ch.emoji} {ch.label}
-            </button>
+        <div style={{borderBottom:'1px solid rgba(255,255,255,0.06)',overflowY:'auto',maxHeight:200}}>
+          {CHANNEL_GROUPS.map(group=>(
+            <div key={group.id} style={{padding:'6px 12px 4px'}}>
+              <div style={{fontSize:10,fontWeight:900,color:'#374151',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:5}}>{group.label}</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:4}}>
+                {group.channels.map(ch=>{
+                  const active=channel===ch.id;
+                  return(
+                    <button key={ch.id} style={{padding:'5px 11px',borderRadius:16,border:`1px solid ${active?'rgba(14,165,233,0.6)':'rgba(255,255,255,0.08)'}`,background:active?'rgba(14,165,233,0.12)':'rgba(255,255,255,0.02)',color:active?'#38bdf8':'#64748b',fontSize:12,fontWeight:active?700:400,cursor:'pointer'}} onClick={()=>{setChannel(ch.id);setMessages([]);}}>
+                      {ch.emoji} {ch.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ))}
         </div>
       )}

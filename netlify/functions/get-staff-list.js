@@ -5,11 +5,25 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 
 function normalizeDays(days) {
   if (!days) return '';
-  const d = days.toLowerCase();
+  const d = days.toLowerCase().trim();
+  // EVERYDAY → full festival
   if (d.includes('every') || d.includes('all day') || d === 'all') {
-    return 'Thursday, Friday, Saturday, Sunday';
+    return 'EVERYDAY';
   }
+  // Already in abbreviated format — return as-is
   return days;
+}
+
+function expandDaysForDisplay(days) {
+  if (!days) return '';
+  const d = days.toLowerCase();
+  if (d.includes('every')) return 'Thu · Fri · Sat · Sun';
+  const parts = [];
+  if (d.includes('th')) parts.push('Thu');
+  if (/f/.test(d) || d.startsWith('f ') || d === 'f') parts.push('Fri');
+  if (/s/.test(d) && !d.includes('su')) parts.push('Sat');
+  if (d.includes('su')) parts.push('Sun');
+  return parts.join(' · ') || days;
 }
 
 function normalizeLocation(loc) {
@@ -40,11 +54,11 @@ exports.handler = async (event) => {
       .filter(r => r.fields.Status === 'Approved')
       .map(r => ({
         id: r.id,
-        name: (r.fields['FullName'] || r.fields['Full Name'] || r.fields['Name'] || '').trim(),
+        name: (r.fields['Name1'] || r.fields['FullName'] || r.fields['Full Name'] || r.fields['Name'] || '').trim(),
         role: (r.fields['Role'] || '').trim(),
         location: normalizeLocation(r.fields['Location'] || ''),
         phone: (r.fields['Phone'] || '').trim(),
-        groupmeUN: (r.fields['GroupMEUN'] || r.fields['UserName'] || r.fields['Username'] || '').trim(),
+        groupmeUN: (r.fields['GroupmeUN'] || r.fields['GroupMEUN'] || r.fields['UserName'] || r.fields['Username'] || '').trim(),
         groupmeGPName: (r.fields['GroupMEGPName'] || r.fields['GroupMe'] || r.fields['GroupME'] || '').trim(),
         days: normalizeDays(r.fields['Days'] || ''),
         shiftStart: r.fields['ShiftStart'] || '',

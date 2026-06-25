@@ -24,7 +24,7 @@ exports.handler = async (event) => {
     RequestedBy:   requestedBy || 'Staff',
     Phone:         phone || '',
     Status:        'Pending',
-    Timestamp:     new Date().toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }),
+    Timestamp:     new Date().toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', timeZone:'America/Chicago' }),
   };
 
   try {

@@ -46,6 +46,27 @@ function FieldApp(){
   },[]);
 
   // ROLE TYPES
+  // Map role to chat channel
+  const roleToChannel=(role)=>{
+    const r=(role||'').toLowerCase();
+    if(r==='a1'||r==='a2') return 'Admin';
+    if(r==='m1'||r==='m2') return 'Med';
+    if(r==='msb1'||r==='msb2') return 'MoonBar';
+    if(r==='ssbl') return 'SunBarL';
+    if(r==='ssbr') return 'SunBarR';
+    if(r==='lafb') return 'LafBar';
+    if(r==='lagb') return 'LagBar';
+    if(r==='ffb') return 'FamilyBar';
+    if(r==='cb') return 'CabBar';
+    if(r==='etecm') return 'EverythingBar';
+    if(r==='msm') return 'MoonST';
+    if(r==='ssm') return 'SunST';
+    if(r==='lafm') return 'LafST';
+    if(r==='lagm') return 'LagST';
+    if(r==='mtm') return 'Merch';
+    return 'AllStaff';
+  };
+
   const ROLE_TYPES={
     bar_manager:    {label:"Bar Manager",           requests:["lost_child","emergency","security","supplies","lost_found","general"]},
     stage_manager:  {label:"Stage Manager",          requests:["lost_child","emergency","security","supplies","lost_found","general"]},
@@ -134,6 +155,34 @@ function FieldApp(){
     });
   };
 
+  // CHAT FUNCTIONS
+  const chatChannel = roleToChannel(role||roleType);
+
+  const fetchChat=async()=>{
+    try{
+      const ch=chatChannel||myChannel;
+      const res=await fetch(`/.netlify/functions/get-messages?channel=${ch}&limit=100`);
+      const data=await res.json();
+      if(data.messages) setChatMessages(data.messages);
+      setChatLastFetch(new Date().toISOString());
+    }catch(e){console.log('Chat fetch error:',e.message);}
+  };
+
+  const sendChat=async()=>{
+    if(!chatInput.trim()||chatSending) return;
+    setChatSending(true);
+    try{
+      await fetch('/.netlify/functions/send-message',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fromName:staffName||name,fromRole:role||roleType,channel:chatChannel,message:chatInput.trim()})
+      });
+      setChatInput('');
+      await fetchChat();
+    }catch(e){console.log('Send error:',e.message);}
+    setChatSending(false);
+  };
+
   const doSubmit=async()=>{
     setRoleLocked(true);
     if(reqType==="lost_child"){
@@ -199,6 +248,220 @@ function FieldApp(){
   // LAST NAME LOGIN
   const [lastNameInput,setLastNameInput]=useState("");
   const [loginError,setLoginError]=useState("");
+
+  // CHAT SYSTEM — Groups + DMs + Alerts
+  const ALL_CHANNELS=[
+    {id:"AllStaff",label:"All Staff",emoji:"📢"},
+    {id:"Bars",label:"All Bars",emoji:"🍺"},
+    {id:"Stages",label:"All Stages",emoji:"🎤"},
+    {id:"AdminMed",label:"Admin & Med",emoji:"🏥"},
+    {id:"MoonBar",label:"Moon Bar",emoji:"🌙"},
+    {id:"SunBarL",label:"Sun Bar L",emoji:"☀️"},
+    {id:"SunBarR",label:"Sun Bar R",emoji:"☀️"},
+    {id:"LafBar",label:"Lafayette Bar",emoji:"🎸"},
+    {id:"LagBar",label:"Lagniappe Bar",emoji:"🎺"},
+    {id:"FamilyBar",label:"Family Bar",emoji:"👨‍👩‍👧"},
+    {id:"CabBar",label:"Cabaret Bar",emoji:"🎭"},
+    {id:"EverythingBar",label:"EEC",emoji:"☕"},
+    {id:"MoonST",label:"Moon Stage",emoji:"🌙"},
+    {id:"SunST",label:"Sun Stage",emoji:"☀️"},
+    {id:"LafST",label:"Lafayette Stage",emoji:"🎸"},
+    {id:"LagST",label:"Lagniappe Stage",emoji:"🎺"},
+  ];
+
+  const [activeChatTab,setActiveChatTab]=useState("channels"); // channels | dms
+  const [activeDMThread,setActiveDMThread]=useState(null); // {otherName, threadId}
+  const [dmMessages,setDMMessages]=useState([]);
+  const [dmList,setDMList]=useState([]);
+  const [newDMTarget,setNewDMTarget]=useState(null);
+  const [showChannelPicker,setShowChannelPicker]=useState(false);
+
+  const myName=staffName||name;
+  const myChannel=roleToChannel(role||roleType);
+
+  const fetchDMList=async()=>{
+    try{
+      const res=await fetch(`/.netlify/functions/get-messages?myName=${encodeURIComponent(myName)}`);
+      const data=await res.json();
+      if(data.dmThreads) setDMList(data.dmThreads);
+    }catch(e){}
+  };
+
+  const fetchDMThread=async(threadId)=>{
+    try{
+      const res=await fetch(`/.netlify/functions/get-messages?dmThread=${encodeURIComponent(threadId)}`);
+      const data=await res.json();
+      if(data.messages) setDMMessages(data.messages);
+    }catch(e){}
+  };
+
+  const sendDM=async()=>{
+    if(!chatInput.trim()||chatSending||!activeDMThread) return;
+    setChatSending(true);
+    try{
+      const target=staffList.find(s=>s.name===activeDMThread.otherName);
+      await fetch('/.netlify/functions/send-message',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          fromName:myName,fromRole:role||roleType,
+          channel:`DM_${[myName,activeDMThread.otherName].sort().join('_')}`,
+          message:chatInput.trim(),isDM:true,
+          toName:activeDMThread.otherName,
+          toPhone:target?.phone||'',
+          threadId:activeDMThread.threadId
+        })
+      });
+      setChatInput('');
+      await fetchDMThread(activeDMThread.threadId);
+    }catch(e){}
+    setChatSending(false);
+  };
+
+  const startNewDM=async(targetStaff)=>{
+    const threadId=`DM_${[myName,targetStaff.name].sort().join('_')}`;
+    setActiveDMThread({otherName:targetStaff.name,threadId});
+    setActiveChatTab('dms');
+    setNewDMTarget(null);
+    await fetchDMThread(threadId);
+  };
+
+  if(chatView&&loggedIn) return(
+    <div style={{minHeight:"100vh",background:"#0d0d1a",display:"flex",flexDirection:"column",fontFamily:"'DM Sans',sans-serif"}}>
+
+      {/* Header */}
+      <div style={{background:"linear-gradient(135deg,#0a0f1e,#111827)",borderBottom:"1px solid rgba(14,165,233,0.2)",padding:"14px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+          <button style={{background:"none",border:"none",color:"#38bdf8",fontSize:20,cursor:"pointer",padding:0}} onClick={()=>{if(activeDMThread){setActiveDMThread(null);setActiveChatTab("channels");}else{setChatView(false);}}}>←</button>
+          <div style={{flex:1}}>
+            <div style={{fontSize:16,fontWeight:900,color:"#f1f5f9"}}>
+              {activeDMThread?`💬 ${activeDMThread.otherName}`:"💬 Festival Chat"}
+            </div>
+            {!activeDMThread&&<div style={{fontSize:11,color:"#64748b"}}>Groups · Direct Messages · Alerts</div>}
+          </div>
+        </div>
+        {/* Tab bar */}
+        {!activeDMThread&&<div style={{display:"flex",gap:6}}>
+          {[["channels","Channels"],["dms","Direct Messages"]].map(([t,l])=>(
+            <button key={t} style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${activeChatTab===t?"rgba(14,165,233,0.5)":"rgba(255,255,255,0.08)"}`,background:activeChatTab===t?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.03)",color:activeChatTab===t?"#38bdf8":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setActiveChatTab(t);if(t==="dms"){setActiveDMThread(null);fetchDMList();}}}>
+              {l}
+            </button>
+          ))}
+        </div>}
+      </div>
+
+      {/* CHANNELS TAB */}
+      {!activeDMThread&&activeChatTab==="channels"&&(
+        <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+          {/* Channel list */}
+          {showChannelPicker&&(
+            <div style={{width:140,borderRight:"1px solid rgba(255,255,255,0.08)",overflowY:"auto",background:"rgba(0,0,0,0.2)"}}>
+              {ALL_CHANNELS.map(ch=>(
+                <button key={ch.id} style={{width:"100%",padding:"10px 12px",textAlign:"left",background:chatChannel===ch.id?"rgba(14,165,233,0.12)":"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",color:chatChannel===ch.id?"#38bdf8":"#64748b",fontSize:12,fontWeight:chatChannel===ch.id?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchChat();setShowChannelPicker(false);}}>
+                  {ch.emoji} {ch.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div style={{flex:1,display:"flex",flexDirection:"column"}}>
+            {/* Active channel header */}
+            <div style={{padding:"8px 14px",borderBottom:"1px solid rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>
+                {ALL_CHANNELS.find(c=>c.id===chatChannel)?.emoji} {ALL_CHANNELS.find(c=>c.id===chatChannel)?.label||chatChannel}
+              </div>
+              <button style={{background:"rgba(14,165,233,0.08)",border:"1px solid rgba(14,165,233,0.2)",borderRadius:8,color:"#38bdf8",fontSize:11,fontWeight:700,cursor:"pointer",padding:"4px 10px"}} onClick={()=>setShowChannelPicker(p=>!p)}>Switch Channel</button>
+            </div>
+            {/* Messages */}
+            <div style={{flex:1,overflowY:"auto",padding:"12px",display:"flex",flexDirection:"column",gap:8}}>
+              {chatMessages.length===0&&<div style={{textAlign:"center",color:"#475569",fontSize:13,padding:30}}>No messages yet</div>}
+              {chatMessages.map(msg=>{
+                const isMe=msg.fromName===myName;
+                const isAlert=msg.isAlert;
+                const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}):'';
+                if(isAlert) return(
+                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"8px 12px",display:"flex",gap:8,alignItems:"flex-start"}}>
+                    <span style={{fontSize:16}}>🚨</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:11,fontWeight:800,color:"#fca5a5",marginBottom:2}}>ALERT · {time}</div>
+                      <div style={{fontSize:13,color:"#fecaca"}}>{msg.message}</div>
+                    </div>
+                  </div>
+                );
+                return(
+                  <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
+                    {!isMe&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromName} · {msg.channel} · {time}</div>}
+                    <div style={{maxWidth:"80%",background:isMe?"rgba(14,165,233,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(14,165,233,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"9px 13px"}}>
+                      <div style={{fontSize:14,color:"#f1f5f9",lineHeight:1.5}}>{msg.message}</div>
+                    </div>
+                    {isMe&&<div style={{fontSize:10,color:"#374151",marginRight:4}}>{time}</div>}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Input */}
+            <div style={{padding:"10px 12px",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",gap:8}}>
+              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder={`Message ${ALL_CHANNELS.find(c=>c.id===chatChannel)?.label||chatChannel}...`} value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendChat();}}}/>
+              <button style={{padding:"11px 16px",borderRadius:10,border:"none",background:chatInput.trim()?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.06)",color:chatInput.trim()?"#fff":"#475569",fontSize:14,fontWeight:800,cursor:chatInput.trim()?"pointer":"not-allowed"}} onClick={sendChat} disabled={!chatInput.trim()||chatSending}>{chatSending?"...":"Send"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DMS TAB — Thread list */}
+      {!activeDMThread&&activeChatTab==="dms"&&(
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {/* New DM */}
+          <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+            <div style={{fontSize:12,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Start New Message</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,maxHeight:120,overflowY:"auto"}}>
+              {staffList.filter(s=>s.name!==myName).map(s=>(
+                <button key={s.id} style={{padding:"5px 12px",borderRadius:20,border:"1px solid rgba(255,255,255,0.12)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:12,cursor:"pointer"}} onClick={()=>startNewDM(s)}>{s.name}</button>
+              ))}
+            </div>
+          </div>
+          {/* Existing DMs */}
+          <div style={{flex:1,overflowY:"auto"}}>
+            {dmList.length===0&&<div style={{textAlign:"center",color:"#475569",fontSize:13,padding:30}}>No direct messages yet</div>}
+            {dmList.map(dm=>(
+              <button key={dm.threadId} style={{width:"100%",padding:"12px 16px",textAlign:"left",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.06)",cursor:"pointer",display:"flex",gap:12,alignItems:"center"}} onClick={()=>{setActiveDMThread({otherName:dm.otherName,threadId:dm.threadId});fetchDMThread(dm.threadId);}}>
+                <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(14,165,233,0.15)",border:"1px solid rgba(14,165,233,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#38bdf8",flexShrink:0}}>
+                  {dm.otherName.split(' ').map(n=>n[0]).join('').slice(0,2)}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9",marginBottom:2}}>{dm.otherName}</div>
+                  <div style={{fontSize:12,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{dm.lastMessage}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* DM THREAD VIEW */}
+      {activeDMThread&&(
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"12px",display:"flex",flexDirection:"column",gap:8}}>
+            {dmMessages.length===0&&<div style={{textAlign:"center",color:"#475569",fontSize:13,padding:30}}>Start the conversation</div>}
+            {dmMessages.map(msg=>{
+              const isMe=msg.fromName===myName;
+              const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}):'';
+              return(
+                <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
+                  <div style={{maxWidth:"80%",background:isMe?"rgba(14,165,233,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(14,165,233,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"9px 13px"}}>
+                    <div style={{fontSize:14,color:"#f1f5f9",lineHeight:1.5}}>{msg.message}</div>
+                  </div>
+                  <div style={{fontSize:10,color:"#374151"}}>{time}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{padding:"10px 12px",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",gap:8}}>
+            <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder={`Message ${activeDMThread.otherName}...`} value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendDM();}}}/>
+            <button style={{padding:"11px 16px",borderRadius:10,border:"none",background:chatInput.trim()?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.06)",color:chatInput.trim()?"#fff":"#475569",fontSize:14,fontWeight:800,cursor:chatInput.trim()?"pointer":"not-allowed"}} onClick={sendDM} disabled={!chatInput.trim()||chatSending}>{chatSending?"...":"Send"}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   if(!loggedIn) return(
     <div style={{minHeight:"100vh",background:"#0d0d1a",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'DM Sans',sans-serif",position:"relative"}}>

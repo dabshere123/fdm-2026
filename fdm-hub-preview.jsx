@@ -315,6 +315,13 @@ function HubApp({onBack}){
   const [lfNewNarrative,setLfNewNarrative]=useState("");
   const [lfPhotoCapturing,setLfPhotoCapturing]=useState(false);
   const [lfPhotoPreview,setLfPhotoPreview]=useState(null);
+  const [chatMessages,setChatMessages]=useState([]);
+  const [chatChannel,setChatChannel]=useState('all');
+  const [chatInput,setChatInput]=useState('');
+  const [chatSending,setChatSending]=useState(false);
+  const [chatUnread,setChatUnread]=useState(0);
+  const [chatLastId,setChatLastId]=useState(null);
+  const [chatAlert,setChatAlert]=useState(null);
   const [lfSubmitting,setLfSubmitting]=useState(false);
   const [lfItems,setLfItems]=useState([]);
   const [lfLoading,setLfLoading]=useState(false);
@@ -344,6 +351,47 @@ function HubApp({onBack}){
       };
       input.click();
     });
+  };
+
+  // HUB CHAT FUNCTIONS
+  const fetchHubChat=async(channel)=>{
+    try{
+      const ch=channel||chatChannel;
+      const url=ch==='all'?'/.netlify/functions/get-messages?limit=100':`/.netlify/functions/get-messages?channel=${ch}&limit=100`;
+      const res=await fetch(url);
+      const data=await res.json();
+      if(data.messages){
+        setChatMessages(data.messages);
+        // Count unread (messages since last check)
+        if(chatLastId){
+          const lastIdx=data.messages.findIndex(m=>m.id===chatLastId);
+          const newCount=lastIdx>=0?data.messages.length-lastIdx-1:0;
+          if(newCount>0&&view!=='chat'){
+            setChatUnread(n=>n+newCount);
+            const latest=data.messages[data.messages.length-1];
+            setChatAlert(`💬 ${latest.fromName}: ${latest.message.slice(0,50)}${latest.message.length>50?'...':''}`);
+            setTimeout(()=>setChatAlert(null),5000);
+          }
+        }
+        if(data.messages.length>0) setChatLastId(data.messages[data.messages.length-1].id);
+      }
+    }catch(e){console.log('Hub chat fetch:',e.message);}
+  };
+
+  const sendHubMessage=async()=>{
+    if(!chatInput.trim()||chatSending) return;
+    setChatSending(true);
+    const targetChannel=chatChannel==='all'?'AllStaff':chatChannel;
+    try{
+      await fetch('/.netlify/functions/send-message',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fromName:'Admin',fromRole:'Admin',channel:targetChannel,message:chatInput.trim()})
+      });
+      setChatInput('');
+      await fetchHubChat(chatChannel);
+    }catch(e){console.log('Hub send error:',e.message);}
+    setChatSending(false);
   };
 
   const fetchLostFound=async()=>{
@@ -2377,61 +2425,97 @@ Reply YES to acknowledge.`
       </div>
     ))}
 
-    {/* SECTION 1: COMMAND */}
-      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,fontSize:13,fontWeight:900,padding:"8px 12px 6px"}}>📡 Command</div>
-        {/* ROW 1: 911 Activation Notify + Lost Child */}
-        <div style={{padding:"10px 10px 6px",display:"flex",flexDirection:"column",gap:8}}>
-          <button style={{width:"100%",display:"flex",alignItems:"center",gap:16,padding:"22px",borderRadius:14,border:`3px solid ${nineOneOne.active?"rgba(239,68,68,0.95)":"rgba(180,0,0,0.6)"}`,background:nineOneOne.active?"linear-gradient(135deg,rgba(239,68,68,0.4),rgba(180,0,0,0.3))":"rgba(180,0,0,0.1)",cursor:"pointer",boxShadow:nineOneOne.active?"0 0 28px rgba(239,68,68,0.6)":"0 0 8px rgba(180,0,0,0.2)"}}
-            onClick={()=>{
-              if(nineOneOne.active){
-                const msg=`🚨 911 ACTIVE 🚨\n\nMadison Fire / EMS has been called.\nLOCATION: ${nineOneOne.info?.location||"Festival Grounds"}\nNATURE: ${nineOneOne.info?.nature||""}\nActivated by: ${nineOneOne.by} · ${nineOneOne.at}\n\nClear a path for emergency vehicles.`;
-                sendGroupMe(msg,["admin","medical"]);
-                setTimeout(()=>{
-                  const phones=[...new Set([ADMIN2_PHONE,...getNotifyList("medical")])];
-                  sendSMSList(phones,msg);
-                  sendVoice(phones,`911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location||"Festival Grounds"}. Clear a path for emergency vehicles. Responding to: ${nineOneOne.info?.location||"Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging||"Staging #1 — Ingersoll & Wilson"}. Clear a path for emergency vehicles. 911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location||"Festival Grounds"}. Responding to: ${nineOneOne.info?.location||"Festival Grounds"}. EMS staging at ${nineOneOne.info?.staging||"Staging #1 — Ingersoll & Wilson"}. Clear a path for emergency vehicles.`);
-                },100);
-                fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"911_active",officers:mpdOfficers,location:nineOneOne.info?.location||"Festival Grounds",situation:msg})}).catch(e=>console.log(e));
-                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"911",label:"911 Alert — Admin/Med/MPD",msg},...p]);
-              } else {
-                set911({active:true,by:"Admin",at:now(),info:{}});
-                setView("911");
-              }
-            }}>
-            <span style={{fontSize:22}}>🚨</span>
-            <div style={{flex:1,textAlign:"left"}}>
-              <div style={{fontSize:17,fontWeight:900,color:nineOneOne.active?"#fca5a5":"#f87171"}}>{nineOneOne.active?"911 Active — Tap to Notify Admin/Med/MPD":"🚨 911 Activation — Tap to Notify"}</div>
-              <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>{nineOneOne.active?"Fires GroupMe + SMS + MPD voice":"Tap after calling 911 — alerts Admin, Med, MPD"}</div>
-            </div>
-          </button>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <button style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",borderRadius:12,border:`2px solid ${lostChildCalls.length>0?"rgba(234,179,8,0.7)":"rgba(245,158,11,0.3)"}`,background:lostChildCalls.length>0?"linear-gradient(135deg,rgba(234,179,8,0.2),rgba(202,138,4,0.1))":"rgba(255,255,255,0.03)",cursor:"pointer",position:"relative"}} onClick={()=>{setCallFilter(["lost_child"]);setCallFilterTitle("Lost Child");setCallTab("active");setView("callqueue");}}>
-              <span style={{fontSize:22}}>🧒</span>
-              <span style={{fontSize:15,fontWeight:800,color:lostChildCalls.length>0?"#fcd34d":"#94a3b8"}}>Lost Child{lostChildCalls.length>0?` (${lostChildCalls.length})`:""}</span>
-              {lostChildCalls.length>0&&<div style={{position:"absolute",top:6,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{lostChildCalls.length}</div>}
-            </button>
-            <button style={{padding:"7px",borderRadius:8,border:"1px solid rgba(234,179,8,0.4)",background:"rgba(234,179,8,0.08)",color:"#fcd34d",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLcView(true)}>➕ Report Lost Child</button>
+    {/* ===== LIVE/DEMO TOGGLE ===== */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",padding:"12px 16px"}}>
+        <div>
+          <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>{liveMode?"🟢 LIVE MODE":"⚪ DEMO MODE"}</div>
+          <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{liveMode?"Connected to Airtable · Pulling live data":"Using sample data only"}</div>
+        </div>
+        <button style={{padding:"10px 20px",borderRadius:10,border:`1px solid ${liveMode?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:liveMode?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.06)",color:liveMode?"#4ade80":"#94a3b8",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>setLiveMode(p=>!p)}>{liveMode?"Turn Off":"Go Live"}</button>
+      </div>
 
+    {/* ===== CHAT BOX ===== */}
+      <button style={{width:"100%",background:"rgba(14,165,233,0.06)",borderRadius:14,border:"1px solid rgba(14,165,233,0.2)",padding:"14px 16px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>{setView("chat");setChatUnread(0);fetchHubChat();}}>
+        <div style={{background:"rgba(14,165,233,0.15)",borderRadius:10,padding:"10px",fontSize:20}}>💬</div>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#38bdf8"}}>Festival Chat</div>
+            {chatUnread>0&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"2px 8px"}}>{chatUnread} new</div>}
+          </div>
+          <div style={{fontSize:12,color:"#64748b"}}>
+            {chatMessages.length>0
+              ?`${chatMessages[chatMessages.length-1].fromName}: ${chatMessages[chatMessages.length-1].message.slice(0,60)}${chatMessages[chatMessages.length-1].message.length>60?"...":""}`
+              :"No messages yet — tap to open chat"}
           </div>
         </div>
+        <div style={{fontSize:14,color:"#38bdf8",fontWeight:700}}>→</div>
+      </button>
 
-      {/* SECTION 2: SAFETY + BROADCAST side by side */}
+    {/* ===== ROW 1: SAFETY | BROADCAST ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-        {/* SAFETY */}
-        <div style={{background:"linear-gradient(160deg,rgba(220,38,38,0.15),rgba(37,99,235,0.15))",borderRadius:14,border:"1px solid rgba(220,38,38,0.3)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{...S.sectionHdr,background:"linear-gradient(135deg,rgba(220,38,38,0.3),rgba(37,99,235,0.3))",fontSize:16,fontWeight:900}}>🚨 Safety</div>
-          <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px",flex:1,justifyContent:"center"}}>
-            <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"16px",borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 0 12px rgba(239,68,68,0.4)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-              <span style={{fontSize:20}}>🚨</span>
-              <div style={{textAlign:"center"}}>
-                <div>New Call</div>
-                <div style={{fontSize:11,fontWeight:500,opacity:0.85}}>Medical · Fire/Life Safety · Security</div>
-              </div>
+
+        {/* SAFETY COLUMN */}
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{background:"linear-gradient(135deg,rgba(220,38,38,0.15),rgba(180,0,0,0.1))",borderRadius:14,border:"1px solid rgba(220,38,38,0.3)",padding:"10px 10px 8px",display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:12,fontWeight:900,color:"#fca5a5",textTransform:"uppercase",letterSpacing:"0.06em",paddingBottom:4,borderBottom:"1px solid rgba(220,38,38,0.2)"}}>🚨 Safety</div>
+
+            {/* REPORT LOST CHILD — ALL YELLOW */}
+            <button style={{width:"100%",padding:"14px 10px",borderRadius:12,border:"2px solid #eab308",background:"linear-gradient(135deg,#ca8a04,#a16207)",color:"#fff",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,position:"relative"}} onClick={()=>setLcView(true)}>
+              <span style={{fontSize:18}}>🧒</span>
+              REPORT LOST CHILD
+              {lostChildCalls.length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{lostChildCalls.length}</div>}
             </button>
+
+            {/* NEW CALL BUTTON */}
+            <button style={{width:"100%",padding:"14px 10px",borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 0 12px rgba(239,68,68,0.3)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+              <span style={{fontSize:18}}>🚨</span> NEW CALL
+            </button>
+
+            {/* 911 COMPACT BUTTON */}
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨
+
+Madison Fire / EMS has been called.
+LOCATION: ${nineOneOne.info?.location||"Festival Grounds"}
+NATURE: ${nineOneOne.info?.nature||""}
+Activated by: ${nineOneOne.by} · ${nineOneOne.at}
+
+Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTimeout(()=>{const phones=[...new Set([ADMIN2_PHONE,...getNotifyList("medical")])];sendSMSList(phones,msg);sendVoice(phones,`911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location||"Festival Grounds"}. Clear a path for emergency vehicles.`);},100);fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"911_active",officers:mpdOfficers,location:nineOneOne.info?.location||"Festival Grounds",situation:msg})}).catch(e=>console.log(e));setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"911",label:"911 Alert — Admin/Med/MPD",msg},...p]);}else{set911({active:true,by:"Admin",at:now(),info:{}});setView("911");}}}>
+              {nineOneOne.active?"🚨 911 ACTIVE — TAP TO ALERT ALL":"🚨 911 ACTIVATION"}
+            </button>
+          </div>
+
+          {/* ACTIVE CALLS */}
+          <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",padding:"10px",display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{fontSize:12,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",paddingBottom:6,borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+              Active Calls {activeCalls.length>0&&<span style={{background:"#ef4444",color:"#fff",fontSize:9,borderRadius:20,padding:"1px 6px",marginLeft:4}}>{activeCalls.length}</span>}
+            </div>
+            {activeCalls.length===0&&<div style={{fontSize:12,color:"#374151",textAlign:"center",padding:"12px 0"}}>No active calls</div>}
+            {activeCalls.map(call=>{
+              const colors={
+                medical:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
+                walk_in:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
+                fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(220,38,38,0.5)",text:"#fca5a5",emoji:"🔥"},
+                maintenance:{bg:"rgba(22,163,74,0.12)",border:"rgba(22,163,74,0.4)",text:"#86efac",emoji:"🔧"},
+                security:{bg:"rgba(37,99,235,0.15)",border:"rgba(37,99,235,0.5)",text:"#93c5fd",emoji:"🛡"},
+                supplies:{bg:"rgba(120,53,15,0.2)",border:"rgba(180,83,9,0.5)",text:"#d97706",emoji:"📦"},
+                lost_child:{bg:"rgba(234,179,8,0.15)",border:"rgba(234,179,8,0.5)",text:"#fcd34d",emoji:"🧒"},
+              };
+              const c=colors[call.type]||{bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.15)",text:"#94a3b8",emoji:"📋"};
+              return(
+                <button key={call.id} style={{width:"100%",padding:"8px 10px",borderRadius:10,border:`1px solid ${c.border}`,background:c.bg,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:8}} onClick={()=>{setAdminCallDetail(call);}}>
+                  <span style={{fontSize:16}}>{c.emoji}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:800,color:c.text,textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.location}</div>
+                    <div style={{fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.problem}</div>
+                  </div>
+                  <div style={{fontSize:9,fontWeight:700,color:c.text,background:`${c.border}33`,borderRadius:6,padding:"2px 5px",whiteSpace:"nowrap"}}>{call.status==="acknowledged"?"ACK":"NEW"}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
+        {/* BROADCAST COLUMN */}
         {/* BROADCAST */}
         <div style={{background:"rgba(236,72,153,0.1)",borderRadius:14,border:"1px solid rgba(236,72,153,0.35)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
           <div style={{...S.sectionHdr,background:"rgba(236,72,153,0.25)",fontSize:13,fontWeight:900}}>📢 Broadcast</div>
@@ -2452,687 +2536,80 @@ Reply YES to acknowledge.`
                 );})}
               </div>
             ))}
-            <button style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.03)",cursor:"pointer"}} onClick={()=>setView("acks")}>
-              <span style={{fontSize:11,fontWeight:600,color:"#f59e0b",flex:1}}>✅ Acknowledgments {pendingAcks>0&&`(${pendingAcks} pending)`}</span>
-            </button>
           </div>
         </div>
       </div>
 
-      {/* SECTION 3: SUPPLIES & MAINTENANCE */}
+    {/* ===== ROW 2: EQUIPMENT TRACKER | LOST & FOUND ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-        {/* SUPPLIES */}
-        <div style={{background:"rgba(120,53,15,0.18)",borderRadius:14,border:"1px solid rgba(146,64,14,0.5)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{...S.sectionHdr,background:"rgba(120,53,15,0.35)",fontSize:13,fontWeight:900}}>📦 Supplies</div>
-          <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:`1px solid ${ALERT_COLORS.supplies.border}`,background:ALERT_COLORS.supplies.bg,cursor:"pointer",textAlign:"left"}}
-              onClick={()=>{setCallFilter(["supplies"]);setCallFilterTitle("Supplies & Restock");setCallTab("active");setView("callqueue");}}>
-              <span style={{fontSize:18}}>📋</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>View Requests</div>
-                <div style={{fontSize:10,color:"#64748b"}}>{suppCalls.length>0?`${suppCalls.length} active`:"Clear"}</div>
-              </div>
-              {suppCalls.filter(c=>!c.acknowledged).length>0&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{suppCalls.filter(c=>!c.acknowledged).length}</div>}
-            </button>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left"}}
-              onClick={()=>{setResourceType("supplies");setResourceFields({});setResourceView(true);}}>
-              <span style={{fontSize:18}}>➕</span>
-              <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Request</div></div>
-            </button>
+
+        {/* EQUIPMENT TRACKER */}
+        <div style={{background:"rgba(6,182,212,0.06)",borderRadius:14,border:"1px solid rgba(6,182,212,0.2)",overflow:"hidden"}}>
+          <div style={{background:"rgba(6,182,212,0.12)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#67e8f9",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment","_blank")}>
+            <span>⚙️ Equipment</span>
+            <span style={{fontSize:11,color:"#67e8f9",fontWeight:400}}>Open →</span>
           </div>
+          <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Track radios, readers and all festival gear.</div>
         </div>
 
-        {/* MAINTENANCE */}
-        <div style={{background:"rgba(16,185,129,0.12)",borderRadius:14,border:"1px solid rgba(22,101,52,0.5)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-          <div style={{...S.sectionHdr,background:"rgba(16,185,129,0.25)",fontSize:13,fontWeight:900}}>🔧 Maintenance</div>
-          <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:`1px solid ${ALERT_COLORS.maintenance.border}`,background:ALERT_COLORS.maintenance.bg,cursor:"pointer",textAlign:"left"}}
-              onClick={()=>{setCallFilter(["maintenance"]);setCallFilterTitle("Maintenance");setCallTab("active");setView("callqueue");}}>
-              <span style={{fontSize:18}}>📋</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>View Requests</div>
-                <div style={{fontSize:10,color:"#64748b"}}>{maintCalls.length>0?`${maintCalls.length} active`:"Clear"}</div>
-              </div>
-              {maintCalls.filter(c=>!c.acknowledged).length>0&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:700,borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{maintCalls.filter(c=>!c.acknowledged).length}</div>}
-            </button>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left"}}
-              onClick={()=>{setResourceType("maintenance");setResourceFields({});setResourceView(true);}}>
-              <span style={{fontSize:18}}>➕</span>
-              <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Request</div></div>
+        {/* LOST & FOUND */}
+        <div style={{background:"rgba(139,92,246,0.06)",borderRadius:14,border:"1px solid rgba(139,92,246,0.2)",overflow:"hidden"}}>
+          <div style={{background:"rgba(139,92,246,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span>📦 Lost & Found</span>
+            {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(139,92,246,0.4)",color:"#e9d5ff",fontSize:10,fontWeight:800,borderRadius:20,padding:"1px 7px"}}>{lfItems.filter(i=>i.status!=="Claimed").length}</div>}
+          </div>
+          <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:5}}>
+            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",textDecoration:"none",cursor:"pointer"}}>
+              <span style={{fontSize:14}}>🔍</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup →</div>
+            </a>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
+              <span style={{fontSize:14}}>📋</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Manage Items →</div>
             </button>
           </div>
         </div>
       </div>
 
-      {/* VENDOR ROSTER */}
-      <div style={{background:"rgba(16,185,129,0.05)",borderRadius:14,border:"1px solid rgba(16,185,129,0.25)",overflow:"hidden"}}>
-        <div style={{background:"rgba(16,185,129,0.15)",padding:"10px 14px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{fontSize:13,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.06em"}}>🎪 Vendor Sign-Ups ({vendorRoster.length})</div>
-          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-            <a href="https://fdm2026.netlify.app/vendors" target="_blank" style={{fontSize:11,color:"#6ee7b7",fontWeight:700,textDecoration:"none",background:"rgba(16,185,129,0.15)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:6,padding:"3px 8px"}}>🔗 Sign-Up Link</a>
-            <button style={{background:"rgba(16,185,129,0.2)",border:"1px solid rgba(16,185,129,0.4)",borderRadius:8,padding:"4px 12px",color:"#6ee7b7",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{
-              if(!vendorRosterLoaded){
-                fetch("/.netlify/functions/get-vendors").then(r=>r.json()).then(d=>{setVendorRoster(d.vendors||[]);setVendorRosterLoaded(true);}).catch(()=>setVendorRosterLoaded(true));
-              }
-              setShowVendorRoster(p=>!p);
-            }}>{showVendorRoster?"▲ Hide":"▼ View All"}</button>
+    {/* ===== ROW 3: VENDOR CHECK-IN | EOD REPORT ===== */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+
+        {/* VENDOR CHECK-IN */}
+        <div style={{background:"rgba(20,184,166,0.06)",borderRadius:14,border:"1px solid rgba(20,184,166,0.2)",overflow:"hidden"}}>
+          <div style={{background:"rgba(20,184,166,0.12)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#5eead4",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("vendors")}>
+            <span>🏪 Vendors</span>
+            <span style={{fontSize:11,color:"#5eead4",fontWeight:400}}>Manage →</span>
           </div>
+          <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Check in vendors, view roster.</div>
         </div>
-        {showVendorRoster&&<div style={{padding:"10px",display:"flex",flexDirection:"column",gap:6}}>
-          {!vendorRosterLoaded&&<div style={{fontSize:13,color:"#64748b",textAlign:"center",padding:8}}>Loading...</div>}
-          {vendorRosterLoaded&&vendorRoster.length===0&&<div style={{fontSize:13,color:"#475569",textAlign:"center",padding:8}}>No vendors signed up yet</div>}
-          {vendorRoster.map((v,i)=>(
-            <div key={v.id||i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(16,185,129,0.15)",borderRadius:10,padding:"10px 12px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#f1f5f9"}}>{v.BusinessName||v.businessName}</div>
-                <div style={{fontSize:10,color:"#6ee7b7",fontWeight:700,background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:4,padding:"2px 6px"}}>{v.Status||"Registered"}</div>
-              </div>
-              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>👤 {v.ContactName||v.contactName} · 📞 {v.Phone||v.phone}</div>
-              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>📍 {v.Location||v.location} · Signed up: {v.SignedUpAt||v.signedUpAt}</div>
+
+        {/* EOD REPORT */}
+        <div style={{background:"rgba(99,102,241,0.06)",borderRadius:14,border:"1px solid rgba(99,102,241,0.2)",overflow:"hidden"}}>
+          <div style={{background:"rgba(99,102,241,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#a5b4fc",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("endofnight")}>
+            <span>🌙 EOD Report</span>
+            <span style={{fontSize:11,color:"#a5b4fc",fontWeight:400}}>Generate →</span>
+          </div>
+          <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>All calls, incidents, L&F, broadcasts.</div>
+        </div>
+      </div>
+
+    {/* ===== ROW 4: ACTIVITY LOG ===== */}
+      <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
+        <div style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.06)"}} onClick={()=>setView("log")}>
+          <div style={{fontSize:12,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>📋 Activity Log</div>
+          <span style={{fontSize:11,color:"#64748b"}}>{activityLog.length} entries →</span>
+        </div>
+        <div style={{maxHeight:120,overflowY:"auto",padding:"6px 10px",display:"flex",flexDirection:"column",gap:4}}>
+          {activityLog.slice(0,5).map(e=>(
+            <div key={e.id} style={{fontSize:11,color:"#475569",display:"flex",gap:6}}>
+              <span style={{color:"#374151",flexShrink:0}}>{e.ts}</span>
+              <span>{e.label}</span>
             </div>
           ))}
-        </div>}
-      </div>
-
-      {/* STAFF MANAGEMENT SECTION */}
-      <div style={{background:"rgba(99,102,241,0.08)",borderRadius:14,border:"1px solid rgba(99,102,241,0.3)",overflow:"hidden"}}>
-        <div style={{background:"rgba(99,102,241,0.15)",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:13,fontWeight:900,color:"#a5b4fc",textTransform:"uppercase",letterSpacing:"0.06em"}}>👥 Staff Management</span>
-          <button style={{background:"rgba(99,102,241,0.2)",border:"1px solid rgba(99,102,241,0.4)",color:"#a5b4fc",padding:"4px 12px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700}} onClick={()=>{setShowStaffMgmt(p=>!p);if(!showStaffMgmt){fetch("/.netlify/functions/get-staff-list").then(r=>r.json()).then(d=>setStaffList(d.staff||d.members||[])).catch(()=>{});}}}>{showStaffMgmt?"▲ Hide":"▼ Manage"}</button>
-        </div>
-        {showStaffMgmt&&<>
-          {/* Tabs */}
-          <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
-            {[["staff","👤 Staff"],["mpd","👮 MPD Officers"]].map(([id,label])=>(
-              <button key={id} style={{flex:1,padding:"10px",border:"none",background:"none",color:staffMgmtTab===id?"#a5b4fc":"#64748b",fontWeight:staffMgmtTab===id?700:400,fontSize:13,cursor:"pointer",borderBottom:staffMgmtTab===id?"2px solid #a5b4fc":"2px solid transparent",marginBottom:-1}} onClick={()=>{setStaffMgmtTab(id);setStaffMgmtSearch("");}}>{label}</button>
-            ))}
-          </div>
-          <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
-            <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px",color:"#f1f5f9",fontSize:13,fontFamily:"inherit",outline:"none"}} placeholder={staffMgmtTab==="staff"?"Search staff by name...":"Search officers..."} value={staffMgmtSearch} onChange={e=>setStaffMgmtSearch(e.target.value)}/>
-            
-            {/* Staff list */}
-            {staffMgmtTab==="staff"&&(()=>{
-              const filtered=(staffList||[]).filter(s=>s&&(!staffMgmtSearch||(s.name||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())||(s.role||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())));
-              if(filtered.length===0) return <div style={{fontSize:12,color:"#475569",padding:"8px 0",textAlign:"center"}}>No staff found</div>;
-              return filtered.map(s=>(
-                <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)"}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</div>
-                    <div style={{fontSize:11,color:"#64748b"}}>{s.role} {s.location?`· ${s.location}`:""}</div>
-                  </div>
-                  <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:deletingId===s.id?0.5:1}}
-                    disabled={deletingId===s.id}
-                    onClick={async()=>{
-                      if(!window.confirm(`Remove ${s.name} from staff?`)) return;
-                      setDeletingId(s.id);
-                      try{
-                        await fetch("/.netlify/functions/delete-staff",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:s.id,table:"staff"})});
-                        setStaffList(p=>p.filter(x=>x.id!==s.id));
-                      }catch(e){console.log(e);}
-                      setDeletingId(null);
-                    }}>{deletingId===s.id?"...":"✕ Remove"}</button>
-                </div>
-              ));
-            })()}
-
-            {/* MPD Officers list */}
-            {staffMgmtTab==="mpd"&&(()=>{
-              const filtered=(mpdOfficers||[]).filter(o=>o&&(!staffMgmtSearch||(o.name||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())||(o.badge||"").toLowerCase().includes(staffMgmtSearch.toLowerCase())));
-              if(filtered.length===0) return <div style={{fontSize:12,color:"#475569",padding:"8px 0",textAlign:"center"}}>No officers loaded — add them in Airtable MPDOfficers table</div>;
-              return filtered.map(o=>(
-                <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)"}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{o.name}</div>
-                    <div style={{fontSize:11,color:"#64748b"}}>{o.badge} {o.phone?`· ${o.phone}`:""}</div>
-                  </div>
-                  <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.1)",color:"#fbbf24",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}
-                    onClick={async()=>{
-                      if(!window.confirm(`Remove ${o.name} from on-duty officers?`)) return;
-                      setDeletingId(o.id);
-                      try{
-                        await fetch("/.netlify/functions/delete-staff",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,table:"mpd"})});
-                        setMpdOfficers(p=>p.filter(x=>x.id!==o.id));
-                      }catch(e){console.log(e);}
-                      setDeletingId(null);
-                    }}>{deletingId===o.id?"...":"✕ Off Duty"}</button>
-                </div>
-              ));
-            })()}
-            {/* GroupMe Channels + Roster tab */}
-            {staffMgmtTab==="groupme"&&(()=>{
-              const CHANNELS=[
-                {id:"all_staff",name:"All Staff",color:"#f59e0b",emoji:"📢"},
-                {id:"admin",name:"Admin",color:"#6366f1",emoji:"⚡"},
-                {id:"medical",name:"Medical / Life Safety",color:"#ef4444",emoji:"🩺"},
-                {id:"bar_stage",name:"Bar / Stage / Greeter",color:"#10b981",emoji:"🎪"},
-                {id:"financial",name:"Financial",color:"#3b82f6",emoji:"💰"},
-                {id:"restock",name:"Restock",color:"#8b5cf6",emoji:"📦"},
-                {id:"maintenance",name:"Maintenance",color:"#f97316",emoji:"🔧"},
-              ];
-              const [gmView,setGmView]=React.useState("roster"); // roster | channels
-              const editing = gmEditId ? gmRoster.find(r=>r.id===gmEditId) : null;
-              return(<>
-                {/* View toggle */}
-                <div style={{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:8,padding:2,gap:2,marginBottom:8}}>
-                  {[["roster","👥 Roster"],["channels","📢 Channels"]].map(([v,l])=>(
-                    <button key={v} style={{flex:1,padding:"7px",border:"none",borderRadius:6,background:gmView===v?"rgba(245,158,11,0.2)":"transparent",color:gmView===v?"#fbbf24":"#64748b",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setGmView(v)}>{l}</button>
-                  ))}
-                </div>
-
-                {/* ── ROSTER VIEW ── */}
-                {gmView==="roster"&&<>
-                  {/* Add / Edit form */}
-                  <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:12,marginBottom:8}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",marginBottom:8}}>{gmEditId?"✏️ Edit Member":"➕ Add Member"}</div>
-                    <div style={{display:"flex",gap:6,marginBottom:6}}>
-                      <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none"}} placeholder="Full name (e.g. John Doe)" value={gmEditId?editing?.name||"":gmNewName} onChange={e=>gmEditId?setGmRoster(p=>p.map(r=>r.id===gmEditId?{...r,name:e.target.value}:r)):setGmNewName(e.target.value)}/>
-                      <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
-                <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 10px",color:"#f1f5f9",fontSize:12,outline:"none",width:"100%"}} placeholder="GroupMe display name (e.g. Moon Stage Joe)" value={gmEditId?editing?.username||"":gmNewUsername} onChange={e=>gmEditId?setGmRoster(p=>p.map(r=>r.id===gmEditId?{...r,username:e.target.value}:r)):setGmNewUsername(e.target.value)}/>
-                {!gmEditId&&gmNewName&&<div style={{fontSize:10,color:"#475569"}}>This is how they appear in GroupMe channels</div>}
-              </div>
-                    </div>
-                    <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>Assign to channels:</div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
-                      {CHANNELS.map(ch=>{
-                        const active=gmEditId?(editing?.channels||[]).includes(ch.id):gmNewChannels.includes(ch.id);
-                        return(<button key={ch.id} style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${active?ch.color:ch.color+"44"}`,background:active?ch.color+"22":"transparent",color:active?ch.color:"#475569",fontSize:11,fontWeight:700,cursor:"pointer"}}
-                          onClick={()=>{
-                            if(gmEditId){
-                              setGmRoster(p=>p.map(r=>r.id===gmEditId?{...r,channels:active?(r.channels||[]).filter(c=>c!==ch.id):[...(r.channels||[]),ch.id]}:r));
-                            } else {
-                              setGmNewChannels(p=>active?p.filter(c=>c!==ch.id):[...p,ch.id]);
-                            }
-                          }}>{ch.emoji} {ch.name}</button>);
-                      })}
-                    </div>
-                    <div style={{display:"flex",gap:6}}>
-                      {gmEditId
-                        ? <>
-                            <button style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setGmEditId(null)}>✅ Done</button>
-                            <button style={{padding:"8px 14px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>{setGmRoster(p=>p.filter(r=>r.id!==gmEditId));setGmEditId(null);}}>🗑 Delete</button>
-                          </>
-                        : <button style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:(!gmNewName.trim()||!gmNewUsername.trim())?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#f59e0b,#d97706)",color:(!gmNewName.trim()||!gmNewUsername.trim())?"#475569":"#0a0f1e",fontWeight:700,fontSize:12,cursor:"pointer",opacity:(!gmNewName.trim()||!gmNewUsername.trim())?0.5:1}}
-                            disabled={!gmNewName.trim()||!gmNewUsername.trim()}
-                            onClick={()=>{
-                              setGmRoster(p=>[...p,{id:Date.now().toString(),name:gmNewName.trim(),username:gmNewUsername.trim(),channels:gmNewChannels}]);
-                              setGmNewName("");setGmNewUsername("");setGmNewChannels([]);
-                            }}>+ Add</button>
-                      }
-                    </div>
-                  </div>
-                  {/* Roster list */}
-                  {gmRoster.length===0&&<div style={{fontSize:12,color:"#475569",textAlign:"center",padding:"12px"}}>No members added yet</div>}
-                  {gmRoster.map(m=>(
-                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)",marginBottom:4}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>{m.name}</div>
-                        <div style={{fontSize:11,color:"#f59e0b",fontFamily:"monospace"}}>@{m.username}</div>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:4}}>
-                          {(m.channels||[]).map(cid=>{
-                            const ch=CHANNELS.find(c=>c.id===cid);
-                            return ch?<span key={cid} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:ch.color+"22",color:ch.color,border:`1px solid ${ch.color}44`}}>{ch.emoji} {ch.name}</span>:null;
-                          })}
-                          {(!m.channels||m.channels.length===0)&&<span style={{fontSize:10,color:"#475569"}}>No channels assigned</span>}
-                        </div>
-                      </div>
-                      <button style={{background:"rgba(99,102,241,0.15)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:6,padding:"5px 10px",color:"#a5b4fc",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>setGmEditId(m.id)}>✏️ Edit</button>
-                    </div>
-                  ))}
-                </>}
-
-                {/* ── CHANNELS VIEW ── */}
-                {gmView==="channels"&&CHANNELS.map(ch=>{
-                  const members=gmRoster.filter(m=>(m.channels||[]).includes(ch.id));
-                  return(
-                    <div key={ch.id} style={{borderRadius:10,border:`1px solid ${ch.color}33`,overflow:"hidden",marginBottom:6}}>
-                      <div style={{background:`${ch.color}15`,padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{fontSize:16}}>{ch.emoji}</span>
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:13,fontWeight:800,color:"#f1f5f9"}}>{ch.name}</div>
-                          <div style={{fontSize:11,color:"#64748b"}}>{members.length} member{members.length!==1?"s":""}</div>
-                        </div>
-                      </div>
-                      {members.length===0
-                        ?<div style={{padding:"8px 14px",fontSize:12,color:"#475569"}}>No members assigned</div>
-                        :<div style={{padding:"6px 8px",display:"flex",flexDirection:"column",gap:3}}>
-                          {members.map(m=>(
-                            <div key={m.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 8px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}>
-                              <span style={{fontSize:12,fontWeight:600,color:"#f1f5f9"}}>{m.name}</span>
-                              <span style={{fontSize:11,fontFamily:"monospace",color:ch.color}}>@{m.username}</span>
-                            </div>
-                          ))}
-                        </div>
-                      }
-                    </div>
-                  );
-                })}
-              </>);
-            })()}
-
-          </div>
-        </>}
-      </div>
-
-      {/* SECTION 4: EQUIPMENT TRACKER */}
-      <div style={{background:"rgba(234,179,8,0.1)",borderRadius:14,border:"1px solid rgba(234,179,8,0.4)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,background:"rgba(234,179,8,0.25)",borderBottom:"1px solid rgba(234,179,8,0.4)",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fcd34d"}}>
-          <span style={{cursor:"pointer"}} onClick={()=>window.open("/equipment","_blank")}>📻 Equipment Tracker →</span>
-          <button style={{background:"rgba(234,179,8,0.2)",border:"1px solid rgba(234,179,8,0.4)",color:"#fcd34d",padding:"4px 12px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700}} onClick={()=>setShowSerials(p=>!p)}>{showSerials?"▲ Hide":"📟 Serials"}</button>
-        </div>
-        {showSerials&&(
-          <div style={{padding:"10px 12px",display:"flex",flexDirection:"column",gap:0}}>
-            <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Radio Serial Numbers</div>
-            {Array.from({length:25},(_,i)=>{
-              const id=`R${String(i+1).padStart(2,"0")}`;
-              const loc=["Sun Left","Sun Right","Cabaret","Lafayette","Lagniappe","Moon Stage 1","Moon Stage 2","Kids/Family Fete","Merch Tent","Cabaret Stage","Lafayette Stage","Lagniappe Stage","Moon Stage","First Aid 1","First Aid 2","First Aid","Devin","Marketing","MPD 1","MPD 2","MPD 3","MPD 4","Extra 1","Extra 2","Extra 3"][i];
-              return(
-                <div key={id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#fcd34d",minWidth:36}}>{id}</div>
-                  <div style={{fontSize:11,color:"#64748b",flex:1}}>{loc}</div>
-                  <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"5px 8px",color:"#f1f5f9",fontSize:12,fontFamily:"inherit",outline:"none",width:120}} placeholder="Serial #" defaultValue={serialNums[id]||""} onBlur={e=>saveSerial(id,e.target.value)}/>
-                </div>
-              );
-            })}
-            <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",margin:"12px 0 8px"}}>Reader Serial Numbers</div>
-            {["Sun Left","Sun Right","Cabaret","Lafayette","Lagniappe","Moon Stage 1","Moon Stage 2","Kids/Family Fete","Merch Tent"].map((loc,i)=>{
-              const id=`CR${String(i+1).padStart(2,"0")}`;
-              return(
-                <div key={id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#a5b4fc",minWidth:36}}>{id}</div>
-                  <div style={{fontSize:11,color:"#64748b",flex:1}}>{loc}</div>
-                  <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"5px 8px",color:"#f1f5f9",fontSize:12,fontFamily:"inherit",outline:"none",width:120}} placeholder="Serial #" defaultValue={serialNums[id]||""} onBlur={e=>saveSerial(id,e.target.value)}/>
-                </div>
-              );
-            })}
-            <div style={{fontSize:11,color:"#475569",padding:"8px 0",textAlign:"center"}}>Serial numbers saved locally. Also available in Equipment Tracker app.</div>
-          </div>
-        )}
-        {!showSerials&&<div style={{padding:"10px 12px"}}>
-          <button style={{width:"100%",padding:"10px",borderRadius:10,border:"1px solid rgba(234,179,8,0.3)",background:"rgba(234,179,8,0.06)",color:"#fcd34d",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>window.open("/equipment","_blank")}>Open Equipment Tracker →</button>
-        </div>}
-      </div>
-
-      {/* SECTION 5: LOST & FOUND */}
-      <div style={{background:"rgba(249,115,22,0.12)",borderRadius:14,border:"1px solid rgba(249,115,22,0.45)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,background:"rgba(249,115,22,0.2)",borderBottom:"1px solid rgba(249,115,22,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>{setView("lostfound");fetchLostFound();}}>
-          <span>📦 Lost & Found</span>
-          <span style={{fontSize:11,color:"#a78bfa",fontWeight:400}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed →</span>
-        </div>
-        <div style={{padding:"8px"}}>
-          {lfItems.length===0
-            ?<div style={{fontSize:13,color:"#64748b",padding:"8px 4px"}}>No items logged yet. Workers can log items from the Field App.</div>
-            :lfItems.slice(0,3).map(item=>(
-              <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:item.status==="Claimed"?"#10b981":"#a78bfa",flexShrink:0}}/>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>#{item.itemNumber} — {item.description}</div>
-                  <div style={{fontSize:11,color:"#64748b"}}>📍 {item.location} · {item.status}</div>
-                </div>
-              </div>
-            ))
-          }
-          <div style={{display:"flex",gap:8,marginTop:8}}>
-            <button style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.08)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setView("lostfound");fetchLostFound();}}>View All →</button>
-            <button style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid rgba(139,92,246,0.5)",background:"rgba(139,92,246,0.15)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddMode(p=>!p)}>+ Log Item</button>
-          </div>
-          {lfAddMode&&(
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8,padding:"12px",background:"rgba(139,92,246,0.08)",borderRadius:10,border:"1px solid rgba(139,92,246,0.2)"}}>
-              {/* Camera + Description */}
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <button type="button" style={{padding:"10px 14px",borderRadius:8,border:"2px solid rgba(139,92,246,0.5)",background:"rgba(139,92,246,0.12)",color:"#c4b5fd",fontSize:13,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}} onClick={captureHubPhoto}>
-                  {lfPhotoCapturing?"⏳...":"📷 Photo"}
-                </button>
-                <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Description of item *" value={lfNewDesc} onChange={e=>setLfNewDesc(e.target.value)}/>
-              </div>
-              {lfPhotoPreview&&<div style={{borderRadius:8,overflow:"hidden",border:"1px solid rgba(139,92,246,0.3)",maxHeight:80}}><img src={lfPhotoPreview} style={{width:"100%",objectFit:"cover",maxHeight:80}}/></div>}
-              <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Where found *" value={lfNewLoc} onChange={e=>setLfNewLoc(e.target.value)}/>
-              <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Where is it now? (if different)" value={lfNewNarrative} onChange={e=>setLfNewNarrative(e.target.value)}/>
-              <button style={{padding:"10px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#8b5cf6,#6d28d9)",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",opacity:(!lfNewDesc||!lfNewLoc||lfSubmitting)?0.5:1}}
-                disabled={!lfNewDesc||!lfNewLoc||lfSubmitting}
-                onClick={async()=>{
-                  setLfSubmitting(true);
-                  try{
-                    const res=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:lfNewDesc,location:lfNewLoc,foundBy:"Admin",narrative:lfNewNarrative})});
-                    const data=await res.json();
-                    if(data.success){
-                      setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lostfound",label:`L&F #${data.itemNumber}`,msg:lfNewDesc},...p]);
-                      setLfNewDesc("");setLfNewLoc("");setLfNewNarrative("");setLfPhotoPreview(null);setLfAddMode(false);
-                      fetchLostFound();
-                    } else {
-                      console.error("L&F save failed:",data);
-                      alert("Save failed: "+(data.error||"Unknown error — check Netlify logs"));
-                    }
-                  }catch(e){console.error("L&F error:",e);alert("Network error — check connection");}
-                  setLfSubmitting(false);
-                }}>
-                {lfSubmitting?"Saving...":"📦 Save Item"}
-              </button>
-            </div>
-          )}
+          {activityLog.length===0&&<div style={{fontSize:11,color:"#374151",padding:"6px 0"}}>No activity yet</div>}
         </div>
       </div>
-
-      {/* END OF NIGHT REPORT */}
-      <div style={{background:"rgba(99,102,241,0.08)",borderRadius:14,border:"1px solid rgba(99,102,241,0.25)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,background:"rgba(99,102,241,0.2)",borderBottom:"1px solid rgba(99,102,241,0.3)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("endofnight")}>
-          <span>🌙 End of Night Report</span>
-          <span style={{fontSize:11,color:"#a5b4fc",fontWeight:400}}>Generate & Email →</span>
-        </div>
-        <div style={{padding:"10px 14px",fontSize:13,color:"#64748b"}}>
-          Tap to generate tonight's summary — all calls, incidents, L&F, broadcasts.
-        </div>
-      </div>
-
-      {/* SECTION 6: ACTIVITY LOG */}
-      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",overflow:"hidden"}}>
-        <div style={{...S.sectionHdr,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("log")}>
-          <span>📋 Activity Log</span>
-          <span style={{fontSize:11,color:"#64748b",fontWeight:400}}>{activityLog.length} entries →</span>
-        </div>
-        <div style={{padding:"8px"}}>
-          {activityLog.slice(0,3).map((e,i)=>(
-            <div key={i} style={{display:"flex",gap:8,padding:"6px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-              <span style={{fontSize:11,color:"#f59e0b",fontWeight:600,minWidth:48,flexShrink:0}}>{e.ts}</span>
-              <span style={{fontSize:11,color:"#94a3b8",lineHeight:1.3}}>{e.label}</span>
-            </div>
-          ))}
-          <button style={{width:"100%",padding:"8px",background:"none",border:"none",color:"#6366f1",fontSize:12,cursor:"pointer",marginTop:4}} onClick={()=>setView("log")}>View full log →</button>
-        </div>
-      </div>
-
-  </div></div></div></div>);
-}
-
-
-
-function SecurityAckPanel({alertCall,role,ackCall,tick}){
-  const [mpdCancelled,setMpdCancelled]=useState(false);
-  const [mpdFired,setMpdFired]=useState(false);
-  const COUNTDOWN=30;
-  const elapsed=Math.min(Math.round((Date.now()-alertCall.firedAt)/1000),COUNTDOWN);
-  const remaining=Math.max(0,COUNTDOWN-elapsed);
-  useEffect(()=>{if(remaining===0&&!mpdCancelled&&!mpdFired)setMpdFired(true);},[remaining]);
-  return(<div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:380,alignItems:"center"}}>
-    <button style={{background:"rgba(16,185,129,0.35)",border:"3px solid rgba(16,185,129,0.8)",borderRadius:14,padding:"20px",color:"#fff",fontSize:18,fontWeight:900,cursor:"pointer",width:"100%"}} onClick={()=>ackCall(alertCall.id,role||"Admin")}>✅ ACKNOWLEDGE</button>
-    {!mpdFired&&!mpdCancelled&&(<div style={{width:"100%",background:"rgba(0,0,0,0.3)",borderRadius:12,padding:"12px 20px",display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.9)"}}>👮 MPD auto-notify in</span>
-        <span style={{fontSize:22,fontWeight:900,color:remaining<=5?"#fca5a5":"#f59e0b"}}>{remaining}s</span>
-      </div>
-      <div style={{height:4,background:"rgba(255,255,255,0.15)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",background:remaining<=5?"#ef4444":"#f59e0b",borderRadius:2,width:`${(remaining/COUNTDOWN)*100}%`,transition:"width 1s"}}/></div>
-      <button style={{padding:"10px",borderRadius:10,border:"2px solid rgba(239,68,68,0.6)",background:"rgba(239,68,68,0.15)",color:"#fca5a5",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={()=>setMpdCancelled(true)}>❌ Cancel MPD Notification</button>
-    </div>)}
-    {mpdFired&&!mpdCancelled&&(<div style={{width:"100%",background:"rgba(29,78,216,0.2)",borderRadius:12,padding:"12px 20px",display:"flex",flexDirection:"column",gap:8,border:"1px solid rgba(59,130,246,0.4)"}}>
-      <div style={{fontSize:13,fontWeight:800,color:"#93c5fd"}}>👮 MPD Notified — SMS + Voice Call Sent</div>
-      <div style={{fontSize:12,color:"rgba(255,255,255,0.6)",fontStyle:"italic",lineHeight:1.6}}>"{MPD_VOICE_SCRIPT(alertCall.location,alertCall.problem)}"</div>
-      <button style={{padding:"10px",borderRadius:10,border:"2px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.12)",color:"#6ee7b7",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>setMpdCancelled(true)}>✅ Stand Down MPD — Send All Clear</button>
-    </div>)}
-    {mpdCancelled&&(<div style={{width:"100%",background:"rgba(16,185,129,0.1)",borderRadius:12,padding:"12px 20px",border:"1px solid rgba(16,185,129,0.3)"}}>
-      {mpdFired?(<><div style={{fontSize:13,fontWeight:800,color:"#10b981",marginBottom:6}}>✅ Stand Down Sent to MPD</div><div style={{fontSize:12,color:"rgba(255,255,255,0.6)",fontStyle:"italic",lineHeight:1.6}}>"{MPD_STANDDOWN_VOICE(alertCall.location)}"</div></>):(
-      <div style={{fontSize:13,fontWeight:800,color:"#10b981"}}>✅ MPD Notification Cancelled — Handling internally</div>)}
-    </div>)}
-  </div>);
-}
-
-function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild,setNewCallView,setNewCallType,setNewCallLocation,setNewCallProblem,staffList,setClearIncView,lfItems}){
-  const [medReqView,setMedReqView]=useState(false);
-  const [medReqType,setMedReqType]=useState("");
-  const [medReqLocation,setMedReqLocation]=useState("");
-  const [medReqProblem,setMedReqProblem]=useState("");
-  const [medReqDetails,setMedReqDetails]=useState("");
-  const [medReqSubmitting,setMedReqSubmitting]=useState(false);
-  const [medReqItem,setMedReqItem]=useState("");
-  const [medReqQty,setMedReqQty]=useState("");
-  const [showWalkIn,setShowWalkIn]=useState(false);
-  const [wiComplaint,setWiComplaint]=useState("");
-  const [wiDetails,setWiDetails]=useState("");
-  const walkIns=(calls||[]).filter(c=>c.type==="walk_in"&&c.unit===role);
-  const allActive=[...myActive,...(calls||[]).filter(c=>c.unit===role&&c.status!=="cleared"&&!myActive.find(m=>m.id===c.id))];
-
-  const doWalkIn=()=>{
-    if(!wiComplaint)return;
-    const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-    const c={id:Date.now(),type:"walk_in",location:"First Aid",problem:wiComplaint,details:wiDetails,requestedBy:role,status:"on_scene",acknowledged:true,history:[{status:"walk_in",ts},{status:"on_scene",ts,unit:role}],unit:role,firedAt:Date.now()};
-    setCalls(p=>[c,...p]);
-    setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:ts}}));
-    if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"walk_in",location:"First Aid",problem:wiComplaint,details:wiDetails,requestedBy:role})}).catch(e=>console.log(e));
-    if(sendGroupMe) sendGroupMe(`🏥 WALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails?"\n"+wiDetails:""}\nTIME: ${ts}`,["admin","medical"]);
-    const wiMsg=`MEDICAL ALERT 🩺\nWALK-IN PATIENT — ${role}\nCHIEF COMPLAINT: ${wiComplaint}${wiDetails?"\n"+wiDetails:""}\nTIME: ${ts}`;
-    const wiPhones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
-    setTimeout(()=>{
-      wiPhones.forEach(p=>{
-        const d=p.replace(/\D/g,"");
-        const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;
-        fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:wiMsg})}).catch(()=>{});
-        fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`Walk in patient at Fete de Marquette First Aid. Chief complaint: ${wiComplaint}. Please respond immediately.`})}).catch(()=>{});
-      });
-    },100);
-    setWiComplaint("");setWiDetails("");
-  };
-
-  const sendRequest=(type,location,problem,details)=>{
-    const newCall={id:Date.now(),type,location,problem,details:details||"",requestedBy:role,status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:new Date().toLocaleTimeString()},{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}],unit:role,firedAt:Date.now()};
-    setCalls(p=>[newCall,...p]);
-    if(liveMode) fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type,location,problem,details:details||"",requestedBy:role})}).catch(e=>console.log(e));
-    if(sendGroupMe){
-      const channelMap={security:"admin",supplies:"admin",maintenance:"admin",medical:"medical"};
-      const emoji={security:"🛡",supplies:"📦",maintenance:"🔧",medical:"🩺"}[type]||"📋";
-      sendGroupMe(`${emoji} REQUEST from ${role}\nLOCATION: ${location}\nPROBLEM: ${problem}${details?"\n"+details:""}\nDATE/TIME: ${new Date().toLocaleString()}`,[channelMap[type]||"admin","admin"]);
-    }
-    setMedReqView(false);setMedReqType("");setMedReqLocation("");setMedReqProblem("");setMedReqDetails("");
-  };
-
-  // Request form
-  if(medReqView) return(
-    <div style={{display:"flex",flexDirection:"column",gap:14,padding:"16px 20px"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-        <div style={{fontSize:16,fontWeight:900,color:"#f1f5f9"}}>
-          {{security:"🛡 Security Request",supplies:"📦 Supplies Request",maintenance:"🔧 Maintenance Request",medical:"🩺 Additional Medical Units"}[medReqType]}
-        </div>
-        <button style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",color:"#94a3b8",padding:"8px 14px",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:700}} onClick={()=>{setMedReqView(false);setMedReqType("");setMedReqItem("");setMedReqQty("");}}>Cancel</button>
-      </div>
-
-      {/* SUPPLIES — worker app style */}
-      {medReqType==="supplies"&&<>
-        <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>What do you need?</div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {[{id:"ice",label:"Ice",emoji:"🧊"},{id:"beer_cups",label:"Beer Cup Sleeves",emoji:"🍺"},{id:"wine_cups",label:"Wine Cup Sleeves",emoji:"🍷"},{id:"paper_towels",label:"Paper Towels",emoji:"🧻"},{id:"bar_towels",label:"Bar Towels",emoji:"🧼"},{id:"water",label:"Bottled Water (24-pack)",emoji:"💧"},{id:"other",label:"Other",emoji:"➕"}].map(item=>(
-            <button key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${medReqItem===item.id?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:medReqItem===item.id?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>{setMedReqItem(item.id);setMedReqQty("");}}>
-              <span style={{fontSize:22,width:28}}>{item.emoji}</span>
-              <span style={{fontSize:15,fontWeight:medReqItem===item.id?800:500,color:medReqItem===item.id?"#fcd34d":"#f1f5f9"}}>{item.label}</span>
-              {medReqItem===item.id&&<span style={{marginLeft:"auto",color:"#fcd34d",fontSize:18}}>✓</span>}
-            </button>
-          ))}
-        </div>
-        {medReqItem&&medReqItem!=="other"&&<>
-          <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Quantity?</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
-            {["1","2","3","4","5","6","7","8","9","10+"].map(q=>(
-              <button key={q} style={{padding:"14px 0",borderRadius:10,border:`2px solid ${medReqQty===q?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:medReqQty===q?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",fontSize:16,fontWeight:medReqQty===q?900:400,color:medReqQty===q?"#fcd34d":"#f1f5f9",textAlign:"center"}} onClick={()=>setMedReqQty(q)}>{q}</button>
-            ))}
-          </div>
-        </>}
-        {medReqItem==="other"&&<input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none",width:"100%"}} placeholder="What do you need?" value={medReqProblem} onChange={e=>setMedReqProblem(e.target.value)}/>}
-        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none",width:"100%"}} placeholder="Your location / station *" value={medReqLocation} onChange={e=>setMedReqLocation(e.target.value)}/>
-        <button style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",border:"none",borderRadius:12,padding:"16px",color:"#0a0f1e",fontSize:16,fontWeight:800,cursor:"pointer",opacity:(!medReqLocation||(!medReqItem)||(medReqItem!=="other"&&!medReqQty))?0.5:1}}
-          disabled={!medReqLocation||(!medReqItem)||(medReqItem!=="other"&&!medReqQty)}
-          onClick={()=>{
-            const item=medReqItem==="other"?medReqProblem:medReqItem.replace(/_/g," ");
-            const prob=`Restock: ${item}${medReqQty?" x"+medReqQty:""}`;
-            sendRequest("supplies",medReqLocation,prob,"");
-            setMedReqItem("");setMedReqQty("");
-          }}>📤 Send Request</button>
-      </>}
-
-      {/* ALL OTHER TYPES — generic form */}
-      {medReqType!=="supplies"&&<>
-        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Location *" value={medReqLocation} onChange={e=>setMedReqLocation(e.target.value)}/>
-        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="What's needed? *" value={medReqProblem} onChange={e=>setMedReqProblem(e.target.value)}/>
-        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Additional details (optional)" value={medReqDetails} onChange={e=>setMedReqDetails(e.target.value)}/>
-        {medReqType==="security"&&(
-          <div style={{background:"rgba(29,78,216,0.08)",border:"1px solid rgba(59,130,246,0.3)",borderRadius:10,padding:"12px",display:"flex",flexDirection:"column",gap:8}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#93c5fd",textTransform:"uppercase"}}>Request MPD?</div>
-            <button style={{padding:"12px",borderRadius:8,border:"1px solid rgba(59,130,246,0.4)",background:"rgba(59,130,246,0.1)",color:"#93c5fd",fontSize:14,fontWeight:700,cursor:"pointer"}}
-              onClick={()=>{
-                if(sendGroupMe) sendGroupMe(`🚨 MPD REQUESTED by ${role}\nLOCATION: ${medReqLocation||"Festival Grounds"}\nSITUATION: ${medReqProblem||""}\nDATE/TIME: ${new Date().toLocaleString()}`,["admin","medical"]);
-              }}>👮 Notify MPD via Admin</button>
-          </div>
-        )}
-        <button style={{background:"linear-gradient(135deg,#7c3aed,#4f46e5)",border:"none",borderRadius:12,padding:"16px",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",opacity:(!medReqLocation||!medReqProblem)?0.5:1}}
-          disabled={!medReqLocation||!medReqProblem}
-          onClick={()=>sendRequest(medReqType,medReqLocation,medReqProblem,medReqDetails)}>
-          📤 Send Request
-        </button>
-      </>}
     </div>
-  );
-
-
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:12,padding:"12px 16px 32px"}}>
-
-      {/* ACTIVE CALLS */}
-      <>
-        {/* ACTIVE CALLS */}
-      {allActive.length>0&&<>
-        <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Active Calls ({allActive.length})</div>
-        {allActive.map(c=>(
-          <div key={c.id} style={{borderRadius:12,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
-            <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>📍 {c.location}</div>
-            <div style={{fontSize:13,color:"#94a3b8"}}>{c.problem}</div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              <button style={{flex:1,padding:"10px",borderRadius:8,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.15)",color:"#fca5a5",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>{setCalls(p=>p.map(x=>x.id===c.id?{...x,status:"on_scene",history:[...x.history,{status:"on_scene",ts:new Date().toLocaleTimeString(),unit:role}]}:x));setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"on_scene",since:new Date().toLocaleTimeString()}}));}}>🔴 On Scene</button>
-              <button style={{flex:1,padding:"10px",borderRadius:8,border:"2px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontSize:13,fontWeight:800,cursor:"pointer"}}
-                onClick={()=>{
-                  setCalls(p=>p.filter(x=>x.id!==c.id));
-                  // Show quick incident form on clear for medical/security/fire
-                  if(["medical","walk_in","fire","security"].includes(c.type)){
-                    setClearIncView({call:c,by:role});
-                  } else {
-                    setCompleted(p=>[{...c,status:"cleared",clearedBy:role,clearedAt:new Date().toLocaleTimeString()},...p]);
-                    setCalls(p=>p.filter(x=>x.id!==c.id));
-                  }
-                  setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"available",since:null}}));
-                  if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:role})}).catch(e=>console.log(e));
-                  if(["medical","walk_in","fire","security"].includes(c.type)&&triggerIncident) triggerIncident({...c,timestamp:c.history?.[0]?.ts||new Date().toISOString()});
-                }}>✅ Clear</button>
-            </div>
-          </div>
-        ))}
-      </>}
-
-      {/* UNASSIGNED CALLS */}
-      {unassigned.length>0&&<>
-        <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Unassigned ({unassigned.length})</div>
-        {unassigned.map(c=>(
-          <div key={c.id} style={{borderRadius:12,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
-            <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>📍 {c.location}</div>
-            <div style={{fontSize:13,color:"#94a3b8"}}>{c.problem}</div>
-            <button style={{padding:"10px",borderRadius:8,border:"2px solid rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.12)",color:"#fcd34d",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>{setCalls(p=>p.map(x=>x.id===c.id?{...x,acknowledged:true,status:"acknowledged",unit:role,history:[...x.history,{status:"acknowledged",ts:new Date().toLocaleTimeString(),unit:role}]}:x));setMedSt(p=>({...p,[role==="Med 1"?"med1":"med2"]:{status:"responding",since:new Date().toLocaleTimeString()}}));}}>✅ Assign to {role}</button>
-          </div>
-        ))}
-      </>}
-
-      {allActive.length===0&&unassigned.length===0&&<div style={{textAlign:"center",color:"#475569",padding:"16px 0",fontSize:14}}>No active calls — standing by</div>}
-
-      </>
-
-      {/* REQUEST */}
-      <>
-
-      {/* MEDICAL · FIRE/LIFE SAFETY · SECURITY SECTION */}
-      <div style={{background:"linear-gradient(160deg,rgba(190,24,93,0.1),rgba(220,38,38,0.08),rgba(37,99,235,0.08))",borderRadius:14,border:"1px solid rgba(190,24,93,0.3)",overflow:"hidden"}}>
-        <div style={{background:"linear-gradient(135deg,rgba(190,24,93,0.25),rgba(220,38,38,0.2),rgba(37,99,235,0.15))",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#fda4af",textTransform:"uppercase",letterSpacing:"0.06em"}}>🩺 Medical · 🔥 Fire/Life Safety · 🛡 Security</div>
-        <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
-
-          {/* NEW CALL — first item */}
-          <button style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"14px",borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,rgba(220,38,38,0.3),rgba(185,28,28,0.2))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 0 10px rgba(239,68,68,0.3)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-            <span style={{fontSize:20}}>🚨</span>
-            <div style={{textAlign:"center"}}>
-              <div>New Call</div>
-              <div style={{fontSize:11,fontWeight:500,opacity:0.85}}>Medical · Fire/Life Safety · Security</div>
-            </div>
-          </button>
-
-          {/* WALK-IN PATIENT — directly under New Call */}
-          <div style={{background:"rgba(168,85,247,0.06)",borderRadius:10,border:"1px solid rgba(168,85,247,0.25)",overflow:"hidden"}}>
-            <div style={{background:"rgba(168,85,247,0.15)",padding:"8px 12px",fontSize:12,fontWeight:900,color:"#d8b4fe",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <span>🏥 Walk-In Patient{walkIns.length>0?` (${walkIns.length})`:""}</span>
-              <button style={{background:"rgba(168,85,247,0.2)",border:"1px solid rgba(168,85,247,0.4)",borderRadius:6,padding:"3px 10px",color:"#d8b4fe",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>setShowWalkIn(p=>!p)}>{showWalkIn?"▲ Hide":"▼ Log"}</button>
-            </div>
-            {showWalkIn&&(
-              <div style={{padding:"10px",display:"flex",flexDirection:"column",gap:8}}>
-                <Fld label="Chief Complaint *" value={wiComplaint} onChange={e=>setWiComplaint(e.target.value)} ph="e.g. Heat exhaustion, laceration, chest pain" required large/>
-                <Fld label="Additional Details" value={wiDetails} onChange={e=>setWiDetails(e.target.value)} ph="Age, gender, condition, vitals..." multi/>
-                <button style={{background:"linear-gradient(135deg,#a855f7,#7c3aed)",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",opacity:!wiComplaint?0.5:1}} disabled={!wiComplaint} onClick={()=>{doWalkIn();setShowWalkIn(false);}}>🏥 Log Walk-In Patient</button>
-              </div>
-            )}
-            {walkIns.length>0&&(
-              <div style={{padding:"0 10px 10px",display:"flex",flexDirection:"column",gap:4}}>
-                {walkIns.map(c=>(
-                  <div key={c.id} style={{borderRadius:6,border:"1px solid rgba(168,85,247,0.2)",background:"rgba(168,85,247,0.05)",padding:"8px 10px"}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#d8b4fe"}}>{c.problem}</div>
-                    <div style={{fontSize:10,color:"#64748b"}}>{c.history?.[0]?.ts} · {c.status}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ADDITIONAL MEDICAL UNITS */}
-          <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(168,85,247,0.3)",background:"rgba(168,85,247,0.08)",cursor:"pointer",textAlign:"left"}} onClick={()=>{setMedReqType("medical");setMedReqView(true);}}>
-            <span style={{fontSize:18}}>🩺</span>
-            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Additional Medical Units</div><div style={{fontSize:11,color:"#64748b"}}>Request more medical personnel</div></div>
-          </button>
-
-        </div>
-      </div>
-
-      {/* LOST CHILD — small, same size as Tap to Notify */}
-      <button style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"1px solid rgba(249,115,22,0.35)",background:"rgba(249,115,22,0.07)",color:"#fdba74",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}} onClick={()=>{ if(openLostChild) openLostChild(); }}>
-        🧒 Report Lost Child
-      </button>
-
-      {/* SUPPLIES & MAINTENANCE SECTION */}
-      <div style={{background:"linear-gradient(160deg,rgba(120,53,15,0.1),rgba(16,185,129,0.08))",borderRadius:14,border:"1px solid rgba(120,53,15,0.3)",overflow:"hidden"}}>
-        <div style={{background:"linear-gradient(135deg,rgba(120,53,15,0.25),rgba(16,185,129,0.15))",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.06em"}}>📦 Supplies & 🔧 Maintenance</div>
-        <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
-          <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(120,53,15,0.4)",background:"rgba(120,53,15,0.1)",cursor:"pointer",textAlign:"left"}} onClick={()=>{setMedReqType("supplies");setMedReqView(true);}}>
-            <span style={{fontSize:20}}>📦</span>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Supplies</div><div style={{fontSize:11,color:"#64748b"}}>Request medical supplies</div></div>
-          </button>
-          <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(16,185,129,0.3)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>{setMedReqType("maintenance");setMedReqView(true);}}>
-            <span style={{fontSize:20}}>🔧</span>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Maintenance</div><div style={{fontSize:11,color:"#64748b"}}>Equipment or structural issue</div></div>
-          </button>
-        </div>
-      </div>
-
-      {/* LOST & FOUND SECTION — Med */}
-      <div style={{background:"linear-gradient(160deg,rgba(139,92,246,0.08),rgba(109,40,217,0.06))",borderRadius:14,border:"1px solid rgba(139,92,246,0.25)",overflow:"hidden"}}>
-        <div style={{background:"rgba(139,92,246,0.15)",padding:"10px 14px 8px",fontSize:13,fontWeight:900,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em"}}>📦 Lost & Found</div>
-        <div style={{display:"flex",flexDirection:"column",gap:6,padding:"8px"}}>
-          <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.08)",cursor:"pointer",textAlign:"left",textDecoration:"none"}}>
-            <span style={{fontSize:20}}>🔍</span>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Lost & Found Lookup Page</div><div style={{fontSize:11,color:"#64748b"}}>Search all found items · fdm2026.netlify.app/lostfound</div></div>
-            <div style={{fontSize:12,color:"#a78bfa",fontWeight:700}}>→</div>
-          </a>
-          <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.08)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
-            <span style={{fontSize:20}}>📋</span>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Manage L&F (Admin)</div><div style={{fontSize:11,color:"#64748b"}}>Log items, mark in box, mark claimed</div></div>
-            {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(139,92,246,0.3)",color:"#e9d5ff",fontSize:11,fontWeight:800,borderRadius:20,padding:"2px 8px"}}>{lfItems.filter(i=>i.status!=="Claimed").length}</div>}
-          </button>
-          <button style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.08)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
-            <span style={{fontSize:20}}>📷</span>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Log Found Item</div><div style={{fontSize:11,color:"#64748b"}}>Take photo · AI fills description</div></div>
-          </button>
-        </div>
-      </div>
-
-      </>
-
-
-    </div>
+  </div>
+  </div>
   );
 }
 

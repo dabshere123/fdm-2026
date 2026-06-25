@@ -2500,8 +2500,12 @@ Reply YES to acknowledge.`
             </button>
 
             {/* NEW CALL BUTTON */}
-            <button style={{width:"100%",padding:"14px 10px",borderRadius:12,border:"2px solid #ef4444",background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 0 12px rgba(239,68,68,0.3)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-              <span style={{fontSize:18}}>🚨</span> NEW CALL
+            <button style={{width:"100%",display:"flex",alignItems:"center",gap:16,padding:"22px 18px",borderRadius:14,border:"3px solid rgba(239,68,68,0.8)",background:"linear-gradient(135deg,rgba(239,68,68,0.35),rgba(180,0,0,0.25))",cursor:"pointer",boxShadow:"0 0 24px rgba(239,68,68,0.35)"}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+              <span style={{fontSize:28}}>🚨</span>
+              <div style={{flex:1,textAlign:"left"}}>
+                <div style={{fontSize:18,fontWeight:900,color:"#ef4444",letterSpacing:"0.04em"}}>NEW CALL</div>
+                <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Admin · submit to all units</div>
+              </div>
             </button>
 
             {/* 911 COMPACT BUTTON */}

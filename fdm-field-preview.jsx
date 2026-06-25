@@ -487,8 +487,8 @@ function FieldApp(){
                     const s=matches[0];
                     const role=s.role.toLowerCase();
                     if(role.includes("admin")){window.location.href="/hub";return;}
-                    if(role.includes("med unit 1")||role.includes("med 1")){window.location.href="/hub?role=med1";return;}
-                    if(role.includes("med unit 2")||role.includes("med 2")){window.location.href="/hub?role=med2";return;}
+                    if(role==="m1"||role.includes("med unit 1")||role.includes("med 1")){window.location.href="/hub?role=med1";return;}
+                    if(role==="m2"||role.includes("med unit 2")||role.includes("med 2")){window.location.href="/hub?role=med2";return;}
                     if(role.includes("overnight")||role.includes("cleaning")||role.includes("night crew")){
                       setStaffName(s.name);setRoleType("overnight");setName(s.location||"Festival Grounds");setLoggedIn(true);return;
                     }

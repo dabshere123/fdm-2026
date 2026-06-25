@@ -1237,11 +1237,11 @@ function FieldApp() {
             window.location.href = "/hub";
             return;
           }
-          if (role.includes("med unit 1") || role.includes("med 1")) {
+          if (role === "m1" || role.includes("med unit 1") || role.includes("med 1")) {
             window.location.href = "/hub?role=med1";
             return;
           }
-          if (role.includes("med unit 2") || role.includes("med 2")) {
+          if (role === "m2" || role.includes("med unit 2") || role.includes("med 2")) {
             window.location.href = "/hub?role=med2";
             return;
           }

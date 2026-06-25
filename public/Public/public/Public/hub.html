@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
-<title>FDM 2026</title>
+<title>FDM 2026 Hub</title>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="theme-color" content="#0d0d0d"/>
@@ -476,10 +476,137 @@ function MedHome({
   setClearIncView,
   lfItems
 }) {
-  const [tab, setTab] = React.useState("calls"); // calls | unassigned | lf
+  const [tab, setTab] = React.useState("mycalls");
+  const [medChatMessages, setMedChatMessages] = React.useState([]);
+  const [medChatInput, setMedChatInput] = React.useState("");
+  const [medChatSending, setMedChatSending] = React.useState(false);
+  const [chatExpanded, setChatExpanded] = React.useState(false);
   const myStatus = medSt[role === "Med 1" ? "med1" : "med2"] || {
     status: "available"
   };
+  const myKey = role === "Med 1" ? "med1" : "med2";
+  const otherRole = role === "Med 1" ? "Med 2" : "Med 1";
+  React.useEffect(() => {
+    fetchMedChat();
+    const iv = setInterval(fetchMedChat, 8000);
+    return () => clearInterval(iv);
+  }, []);
+  async function fetchMedChat() {
+    try {
+      const res = await fetch("/.netlify/functions/get-messages?channel=AdminMed&limit=40");
+      const data = await res.json();
+      if (data.messages) setMedChatMessages(data.messages);
+    } catch (e) {}
+  }
+  async function sendMedChat() {
+    if (!medChatInput.trim() || medChatSending) return;
+    setMedChatSending(true);
+    try {
+      await fetch("/.netlify/functions/send-message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fromName: role,
+          fromRole: role,
+          channel: "AdminMed",
+          message: medChatInput.trim()
+        })
+      });
+      setMedChatInput("");
+      await fetchMedChat();
+    } catch (e) {}
+    setMedChatSending(false);
+  }
+  function setMedStatus(status) {
+    setMedSt(p => ({
+      ...p,
+      [myKey]: {
+        status,
+        since: new Date().toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit"
+        })
+      }
+    }));
+  }
+  function ackCall(callId) {
+    setCalls(p => p.map(c => c.id === callId ? {
+      ...c,
+      acknowledged: true,
+      unit: role,
+      status: "pending"
+    } : c));
+    if (liveMode) fetch("/.netlify/functions/update-call", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        id: callId,
+        status: "Pending",
+        unit: role
+      })
+    }).catch(() => {});
+    setMedStatus("on_call");
+  }
+  function assignCall(callId, assignTo) {
+    setCalls(p => p.map(c => c.id === callId ? {
+      ...c,
+      acknowledged: true,
+      unit: assignTo,
+      status: "pending"
+    } : c));
+    if (liveMode) fetch("/.netlify/functions/update-call", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        id: callId,
+        status: "Pending",
+        unit: assignTo
+      })
+    }).catch(() => {});
+  }
+  function clearCall(callId) {
+    const call = calls.find(c => c.id === callId);
+    if (call) setClearIncView(call);
+    setCalls(p => p.map(c => c.id === callId ? {
+      ...c,
+      status: "cleared",
+      clearedBy: role
+    } : c));
+    if (call) setCompleted(p => [...p, {
+      ...call,
+      clearedBy: role,
+      clearedAt: new Date().toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit"
+      })
+    }]);
+    setMedStatus("available");
+  }
+  function requestResource(type) {
+    const msgs = {
+      med: `🩺 RESOURCE REQUEST — ${role} requesting ${otherRole} assistance. Please respond on radio or report to staging.`,
+      admin: `📢 RESOURCE REQUEST — ${role} requesting Admin support. Please respond.`,
+      mpd: `🚔 MPD REQUESTED — ${role} requesting police assistance at festival grounds. Fête de Marquette, McPike Park, Madison WI.`
+    };
+    const msg = msgs[type];
+    sendGroupMe(msg, ["admin", "medical"]);
+    fetch("/.netlify/functions/send-sms", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        to: "+16082289692",
+        message: msg
+      })
+    }).catch(() => {});
+  }
   const CALL_COLORS = {
     medical: {
       bg: "rgba(147,51,234,0.15)",
@@ -531,70 +658,19 @@ function MedHome({
       label: "Lost Child"
     }
   };
-  function setMedStatus(status) {
-    const key = role === "Med 1" ? "med1" : "med2";
-    setMedSt(p => ({
-      ...p,
-      [key]: {
-        status,
-        since: new Date().toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit"
-        })
-      }
-    }));
-  }
-  function ackCall(callId) {
-    setCalls(p => p.map(c => c.id === callId ? {
-      ...c,
-      acknowledged: true,
-      unit: role,
-      status: "pending"
-    } : c));
-    if (liveMode) fetch("/.netlify/functions/update-call", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        id: callId,
-        status: "Pending",
-        unit: role
-      })
-    }).catch(() => {});
-    setMedStatus("on_call");
-  }
-  function clearCall(callId) {
-    const call = calls.find(c => c.id === callId);
-    if (call) setClearIncView(call);
-    setCalls(p => p.map(c => c.id === callId ? {
-      ...c,
-      status: "cleared",
-      clearedBy: role
-    } : c));
-    setCompleted(p => [...p, {
-      ...call,
-      clearedBy: role,
-      clearedAt: new Date().toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit"
-      })
-    }]);
-    setMedStatus("available");
-  }
+  const lastMsg = medChatMessages[medChatMessages.length - 1];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 0,
       flex: 1,
       overflowY: "auto"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "8px 16px",
+      padding: "8px 16px 6px",
       display: "flex",
-      gap: 8
+      gap: 6
     }
   }, [["available", "⚪ Available"], ["on_call", "🟣 On Call"], ["cleared", "🟢 Cleared"]].map(([s, l]) => /*#__PURE__*/React.createElement("button", {
     key: s,
@@ -612,12 +688,259 @@ function MedHome({
     onClick: () => setMedStatus(s)
   }, l))), /*#__PURE__*/React.createElement("div", {
     style: {
+      margin: "6px 16px",
+      background: "rgba(147,51,234,0.06)",
+      border: "1px solid rgba(147,51,234,0.2)",
+      borderRadius: 12,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      padding: "10px 14px",
+      background: "none",
+      border: "none",
       display: "flex",
-      gap: 0,
+      alignItems: "center",
+      justifyContent: "space-between",
+      cursor: "pointer"
+    },
+    onClick: () => setChatExpanded(p => !p)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 800,
+      color: "#c4b5fd"
+    }
+  }, "💬 Admin & Med Chat"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#64748b"
+    }
+  }, chatExpanded ? "▲ Collapse" : "▼ Expand", medChatMessages.filter(m => m.isAlert).length > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 6,
+      background: "#ef4444",
+      color: "#fff",
+      fontSize: 9,
+      borderRadius: 20,
+      padding: "1px 6px"
+    }
+  }, "!"))), chatExpanded && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: "1px solid rgba(147,51,234,0.15)",
+      padding: "8px 12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxHeight: 160,
+      overflowY: "auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: 5
+    }
+  }, medChatMessages.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#374151",
+      textAlign: "center",
+      padding: "8px 0"
+    }
+  }, "No messages yet"), medChatMessages.map(msg => {
+    const isMe = msg.fromName === role;
+    const isAlert = msg.isAlert;
+    const time = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Chicago"
+    }) : "";
+    if (isAlert) return /*#__PURE__*/React.createElement("div", {
+      key: msg.id,
+      style: {
+        background: "rgba(239,68,68,0.1)",
+        border: "1px solid rgba(239,68,68,0.3)",
+        borderRadius: 6,
+        padding: "5px 8px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        fontWeight: 800,
+        color: "#fca5a5"
+      }
+    }, "🚨 ALERT · ", time), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#fecaca"
+      }
+    }, msg.message));
+    return /*#__PURE__*/React.createElement("div", {
+      key: msg.id,
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: isMe ? "flex-end" : "flex-start",
+        gap: 1
+      }
+    }, !isMe && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: "#64748b",
+        marginLeft: 3
+      }
+    }, msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxWidth: "85%",
+        background: isMe ? "rgba(147,51,234,0.2)" : "rgba(255,255,255,0.06)",
+        border: `1px solid ${isMe ? "rgba(147,51,234,0.4)" : "rgba(255,255,255,0.08)"}`,
+        borderRadius: "10px",
+        padding: "6px 10px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#f1f5f9"
+      }
+    }, msg.message)));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      flex: 1,
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 8,
+      padding: "8px 11px",
+      color: "#f1f5f9",
+      fontSize: 14,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    placeholder: "Message Admin & Med...",
+    value: medChatInput,
+    onChange: e => setMedChatInput(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMedChat();
+      }
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "8px 14px",
+      borderRadius: 8,
+      border: "none",
+      background: medChatInput.trim() ? "linear-gradient(135deg,#7c3aed,#6d28d9)" : "rgba(255,255,255,0.06)",
+      color: medChatInput.trim() ? "#fff" : "#475569",
+      fontSize: 12,
+      fontWeight: 800,
+      cursor: medChatInput.trim() ? "pointer" : "not-allowed"
+    },
+    onClick: sendMedChat,
+    disabled: !medChatInput.trim() || medChatSending
+  }, medChatSending ? "..." : "Send"))), !chatExpanded && lastMsg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "0 14px 8px",
+      fontSize: 11,
+      color: "#64748b",
+      textOverflow: "ellipsis",
+      overflow: "hidden",
+      whiteSpace: "nowrap"
+    }
+  }, lastMsg.fromName, ": ", lastMsg.message.slice(0, 60), lastMsg.message.length > 60 ? "..." : "")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "6px 16px 4px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      padding: "16px",
+      borderRadius: 14,
+      border: "2px solid rgba(147,51,234,0.7)",
+      background: "linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      boxShadow: "0 0 16px rgba(147,51,234,0.2)"
+    },
+    onClick: () => {
+      setNewCallType("medical");
+      setNewCallLocation("");
+      setNewCallProblem("");
+      setNewCallView(true);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 26
+    }
+  }, "🏥"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: "#d8b4fe"
+    }
+  }, "NEW MEDICAL CALL"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#94a3b8",
+      marginTop: 2
+    }
+  }, "Submit call · alerts all units")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "4px 16px 8px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      padding: "16px",
+      borderRadius: 14,
+      border: "2px solid #eab308",
+      background: "linear-gradient(135deg,rgba(202,138,4,0.3),rgba(161,98,7,0.2))",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      boxShadow: "0 0 16px rgba(234,179,8,0.2)"
+    },
+    onClick: openLostChild
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 26
+    }
+  }, "🧒"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: "#fcd34d"
+    }
+  }, "REPORT LOST CHILD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#94a3b8",
+      marginTop: 2
+    }
+  }, "Alerts all staff immediately")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
       borderBottom: "1px solid rgba(255,255,255,0.08)",
       margin: "0 16px"
     }
-  }, [["calls", `My Calls (${myActive.length})`], ["unassigned", `Unassigned (${unassigned.length})`], ["lf", "L&F"], ["chat", "💬 Chat"]].map(([t, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["mycalls", `${role} Calls (${myActive.length})`], ["unassigned", `Unassigned (${unassigned.length})`], ["resources", "Additional Resources"]].map(([t, l]) => /*#__PURE__*/React.createElement("button", {
     key: t,
     style: {
       flex: 1,
@@ -626,9 +949,10 @@ function MedHome({
       border: "none",
       borderBottom: `2px solid ${tab === t ? "#a855f7" : "transparent"}`,
       color: tab === t ? "#d8b4fe" : "#64748b",
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: 700,
-      cursor: "pointer"
+      cursor: "pointer",
+      lineHeight: 1.3
     },
     onClick: () => setTab(t)
   }, l))), /*#__PURE__*/React.createElement("div", {
@@ -640,14 +964,14 @@ function MedHome({
       flex: 1,
       overflowY: "auto"
     }
-  }, tab === "calls" && /*#__PURE__*/React.createElement(React.Fragment, null, myActive.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, tab === "mycalls" && /*#__PURE__*/React.createElement(React.Fragment, null, myActive.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       color: "#374151",
       fontSize: 13,
       padding: "24px 0"
     }
-  }, "No calls assigned to ", role, " yet"), myActive.map(call => {
+  }, "No calls assigned to ", role), myActive.map(call => {
     const c = CALL_COLORS[call.type] || CALL_COLORS.medical;
     return /*#__PURE__*/React.createElement("div", {
       key: call.id,
@@ -759,7 +1083,7 @@ function MedHome({
           nature: call.problem
         }
       })
-    }, "🚨 Activate 911"), /*#__PURE__*/React.createElement("button", {
+    }, "🚨 911"), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
         padding: "10px",
@@ -773,131 +1097,7 @@ function MedHome({
       },
       onClick: () => clearCall(call.id)
     }, "Clear Call →")));
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      borderTop: "1px solid rgba(255,255,255,0.06)",
-      paddingTop: 8,
-      display: "flex",
-      gap: 6,
-      flexWrap: "wrap"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      flex: 1,
-      minWidth: "45%",
-      padding: "10px 6px",
-      borderRadius: 10,
-      border: "1px solid rgba(245,158,11,0.3)",
-      background: "rgba(245,158,11,0.06)",
-      color: "#fcd34d",
-      fontSize: 11,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: openLostChild
-  }, "🧒 Lost Child"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      flex: 1,
-      minWidth: "45%",
-      padding: "10px 6px",
-      borderRadius: 10,
-      border: "1px solid rgba(139,92,246,0.3)",
-      background: "rgba(139,92,246,0.06)",
-      color: "#c4b5fd",
-      fontSize: 11,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      setNewCallType("medical");
-      setNewCallView(true);
-    }
-  }, "🏥 New Call"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      flex: 1,
-      minWidth: "45%",
-      padding: "10px 6px",
-      borderRadius: 10,
-      border: "1px solid rgba(147,51,234,0.4)",
-      background: "rgba(147,51,234,0.08)",
-      color: "#d8b4fe",
-      fontSize: 11,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      const other = role === "Med 1" ? "Med 2" : "Med 1";
-      const msg = `🩺 RESOURCE REQUEST — ${role} requesting ${other} assistance.
-Please respond on radio or report to staging.`;
-      sendGroupMe(msg, ["admin", "medical"]);
-      fetch("/.netlify/functions/send-sms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          to: "+16082289692",
-          message: msg
-        })
-      }).catch(() => {});
-    }
-  }, "🩺 Request ", role === "Med 1" ? "Med 2" : "Med 1"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      flex: 1,
-      minWidth: "45%",
-      padding: "10px 6px",
-      borderRadius: 10,
-      border: "1px solid rgba(245,158,11,0.3)",
-      background: "rgba(245,158,11,0.06)",
-      color: "#fcd34d",
-      fontSize: 11,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      const msg = `📢 RESOURCE REQUEST — ${role} requesting Admin support.
-Please respond.`;
-      sendGroupMe(msg, ["admin", "medical"]);
-      fetch("/.netlify/functions/send-sms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          to: "+16082289692",
-          message: msg
-        })
-      }).catch(() => {});
-    }
-  }, "📢 Request Admin"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      flex: 1,
-      minWidth: "100%",
-      padding: "10px 6px",
-      borderRadius: 10,
-      border: "1px solid rgba(37,99,235,0.4)",
-      background: "rgba(37,99,235,0.08)",
-      color: "#93c5fd",
-      fontSize: 11,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      const msg = `🚔 MPD REQUESTED — ${role} requesting police assistance at festival grounds.
-Fête de Marquette, McPike Park, Madison WI.`;
-      sendGroupMe(msg, ["admin", "medical"]);
-      fetch("/.netlify/functions/send-sms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          to: "+16082289692",
-          message: msg
-        })
-      }).catch(() => {});
-    }
-  }, "🚔 Request MPD"))), tab === "unassigned" && /*#__PURE__*/React.createElement(React.Fragment, null, unassigned.length === 0 && /*#__PURE__*/React.createElement("div", {
+  })), tab === "unassigned" && /*#__PURE__*/React.createElement(React.Fragment, null, unassigned.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       color: "#374151",
@@ -915,7 +1115,7 @@ Fête de Marquette, McPike Park, Madison WI.`;
         padding: "12px",
         display: "flex",
         flexDirection: "column",
-        gap: 6
+        gap: 8
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -924,7 +1124,7 @@ Fête de Marquette, McPike Park, Madison WI.`;
         color: c.text,
         textTransform: "uppercase"
       }
-    }, c.icon, " ", c.label, " — UNASSIGNED"), /*#__PURE__*/React.createElement("div", {
+    }, c.icon, " ", c.label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 16,
         fontWeight: 800,
@@ -935,205 +1135,141 @@ Fête de Marquette, McPike Park, Madison WI.`;
         fontSize: 13,
         color: "#e2e8f0"
       }
-    }, call.problem), /*#__PURE__*/React.createElement("button", {
+    }, call.problem), /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        flex: 1,
         padding: "10px",
         borderRadius: 8,
         border: "none",
         background: `${c.border}`,
         color: "#fff",
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: 800,
         cursor: "pointer"
       },
       onClick: () => ackCall(call.id)
-    }, "Acknowledge — Take This Call"));
-  })), tab === "lf" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("a", {
-    href: "https://fdm2026.netlify.app/lostfound",
-    target: "_blank",
+    }, "Take — Assign to ", role), /*#__PURE__*/React.createElement("button", {
+      style: {
+        flex: 1,
+        padding: "10px",
+        borderRadius: 8,
+        border: `1px solid ${c.border}`,
+        background: "rgba(255,255,255,0.04)",
+        color: c.text,
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer"
+      },
+      onClick: () => assignCall(call.id, otherRole)
+    }, "Assign to ", otherRole)));
+  })), tab === "resources" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      alignItems: "center",
-      gap: 10,
-      padding: "12px",
-      borderRadius: 10,
-      border: "1px solid rgba(139,92,246,0.3)",
-      background: "rgba(139,92,246,0.06)",
-      textDecoration: "none",
-      marginBottom: 4
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 18
-    }
-  }, "🔍"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: "#f1f5f9"
-    }
-  }, "Staff Lookup Page →")), (lfItems || []).filter(i => i.status !== "Claimed").slice(0, 10).map(item => /*#__PURE__*/React.createElement("div", {
-    key: item.id,
-    style: {
-      borderRadius: 10,
-      border: "1px solid rgba(139,92,246,0.2)",
-      background: "rgba(139,92,246,0.06)",
-      padding: "10px 12px"
+      flexDirection: "column",
+      gap: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 800,
-      color: "#c4b5fd",
-      marginBottom: 2
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      marginBottom: 4
     }
-  }, item.itemNumber || "—"), /*#__PURE__*/React.createElement("div", {
+  }, "Request Additional Units"), /*#__PURE__*/React.createElement("button", {
     style: {
-      fontSize: 13,
-      color: "#f1f5f9"
+      padding: "18px 16px",
+      borderRadius: 14,
+      border: "2px solid rgba(147,51,234,0.5)",
+      background: "rgba(147,51,234,0.1)",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      textAlign: "left"
+    },
+    onClick: () => requestResource("med")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24
     }
-  }, item.description), /*#__PURE__*/React.createElement("div", {
+  }, "🩺"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 900,
+      color: "#d8b4fe"
+    }
+  }, "Request ", otherRole), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#64748b",
       marginTop: 2
     }
-  }, "📍 ", item.location, " · ", item.status))), (lfItems || []).filter(i => i.status !== "Claimed").length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, "GroupMe + SMS to Admin · Medical channel"))), /*#__PURE__*/React.createElement("button", {
     style: {
-      textAlign: "center",
-      color: "#374151",
-      fontSize: 13,
-      padding: "24px 0"
-    }
-  }, "No active L&F items")), tab === "chat" && /*#__PURE__*/React.createElement("div", {
-    style: {
+      padding: "18px 16px",
+      borderRadius: 14,
+      border: "2px solid rgba(245,158,11,0.5)",
+      background: "rgba(245,158,11,0.08)",
+      cursor: "pointer",
       display: "flex",
-      flexDirection: "column",
-      gap: 0,
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
+      alignItems: "center",
+      gap: 14,
+      textAlign: "left"
+    },
+    onClick: () => requestResource("admin")
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
-      flex: 1,
-      overflowY: "auto",
-      maxHeight: 380,
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-      marginBottom: 8
+      fontSize: 24
     }
-  }, medChatMessages.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, "📢"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      textAlign: "center",
-      color: "#374151",
-      fontSize: 13,
-      padding: "20px 0"
-    }
-  }, "No messages yet in Admin & Med channel"), medChatMessages.map(msg => {
-    const isMe = msg.fromName === role;
-    const isAlert = msg.isAlert;
-    const time = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: "America/Chicago"
-    }) : "";
-    if (isAlert) return /*#__PURE__*/React.createElement("div", {
-      key: msg.id,
-      style: {
-        background: "rgba(239,68,68,0.1)",
-        border: "1px solid rgba(239,68,68,0.3)",
-        borderRadius: 8,
-        padding: "7px 10px"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        fontWeight: 800,
-        color: "#fca5a5",
-        marginBottom: 2
-      }
-    }, "🚨 ALERT · ", time), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "#fecaca"
-      }
-    }, msg.message));
-    return /*#__PURE__*/React.createElement("div", {
-      key: msg.id,
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: isMe ? "flex-end" : "flex-start",
-        gap: 2
-      }
-    }, !isMe && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: "#64748b",
-        marginLeft: 3
-      }
-    }, msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
-      style: {
-        maxWidth: "85%",
-        background: isMe ? "rgba(147,51,234,0.2)" : "rgba(255,255,255,0.06)",
-        border: `1px solid ${isMe ? "rgba(147,51,234,0.4)" : "rgba(255,255,255,0.08)"}`,
-        borderRadius: isMe ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
-        padding: "8px 11px"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        color: "#f1f5f9"
-      }
-    }, msg.message)), isMe && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: "#374151",
-        marginRight: 3
-      }
-    }, time));
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8,
-      borderTop: "1px solid rgba(255,255,255,0.06)",
-      paddingTop: 8
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    style: {
-      flex: 1,
-      background: "rgba(255,255,255,0.06)",
-      border: "1px solid rgba(255,255,255,0.12)",
-      borderRadius: 10,
-      padding: "10px 12px",
-      color: "#f1f5f9",
       fontSize: 14,
-      fontFamily: "inherit",
-      outline: "none"
-    },
-    placeholder: "Message Admin & Med channel...",
-    value: medChatInput,
-    onChange: e => setMedChatInput(e.target.value),
-    onKeyDown: e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendMedChat();
-      }
+      fontWeight: 900,
+      color: "#fcd34d"
     }
-  }), /*#__PURE__*/React.createElement("button", {
+  }, "Request Admin"), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "10px 16px",
-      borderRadius: 10,
-      border: "none",
-      background: medChatInput.trim() ? "linear-gradient(135deg,#7c3aed,#6d28d9)" : "rgba(255,255,255,0.06)",
-      color: medChatInput.trim() ? "#fff" : "#475569",
-      fontSize: 13,
-      fontWeight: 800,
-      cursor: medChatInput.trim() ? "pointer" : "not-allowed"
+      fontSize: 11,
+      color: "#64748b",
+      marginTop: 2
+    }
+  }, "GroupMe + SMS to Admin"))), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "18px 16px",
+      borderRadius: 14,
+      border: "2px solid rgba(37,99,235,0.5)",
+      background: "rgba(37,99,235,0.08)",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      textAlign: "left"
     },
-    onClick: sendMedChat,
-    disabled: !medChatInput.trim() || medChatSending
-  }, medChatSending ? "..." : "Send")))));
+    onClick: () => requestResource("mpd")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24
+    }
+  }, "🚔"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 900,
+      color: "#93c5fd"
+    }
+  }, "Request MPD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#64748b",
+      marginTop: 2
+    }
+  }, "GroupMe + SMS · McPike Park, Madison WI"))))));
 }
 function HubApp({
   onBack

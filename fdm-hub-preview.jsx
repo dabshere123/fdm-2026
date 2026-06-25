@@ -166,8 +166,74 @@ const sendGroupMe = async (message, channels) => {
 // MED HOME COMPONENT
 // ============================================================
 function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,resourceView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild,setNewCallView,setNewCallType,setNewCallLocation,setNewCallProblem,staffList,setClearIncView,lfItems}){
-  const [tab,setTab]=React.useState("calls"); // calls | unassigned | lf
+  const [tab,setTab]=React.useState("mycalls");
+  const [medChatMessages,setMedChatMessages]=React.useState([]);
+  const [medChatInput,setMedChatInput]=React.useState("");
+  const [medChatSending,setMedChatSending]=React.useState(false);
+  const [chatExpanded,setChatExpanded]=React.useState(false);
   const myStatus=medSt[role==="Med 1"?"med1":"med2"]||{status:"available"};
+  const myKey=role==="Med 1"?"med1":"med2";
+  const otherRole=role==="Med 1"?"Med 2":"Med 1";
+
+  React.useEffect(()=>{
+    fetchMedChat();
+    const iv=setInterval(fetchMedChat,8000);
+    return()=>clearInterval(iv);
+  },[]);
+
+  async function fetchMedChat(){
+    try{
+      const res=await fetch("/.netlify/functions/get-messages?channel=AdminMed&limit=40");
+      const data=await res.json();
+      if(data.messages) setMedChatMessages(data.messages);
+    }catch(e){}
+  }
+
+  async function sendMedChat(){
+    if(!medChatInput.trim()||medChatSending) return;
+    setMedChatSending(true);
+    try{
+      await fetch("/.netlify/functions/send-message",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({fromName:role,fromRole:role,channel:"AdminMed",message:medChatInput.trim()})});
+      setMedChatInput("");
+      await fetchMedChat();
+    }catch(e){}
+    setMedChatSending(false);
+  }
+
+  function setMedStatus(status){
+    setMedSt(p=>({...p,[myKey]:{status,since:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}}));
+  }
+
+  function ackCall(callId){
+    setCalls(p=>p.map(c=>c.id===callId?{...c,acknowledged:true,unit:role,status:"pending"}:c));
+    if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:callId,status:"Pending",unit:role})}).catch(()=>{});
+    setMedStatus("on_call");
+  }
+
+  function assignCall(callId, assignTo){
+    setCalls(p=>p.map(c=>c.id===callId?{...c,acknowledged:true,unit:assignTo,status:"pending"}:c));
+    if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:callId,status:"Pending",unit:assignTo})}).catch(()=>{});
+  }
+
+  function clearCall(callId){
+    const call=calls.find(c=>c.id===callId);
+    if(call) setClearIncView(call);
+    setCalls(p=>p.map(c=>c.id===callId?{...c,status:"cleared",clearedBy:role}:c));
+    if(call) setCompleted(p=>[...p,{...call,clearedBy:role,clearedAt:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}]);
+    setMedStatus("available");
+  }
+
+  function requestResource(type){
+    const msgs={
+      med:`🩺 RESOURCE REQUEST — ${role} requesting ${otherRole} assistance. Please respond on radio or report to staging.`,
+      admin:`📢 RESOURCE REQUEST — ${role} requesting Admin support. Please respond.`,
+      mpd:`🚔 MPD REQUESTED — ${role} requesting police assistance at festival grounds. Fête de Marquette, McPike Park, Madison WI.`,
+    };
+    const msg=msgs[type];
+    sendGroupMe(msg,["admin","medical"]);
+    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
+  }
 
   const CALL_COLORS={
     medical:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",icon:"🏥",label:"Medical"},
@@ -179,48 +245,96 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
     lost_child:{bg:"rgba(234,179,8,0.15)",border:"rgba(234,179,8,0.5)",text:"#fcd34d",icon:"🧒",label:"Lost Child"},
   };
 
-  function setMedStatus(status){
-    const key=role==="Med 1"?"med1":"med2";
-    setMedSt(p=>({...p,[key]:{status,since:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}}));
-  }
-
-  function ackCall(callId){
-    setCalls(p=>p.map(c=>c.id===callId?{...c,acknowledged:true,unit:role,status:"pending"}:c));
-    if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:callId,status:"Pending",unit:role})}).catch(()=>{});
-    setMedStatus("on_call");
-  }
-
-  function clearCall(callId){
-    const call=calls.find(c=>c.id===callId);
-    if(call) setClearIncView(call);
-    setCalls(p=>p.map(c=>c.id===callId?{...c,status:"cleared",clearedBy:role}:c));
-    setCompleted(p=>[...p,{...call,clearedBy:role,clearedAt:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}]);
-    setMedStatus("available");
-  }
+  const lastMsg=medChatMessages[medChatMessages.length-1];
 
   return(
-    <div style={{display:"flex",flexDirection:"column",gap:0,flex:1,overflowY:"auto"}}>
+    <div style={{display:"flex",flexDirection:"column",flex:1,overflowY:"auto"}}>
 
       {/* STATUS BAR */}
-      <div style={{padding:"8px 16px",display:"flex",gap:8}}>
+      <div style={{padding:"8px 16px 6px",display:"flex",gap:6}}>
         {[["available","⚪ Available"],["on_call","🟣 On Call"],["cleared","🟢 Cleared"]].map(([s,l])=>(
           <button key={s} style={{flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${myStatus.status===s?"rgba(245,158,11,0.6)":"rgba(255,255,255,0.1)"}`,background:myStatus.status===s?"rgba(245,158,11,0.12)":"rgba(255,255,255,0.03)",color:myStatus.status===s?"#fcd34d":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>setMedStatus(s)}>{l}</button>
         ))}
       </div>
 
+      {/* CHAT — always visible, collapsible */}
+      <div style={{margin:"6px 16px",background:"rgba(147,51,234,0.06)",border:"1px solid rgba(147,51,234,0.2)",borderRadius:12,overflow:"hidden"}}>
+        <button style={{width:"100%",padding:"10px 14px",background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setChatExpanded(p=>!p)}>
+          <div style={{fontSize:13,fontWeight:800,color:"#c4b5fd"}}>💬 Admin & Med Chat</div>
+          <div style={{fontSize:11,color:"#64748b"}}>{chatExpanded?"▲ Collapse":"▼ Expand"}{medChatMessages.filter(m=>m.isAlert).length>0&&<span style={{marginLeft:6,background:"#ef4444",color:"#fff",fontSize:9,borderRadius:20,padding:"1px 6px"}}>!</span>}</div>
+        </button>
+        {chatExpanded&&(
+          <div style={{borderTop:"1px solid rgba(147,51,234,0.15)",padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{maxHeight:160,overflowY:"auto",display:"flex",flexDirection:"column",gap:5}}>
+              {medChatMessages.length===0&&<div style={{fontSize:12,color:"#374151",textAlign:"center",padding:"8px 0"}}>No messages yet</div>}
+              {medChatMessages.map(msg=>{
+                const isMe=msg.fromName===role;
+                const isAlert=msg.isAlert;
+                const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
+                if(isAlert) return(
+                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"5px 8px"}}>
+                    <div style={{fontSize:9,fontWeight:800,color:"#fca5a5"}}>🚨 ALERT · {time}</div>
+                    <div style={{fontSize:11,color:"#fecaca"}}>{msg.message}</div>
+                  </div>
+                );
+                return(
+                  <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:1}}>
+                    {!isMe&&<div style={{fontSize:9,color:"#64748b",marginLeft:3}}>{msg.fromName} · {time}</div>}
+                    <div style={{maxWidth:"85%",background:isMe?"rgba(147,51,234,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(147,51,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:"10px",padding:"6px 10px"}}>
+                      <div style={{fontSize:12,color:"#f1f5f9"}}>{msg.message}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"8px 11px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Message Admin & Med..." value={medChatInput} onChange={e=>setMedChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendMedChat();}}}/>
+              <button style={{padding:"8px 14px",borderRadius:8,border:"none",background:medChatInput.trim()?"linear-gradient(135deg,#7c3aed,#6d28d9)":"rgba(255,255,255,0.06)",color:medChatInput.trim()?"#fff":"#475569",fontSize:12,fontWeight:800,cursor:medChatInput.trim()?"pointer":"not-allowed"}} onClick={sendMedChat} disabled={!medChatInput.trim()||medChatSending}>{medChatSending?"...":"Send"}</button>
+            </div>
+          </div>
+        )}
+        {!chatExpanded&&lastMsg&&(
+          <div style={{padding:"0 14px 8px",fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>
+            {lastMsg.fromName}: {lastMsg.message.slice(0,60)}{lastMsg.message.length>60?"...":""}
+          </div>
+        )}
+      </div>
+
+      {/* NEW CALL BUTTON */}
+      <div style={{padding:"6px 16px 4px"}}>
+        <button style={{width:"100%",padding:"16px",borderRadius:14,border:"2px solid rgba(147,51,234,0.7)",background:"linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 0 16px rgba(147,51,234,0.2)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+          <span style={{fontSize:26}}>🏥</span>
+          <div style={{textAlign:"left"}}>
+            <div style={{fontSize:16,fontWeight:900,color:"#d8b4fe"}}>NEW MEDICAL CALL</div>
+            <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Submit call · alerts all units</div>
+          </div>
+        </button>
+      </div>
+
+      {/* LOST CHILD BUTTON */}
+      <div style={{padding:"4px 16px 8px"}}>
+        <button style={{width:"100%",padding:"16px",borderRadius:14,border:"2px solid #eab308",background:"linear-gradient(135deg,rgba(202,138,4,0.3),rgba(161,98,7,0.2))",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 0 16px rgba(234,179,8,0.2)"}} onClick={openLostChild}>
+          <span style={{fontSize:26}}>🧒</span>
+          <div style={{textAlign:"left"}}>
+            <div style={{fontSize:16,fontWeight:900,color:"#fcd34d"}}>REPORT LOST CHILD</div>
+            <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Alerts all staff immediately</div>
+          </div>
+        </button>
+      </div>
+
       {/* TABS */}
-      <div style={{display:"flex",gap:0,borderBottom:"1px solid rgba(255,255,255,0.08)",margin:"0 16px"}}>
-        {[["calls",`My Calls (${myActive.length})`],["unassigned",`Unassigned (${unassigned.length})`],["lf","L&F"],["chat","💬 Chat"]].map(([t,l])=>(
-          <button key={t} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`2px solid ${tab===t?"#a855f7":"transparent"}`,color:tab===t?"#d8b4fe":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setTab(t)}>{l}</button>
+      <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.08)",margin:"0 16px"}}>
+        {[["mycalls",`${role} Calls (${myActive.length})`],["unassigned",`Unassigned (${unassigned.length})`],["resources","Additional Resources"]].map(([t,l])=>(
+          <button key={t} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`2px solid ${tab===t?"#a855f7":"transparent"}`,color:tab===t?"#d8b4fe":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer",lineHeight:1.3}} onClick={()=>setTab(t)}>{l}</button>
         ))}
       </div>
 
       <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:8,flex:1,overflowY:"auto"}}>
 
-        {/* MY ACTIVE CALLS */}
-        {tab==="calls"&&(
+        {/* MY CALLS TAB */}
+        {tab==="mycalls"&&(
           <>
-            {myActive.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No calls assigned to {role} yet</div>}
+            {myActive.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No calls assigned to {role}</div>}
             {myActive.map(call=>{
               const c=CALL_COLORS[call.type]||CALL_COLORS.medical;
               return(
@@ -239,104 +353,61 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
                         if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:call.id,status:"On Scene",unit:role})}).catch(()=>{});
                       }}>✅ On Scene</button>
                     )}
-                    <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:call.id,info:{location:call.location,nature:call.problem}})}>🚨 Activate 911</button>
+                    <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:call.id,info:{location:call.location,nature:call.problem}})}>🚨 911</button>
                     <button style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(100,116,139,0.4)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>clearCall(call.id)}>Clear Call →</button>
                   </div>
                 </div>
               );
             })}
-            {/* Quick actions */}
-            <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
-              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",color:"#fcd34d",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={openLostChild}>🧒 Lost Child</button>
-              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",color:"#c4b5fd",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{setNewCallType("medical");setNewCallView(true);}}>🏥 New Call</button>
-              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(147,51,234,0.4)",background:"rgba(147,51,234,0.08)",color:"#d8b4fe",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{
-                const other=role==="Med 1"?"Med 2":"Med 1";
-                const msg=`🩺 RESOURCE REQUEST — ${role} requesting ${other} assistance.
-Please respond on radio or report to staging.`;
-                sendGroupMe(msg,["admin","medical"]);
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
-              }}>🩺 Request {role==="Med 1"?"Med 2":"Med 1"}</button>
-              <button style={{flex:1,minWidth:"45%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",color:"#fcd34d",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{
-                const msg=`📢 RESOURCE REQUEST — ${role} requesting Admin support.
-Please respond.`;
-                sendGroupMe(msg,["admin","medical"]);
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
-              }}>📢 Request Admin</button>
-              <button style={{flex:1,minWidth:"100%",padding:"10px 6px",borderRadius:10,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{
-                const msg=`🚔 MPD REQUESTED — ${role} requesting police assistance at festival grounds.
-Fête de Marquette, McPike Park, Madison WI.`;
-                sendGroupMe(msg,["admin","medical"]);
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
-              }}>🚔 Request MPD</button>
-            </div>
           </>
         )}
 
-        {/* UNASSIGNED CALLS */}
+        {/* UNASSIGNED TAB */}
         {tab==="unassigned"&&(
           <>
             {unassigned.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No unassigned calls</div>}
             {unassigned.map(call=>{
               const c=CALL_COLORS[call.type]||CALL_COLORS.medical;
               return(
-                <div key={call.id} style={{borderRadius:12,border:`1px solid ${c.border}`,background:c.bg,padding:"12px",display:"flex",flexDirection:"column",gap:6}}>
-                  <div style={{fontSize:12,fontWeight:900,color:c.text,textTransform:"uppercase"}}>{c.icon} {c.label} — UNASSIGNED</div>
+                <div key={call.id} style={{borderRadius:12,border:`1px solid ${c.border}`,background:c.bg,padding:"12px",display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{fontSize:12,fontWeight:900,color:c.text,textTransform:"uppercase"}}>{c.icon} {c.label}</div>
                   <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>📍 {call.location}</div>
                   <div style={{fontSize:13,color:"#e2e8f0"}}>{call.problem}</div>
-                  <button style={{padding:"10px",borderRadius:8,border:"none",background:`${c.border}`,color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>ackCall(call.id)}>Acknowledge — Take This Call</button>
+                  <div style={{display:"flex",gap:6}}>
+                    <button style={{flex:1,padding:"10px",borderRadius:8,border:"none",background:`${c.border}`,color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>ackCall(call.id)}>Take — Assign to {role}</button>
+                    <button style={{flex:1,padding:"10px",borderRadius:8,border:`1px solid ${c.border}`,background:"rgba(255,255,255,0.04)",color:c.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>assignCall(call.id,otherRole)}>Assign to {otherRole}</button>
+                  </div>
                 </div>
               );
             })}
           </>
         )}
 
-        {/* LOST & FOUND */}
-        {tab==="lf"&&(
-          <>
-            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",textDecoration:"none",marginBottom:4}}>
-              <span style={{fontSize:18}}>🔍</span><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup Page →</div>
-            </a>
-            {(lfItems||[]).filter(i=>i.status!=="Claimed").slice(0,10).map(item=>(
-              <div key={item.id} style={{borderRadius:10,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",padding:"10px 12px"}}>
-                <div style={{fontSize:12,fontWeight:800,color:"#c4b5fd",marginBottom:2}}>{item.itemNumber||"—"}</div>
-                <div style={{fontSize:13,color:"#f1f5f9"}}>{item.description}</div>
-                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>📍 {item.location} · {item.status}</div>
+        {/* ADDITIONAL RESOURCES TAB */}
+        {tab==="resources"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:12,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Request Additional Units</div>
+            <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(147,51,234,0.5)",background:"rgba(147,51,234,0.1)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>requestResource("med")}>
+              <span style={{fontSize:24}}>🩺</span>
+              <div>
+                <div style={{fontSize:14,fontWeight:900,color:"#d8b4fe"}}>Request {otherRole}</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>GroupMe + SMS to Admin · Medical channel</div>
               </div>
-            ))}
-            {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No active L&F items</div>}
-          </>
-        )}
-
-        {/* CHAT TAB */}
-        {tab==="chat"&&(
-          <div style={{display:"flex",flexDirection:"column",gap:0,flex:1}}>
-            <div style={{flex:1,overflowY:"auto",maxHeight:380,display:"flex",flexDirection:"column",gap:6,marginBottom:8}}>
-              {medChatMessages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"20px 0"}}>No messages yet in Admin & Med channel</div>}
-              {medChatMessages.map(msg=>{
-                const isMe=msg.fromName===role;
-                const isAlert=msg.isAlert;
-                const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
-                if(isAlert) return(
-                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"7px 10px"}}>
-                    <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:2}}>🚨 ALERT · {time}</div>
-                    <div style={{fontSize:12,color:"#fecaca"}}>{msg.message}</div>
-                  </div>
-                );
-                return(
-                  <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
-                    {!isMe&&<div style={{fontSize:10,color:"#64748b",marginLeft:3}}>{msg.fromName} · {time}</div>}
-                    <div style={{maxWidth:"85%",background:isMe?"rgba(147,51,234,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(147,51,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:isMe?"12px 12px 3px 12px":"12px 12px 12px 3px",padding:"8px 11px"}}>
-                      <div style={{fontSize:13,color:"#f1f5f9"}}>{msg.message}</div>
-                    </div>
-                    {isMe&&<div style={{fontSize:10,color:"#374151",marginRight:3}}>{time}</div>}
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{display:"flex",gap:8,borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:8}}>
-              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"10px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Message Admin & Med channel..." value={medChatInput} onChange={e=>setMedChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendMedChat();}}}/>
-              <button style={{padding:"10px 16px",borderRadius:10,border:"none",background:medChatInput.trim()?"linear-gradient(135deg,#7c3aed,#6d28d9)":"rgba(255,255,255,0.06)",color:medChatInput.trim()?"#fff":"#475569",fontSize:13,fontWeight:800,cursor:medChatInput.trim()?"pointer":"not-allowed"}} onClick={sendMedChat} disabled={!medChatInput.trim()||medChatSending}>{medChatSending?"...":"Send"}</button>
-            </div>
+            </button>
+            <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>requestResource("admin")}>
+              <span style={{fontSize:24}}>📢</span>
+              <div>
+                <div style={{fontSize:14,fontWeight:900,color:"#fcd34d"}}>Request Admin</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>GroupMe + SMS to Admin</div>
+              </div>
+            </button>
+            <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>requestResource("mpd")}>
+              <span style={{fontSize:24}}>🚔</span>
+              <div>
+                <div style={{fontSize:14,fontWeight:900,color:"#93c5fd"}}>Request MPD</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>GroupMe + SMS · McPike Park, Madison WI</div>
+              </div>
+            </button>
           </div>
         )}
 
@@ -344,6 +415,7 @@ Fête de Marquette, McPike Park, Madison WI.`;
     </div>
   );
 }
+
 
 function HubApp({onBack}){
   const [role,setRole]=useState(()=>{

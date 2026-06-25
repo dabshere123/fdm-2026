@@ -299,9 +299,11 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
       {/* CHAT — collapsible, full access */}
       <div style={{margin:"6px 16px",background:"rgba(147,51,234,0.06)",border:"1px solid rgba(147,51,234,0.2)",borderRadius:12,overflow:"hidden"}}>
-        <button style={{width:"100%",padding:"10px 14px",background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setChatExpanded(p=>!p)}>
-          <div style={{fontSize:13,fontWeight:800,color:"#c4b5fd"}}>
-            💬 {medDMThread?`DM: ${medDMThread.otherName}`:MED_CHANNELS.find(c=>c.id===medChatChannel)?.label||medChatChannel}
+        <button style={{width:"100%",padding:"16px 18px",background:"none",border:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}} onClick={()=>setChatExpanded(p=>!p)}>
+          <div style={{width:46,height:46,borderRadius:12,background:"rgba(147,51,234,0.2)",border:"1px solid rgba(147,51,234,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>💬</div>
+          <div style={{flex:1,textAlign:"left"}}>
+            <div style={{fontSize:16,fontWeight:900,color:"#c4b5fd"}}>Festival Chat</div>
+            <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{medDMThread?`DM: ${medDMThread.otherName}`:MED_CHANNELS.find(c=>c.id===medChatChannel)?.label||"Admin & Med"}</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             {medDMThread&&<button style={{fontSize:10,color:"#64748b",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"2px 7px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setMedDMThread(null);setMedChatMessages([]);}}>← Channels</button>}

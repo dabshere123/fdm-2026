@@ -7,7 +7,7 @@ const TWILIO_AUTH    = process.env.TWILIO_AUTH_TOKEN;
 const MESSAGING_SID  = process.env.TWILIO_MESSAGING_SERVICE_SID;
 
 function approvalSMS(name, role, lastName) {
-  return `Hi ${name},\n\nThank you for registering as a ${role||'Staff Member'} at Fête de Marquette 2026! We're glad to have you on the team.\n\nTo access the Worker App:\n\n1️⃣ Tap the link below\n2️⃣ Sign in with your last name: ${lastName}\n3️⃣ Add the app to your home screen for quick access\n\n🔗 Worker App:\nhttps://fdm2026.netlify.app/field\n\n📋 User Guide & Info:\nhttps://fdm2026.netlify.app/guide\n\nIf you have any questions, reach out to festival operations. See you at McPike Park, July 9–12! 🎶\n\n— Fête de Marquette 2026 Operations\n\nReply STOP to unsubscribe.`;
+  return `Hi ${name}, welcome to the FDM 2026 team! 🎶\n\nYou are registered as: ${role||'Staff Member'}\n\n━━━━━━━━━━━━━━━\n📱 WORKER APP\nhttps://fdm2026.netlify.app/field\nSign in with your last name: ${lastName}\nAdd to your home screen for quick access\n\n━━━━━━━━━━━━━━━\n📖 WORKER GUIDE\nhttps://fdm2026.netlify.app/guide\nRead before July 9 — covers all request types, lost child protocol, and how the app works\n\n━━━━━━━━━━━━━━━\n✅ KNOWLEDGE QUIZ\nhttps://fdm2026.netlify.app/quiz\n7 questions · Takes 5 min · Complete before July 9\n\n━━━━━━━━━━━━━━━\n📦 LOST & FOUND\nhttps://fdm2026.netlify.app/lostfound\nSearch all items found at the festival\n\n━━━━━━━━━━━━━━━\nSee you at McPike Park, July 9–12! 🎪\n— Fête de Marquette 2026 Operations\n\nReply STOP to unsubscribe.`;
 }
 
 function normalizePhone(p) {

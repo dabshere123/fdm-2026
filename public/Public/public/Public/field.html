@@ -8,18 +8,28 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
 </head><body>
-<div id="root"></div>
+<div id="root"><div style="color:#475569;padding:20px;font-family:monospace;font-size:12px">Loading...</div></div>
+<script>
+window.onerror=function(msg,src,line,col,err){
+  document.body.style.background='#0d0d0d';
+  document.body.style.padding='20px';
+  document.body.style.fontFamily='monospace';
+  document.getElementById('root').innerHTML='<div style="color:#ef4444;font-size:14px"><div style="font-size:18px;font-weight:900;margin-bottom:12px">⚠️ Field App Error</div><div style="color:#fca5a5"><b>'+msg+'</b></div><div style="color:#64748b;margin-top:8px;font-size:11px">Line '+line+' · '+src+'</div></div>';
+  return true;
+};</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 
 class ErrorBoundary extends React.Component{
-  constructor(p){super(p);this.state={err:null};}
+  constructor(p){super(p);this.state={err:null,info:null};}
   static getDerivedStateFromError(e){return{err:e};}
+  componentDidCatch(e,i){this.setState({info:i});}
   render(){
-    if(this.state.err)return React.createElement('div',{style:{padding:30,color:'#ef4444',background:'#0d0d0d',minHeight:'100vh',fontFamily:'monospace'}},
-      React.createElement('div',{style:{fontSize:18,fontWeight:900,marginBottom:16}},'⚠️ App Error'),
-      React.createElement('div',{style:{fontSize:12,color:'#94a3b8',whiteSpace:'pre-wrap'}},String(this.state.err))
+    if(this.state.err)return React.createElement('div',{style:{padding:20,background:'#0d0d0d',minHeight:'100vh',fontFamily:'monospace'}},
+      React.createElement('div',{style:{color:'#ef4444',fontSize:18,fontWeight:900,marginBottom:12}},'⚠️ Field App Error'),
+      React.createElement('div',{style:{color:'#fca5a5',fontSize:13,marginBottom:8}},String(this.state.err)),
+      React.createElement('div',{style:{color:'#64748b',fontSize:11,whiteSpace:'pre-wrap'}},this.state.info&&this.state.info.componentStack)
     );
     return this.props.children;
   }

@@ -8,57 +8,64 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh;padding:20px 16px 40px;}
+body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh;padding:20px 16px 80px;}
 .wrap{max-width:480px;margin:0 auto;}
-
 .header{text-align:center;margin-bottom:24px;padding-top:8px;}
-.logo{font-size:36px;margin-bottom:10px;}
-.title{font-size:20px;font-weight:900;color:#f1f5f9;letter-spacing:-0.01em;}
+.logo{font-size:34px;margin-bottom:10px;}
+.title{font-size:20px;font-weight:900;color:#f1f5f9;}
 .subtitle{font-size:13px;color:#475569;margin-top:4px;}
-
-.greeting{background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:14px;padding:16px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.greeting{background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:14px;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;gap:14px;}
 .avatar{width:50px;height:50px;border-radius:12px;background:rgba(14,165,233,0.2);border:1px solid rgba(14,165,233,0.35);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#38bdf8;flex-shrink:0;}
 .greeting-name{font-size:18px;font-weight:800;color:#f1f5f9;}
 .greeting-sub{font-size:12px;color:#64748b;margin-top:3px;}
-
-.prompt{font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
-
-.group{margin-bottom:18px;}
-.group-label{font-size:11px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
-.roles{display:flex;flex-direction:column;gap:5px;}
-.role-btn{padding:14px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:#94a3b8;font-size:15px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.1s,background 0.1s,color 0.1s;}
-.role-btn:active{transform:scale(0.99);}
+.section{margin-bottom:22px;}
+.section-label{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+.group-label{font-size:11px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px;}
+.roles{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.role-btn{padding:14px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:#94a3b8;font-size:15px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;justify-content:space-between;transition:all 0.1s;}
 .role-btn.selected{border:2px solid #0ea5e9;background:rgba(14,165,233,0.12);color:#f1f5f9;font-weight:700;}
-.role-btn.selected::after{content:"✓";color:#38bdf8;font-weight:900;font-size:16px;}
+.role-btn.selected::after{content:"✓";color:#38bdf8;font-weight:900;}
 
-.confirm-wrap{position:sticky;bottom:16px;margin-top:10px;}
-.confirm-btn{width:100%;padding:18px;border-radius:14px;border:none;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 24px rgba(14,165,233,0.35);opacity:0.35;transition:opacity 0.2s;}
+/* Schedule */
+.day-card{border-radius:12px;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);overflow:hidden;margin-bottom:8px;transition:border-color 0.15s,background 0.15s;}
+.day-card.active{border-color:#f59e0b;background:rgba(245,158,11,0.05);}
+.day-toggle{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;width:100%;background:none;border:none;font-family:inherit;text-align:left;}
+.day-check{width:22px;height:22px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.1s;}
+.day-card.active .day-check{border-color:#f59e0b;background:#f59e0b;}
+.day-check-inner{font-size:13px;color:#1a1000;font-weight:900;display:none;}
+.day-card.active .day-check-inner{display:block;}
+.day-name{font-size:15px;font-weight:700;color:#f1f5f9;}
+.day-date{font-size:12px;color:#64748b;margin-top:1px;}
+.day-times{padding:0 16px 14px;display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.day-card.active .day-times{display:grid;}
+.time-label{font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;}
+.time-select{width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;cursor:pointer;}
+
+/* Sticky confirm */
+.confirm-wrap{position:fixed;bottom:0;left:0;right:0;padding:12px 16px 20px;background:linear-gradient(to top,#0a0a14 60%,rgba(10,10,20,0) 100%);}
+.confirm-btn{width:100%;max-width:480px;display:block;margin:0 auto;padding:17px;border-radius:14px;border:none;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 24px rgba(14,165,233,0.3);opacity:0.35;}
 .confirm-btn.ready{opacity:1;}
 
 .not-you{font-size:12px;color:#374151;text-align:center;margin-top:14px;}
 .not-you a{color:#38bdf8;cursor:pointer;}
-
 #manual-name{display:none;margin-bottom:18px;}
 #manual-name input{width:100%;padding:13px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
 
+/* Success */
 .success{text-align:center;padding:48px 16px;}
-.success .icon{font-size:64px;margin-bottom:18px;}
-.success .msg{font-size:22px;font-weight:900;color:#f1f5f9;margin-bottom:6px;}
-.success .role-tag{display:inline-block;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:8px;padding:6px 14px;font-size:14px;color:#38bdf8;font-weight:700;margin-bottom:20px;}
-.links{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;margin-top:4px;text-align:left;}
-.links-title{font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;}
+.success .icon{font-size:56px;margin-bottom:16px;}
+.success .msg{font-size:22px;font-weight:900;margin-bottom:6px;}
+.success .tag{display:inline-block;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:8px;padding:5px 14px;font-size:13px;color:#38bdf8;font-weight:700;margin:4px 3px;}
+.links{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;margin-top:20px;text-align:left;}
 .link-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
-.link-row:last-child{border-bottom:none;padding-bottom:0;}
-.link-icon{font-size:20px;flex-shrink:0;}
-.link-text{font-size:14px;font-weight:700;color:#f1f5f9;}
-.link-text a{color:#38bdf8;text-decoration:none;}
+.link-row:last-child{border:none;padding-bottom:0;}
+.link-icon{font-size:20px;}
+.link-text{font-size:14px;font-weight:700;color:#38bdf8;text-decoration:none;}
 .link-sub{font-size:12px;color:#64748b;margin-top:1px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-
-  <!-- FORM VIEW -->
   <div id="form-view">
     <div class="header">
       <div class="logo">🎶</div>
@@ -67,10 +74,10 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
     </div>
 
     <div class="greeting">
-      <div class="avatar" id="avatar">?</div>
+      <div class="avatar" id="avatar">👋</div>
       <div>
         <div class="greeting-name" id="display-name">Welcome!</div>
-        <div class="greeting-sub">Tap your role below to confirm</div>
+        <div class="greeting-sub">Confirm your role and schedule below</div>
       </div>
     </div>
 
@@ -78,9 +85,9 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
       <input id="name-input" type="text" placeholder="Enter your full name" autocomplete="name"/>
     </div>
 
-    <div class="prompt">What's your role at the festival?</div>
-
-    <div class="group">
+    <!-- ROLE -->
+    <div class="section">
+      <div class="section-label">Your Role at the Festival</div>
       <div class="group-label">🍺 Bars</div>
       <div class="roles">
         <button class="role-btn" data-role="Bar Manager – Moon Bar">Moon Bar</button>
@@ -92,9 +99,6 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
         <button class="role-btn" data-role="Bar Manager – Cabaret Bar">Cabaret Bar</button>
         <button class="role-btn" data-role="Bar Manager – Everything Else Cafe">Everything Else Cafe</button>
       </div>
-    </div>
-
-    <div class="group">
       <div class="group-label">🎤 Stages</div>
       <div class="roles">
         <button class="role-btn" data-role="Stage Manager – Moon Stage">Moon Stage</button>
@@ -102,9 +106,6 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
         <button class="role-btn" data-role="Stage Manager – Lafayette Stage">Lafayette Stage</button>
         <button class="role-btn" data-role="Stage Manager – Lagniappe Stage">Lagniappe Stage</button>
       </div>
-    </div>
-
-    <div class="group">
       <div class="group-label">📋 Other</div>
       <div class="roles">
         <button class="role-btn" data-role="Greeter – Main Entrance Left">Greeter – Main Entrance Left</button>
@@ -115,112 +116,188 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
       </div>
     </div>
 
-    <div class="confirm-wrap">
-      <button class="confirm-btn" id="confirm-btn" onclick="submit()">Confirm My Role →</button>
+    <!-- SCHEDULE -->
+    <div class="section">
+      <div class="section-label">Days & Times You're Working</div>
+
+      <div class="day-card" id="card-thu">
+        <button class="day-toggle" onclick="toggleDay('thu')">
+          <div class="day-check"><span class="day-check-inner">✓</span></div>
+          <div>
+            <div class="day-name">🔵 Thursday, July 9</div>
+            <div class="day-date">Tap to add this day</div>
+          </div>
+        </button>
+        <div class="day-times">
+          <div><div class="time-label">Start Time</div><select class="time-select" id="thu-start" onchange="updateBtn()"><option value="">Select</option></select></div>
+          <div><div class="time-label">End Time</div><select class="time-select" id="thu-end" onchange="updateBtn()"><option value="">Select</option></select></div>
+        </div>
+      </div>
+
+      <div class="day-card" id="card-fri">
+        <button class="day-toggle" onclick="toggleDay('fri')">
+          <div class="day-check"><span class="day-check-inner">✓</span></div>
+          <div>
+            <div class="day-name">🟠 Friday, July 10</div>
+            <div class="day-date">Tap to add this day</div>
+          </div>
+        </button>
+        <div class="day-times">
+          <div><div class="time-label">Start Time</div><select class="time-select" id="fri-start" onchange="updateBtn()"><option value="">Select</option></select></div>
+          <div><div class="time-label">End Time</div><select class="time-select" id="fri-end" onchange="updateBtn()"><option value="">Select</option></select></div>
+        </div>
+      </div>
+
+      <div class="day-card" id="card-sat">
+        <button class="day-toggle" onclick="toggleDay('sat')">
+          <div class="day-check"><span class="day-check-inner">✓</span></div>
+          <div>
+            <div class="day-name">🟢 Saturday, July 11</div>
+            <div class="day-date">Tap to add this day</div>
+          </div>
+        </button>
+        <div class="day-times">
+          <div><div class="time-label">Start Time</div><select class="time-select" id="sat-start" onchange="updateBtn()"><option value="">Select</option></select></div>
+          <div><div class="time-label">End Time</div><select class="time-select" id="sat-end" onchange="updateBtn()"><option value="">Select</option></select></div>
+        </div>
+      </div>
+
+      <div class="day-card" id="card-sun">
+        <button class="day-toggle" onclick="toggleDay('sun')">
+          <div class="day-check"><span class="day-check-inner">✓</span></div>
+          <div>
+            <div class="day-name">🟣 Sunday, July 12</div>
+            <div class="day-date">Tap to add this day</div>
+          </div>
+        </button>
+        <div class="day-times">
+          <div><div class="time-label">Start Time</div><select class="time-select" id="sun-start" onchange="updateBtn()"><option value="">Select</option></select></div>
+          <div><div class="time-label">End Time</div><select class="time-select" id="sun-end" onchange="updateBtn()"><option value="">Select</option></select></div>
+        </div>
+      </div>
     </div>
 
     <div class="not-you">Not you? <a onclick="showNameField()">Tap here to enter your name</a></div>
+    <div style="height:80px"></div>
   </div>
 
-  <!-- SUCCESS VIEW -->
   <div id="success-view" class="success" style="display:none">
     <div class="icon">🎶</div>
     <div class="msg" id="success-name"></div>
-    <div class="role-tag" id="success-role"></div>
-    <div style="font-size:14px;color:#64748b;margin-bottom:24px;">You're confirmed! Devin has been notified.</div>
+    <div id="success-tags"></div>
+    <div style="font-size:14px;color:#64748b;margin:12px 0 0;">Confirmed! Devin has been notified.</div>
     <div class="links">
-      <div class="links-title">Before Tuesday's meeting</div>
-      <div class="link-row">
-        <div class="link-icon">📱</div>
-        <div>
-          <div class="link-text"><a href="https://fdm2026.netlify.app/field">Open the Worker App</a></div>
-          <div class="link-sub">Explore before the meeting</div>
-        </div>
-      </div>
-      <div class="link-row">
-        <div class="link-icon">📖</div>
-        <div>
-          <div class="link-text"><a href="https://fdm2026.netlify.app/guide">Read the Staff Guide</a></div>
-          <div class="link-sub">5 min read — covers everything</div>
-        </div>
-      </div>
-      <div class="link-row">
-        <div class="link-icon">✅</div>
-        <div>
-          <div class="link-text"><a href="https://fdm2026.netlify.app/quiz">Take the Quiz</a></div>
-          <div class="link-sub">Optional · quick check</div>
-        </div>
-      </div>
+      <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;">Before Tuesday's meeting</div>
+      <div class="link-row"><div class="link-icon">📱</div><div><a class="link-text" href="https://fdm2026.netlify.app/field">Open the Worker App</a><div class="link-sub">Sign in with your last name</div></div></div>
+      <div class="link-row"><div class="link-icon">📖</div><div><a class="link-text" href="https://fdm2026.netlify.app/guide">Read the Staff Guide</a><div class="link-sub">5 min — covers everything</div></div></div>
+      <div class="link-row"><div class="link-icon">✅</div><div><a class="link-text" href="https://fdm2026.netlify.app/quiz">Take the Quiz</a><div class="link-sub">Optional · quick check</div></div></div>
     </div>
   </div>
-
 </div>
+
+<!-- Sticky confirm -->
+<div class="confirm-wrap" id="confirm-wrap" style="display:none">
+  <button class="confirm-btn" id="confirm-btn" onclick="submitForm()">Confirm →</button>
+</div>
+
 <script>
-const params = new URLSearchParams(window.location.search);
-let staffName = decodeURIComponent(params.get('name') || '').trim();
-let selectedRole = '';
-
-function init() {
-  if (staffName) {
-    setName(staffName);
-  } else {
-    document.getElementById('display-name').textContent = 'Hi there!';
-    document.getElementById('avatar').textContent = '👋';
-    showNameField();
-  }
+// ── Time options
+const TIMES=[];
+for(let h=6;h<=27;h++){
+  const disp=h<24?`${h<13?h:h-12}:00 ${h<12||h===24?'AM':'PM'}`:`${h-12}:00 AM (next day)`;
+  const val=h<24?`${String(h).padStart(2,'0')}:00`:`${String(h-24).padStart(2,'0')}:00+1`;
+  TIMES.push({disp,val});
 }
-
-function setName(n) {
-  staffName = n;
-  const initials = n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('avatar').textContent = initials || '👋';
-  document.getElementById('display-name').textContent = n;
-}
-
-function showNameField() {
-  document.getElementById('manual-name').style.display = 'block';
-  const input = document.getElementById('name-input');
-  input.value = staffName;
-  input.oninput = () => { setName(input.value.trim()); updateBtn(); };
-  input.focus();
-}
-
-document.querySelectorAll('.role-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
-    this.classList.add('selected');
-    selectedRole = this.dataset.role;
-    updateBtn();
-    // Smooth scroll confirm button into view
-    document.getElementById('confirm-btn').scrollIntoView({behavior:'smooth',block:'nearest'});
+['thu','fri','sat','sun'].forEach(d=>{
+  ['start','end'].forEach(t=>{
+    const sel=document.getElementById(`${d}-${t}`);
+    TIMES.forEach(({disp,val})=>sel.add(new Option(disp,val)));
   });
 });
 
-function updateBtn() {
-  const ready = selectedRole && staffName;
-  document.getElementById('confirm-btn').className = 'confirm-btn' + (ready ? ' ready' : '');
+// ── Name from URL
+const params=new URLSearchParams(window.location.search);
+let staffName=decodeURIComponent(params.get('name')||'').trim();
+let selectedRole='';
+const activeDays={thu:false,fri:false,sat:false,sun:false};
+
+function init(){
+  if(staffName){setName(staffName);}
+  else{showNameField();}
 }
 
-async function submit() {
-  if (!selectedRole || !staffName) return;
-  const btn = document.getElementById('confirm-btn');
-  btn.textContent = 'Sending...';
-  btn.style.opacity = '0.6';
+function setName(n){
+  staffName=n;
+  const ini=n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('avatar').textContent=ini||'👋';
+  document.getElementById('display-name').textContent=n;
+}
 
-  try {
-    await fetch('/.netlify/functions/send-rsvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: staffName, role: selectedRole })
+function showNameField(){
+  document.getElementById('manual-name').style.display='block';
+  const inp=document.getElementById('name-input');
+  inp.value=staffName;
+  inp.oninput=()=>{setName(inp.value.trim());updateBtn();};
+}
+
+// ── Role selection
+document.querySelectorAll('.role-btn').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
+    this.classList.add('selected');
+    selectedRole=this.dataset.role;
+    updateBtn();
+  });
+});
+
+// ── Day toggle
+function toggleDay(d){
+  activeDays[d]=!activeDays[d];
+  const card=document.getElementById(`card-${d}`);
+  if(activeDays[d]) card.classList.add('active');
+  else card.classList.remove('active');
+  updateBtn();
+}
+
+function updateBtn(){
+  const anyDay=Object.values(activeDays).some(Boolean);
+  const ready=staffName&&selectedRole&&anyDay;
+  const btn=document.getElementById('confirm-btn');
+  const wrap=document.getElementById('confirm-wrap');
+  wrap.style.display='block';
+  btn.className='confirm-btn'+(ready?' ready':'');
+  btn.disabled=!ready;
+}
+
+// ── Submit
+async function submitForm(){
+  if(!staffName||!selectedRole) return;
+  const schedule=[];
+  ['thu','fri','sat','sun'].forEach(d=>{
+    if(!activeDays[d]) return;
+    const s=document.getElementById(`${d}-start`).value;
+    const e=document.getElementById(`${d}-end`).value;
+    const labels={thu:'Thu Jul 9',fri:'Fri Jul 10',sat:'Sat Jul 11',sun:'Sun Jul 12'};
+    schedule.push(`${labels[d]}: ${s||'TBD'}–${e||'TBD'}`);
+  });
+
+  const btn=document.getElementById('confirm-btn');
+  btn.textContent='Sending...';btn.disabled=true;
+
+  try{
+    await fetch('/.netlify/functions/send-rsvp',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:staffName,role:selectedRole,schedule:schedule.join(' | ')})
     });
-    document.getElementById('form-view').style.display = 'none';
-    document.getElementById('success-view').style.display = 'block';
-    document.getElementById('success-name').textContent = staffName;
-    document.getElementById('success-role').textContent = selectedRole;
+    document.getElementById('form-view').style.display='none';
+    document.getElementById('confirm-wrap').style.display='none';
+    document.getElementById('success-view').style.display='block';
+    document.getElementById('success-name').textContent=staffName;
+    const tags=document.getElementById('success-tags');
+    tags.innerHTML=`<span class="tag">${selectedRole}</span>`+schedule.map(s=>`<span class="tag">${s}</span>`).join('');
     window.scrollTo(0,0);
-  } catch(e) {
-    btn.textContent = 'Confirm My Role →';
-    btn.style.opacity = '';
+  }catch(e){
+    btn.textContent='Confirm →';btn.disabled=false;
     alert('Something went wrong. Please try again.');
   }
 }

@@ -1,4 +1,3 @@
-// send-rsvp.js — receives staff role confirmation, texts Devin
 const TWILIO_SID  = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH = process.env.TWILIO_AUTH_TOKEN;
 const FROM        = process.env.TWILIO_MESSAGING_SERVICE_SID;
@@ -10,10 +9,15 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
   try {
-    const { name, role, phone } = JSON.parse(event.body || '{}');
-    if (!name || !role) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing name or role' }) };
+    const { name, role, schedule } = JSON.parse(event.body || '{}');
+    if (!name || !role) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing fields' }) };
 
-    const msg = `🎶 FDM 2026 STAFF CONFIRMATION\n\n${name}\nRole: ${role}${phone ? `\nPhone: ${phone}` : ''}\n\nReceived via rsvp form.`;
+    const msg =
+      `🎶 FDM 2026 STAFF CONFIRMATION\n\n` +
+      `Name: ${name}\n` +
+      `Role: ${role}\n` +
+      (schedule ? `Schedule: ${schedule}\n` : '') +
+      `\nReceived via fdm2026.netlify.app/rsvp`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {

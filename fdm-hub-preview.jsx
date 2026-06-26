@@ -471,11 +471,11 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
                 <div style={{fontSize:11,color:"#64748b",marginTop:2}}>GroupMe + SMS to Admin</div>
               </div>
             </button>
-            <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>requestResource("mpd")}>
+            <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>setMpdRequestView(true)}>
               <span style={{fontSize:24}}>🚔</span>
               <div>
                 <div style={{fontSize:14,fontWeight:900,color:"#93c5fd"}}>Request MPD</div>
-                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>GroupMe + SMS · McPike Park, Madison WI</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>SMS + Voice call to officers on duty</div>
               </div>
             </button>
           </div>
@@ -516,6 +516,10 @@ function HubApp({onBack}){
   });
   const [view,setView]=useState("home");
   const [holdTexts,setHoldTexts]=useState(false);
+  const [mpdRequestView,setMpdRequestView]=useState(false);
+  const [mpdLocation,setMpdLocation]=useState("");
+  const [mpdSituation,setMpdSituation]=useState("");
+  const [mpdSending,setMpdSending]=useState(false);
   const [tick,setTick]=useState(0);
   const [lostChildBlink,setLostChildBlink]=useState(false);
   const [newCallView,setNewCallView]=useState(false);
@@ -2011,6 +2015,64 @@ Reply YES to acknowledge.`
 
   // 911 VIEW
   
+  // MPD REQUEST OVERLAY
+  if(mpdRequestView) return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>setMpdRequestView(false)}/>
+        <span style={S.panelTitle}>🚔 Request MPD Officer</span>
+      </div>
+      <div style={{padding:"20px 16px",display:"flex",flexDirection:"column",gap:14}}>
+        <div style={{background:"rgba(37,99,235,0.08)",border:"1px solid rgba(37,99,235,0.25)",borderRadius:12,padding:"14px"}}>
+          <div style={{fontSize:13,color:"#93c5fd",fontWeight:700,marginBottom:4}}>How it works</div>
+          <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Each officer on duty will receive an SMS text AND a voice call with your location and situation details.</div>
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>📍 Where do they need to go?</div>
+          <input style={{width:"100%",padding:"14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Moon Stage Left, near the bar" value={mpdLocation} onChange={e=>setMpdLocation(e.target.value)}/>
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Situation (optional)</div>
+          <textarea style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none",minHeight:80,resize:"none"}} placeholder="e.g. Fight in progress, crowd control needed" value={mpdSituation} onChange={e=>setMpdSituation(e.target.value)}/>
+        </div>
+        <div style={{fontSize:12,color:"#374151"}}>
+          {mpdOfficers.length>0?`${mpdOfficers.length} officer${mpdOfficers.length>1?"s":""} on duty will be contacted`:"No MPD officers currently on duty"}
+        </div>
+        <button style={{padding:"18px",borderRadius:12,border:"none",background:mpdLocation.trim()&&mpdOfficers.length>0?"linear-gradient(135deg,rgba(37,99,235,0.9),rgba(29,78,216,0.9))":"rgba(255,255,255,0.06)",color:mpdLocation.trim()&&mpdOfficers.length>0?"#fff":"#475569",fontSize:16,fontWeight:900,cursor:mpdLocation.trim()&&mpdOfficers.length>0?"pointer":"not-allowed",opacity:mpdSending?0.6:1}} disabled={!mpdLocation.trim()||mpdOfficers.length===0||mpdSending} onClick={async()=>{
+          setMpdSending(true);
+          const loc=mpdLocation.trim();
+          const sit=mpdSituation.trim();
+          const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+          const smsMsg=`🚔 MPD REQUESTED — Fête de Marquette 2026
+
+Your presence is requested at:
+📍 ${loc}
+${sit?`Situation: ${sit}
+`:""}
+McPike Park, Madison WI
+Time: ${ts}
+
+Please respond immediately.
+— FDM 2026 Operations`;
+          const voiceMsg=`This is Fête de Marquette Operations at McPike Park in Madison. Your presence is requested at ${loc}.${sit?` Situation: ${sit}.`:""} Please respond immediately. This is Fête de Marquette Operations at McPike Park.`;
+          const phones=mpdOfficers.filter(o=>o.phone).map(o=>{const d=String(o.phone).replace(/[^0-9]/g,"");return d.length===10?`+1${d}`:`+${d}`;});
+          for(const phone of phones){
+            await fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message:smsMsg})}).catch(()=>{});
+          }
+          if(phones.length>0){
+            await fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones,message:voiceMsg})}).catch(()=>{});
+          }
+          setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"security",label:`MPD Requested — ${loc}`,msg:smsMsg},...p]);
+          setMpdSending(false);
+          setMpdLocation("");
+          setMpdSituation("");
+          setMpdRequestView(false);
+          alert(`✅ MPD alerted — ${phones.length} officer${phones.length!==1?"s":""} contacted via SMS + Voice`);
+        }}>{mpdSending?"Sending...":"🚔 Send SMS + Voice to All Officers"}</button>
+      </div>
+    </div></div>
+  );
+
   if(lcView) return(
     <div style={{...S.root,position:"relative"}}><Bg/><div style={{...S.panel,position:"relative",zIndex:1}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.95)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
@@ -3127,16 +3189,10 @@ Reply YES to acknowledge.`
               </button>
             </div>
 
-            {/* ALERT MPD BUTTON */}
-            <button style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{
-              const msg=`🚔 MPD ALERT — Fête de Marquette 2026\nMcPike Park, Madison WI\n\nAlert issued by Admin at ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}\nPlease respond.`;
-              const mpdPhones=mpdOfficers.filter(o=>o.phone).map(o=>{const d=String(o.phone).replace(/[^0-9]/g,"");return d.length===10?`+1${d}`:`+${d}`;});
-              mpdPhones.forEach(phone=>{
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message:msg})}).catch(()=>{});
-              });
-              if(mpdPhones.length>0) fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:mpdPhones,message:"Alert from Fete de Marquette Operations. Please respond to McPike Park immediately."})}).catch(()=>{});
-              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"security",label:"MPD Alert sent — SMS+Voice",msg},...p]);
-            }}>🚔 Alert MPD — SMS + Voice</button>
+            {/* REQUEST MPD BUTTON */}
+            <button style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>setMpdRequestView(true)}>
+              🚔 Request MPD Officer
+            </button>
 
             {/* 911 COMPACT BUTTON */}
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨

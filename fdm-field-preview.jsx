@@ -264,7 +264,7 @@ function ChatView({user,onBack}){
           <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:8}}>NEW MESSAGE</div>
           <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
             {staffList.filter(s=>s.name!==user.name).map(s=>(
-              <button key={s.id} style={{padding:'4px 10px',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#94a3b8',fontSize:12,cursor:'pointer'}} onClick={()=>{setDmThread({otherName:s.name,threadId:`DM_${[user.name,s.name].sort().join('_')}`});setMessages([]);}}>{s.name}</button>
+              <button key={s.id} style={{padding:'4px 10px',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#94a3b8',fontSize:12,cursor:'pointer'}} onClick={()=>{setDmThread({otherName:s.name,threadId:`DM_${[user.name,s.name].sort().join('_')}`});setMessages([]);}}>{s.role||s.name}</button>
             ))}
           </div>
           {dmList.map(dm=>(

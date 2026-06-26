@@ -2314,7 +2314,7 @@ Please respond immediately.
                   const tid=`DM_${["Admin",s.name].sort().join("_")}`;
                   setChatChannel(`DM:${s.name}:${tid}`);
                   fetchHubChat(`DM:${s.name}:${tid}`);
-                }}>{s.name}</button>
+                }}>{s.role||s.name}</button>
               ))}
             </div>
             {chatChannel.startsWith("DM:")&&(

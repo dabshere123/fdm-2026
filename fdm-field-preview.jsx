@@ -183,41 +183,117 @@ function NewCallView({user,callType,onBack}){
 }
 
 // ── CHAT ─────────────────────────────────────────────────────
-function ChatView({user,onBack}){
-  const [tab,setTab]=useState('channels');
-  const [channel,setChannel]=useState(roleChannel(user.role));
+const CHANNEL_LABELS={
+  AllStaff:'All Staff',Hospitality:'Hospitality',
+  Bars:'All Bars',MoonBar:'Moon Bar',SunBarL:'Sun Bar Left',SunBarR:'Sun Bar Right',
+  LafBar:'Lafayette Bar',LagBar:'Lagniappe Bar',FamilyBar:'Family Bar',
+  CabBar:'Cabaret Bar',EverythingBar:'EEC',
+  MoonST:'Moon Stage',SunST:'Sun Stage',LafST:'Lafayette Stage',
+  LagST:'Lagniappe Stage',FamST:'Family Fete Stage',CabST:'Cabaret Stage',
+  Admin:'Admin',AdminMed:'Medical',
+};
+
+function ChatInbox({user,onBack}){
+  const [convos,setConvos]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [openConvo,setOpenConvo]=useState(null);
+  const [newMsg,setNewMsg]=useState(false);
+
+  useEffect(()=>{
+    fetchConvos();
+    const iv=setInterval(fetchConvos,10000);
+    return()=>clearInterval(iv);
+  },[]);
+
+  async function fetchConvos(){
+    try{
+      const res=await fetch(`${API}/get-conversations?myName=${encodeURIComponent(user.name)}`);
+      const data=await res.json();
+      setConvos(data.conversations||[]);
+    }catch(e){}
+    setLoading(false);
+  }
+
+  if(openConvo) return <ConversationView user={user} convo={openConvo} onBack={()=>{setOpenConvo(null);fetchConvos();}}/>;
+  if(newMsg) return <NewMessageView user={user} onBack={()=>setNewMsg(false)} onOpen={c=>{setNewMsg(false);setOpenConvo(c);}}/>;
+
+  function timeAgo(ts){
+    if(!ts) return '';
+    const d=new Date(ts);
+    const now=new Date();
+    const diff=(now-d)/1000;
+    if(diff<60) return 'now';
+    if(diff<3600) return Math.floor(diff/60)+'m';
+    if(diff<86400) return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+
+  const myChannel=roleChannel(user.role);
+
+  return(
+    <div style={{...S.root,display:'flex',flexDirection:'column',height:'100vh'}}>
+      <div style={S.hdr}>
+        <BackBtn onBack={onBack}/>
+        <div style={{flex:1,fontSize:16,fontWeight:900,color:'#f1f5f9'}}>Messages</div>
+        <button style={{padding:'7px 14px',borderRadius:10,border:'1px solid rgba(14,165,233,0.3)',background:'rgba(14,165,233,0.08)',color:'#38bdf8',fontSize:13,fontWeight:700,cursor:'pointer'}} onClick={()=>setNewMsg(true)}>✏️ New</button>
+      </div>
+
+      {loading&&<div style={{textAlign:'center',color:'#475569',padding:32}}>Loading...</div>}
+      <div style={{flex:1,overflowY:'auto'}}>
+        {!loading&&convos.length===0&&(
+          <div style={{textAlign:'center',padding:40}}>
+            <div style={{fontSize:32,marginBottom:12}}>💬</div>
+            <div style={{fontSize:16,fontWeight:700,color:'#f1f5f9',marginBottom:4}}>No messages yet</div>
+            <div style={{fontSize:13,color:'#64748b',marginBottom:20}}>Start a conversation or join a channel</div>
+            <button style={{padding:'12px 24px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#0ea5e9,#0284c7)',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={()=>setNewMsg(true)}>Start a Conversation</button>
+          </div>
+        )}
+        {convos.map(c=>{
+          const label=c.isDM?(c.otherName||'Direct Message'):(CHANNEL_LABELS[c.channel]||c.channel);
+          const isMyChannel=c.channel===myChannel||c.channel==='AllStaff';
+          return(
+            <button key={c.id} style={{width:'100%',padding:'14px 16px',background:'none',border:'none',borderBottom:'1px solid rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left',display:'flex',gap:12,alignItems:'center'}} onClick={()=>setOpenConvo(c)}>
+              <div style={{width:46,height:46,borderRadius:'50%',background:c.isDM?'rgba(99,102,241,0.2)':isMyChannel?'rgba(14,165,233,0.2)':'rgba(255,255,255,0.08)',border:`1px solid ${c.isDM?'rgba(99,102,241,0.4)':isMyChannel?'rgba(14,165,233,0.4)':'rgba(255,255,255,0.1)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:c.isDM?14:18,flexShrink:0,color:c.isDM?'#a5b4fc':isMyChannel?'#38bdf8':'#64748b'}}>
+                {c.isDM?(c.otherName||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase():'#'}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:3}}>
+                  <div style={{fontSize:15,fontWeight:700,color:'#f1f5f9',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap',maxWidth:'70%'}}>{label}</div>
+                  <div style={{fontSize:11,color:'#475569',flexShrink:0,marginLeft:8}}>{timeAgo(c.lastAt)}</div>
+                </div>
+                <div style={{fontSize:13,color:'#64748b',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}>
+                  {c.lastFrom&&c.lastFrom!==user.role&&c.lastFrom!==user.name?`${c.lastFrom}: `:''}{c.lastMessage}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ConversationView({user,convo,onBack}){
   const [messages,setMessages]=useState([]);
   const [input,setInput]=useState('');
   const [sending,setSending]=useState(false);
-  const [dmThread,setDmThread]=useState(null);
-  const [dmList,setDmList]=useState([]);
-  const [staffList,setStaffList]=useState([]);
-  // Multi-channel send
-  const [multiMode,setMultiMode]=useState(false);
-  const [selectedChannels,setSelectedChannels]=useState([]);
   const msgEnd=useRef(null);
-
-  function toggleChannel(id){
-    setSelectedChannels(p=>p.includes(id)?p.filter(c=>c!==id):[...p,id]);
-  }
+  const label=convo.isDM?(convo.otherName||'Direct Message'):(CHANNEL_LABELS[convo.channel]||convo.channel);
 
   useEffect(()=>{
-    fetch(`${API}/get-staff-list`).then(r=>r.json()).then(d=>setStaffList(d.staff||[])).catch(()=>{});
+    fetchMsgs();
+    const iv=setInterval(fetchMsgs,6000);
+    return()=>clearInterval(iv);
   },[]);
 
-  useEffect(()=>{
-    fetchMessages();
-    const iv=setInterval(fetchMessages,8000);
-    return()=>clearInterval(iv);
-  },[channel,dmThread]);
-
-  async function fetchMessages(){
+  async function fetchMsgs(){
     try{
-      const url=dmThread?`${API}/get-messages?dmThread=${encodeURIComponent(dmThread.threadId)}`:`${API}/get-messages?channel=${channel}&myName=${encodeURIComponent(user.name)}&limit=60`;
+      const url=convo.isDM
+        ?`${API}/get-messages?dmThread=${encodeURIComponent(convo.id)}`
+        :`${API}/get-messages?channel=${convo.channel}&limit=80`;
       const res=await fetch(url);
       const data=await res.json();
       if(data.messages) setMessages(data.messages);
-      if(data.dmThreads) setDmList(data.dmThreads);
       setTimeout(()=>msgEnd.current?.scrollIntoView({behavior:'smooth'}),100);
     }catch(e){}
   }
@@ -226,111 +302,117 @@ function ChatView({user,onBack}){
     if(!input.trim()||sending) return;
     setSending(true);
     try{
-      let body;
-      if(dmThread){
-        body={fromName:user.name,fromRole:user.role,channel:`DM_${[user.name,dmThread.otherName].sort().join('_')}`,message:input.trim(),isDM:true,toName:dmThread.otherName,threadId:dmThread.threadId};
-      } else if(multiMode&&selectedChannels.length>0){
-        body={fromName:user.name,fromRole:user.role,channels:selectedChannels,message:input.trim()};
-      } else {
-        body={fromName:user.name,fromRole:user.role,channel,message:input.trim()};
-      }
+      const body=convo.isDM
+        ?{fromName:user.name,fromRole:user.role,channel:`DM_${[user.name,convo.otherName].sort().join('_')}`,message:input.trim(),isDM:true,toName:convo.otherName,threadId:convo.id}
+        :{fromName:user.name,fromRole:user.role,channel:convo.channel,message:input.trim()};
       await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       setInput('');
-      if(multiMode){setSelectedChannels([]);setMultiMode(false);}
-      await fetchMessages();
+      await fetchMsgs();
     }catch(e){}
     setSending(false);
   }
 
-  const chanObj=CHANNELS.find(c=>c.id===channel);
+  return(
+    <div style={{...S.root,display:'flex',flexDirection:'column',height:'100vh',maxHeight:'100vh'}}>
+      <div style={S.hdr}>
+        <BackBtn onBack={onBack}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:15,fontWeight:900,color:'#f1f5f9'}}>{label}</div>
+          {!convo.isDM&&<div style={{fontSize:11,color:'#64748b'}}>Group channel</div>}
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8,minHeight:0}}>
+        {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:13,padding:'24px 0'}}>No messages yet — say something!</div>}
+        {messages.map(msg=>{
+          const isMe=msg.fromName===user.name||(msg.fromRole&&msg.fromRole===user.role);
+          const isAlert=msg.isAlert;
+          const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}):'';
+          const sentToMultiple=msg.recipients&&msg.recipients.includes(',');
+          if(isAlert) return(
+            <div key={msg.id} style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,padding:'8px 12px'}}>
+              <div style={{fontSize:10,fontWeight:800,color:'#fca5a5',marginBottom:2}}>🚨 ALERT · {time}</div>
+              <div style={{fontSize:13,color:'#fecaca'}}>{msg.message}</div>
+            </div>
+          );
+          return(
+            <div key={msg.id} style={{display:'flex',flexDirection:'column',alignItems:isMe?'flex-end':'flex-start',gap:2}}>
+              {!isMe&&<div style={{fontSize:10,color:'#64748b',marginLeft:4}}>{msg.fromRole||msg.fromName} · {time}</div>}
+              <div style={{maxWidth:'82%',background:isMe?'rgba(14,165,233,0.25)':'rgba(255,255,255,0.07)',border:`1px solid ${isMe?'rgba(14,165,233,0.5)':'rgba(255,255,255,0.1)'}`,borderRadius:isMe?'14px 14px 4px 14px':'14px 14px 14px 4px',padding:'9px 13px'}}>
+                <div style={{fontSize:14,color:'#f1f5f9',lineHeight:1.5}}>{msg.message}</div>
+                {sentToMultiple&&!isMe&&<div style={{fontSize:10,color:'#475569',marginTop:3}}>sent to multiple</div>}
+              </div>
+              {isMe&&<div style={{fontSize:10,color:'#374151',marginRight:4}}>{time}</div>}
+            </div>
+          );
+        })}
+        <div ref={msgEnd}/>
+      </div>
+      <div style={{padding:'10px 14px',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,background:'rgba(10,10,20,0.95)'}}>
+        <input style={{...S.inp,flex:1}} placeholder={`Message ${label}...`} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();send();}}}/>
+        <button style={{padding:'10px 16px',borderRadius:10,border:'none',background:input.trim()?'linear-gradient(135deg,#0ea5e9,#0284c7)':'rgba(255,255,255,0.06)',color:input.trim()?'#fff':'#475569',fontSize:14,fontWeight:800,cursor:input.trim()?'pointer':'not-allowed',flexShrink:0}} onClick={send} disabled={!input.trim()||sending}>{sending?'...':'Send'}</button>
+      </div>
+    </div>
+  );
+}
+
+function NewMessageView({user,onBack,onOpen}){
+  const [staffList,setStaffList]=useState([]);
+  const [search,setSearch]=useState('');
+
+  useEffect(()=>{
+    fetch(`${API}/get-staff-list`).then(r=>r.json()).then(d=>setStaffList(d.staff||[])).catch(()=>{});
+  },[]);
+
+  const myChannel=roleChannel(user.role);
+
+  function openChannel(ch){
+    onOpen({id:ch,isDM:false,channel:ch,lastMessage:'',lastFrom:'',lastAt:'',recipients:ch});
+  }
+  function openDM(s){
+    const threadId=`DM_${[user.name,s.name].sort().join('_')}`;
+    onOpen({id:threadId,isDM:true,channel:`DM_${[user.name,s.name].sort().join('_')}`,otherName:s.name,lastMessage:'',lastFrom:'',lastAt:'',recipients:''});
+  }
+
+  const filteredStaff=search.length>=2?staffList.filter(s=>s.name!==user.name&&((s.name||'').toLowerCase().includes(search.toLowerCase())||(s.role||'').toLowerCase().includes(search.toLowerCase()))):staffList.filter(s=>s.name!==user.name);
 
   return(
     <div style={{...S.root,display:'flex',flexDirection:'column',height:'100vh'}}>
       <div style={S.hdr}>
-        <BackBtn onBack={()=>{if(dmThread){setDmThread(null);setMessages([]);}else onBack();}}/>
-        <div style={{flex:1,fontSize:15,fontWeight:800}}>
-          {dmThread?`${dmThread.otherName}`:`${chanObj?chanObj.label:channel}`}
-        </div>
+        <BackBtn onBack={onBack}/>
+        <div style={{fontSize:16,fontWeight:900,color:'#f1f5f9'}}>New Message</div>
       </div>
-      {!dmThread&&<div style={{display:'flex',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-        {[['channels','Channels'],['dms','Direct Messages']].map(([t,l])=>(
-          <button key={t} style={{flex:1,padding:'10px',background:'none',border:'none',borderBottom:`2px solid ${tab===t?'#38bdf8':'transparent'}`,color:tab===t?'#38bdf8':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer'}} onClick={()=>setTab(t)}>{l}</button>
+      <div style={{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+        <input style={{...S.inp}} placeholder="Search by name or role..." value={search} onChange={e=>setSearch(e.target.value)} autoFocus/>
+      </div>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {/* Group channels */}
+        {!search&&<>
+          <div style={{padding:'8px 16px 4px',fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em'}}>Channels</div>
+          {CHANNEL_GROUPS.flatMap(g=>g.channels).map(ch=>(
+            <button key={ch.id} style={{width:'100%',padding:'12px 16px',background:ch.id===myChannel||ch.id==='AllStaff'?'rgba(14,165,233,0.04)':'none',border:'none',borderBottom:'1px solid rgba(255,255,255,0.04)',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:12}} onClick={()=>openChannel(ch.id)}>
+              <div style={{width:36,height:36,borderRadius:'50%',background:'rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#64748b',flexShrink:0}}>#</div>
+              <div style={{fontSize:14,fontWeight:ch.id===myChannel?700:400,color:ch.id===myChannel?'#38bdf8':'#f1f5f9'}}>{ch.label}</div>
+            </button>
+          ))}
+          <div style={{padding:'8px 16px 4px',fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em'}}>Direct Messages</div>
+        </>}
+        {filteredStaff.map(s=>(
+          <button key={s.id} style={{width:'100%',padding:'12px 16px',background:'none',border:'none',borderBottom:'1px solid rgba(255,255,255,0.04)',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:12}} onClick={()=>openDM(s)}>
+            <div style={{width:36,height:36,borderRadius:'50%',background:'rgba(99,102,241,0.15)',border:'1px solid rgba(99,102,241,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#a5b4fc',flexShrink:0}}>{(s.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
+            <div>
+              <div style={{fontSize:14,fontWeight:600,color:'#f1f5f9'}}>{s.role||s.name}</div>
+              {s.role&&s.name&&<div style={{fontSize:11,color:'#64748b',marginTop:1}}>{s.name}</div>}
+            </div>
+          </button>
         ))}
-      </div>}
-      {!dmThread&&tab==='channels'&&(
-        <div style={{borderBottom:'1px solid rgba(255,255,255,0.06)',overflowY:'auto',maxHeight:220}}>
-          {/* Multi-send toggle */}
-          <div style={{padding:'8px 14px 4px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <div style={{fontSize:11,color:'#64748b'}}>
-              {multiMode?`${selectedChannels.length} selected — tap channels to add`:'Tap to switch channel'}
-            </div>
-            <button style={{padding:'4px 12px',borderRadius:8,border:`1px solid ${multiMode?'rgba(249,115,22,0.5)':'rgba(255,255,255,0.1)'}`,background:multiMode?'rgba(249,115,22,0.12)':'rgba(255,255,255,0.04)',color:multiMode?'#fb923c':'#64748b',fontSize:11,fontWeight:700,cursor:'pointer'}} onClick={()=>{setMultiMode(p=>!p);setSelectedChannels([]);}}>
-              {multiMode?'✕ Cancel':'Send to Multiple'}
-            </button>
-          </div>
-          {CHANNEL_GROUPS.map(group=>(
-            <div key={group.id} style={{padding:'4px 14px 4px'}}>
-              <div style={{fontSize:10,fontWeight:900,color:'#374151',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:5}}>{group.label}</div>
-              <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:4}}>
-                {group.channels.map(ch=>{
-                  const active=multiMode?selectedChannels.includes(ch.id):channel===ch.id;
-                  return <button key={ch.id} style={{padding:'5px 11px',borderRadius:16,border:`1px solid ${active?'rgba(249,115,22,0.6)':'rgba(255,255,255,0.08)'}`,background:active?(multiMode?'rgba(249,115,22,0.15)':'rgba(14,165,233,0.12)'):'rgba(255,255,255,0.02)',color:active?(multiMode?'#fb923c':'#38bdf8'):'#64748b',fontSize:12,fontWeight:active?700:400,cursor:'pointer'}} onClick={()=>{if(multiMode){toggleChannel(ch.id);}else{setChannel(ch.id);setMessages([]);}}}>
-                    {multiMode&&active?'✓ ':''}{ch.label}
-                  </button>;
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {!dmThread&&tab==='dms'&&(
-        <div style={{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)',overflowY:'auto',maxHeight:200}}>
-          <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:8}}>NEW MESSAGE</div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
-            {staffList.filter(s=>s.name!==user.name).map(s=>(
-              <button key={s.id} style={{padding:'4px 10px',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',color:'#94a3b8',fontSize:12,cursor:'pointer'}} onClick={()=>{setDmThread({otherName:s.name,threadId:`DM_${[user.name,s.name].sort().join('_')}`});setMessages([]);}}>{s.role||s.name}</button>
-            ))}
-          </div>
-          {dmList.map(dm=>(
-            <button key={dm.threadId} style={{width:'100%',padding:'8px 0',background:'none',border:'none',borderBottom:'1px solid rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left',display:'flex',gap:10,alignItems:'center'}} onClick={()=>{setDmThread({otherName:dm.otherName,threadId:dm.threadId});setMessages([]);}}>
-              <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9',flex:1}}>{dm.otherName}</div>
-              <div style={{fontSize:11,color:'#64748b',maxWidth:120,textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}>{dm.lastMessage}</div>
-            </button>
-          ))}
-        </div>
-      )}
-      {(tab==='channels'||dmThread)&&<>
-        <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8,minHeight:0}}>
-          {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:13,padding:'24px 0'}}>No messages yet</div>}
-          {messages.map(msg=>{
-            const isMe=msg.fromName===user.name;
-            const isAlert=msg.isAlert;
-            const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}):'';
-            if(isAlert) return(
-              <div key={msg.id} style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,padding:'8px 12px'}}>
-                <div style={{fontSize:10,fontWeight:800,color:'#fca5a5',marginBottom:2}}>🚨 ALERT · {time}</div>
-                <div style={{fontSize:13,color:'#fecaca'}}>{msg.message}</div>
-              </div>
-            );
-            return(
-              <div key={msg.id} style={{display:'flex',flexDirection:'column',alignItems:isMe?'flex-end':'flex-start',gap:2}}>
-                {!isMe&&<div style={{fontSize:10,color:'#64748b',marginLeft:4}}>{msg.fromName} · {time}</div>}
-                <div style={{maxWidth:'82%',background:isMe?'rgba(14,165,233,0.2)':'rgba(255,255,255,0.06)',border:`1px solid ${isMe?'rgba(14,165,233,0.4)':'rgba(255,255,255,0.08)'}`,borderRadius:isMe?'14px 14px 4px 14px':'14px 14px 14px 4px',padding:'9px 13px'}}>
-                  <div style={{fontSize:14,lineHeight:1.5}}>{msg.message}</div>
-                </div>
-                {isMe&&<div style={{fontSize:10,color:'#374151',marginRight:4}}>{time}</div>}
-              </div>
-            );
-          })}
-          <div ref={msgEnd}/>
-        </div>
-        <div style={{padding:'10px 14px',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,background:'rgba(10,10,20,0.95)'}}>
-          <input style={{...S.inp,flex:1}} placeholder={dmThread?`Message ${dmThread.otherName}...`:multiMode&&selectedChannels.length>0?`Send to ${selectedChannels.length} channels...`:`Message ${chanObj?chanObj.label:channel}...`} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();send();}}}/>
-          <button style={{padding:'10px 16px',borderRadius:10,border:'none',background:input.trim()?'linear-gradient(135deg,#0ea5e9,#0284c7)':'rgba(255,255,255,0.06)',color:input.trim()?'#fff':'#475569',fontSize:14,fontWeight:800,cursor:input.trim()?'pointer':'not-allowed',flexShrink:0}} onClick={send} disabled={!input.trim()||sending}>{sending?'...':'Send'}</button>
-        </div>
-      </>}
+      </div>
     </div>
   );
+}
+
+// Wrap ChatInbox as ChatView for backward compat
+function ChatView({user,onBack}){
+  return <ChatInbox user={user} onBack={onBack}/>;
 }
 
 // ── LOST & FOUND FORM ────────────────────────────────────────

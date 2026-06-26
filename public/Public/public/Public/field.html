@@ -508,92 +508,82 @@ function NewCallView({
 }
 
 // ── CHAT ─────────────────────────────────────────────────────
-function ChatView({
+const CHANNEL_LABELS = {
+  AllStaff: 'All Staff',
+  Hospitality: 'Hospitality',
+  Bars: 'All Bars',
+  MoonBar: 'Moon Bar',
+  SunBarL: 'Sun Bar Left',
+  SunBarR: 'Sun Bar Right',
+  LafBar: 'Lafayette Bar',
+  LagBar: 'Lagniappe Bar',
+  FamilyBar: 'Family Bar',
+  CabBar: 'Cabaret Bar',
+  EverythingBar: 'EEC',
+  MoonST: 'Moon Stage',
+  SunST: 'Sun Stage',
+  LafST: 'Lafayette Stage',
+  LagST: 'Lagniappe Stage',
+  FamST: 'Family Fete Stage',
+  CabST: 'Cabaret Stage',
+  Admin: 'Admin',
+  AdminMed: 'Medical'
+};
+function ChatInbox({
   user,
   onBack
 }) {
-  const [tab, setTab] = useState('channels');
-  const [channel, setChannel] = useState(roleChannel(user.role));
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [sending, setSending] = useState(false);
-  const [dmThread, setDmThread] = useState(null);
-  const [dmList, setDmList] = useState([]);
-  const [staffList, setStaffList] = useState([]);
-  // Multi-channel send
-  const [multiMode, setMultiMode] = useState(false);
-  const [selectedChannels, setSelectedChannels] = useState([]);
-  const msgEnd = useRef(null);
-  function toggleChannel(id) {
-    setSelectedChannels(p => p.includes(id) ? p.filter(c => c !== id) : [...p, id]);
-  }
+  const [convos, setConvos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [openConvo, setOpenConvo] = useState(null);
+  const [newMsg, setNewMsg] = useState(false);
   useEffect(() => {
-    fetch(`${API}/get-staff-list`).then(r => r.json()).then(d => setStaffList(d.staff || [])).catch(() => {});
-  }, []);
-  useEffect(() => {
-    fetchMessages();
-    const iv = setInterval(fetchMessages, 8000);
+    fetchConvos();
+    const iv = setInterval(fetchConvos, 10000);
     return () => clearInterval(iv);
-  }, [channel, dmThread]);
-  async function fetchMessages() {
+  }, []);
+  async function fetchConvos() {
     try {
-      const url = dmThread ? `${API}/get-messages?dmThread=${encodeURIComponent(dmThread.threadId)}` : `${API}/get-messages?channel=${channel}&myName=${encodeURIComponent(user.name)}&limit=60`;
-      const res = await fetch(url);
+      const res = await fetch(`${API}/get-conversations?myName=${encodeURIComponent(user.name)}`);
       const data = await res.json();
-      if (data.messages) setMessages(data.messages);
-      if (data.dmThreads) setDmList(data.dmThreads);
-      setTimeout(() => msgEnd.current?.scrollIntoView({
-        behavior: 'smooth'
-      }), 100);
+      setConvos(data.conversations || []);
     } catch (e) {}
+    setLoading(false);
   }
-  async function send() {
-    if (!input.trim() || sending) return;
-    setSending(true);
-    try {
-      let body;
-      if (dmThread) {
-        body = {
-          fromName: user.name,
-          fromRole: user.role,
-          channel: `DM_${[user.name, dmThread.otherName].sort().join('_')}`,
-          message: input.trim(),
-          isDM: true,
-          toName: dmThread.otherName,
-          threadId: dmThread.threadId
-        };
-      } else if (multiMode && selectedChannels.length > 0) {
-        body = {
-          fromName: user.name,
-          fromRole: user.role,
-          channels: selectedChannels,
-          message: input.trim()
-        };
-      } else {
-        body = {
-          fromName: user.name,
-          fromRole: user.role,
-          channel,
-          message: input.trim()
-        };
-      }
-      await fetch(`${API}/send-message`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-      setInput('');
-      if (multiMode) {
-        setSelectedChannels([]);
-        setMultiMode(false);
-      }
-      await fetchMessages();
-    } catch (e) {}
-    setSending(false);
+  if (openConvo) return /*#__PURE__*/React.createElement(ConversationView, {
+    user: user,
+    convo: openConvo,
+    onBack: () => {
+      setOpenConvo(null);
+      fetchConvos();
+    }
+  });
+  if (newMsg) return /*#__PURE__*/React.createElement(NewMessageView, {
+    user: user,
+    onBack: () => setNewMsg(false),
+    onOpen: c => {
+      setNewMsg(false);
+      setOpenConvo(c);
+    }
+  });
+  function timeAgo(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60) return 'now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm';
+    if (diff < 86400) return d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'America/Chicago'
+    });
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
   }
-  const chanObj = CHANNELS.find(c => c.id === channel);
+  const myChannel = roleChannel(user.role);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       ...S.root,
@@ -604,191 +594,228 @@ function ChatView({
   }, /*#__PURE__*/React.createElement("div", {
     style: S.hdr
   }, /*#__PURE__*/React.createElement(BackBtn, {
-    onBack: () => {
-      if (dmThread) {
-        setDmThread(null);
-        setMessages([]);
-      } else onBack();
-    }
+    onBack: onBack
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      fontSize: 15,
-      fontWeight: 800
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#f1f5f9'
     }
-  }, dmThread ? `${dmThread.otherName}` : `${chanObj ? chanObj.label : channel}`)), !dmThread && /*#__PURE__*/React.createElement("div", {
+  }, "Messages"), /*#__PURE__*/React.createElement("button", {
     style: {
-      display: 'flex',
-      borderBottom: '1px solid rgba(255,255,255,0.06)'
-    }
-  }, [['channels', 'Channels'], ['dms', 'Direct Messages']].map(([t, l]) => /*#__PURE__*/React.createElement("button", {
-    key: t,
-    style: {
-      flex: 1,
-      padding: '10px',
-      background: 'none',
-      border: 'none',
-      borderBottom: `2px solid ${tab === t ? '#38bdf8' : 'transparent'}`,
-      color: tab === t ? '#38bdf8' : '#64748b',
+      padding: '7px 14px',
+      borderRadius: 10,
+      border: '1px solid rgba(14,165,233,0.3)',
+      background: 'rgba(14,165,233,0.08)',
+      color: '#38bdf8',
       fontSize: 13,
       fontWeight: 700,
       cursor: 'pointer'
     },
-    onClick: () => setTab(t)
-  }, l))), !dmThread && tab === 'channels' && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setNewMsg(true)
+  }, "✏️ New")), loading && /*#__PURE__*/React.createElement("div", {
     style: {
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      overflowY: 'auto',
-      maxHeight: 220
+      textAlign: 'center',
+      color: '#475569',
+      padding: 32
+    }
+  }, "Loading..."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto'
+    }
+  }, !loading && convos.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: 40
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '8px 14px 4px',
+      fontSize: 32,
+      marginBottom: 12
+    }
+  }, "💬"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 700,
+      color: '#f1f5f9',
+      marginBottom: 4
+    }
+  }, "No messages yet"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: '#64748b',
+      marginBottom: 20
+    }
+  }, "Start a conversation or join a channel"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: '12px 24px',
+      borderRadius: 10,
+      border: 'none',
+      background: 'linear-gradient(135deg,#0ea5e9,#0284c7)',
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: 'pointer'
+    },
+    onClick: () => setNewMsg(true)
+  }, "Start a Conversation")), convos.map(c => {
+    const label = c.isDM ? c.otherName || 'Direct Message' : CHANNEL_LABELS[c.channel] || c.channel;
+    const isMyChannel = c.channel === myChannel || c.channel === 'AllStaff';
+    return /*#__PURE__*/React.createElement("button", {
+      key: c.id,
+      style: {
+        width: '100%',
+        padding: '14px 16px',
+        background: 'none',
+        border: 'none',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        cursor: 'pointer',
+        textAlign: 'left',
+        display: 'flex',
+        gap: 12,
+        alignItems: 'center'
+      },
+      onClick: () => setOpenConvo(c)
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 46,
+        height: 46,
+        borderRadius: '50%',
+        background: c.isDM ? 'rgba(99,102,241,0.2)' : isMyChannel ? 'rgba(14,165,233,0.2)' : 'rgba(255,255,255,0.08)',
+        border: `1px solid ${c.isDM ? 'rgba(99,102,241,0.4)' : isMyChannel ? 'rgba(14,165,233,0.4)' : 'rgba(255,255,255,0.1)'}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: c.isDM ? 14 : 18,
+        flexShrink: 0,
+        color: c.isDM ? '#a5b4fc' : isMyChannel ? '#38bdf8' : '#64748b'
+      }
+    }, c.isDM ? (c.otherName || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '#'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        marginBottom: 3
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 700,
+        color: '#f1f5f9',
+        textOverflow: 'ellipsis',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        maxWidth: '70%'
+      }
+    }, label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: '#475569',
+        flexShrink: 0,
+        marginLeft: 8
+      }
+    }, timeAgo(c.lastAt))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: '#64748b',
+        textOverflow: 'ellipsis',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap'
+      }
+    }, c.lastFrom && c.lastFrom !== user.role && c.lastFrom !== user.name ? `${c.lastFrom}: ` : '', c.lastMessage)));
+  })));
+}
+function ConversationView({
+  user,
+  convo,
+  onBack
+}) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const msgEnd = useRef(null);
+  const label = convo.isDM ? convo.otherName || 'Direct Message' : CHANNEL_LABELS[convo.channel] || convo.channel;
+  useEffect(() => {
+    fetchMsgs();
+    const iv = setInterval(fetchMsgs, 6000);
+    return () => clearInterval(iv);
+  }, []);
+  async function fetchMsgs() {
+    try {
+      const url = convo.isDM ? `${API}/get-messages?dmThread=${encodeURIComponent(convo.id)}` : `${API}/get-messages?channel=${convo.channel}&limit=80`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.messages) setMessages(data.messages);
+      setTimeout(() => msgEnd.current?.scrollIntoView({
+        behavior: 'smooth'
+      }), 100);
+    } catch (e) {}
+  }
+  async function send() {
+    if (!input.trim() || sending) return;
+    setSending(true);
+    try {
+      const body = convo.isDM ? {
+        fromName: user.name,
+        fromRole: user.role,
+        channel: `DM_${[user.name, convo.otherName].sort().join('_')}`,
+        message: input.trim(),
+        isDM: true,
+        toName: convo.otherName,
+        threadId: convo.id
+      } : {
+        fromName: user.name,
+        fromRole: user.role,
+        channel: convo.channel,
+        message: input.trim()
+      };
+      await fetch(`${API}/send-message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      setInput('');
+      await fetchMsgs();
+    } catch (e) {}
+    setSending(false);
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.root,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between'
+      flexDirection: 'column',
+      height: '100vh',
+      maxHeight: '100vh'
     }
   }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement(BackBtn, {
+    onBack: onBack
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, label), !convo.isDM && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: '#64748b'
     }
-  }, multiMode ? `${selectedChannels.length} selected — tap channels to add` : 'Tap to switch channel'), /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: '4px 12px',
-      borderRadius: 8,
-      border: `1px solid ${multiMode ? 'rgba(249,115,22,0.5)' : 'rgba(255,255,255,0.1)'}`,
-      background: multiMode ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.04)',
-      color: multiMode ? '#fb923c' : '#64748b',
-      fontSize: 11,
-      fontWeight: 700,
-      cursor: 'pointer'
-    },
-    onClick: () => {
-      setMultiMode(p => !p);
-      setSelectedChannels([]);
-    }
-  }, multiMode ? '✕ Cancel' : 'Send to Multiple')), CHANNEL_GROUPS.map(group => /*#__PURE__*/React.createElement("div", {
-    key: group.id,
-    style: {
-      padding: '4px 14px 4px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 900,
-      color: '#374151',
-      textTransform: 'uppercase',
-      letterSpacing: '0.1em',
-      marginBottom: 5
-    }
-  }, group.label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: 5,
-      marginBottom: 4
-    }
-  }, group.channels.map(ch => {
-    const active = multiMode ? selectedChannels.includes(ch.id) : channel === ch.id;
-    return /*#__PURE__*/React.createElement("button", {
-      key: ch.id,
-      style: {
-        padding: '5px 11px',
-        borderRadius: 16,
-        border: `1px solid ${active ? 'rgba(249,115,22,0.6)' : 'rgba(255,255,255,0.08)'}`,
-        background: active ? multiMode ? 'rgba(249,115,22,0.15)' : 'rgba(14,165,233,0.12)' : 'rgba(255,255,255,0.02)',
-        color: active ? multiMode ? '#fb923c' : '#38bdf8' : '#64748b',
-        fontSize: 12,
-        fontWeight: active ? 700 : 400,
-        cursor: 'pointer'
-      },
-      onClick: () => {
-        if (multiMode) {
-          toggleChannel(ch.id);
-        } else {
-          setChannel(ch.id);
-          setMessages([]);
-        }
-      }
-    }, multiMode && active ? '✓ ' : '', ch.label);
-  }))))), !dmThread && tab === 'dms' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '10px 14px',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      overflowY: 'auto',
-      maxHeight: 200
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: '#64748b',
-      marginBottom: 8
-    }
-  }, "NEW MESSAGE"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: 5,
-      marginBottom: 10
-    }
-  }, staffList.filter(s => s.name !== user.name).map(s => /*#__PURE__*/React.createElement("button", {
-    key: s.id,
-    style: {
-      padding: '4px 10px',
-      borderRadius: 14,
-      border: '1px solid rgba(255,255,255,0.1)',
-      background: 'rgba(255,255,255,0.03)',
-      color: '#94a3b8',
-      fontSize: 12,
-      cursor: 'pointer'
-    },
-    onClick: () => {
-      setDmThread({
-        otherName: s.name,
-        threadId: `DM_${[user.name, s.name].sort().join('_')}`
-      });
-      setMessages([]);
-    }
-  }, s.role || s.name))), dmList.map(dm => /*#__PURE__*/React.createElement("button", {
-    key: dm.threadId,
-    style: {
-      width: '100%',
-      padding: '8px 0',
-      background: 'none',
-      border: 'none',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-      cursor: 'pointer',
-      textAlign: 'left',
-      display: 'flex',
-      gap: 10,
-      alignItems: 'center'
-    },
-    onClick: () => {
-      setDmThread({
-        otherName: dm.otherName,
-        threadId: dm.threadId
-      });
-      setMessages([]);
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700,
-      color: '#f1f5f9',
-      flex: 1
-    }
-  }, dm.otherName), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: '#64748b',
-      maxWidth: 120,
-      textOverflow: 'ellipsis',
-      overflow: 'hidden',
-      whiteSpace: 'nowrap'
-    }
-  }, dm.lastMessage)))), (tab === 'channels' || dmThread) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, "Group channel"))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflowY: 'auto',
@@ -805,14 +832,15 @@ function ChatView({
       fontSize: 13,
       padding: '24px 0'
     }
-  }, "No messages yet"), messages.map(msg => {
-    const isMe = msg.fromName === user.name;
+  }, "No messages yet — say something!"), messages.map(msg => {
+    const isMe = msg.fromName === user.name || msg.fromRole && msg.fromRole === user.role;
     const isAlert = msg.isAlert;
     const time = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       timeZone: 'America/Chicago'
     }) : '';
+    const sentToMultiple = msg.recipients && msg.recipients.includes(',');
     if (isAlert) return /*#__PURE__*/React.createElement("div", {
       key: msg.id,
       style: {
@@ -848,20 +876,27 @@ function ChatView({
         color: '#64748b',
         marginLeft: 4
       }
-    }, msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
+    }, msg.fromRole || msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
       style: {
         maxWidth: '82%',
-        background: isMe ? 'rgba(14,165,233,0.2)' : 'rgba(255,255,255,0.06)',
-        border: `1px solid ${isMe ? 'rgba(14,165,233,0.4)' : 'rgba(255,255,255,0.08)'}`,
+        background: isMe ? 'rgba(14,165,233,0.25)' : 'rgba(255,255,255,0.07)',
+        border: `1px solid ${isMe ? 'rgba(14,165,233,0.5)' : 'rgba(255,255,255,0.1)'}`,
         borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
         padding: '9px 13px'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
+        color: '#f1f5f9',
         lineHeight: 1.5
       }
-    }, msg.message)), isMe && /*#__PURE__*/React.createElement("div", {
+    }, msg.message), sentToMultiple && !isMe && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: '#475569',
+        marginTop: 3
+      }
+    }, "sent to multiple")), isMe && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: '#374151',
@@ -883,7 +918,7 @@ function ChatView({
       ...S.inp,
       flex: 1
     },
-    placeholder: dmThread ? `Message ${dmThread.otherName}...` : multiMode && selectedChannels.length > 0 ? `Send to ${selectedChannels.length} channels...` : `Message ${chanObj ? chanObj.label : channel}...`,
+    placeholder: `Message ${label}...`,
     value: input,
     onChange: e => setInput(e.target.value),
     onKeyDown: e => {
@@ -906,7 +941,185 @@ function ChatView({
     },
     onClick: send,
     disabled: !input.trim() || sending
-  }, sending ? '...' : 'Send'))));
+  }, sending ? '...' : 'Send')));
+}
+function NewMessageView({
+  user,
+  onBack,
+  onOpen
+}) {
+  const [staffList, setStaffList] = useState([]);
+  const [search, setSearch] = useState('');
+  useEffect(() => {
+    fetch(`${API}/get-staff-list`).then(r => r.json()).then(d => setStaffList(d.staff || [])).catch(() => {});
+  }, []);
+  const myChannel = roleChannel(user.role);
+  function openChannel(ch) {
+    onOpen({
+      id: ch,
+      isDM: false,
+      channel: ch,
+      lastMessage: '',
+      lastFrom: '',
+      lastAt: '',
+      recipients: ch
+    });
+  }
+  function openDM(s) {
+    const threadId = `DM_${[user.name, s.name].sort().join('_')}`;
+    onOpen({
+      id: threadId,
+      isDM: true,
+      channel: `DM_${[user.name, s.name].sort().join('_')}`,
+      otherName: s.name,
+      lastMessage: '',
+      lastFrom: '',
+      lastAt: '',
+      recipients: ''
+    });
+  }
+  const filteredStaff = search.length >= 2 ? staffList.filter(s => s.name !== user.name && ((s.name || '').toLowerCase().includes(search.toLowerCase()) || (s.role || '').toLowerCase().includes(search.toLowerCase()))) : staffList.filter(s => s.name !== user.name);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.root,
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement(BackBtn, {
+    onBack: onBack
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, "New Message")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '10px 14px',
+      borderBottom: '1px solid rgba(255,255,255,0.06)'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp
+    },
+    placeholder: "Search by name or role...",
+    value: search,
+    onChange: e => setSearch(e.target.value),
+    autoFocus: true
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto'
+    }
+  }, !search && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 16px 4px',
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#64748b',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em'
+    }
+  }, "Channels"), CHANNEL_GROUPS.flatMap(g => g.channels).map(ch => /*#__PURE__*/React.createElement("button", {
+    key: ch.id,
+    style: {
+      width: '100%',
+      padding: '12px 16px',
+      background: ch.id === myChannel || ch.id === 'AllStaff' ? 'rgba(14,165,233,0.04)' : 'none',
+      border: 'none',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      cursor: 'pointer',
+      textAlign: 'left',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12
+    },
+    onClick: () => openChannel(ch.id)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.06)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 14,
+      color: '#64748b',
+      flexShrink: 0
+    }
+  }, "#"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: ch.id === myChannel ? 700 : 400,
+      color: ch.id === myChannel ? '#38bdf8' : '#f1f5f9'
+    }
+  }, ch.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '8px 16px 4px',
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#64748b',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em'
+    }
+  }, "Direct Messages")), filteredStaff.map(s => /*#__PURE__*/React.createElement("button", {
+    key: s.id,
+    style: {
+      width: '100%',
+      padding: '12px 16px',
+      background: 'none',
+      border: 'none',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      cursor: 'pointer',
+      textAlign: 'left',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12
+    },
+    onClick: () => openDM(s)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: '50%',
+      background: 'rgba(99,102,241,0.15)',
+      border: '1px solid rgba(99,102,241,0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 12,
+      fontWeight: 800,
+      color: '#a5b4fc',
+      flexShrink: 0
+    }
+  }, (s.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: '#f1f5f9'
+    }
+  }, s.role || s.name), s.role && s.name && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: '#64748b',
+      marginTop: 1
+    }
+  }, s.name))))));
+}
+
+// Wrap ChatInbox as ChatView for backward compat
+function ChatView({
+  user,
+  onBack
+}) {
+  return /*#__PURE__*/React.createElement(ChatInbox, {
+    user: user,
+    onBack: onBack
+  });
 }
 
 // ── LOST & FOUND FORM ────────────────────────────────────────

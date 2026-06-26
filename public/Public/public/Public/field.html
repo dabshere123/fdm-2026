@@ -1794,8 +1794,7 @@ function HomeView({
               channel: ch,
               fromRole: latest.fromRole
             });
-            if (notifTimer.current) clearTimeout(notifTimer.current);
-            notifTimer.current = setTimeout(() => setNotif(null), 8000);
+            // Banner stays until dismissed or replied to
           }
           lastMsgId.current = latest.id;
         }
@@ -1822,7 +1821,11 @@ function HomeView({
     }).catch(() => {});
     setQuickReply('');
     setReplySending(false);
-    setNotif(null);
+    setNotif({
+      ...notif,
+      sent: true
+    });
+    setTimeout(() => setNotif(null), 2000);
   }
   function goCall(type) {
     setCallType(type);
@@ -1924,58 +1927,80 @@ function HomeView({
       color: '#f1f5f9',
       lineHeight: 1.4
     }
-  }, notif.message), /*#__PURE__*/React.createElement("div", {
+  }, notif.message), notif.sent && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 800,
+      color: '#4ade80'
+    }
+  }, "✅ Reply sent!"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
+      flexDirection: 'column',
       gap: 6
     }
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#fb923c',
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em'
+    }
+  }, "↩ Reply to ", notif.channel), /*#__PURE__*/React.createElement("textarea", {
     style: {
       ...S.inp,
-      flex: 1,
-      padding: '9px 12px',
-      fontSize: 14
+      minHeight: 70,
+      resize: 'none',
+      fontSize: 15,
+      borderColor: 'rgba(249,115,22,0.4)'
     },
-    placeholder: "Quick reply...",
+    placeholder: "Type your reply here...",
     value: quickReply,
     onChange: e => setQuickReply(e.target.value),
     onKeyDown: e => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendQuickReply();
       }
-    }
-  }), /*#__PURE__*/React.createElement("button", {
+    },
+    autoFocus: true
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '9px 14px',
+      display: 'flex',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      flex: 1,
+      padding: '12px',
       borderRadius: 10,
       border: 'none',
-      background: quickReply.trim() ? 'linear-gradient(135deg,#0ea5e9,#0284c7)' : 'rgba(255,255,255,0.06)',
+      background: quickReply.trim() ? 'linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))' : 'rgba(255,255,255,0.06)',
       color: quickReply.trim() ? '#fff' : '#475569',
-      fontSize: 13,
-      fontWeight: 800,
-      cursor: 'pointer',
-      flexShrink: 0
+      fontSize: 14,
+      fontWeight: 900,
+      cursor: 'pointer'
     },
     onClick: sendQuickReply,
     disabled: !quickReply.trim() || replySending
-  }, replySending ? '...' : 'Send')), /*#__PURE__*/React.createElement("button", {
+  }, replySending ? 'Sending...' : 'Send Reply'), /*#__PURE__*/React.createElement("button", {
     style: {
-      background: 'none',
-      border: 'none',
-      color: '#fb923c',
-      fontSize: 12,
+      padding: '12px 16px',
+      borderRadius: 10,
+      border: '1px solid rgba(255,255,255,0.1)',
+      background: 'rgba(255,255,255,0.04)',
+      color: '#64748b',
+      fontSize: 13,
       fontWeight: 700,
-      cursor: 'pointer',
-      textAlign: 'left',
-      padding: 0
+      cursor: 'pointer'
     },
     onClick: () => {
       setView('chat');
       setNotif(null);
       setUnread(0);
     }
-  }, "Open in Chat →")), /*#__PURE__*/React.createElement("button", {
+  }, "Open Chat")))), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.card,
       padding: '14px 16px',

@@ -662,8 +662,7 @@ function HomeView({user,onLogout}){
             // New message from someone else
             setUnread(p=>p+1);
             setNotif({from:latest.fromName,message:latest.message,channel:ch,fromRole:latest.fromRole});
-            if(notifTimer.current) clearTimeout(notifTimer.current);
-            notifTimer.current=setTimeout(()=>setNotif(null),8000);
+            // Banner stays until dismissed or replied to
           }
           lastMsgId.current=latest.id;
         }
@@ -680,7 +679,8 @@ function HomeView({user,onLogout}){
     await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromName:user.name,fromRole:user.role,channel:notif.channel,message:quickReply.trim()})}).catch(()=>{});
     setQuickReply('');
     setReplySending(false);
-    setNotif(null);
+    setNotif({...notif,sent:true});
+    setTimeout(()=>setNotif(null),2000);
   }
 
   function goCall(type){setCallType(type);setView('call');}
@@ -713,11 +713,15 @@ function HomeView({user,onLogout}){
             </div>
             <div style={{fontSize:12,fontWeight:700,color:'#94a3b8'}}>{notif.fromRole||notif.from}</div>
             <div style={{fontSize:15,color:'#f1f5f9',lineHeight:1.4}}>{notif.message}</div>
-            <div style={{display:'flex',gap:6}}>
-              <input style={{...S.inp,flex:1,padding:'9px 12px',fontSize:14}} placeholder="Quick reply..." value={quickReply} onChange={e=>setQuickReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();sendQuickReply();}}}/>
-              <button style={{padding:'9px 14px',borderRadius:10,border:'none',background:quickReply.trim()?'linear-gradient(135deg,#0ea5e9,#0284c7)':'rgba(255,255,255,0.06)',color:quickReply.trim()?'#fff':'#475569',fontSize:13,fontWeight:800,cursor:'pointer',flexShrink:0}} onClick={sendQuickReply} disabled={!quickReply.trim()||replySending}>{replySending?'...':'Send'}</button>
+            {notif.sent&&<div style={{fontSize:14,fontWeight:800,color:'#4ade80'}}>✅ Reply sent!</div>}
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              <div style={{fontSize:11,fontWeight:800,color:'#fb923c',textTransform:'uppercase',letterSpacing:'0.06em'}}>↩ Reply to {notif.channel}</div>
+              <textarea style={{...S.inp,minHeight:70,resize:'none',fontSize:15,borderColor:'rgba(249,115,22,0.4)'}} placeholder="Type your reply here..." value={quickReply} onChange={e=>setQuickReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendQuickReply();}}} autoFocus/>
+              <div style={{display:'flex',gap:8}}>
+                <button style={{flex:1,padding:'12px',borderRadius:10,border:'none',background:quickReply.trim()?'linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))':'rgba(255,255,255,0.06)',color:quickReply.trim()?'#fff':'#475569',fontSize:14,fontWeight:900,cursor:'pointer'}} onClick={sendQuickReply} disabled={!quickReply.trim()||replySending}>{replySending?'Sending...':'Send Reply'}</button>
+                <button style={{padding:'12px 16px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'#64748b',fontSize:13,fontWeight:700,cursor:'pointer'}} onClick={()=>{setView('chat');setNotif(null);setUnread(0);}}>Open Chat</button>
+              </div>
             </div>
-            <button style={{background:'none',border:'none',color:'#fb923c',fontSize:12,fontWeight:700,cursor:'pointer',textAlign:'left',padding:0}} onClick={()=>{setView('chat');setNotif(null);setUnread(0);}}>Open in Chat →</button>
           </div>
         )}
 

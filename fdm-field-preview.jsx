@@ -378,6 +378,230 @@ function LFView({user,onBack}){
   );
 }
 
+
+// ── OVERNIGHT VIEW ───────────────────────────────────────────
+function OvernightView({user,onLogout}){
+  const [tab,setTab]=useState('home');
+  const [arrived,setArrived]=useState(false);
+  const [logs,setLogs]=useState([]);
+
+  // Log form state
+  const [logType,setLogType]=useState('');
+  const [logTime,setLogTime]=useState('');
+  const [logWhat,setLogWhat]=useState('');
+  const [logSending,setLogSending]=useState(false);
+  const [logSent,setLogSent]=useState(false);
+
+  // EOD report state
+  const [eodNotes,setEodNotes]=useState('');
+  const [eodIncidents,setEodIncidents]=useState('');
+  const [eodLF,setEodLF]=useState('');
+  const [eodSending,setEodSending]=useState(false);
+  const [eodSent,setEodSent]=useState(false);
+
+  // L&F view
+  const [view,setView]=useState('home');
+  if(view==='lf') return <LFView user={user} onBack={()=>setView('home')}/>;
+
+  async function sendArrival(){
+    const ts=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    const msg=`✅ OVERNIGHT CREW ONSITE
+
+${user.name} has arrived at McPike Park.
+Time: ${ts}
+
+Fête de Marquette 2026 Operations`;
+    await fetch(`${API}/send-sms`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:'+16082289692',message:msg})}).catch(()=>{});
+    setArrived(true);
+  }
+
+  async function submitLog(){
+    if(!logType||!logWhat) return;
+    setLogSending(true);
+    const ts=logTime||new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    const entry={id:Date.now(),type:logType,time:ts,what:logWhat};
+    const msg=`📋 OVERNIGHT LOG — ${logType.toUpperCase()}
+
+Time: ${ts}
+Logged by: ${user.name}
+
+${logWhat}
+
+Fête de Marquette 2026`;
+    await fetch(`${API}/send-sms`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:'+16082289692',message:msg})}).catch(()=>{});
+    setLogs(p=>[entry,...p]);
+    setLogType('');setLogTime('');setLogWhat('');
+    setLogSent(true);
+    setTimeout(()=>setLogSent(false),2000);
+    setLogSending(false);
+  }
+
+  async function submitEOD(){
+    if(!eodNotes) return;
+    setEodSending(true);
+    const msg=`🌙 OVERNIGHT EOD REPORT
+
+Crew: ${user.name}
+Date: ${new Date().toLocaleDateString()}
+
+INCIDENTS:
+${eodIncidents||'None'}
+
+LOST & FOUND:
+${eodLF||'None'}
+
+GENERAL NOTES:
+${eodNotes}
+
+Fête de Marquette 2026`;
+    await fetch(`${API}/send-sms`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:'+16082289692',message:msg})}).catch(()=>{});
+    setEodSent(true);
+    setEodSending(false);
+  }
+
+  const LOG_TYPES=[
+    {id:'Police Called',color:'rgba(37,99,235,0.7)',label:'🚔 Police Called'},
+    {id:'Medical Called',color:'rgba(147,51,234,0.7)',label:'🏥 Medical Called'},
+    {id:'Fire / Life Safety',color:'rgba(220,38,38,0.7)',label:'🔥 Fire / Life Safety'},
+    {id:'Lost & Found',color:'rgba(249,115,22,0.7)',label:'📦 Lost & Found'},
+    {id:'Other',color:'rgba(100,116,139,0.7)',label:'📋 Other'},
+  ];
+
+  return(
+    <div style={S.root}>
+      <div style={S.hdr}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:16,fontWeight:900}}>{user.name.split(' ')[0]} — Overnight</div>
+          <div style={{fontSize:11,color:'#64748b'}}>{user.location||'McPike Park'}</div>
+        </div>
+        <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#64748b',fontSize:11,fontWeight:700,cursor:'pointer',padding:'6px 12px'}} onClick={onLogout}>Sign Out</button>
+      </div>
+
+      <div style={S.body}>
+
+        {/* I AM HERE BUTTON */}
+        {!arrived?(
+          <button style={{padding:'20px',borderRadius:14,border:'2px solid rgba(34,197,94,0.6)',background:'linear-gradient(135deg,rgba(22,163,74,0.2),rgba(16,185,129,0.1))',cursor:'pointer',textAlign:'center',boxShadow:'0 0 20px rgba(34,197,94,0.2)'}} onClick={sendArrival}>
+            <div style={{fontSize:26,marginBottom:6}}>✋</div>
+            <div style={{fontSize:18,fontWeight:900,color:'#4ade80'}}>I Am Here</div>
+            <div style={{fontSize:12,color:'#64748b',marginTop:4}}>Tap to notify admin you have arrived</div>
+          </button>
+        ):(
+          <div style={{padding:'14px 16px',borderRadius:12,border:'1px solid rgba(34,197,94,0.4)',background:'rgba(22,163,74,0.08)',display:'flex',alignItems:'center',gap:10}}>
+            <div style={{fontSize:20}}>✅</div>
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:'#4ade80'}}>Admin Notified — You Are Onsite</div>
+              <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>
+            </div>
+          </div>
+        )}
+
+        {/* TABS */}
+        <div style={{display:'flex',gap:0,borderBottom:'1px solid rgba(255,255,255,0.08)',marginTop:4}}>
+          {[['log','Log Event'],['lf','Lost & Found'],['eod','EOD Report'],['history','History']].map(([t,l])=>(
+            <button key={t} style={{flex:1,padding:'9px 4px',background:'none',border:'none',borderBottom:`2px solid ${tab===t?'#38bdf8':'transparent'}`,color:tab===t?'#38bdf8':'#64748b',fontSize:11,fontWeight:700,cursor:'pointer',lineHeight:1.3}} onClick={()=>setTab(t)}>{l}</button>
+          ))}
+        </div>
+
+        {/* LOG EVENT TAB */}
+        {tab==='log'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {logSent&&<div style={{background:'rgba(34,197,94,0.1)',border:'1px solid rgba(34,197,94,0.3)',borderRadius:8,padding:'10px 14px',color:'#4ade80',fontSize:13,fontWeight:700,textAlign:'center'}}>✅ Logged & sent to admin</div>}
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em'}}>What happened?</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {LOG_TYPES.map(lt=>(
+                <button key={lt.id} style={{padding:'13px 14px',borderRadius:10,border:`1.5px solid ${logType===lt.id?lt.color:'rgba(255,255,255,0.08)'}`,background:logType===lt.id?`${lt.color.replace('0.7','0.15')}`:'rgba(255,255,255,0.03)',cursor:'pointer',textAlign:'left',fontSize:14,fontWeight:logType===lt.id?700:400,color:logType===lt.id?'#f1f5f9':'#94a3b8'}} onClick={()=>setLogType(lt.id)}>{lt.label}</button>
+              ))}
+            </div>
+            {logType&&<>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Time of Event</div>
+                <input type="time" style={{...S.inp}} value={logTime} onChange={e=>setLogTime(e.target.value)} placeholder="Leave blank for now"/>
+              </div>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>What Happened?</div>
+                <textarea style={{...S.inp,minHeight:100,resize:'none'}} placeholder="Describe what happened..." value={logWhat} onChange={e=>setLogWhat(e.target.value)}/>
+              </div>
+              <button style={{padding:'15px',borderRadius:12,border:'none',background:'rgba(14,165,233,0.8)',color:'#fff',fontSize:15,fontWeight:800,cursor:'pointer',opacity:(!logWhat||logSending)?0.4:1}} disabled={!logWhat||logSending} onClick={submitLog}>
+                {logSending?'Logging...':'Log Event — Notify Admin'}
+              </button>
+            </>}
+          </div>
+        )}
+
+        {/* LOST & FOUND TAB */}
+        {tab==='lf'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <button style={{...S.card,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,border:'1px solid rgba(249,115,22,0.2)',background:'rgba(249,115,22,0.06)'}} onClick={()=>setView('lf')}>
+              <span style={{fontSize:22}}>📦</span>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:'#fb923c'}}>Log Found Item</div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Add item to Lost & Found</div>
+              </div>
+              <div style={{marginLeft:'auto',color:'#fb923c'}}>→</div>
+            </button>
+            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{...S.card,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,border:'1px solid rgba(139,92,246,0.2)',background:'rgba(139,92,246,0.06)',textDecoration:'none'}}>
+              <span style={{fontSize:22}}>🔍</span>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:'#c4b5fd'}}>L&F Lookup</div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Search all items</div>
+              </div>
+              <div style={{marginLeft:'auto',color:'#c4b5fd'}}>→</div>
+            </a>
+          </div>
+        )}
+
+        {/* EOD REPORT TAB */}
+        {tab==='eod'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {eodSent?(
+              <div style={{textAlign:'center',padding:'30px 0'}}>
+                <div style={{fontSize:48,marginBottom:12}}>🌙</div>
+                <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>EOD Report Sent</div>
+                <div style={{fontSize:13,color:'#64748b'}}>Admin has been notified. Good night!</div>
+              </div>
+            ):<>
+              <div style={{fontSize:12,color:'#64748b',lineHeight:1.6}}>Fill out before leaving for the night. Sends directly to admin.</div>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Incidents (police, medical, fire)</div>
+                <textarea style={{...S.inp,minHeight:80,resize:'none'}} placeholder="List any incidents that occurred..." value={eodIncidents} onChange={e=>setEodIncidents(e.target.value)}/>
+              </div>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Lost & Found Items</div>
+                <textarea style={{...S.inp,minHeight:70,resize:'none'}} placeholder="List any L&F items found overnight..." value={eodLF} onChange={e=>setEodLF(e.target.value)}/>
+              </div>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>General Notes *</div>
+                <textarea style={{...S.inp,minHeight:90,resize:'none'}} placeholder="Overall how did the night go? Any concerns?" value={eodNotes} onChange={e=>setEodNotes(e.target.value)}/>
+              </div>
+              <button style={{padding:'16px',borderRadius:12,border:'none',background:'linear-gradient(135deg,rgba(99,102,241,0.8),rgba(79,70,229,0.8))',color:'#fff',fontSize:15,fontWeight:900,cursor:'pointer',opacity:(!eodNotes||eodSending)?0.4:1}} disabled={!eodNotes||eodSending} onClick={submitEOD}>
+                {eodSending?'Sending...':'🌙 Submit EOD Report'}
+              </button>
+            </>}
+          </div>
+        )}
+
+        {/* HISTORY TAB */}
+        {tab==='history'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}>Events logged this session</div>
+            {logs.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:13,padding:'24px 0'}}>No events logged yet</div>}
+            {logs.map(log=>(
+              <div key={log.id} style={{...S.card,padding:'10px 14px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                  <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{log.type}</div>
+                  <div style={{fontSize:11,color:'#64748b'}}>{log.time}</div>
+                </div>
+                <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.5}}>{log.what}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── HOME ─────────────────────────────────────────────────────
 function HomeView({user,onLogout}){
   const [view,setView]=useState('home');
@@ -485,5 +709,8 @@ function HomeView({user,onLogout}){
 // ── MAIN ─────────────────────────────────────────────────────
 function FieldApp(){
   const [user,setUser]=useState(null);
-  return user?<HomeView user={user} onLogout={()=>setUser(null)}/>:<LoginView onLogin={setUser}/>;
+  if(!user) return <LoginView onLogin={setUser}/>;
+  const r=(user.role||'').toLowerCase();
+  if(r.includes('overnight')) return <OvernightView user={user} onLogout={()=>setUser(null)}/>;
+  return <HomeView user={user} onLogout={()=>setUser(null)}/>;
 }

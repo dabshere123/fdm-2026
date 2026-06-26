@@ -33,6 +33,7 @@ exports.handler = async (event) => {
       fromName:r.fields.FromName||'',
       fromRole:r.fields.FromRole||'',
       channel:r.fields.Channel||'',
+        recipients:r.fields.Recipients||r.fields.Channel||'',
       message:r.fields.Message||'',
       sentAt:r.fields.SentAt||'',
       threadId:r.fields.ThreadID||'',

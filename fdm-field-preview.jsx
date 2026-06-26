@@ -192,7 +192,14 @@ function ChatView({user,onBack}){
   const [dmThread,setDmThread]=useState(null);
   const [dmList,setDmList]=useState([]);
   const [staffList,setStaffList]=useState([]);
+  // Multi-channel send
+  const [multiMode,setMultiMode]=useState(false);
+  const [selectedChannels,setSelectedChannels]=useState([]);
   const msgEnd=useRef(null);
+
+  function toggleChannel(id){
+    setSelectedChannels(p=>p.includes(id)?p.filter(c=>c!==id):[...p,id]);
+  }
 
   useEffect(()=>{
     fetch(`${API}/get-staff-list`).then(r=>r.json()).then(d=>setStaffList(d.staff||[])).catch(()=>{});
@@ -219,11 +226,17 @@ function ChatView({user,onBack}){
     if(!input.trim()||sending) return;
     setSending(true);
     try{
-      const body=dmThread
-        ?{fromName:user.name,fromRole:user.role,channel:`DM_${[user.name,dmThread.otherName].sort().join('_')}`,message:input.trim(),isDM:true,toName:dmThread.otherName,threadId:dmThread.threadId}
-        :{fromName:user.name,fromRole:user.role,channel,message:input.trim()};
+      let body;
+      if(dmThread){
+        body={fromName:user.name,fromRole:user.role,channel:`DM_${[user.name,dmThread.otherName].sort().join('_')}`,message:input.trim(),isDM:true,toName:dmThread.otherName,threadId:dmThread.threadId};
+      } else if(multiMode&&selectedChannels.length>0){
+        body={fromName:user.name,fromRole:user.role,channels:selectedChannels,message:input.trim()};
+      } else {
+        body={fromName:user.name,fromRole:user.role,channel,message:input.trim()};
+      }
       await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       setInput('');
+      if(multiMode){setSelectedChannels([]);setMultiMode(false);}
       await fetchMessages();
     }catch(e){}
     setSending(false);
@@ -245,14 +258,25 @@ function ChatView({user,onBack}){
         ))}
       </div>}
       {!dmThread&&tab==='channels'&&(
-        <div style={{borderBottom:'1px solid rgba(255,255,255,0.06)',overflowY:'auto',maxHeight:180}}>
+        <div style={{borderBottom:'1px solid rgba(255,255,255,0.06)',overflowY:'auto',maxHeight:220}}>
+          {/* Multi-send toggle */}
+          <div style={{padding:'8px 14px 4px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{fontSize:11,color:'#64748b'}}>
+              {multiMode?`${selectedChannels.length} selected — tap channels to add`:'Tap to switch channel'}
+            </div>
+            <button style={{padding:'4px 12px',borderRadius:8,border:`1px solid ${multiMode?'rgba(249,115,22,0.5)':'rgba(255,255,255,0.1)'}`,background:multiMode?'rgba(249,115,22,0.12)':'rgba(255,255,255,0.04)',color:multiMode?'#fb923c':'#64748b',fontSize:11,fontWeight:700,cursor:'pointer'}} onClick={()=>{setMultiMode(p=>!p);setSelectedChannels([]);}}>
+              {multiMode?'✕ Cancel':'Send to Multiple'}
+            </button>
+          </div>
           {CHANNEL_GROUPS.map(group=>(
-            <div key={group.id} style={{padding:'6px 14px 4px'}}>
+            <div key={group.id} style={{padding:'4px 14px 4px'}}>
               <div style={{fontSize:10,fontWeight:900,color:'#374151',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:5}}>{group.label}</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:4}}>
                 {group.channels.map(ch=>{
-                  const active=channel===ch.id;
-                  return <button key={ch.id} style={{padding:'5px 11px',borderRadius:16,border:`1px solid ${active?'rgba(14,165,233,0.6)':'rgba(255,255,255,0.08)'}`,background:active?'rgba(14,165,233,0.12)':'rgba(255,255,255,0.02)',color:active?'#38bdf8':'#64748b',fontSize:12,fontWeight:active?700:400,cursor:'pointer'}} onClick={()=>{setChannel(ch.id);setMessages([]);}}>{ch.label}</button>;
+                  const active=multiMode?selectedChannels.includes(ch.id):channel===ch.id;
+                  return <button key={ch.id} style={{padding:'5px 11px',borderRadius:16,border:`1px solid ${active?'rgba(249,115,22,0.6)':'rgba(255,255,255,0.08)'}`,background:active?(multiMode?'rgba(249,115,22,0.15)':'rgba(14,165,233,0.12)'):'rgba(255,255,255,0.02)',color:active?(multiMode?'#fb923c':'#38bdf8'):'#64748b',fontSize:12,fontWeight:active?700:400,cursor:'pointer'}} onClick={()=>{if(multiMode){toggleChannel(ch.id);}else{setChannel(ch.id);setMessages([]);}}}>
+                    {multiMode&&active?'✓ ':''}{ch.label}
+                  </button>;
                 })}
               </div>
             </div>
@@ -301,7 +325,7 @@ function ChatView({user,onBack}){
           <div ref={msgEnd}/>
         </div>
         <div style={{padding:'10px 14px',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,background:'rgba(10,10,20,0.95)'}}>
-          <input style={{...S.inp,flex:1}} placeholder={dmThread?`Message ${dmThread.otherName}...`:`Message ${chanObj?chanObj.label:channel}...`} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();send();}}}/>
+          <input style={{...S.inp,flex:1}} placeholder={dmThread?`Message ${dmThread.otherName}...`:multiMode&&selectedChannels.length>0?`Send to ${selectedChannels.length} channels...`:`Message ${chanObj?chanObj.label:channel}...`} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();send();}}}/>
           <button style={{padding:'10px 16px',borderRadius:10,border:'none',background:input.trim()?'linear-gradient(135deg,#0ea5e9,#0284c7)':'rgba(255,255,255,0.06)',color:input.trim()?'#fff':'#475569',fontSize:14,fontWeight:800,cursor:input.trim()?'pointer':'not-allowed',flexShrink:0}} onClick={send} disabled={!input.trim()||sending}>{sending?'...':'Send'}</button>
         </div>
       </>}
@@ -677,7 +701,9 @@ function HomeView({user,onLogout}){
   async function sendQuickReply(){
     if(!quickReply.trim()||replySending||!currentNotif) return;
     setReplySending(true);
-    await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromName:user.name,fromRole:user.role,channel:currentNotif.channel,message:quickReply.trim()})}).catch(()=>{});
+    // Reply to all original channels if available
+    const replyChannels=currentNotif.recipients?currentNotif.recipients.split(',').filter(Boolean):[currentNotif.channel];
+    await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromName:user.name,fromRole:user.role,channels:replyChannels,message:quickReply.trim()})}).catch(()=>{});
     setQuickReply('');
     setReplySending(false);
     dismissNotif();

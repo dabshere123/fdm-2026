@@ -1,22 +1,11 @@
-// get-conversations.js — inbox filtered by role
+// get-conversations.js — inbox filtered by role, DMs only to participants
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const BASE = 'appUVEp7kO9NeeJh0';
 
-// Which channels each role can see
 function allowedChannels(role) {
   const r = (role || '').toLowerCase();
-
-  // Admin sees everything
-  if (r === 'admin' || r === 'a1' || r === 'a2' || r === 'a3' || r.includes('admin')) {
-    return 'ALL';
-  }
-
-  // Med sees Medical + AllStaff (NOT Admin, NOT bars, NOT stages)
-  if (r === 'm1' || r === 'm2' || r === 'med 1' || r === 'med 2' || r.includes('med unit') || r.includes('medical')) {
-    return ['AdminMed', 'AllStaff', 'Hospitality'];
-  }
-
-  // Bars — their specific channel + All Bars + AllStaff
+  if (r === 'admin' || r === 'a1' || r === 'a2' || r === 'a3' || r.includes('admin')) return 'ALL';
+  if (r === 'm1' || r === 'm2' || r === 'med 1' || r === 'med 2' || r.includes('med unit') || r.includes('medical')) return ['AdminMed', 'AllStaff'];
   if (r.includes('moon bar') || r === 'msb1' || r === 'msb2') return ['MoonBar', 'Bars', 'AllStaff'];
   if (r.includes('sun bar left') || r === 'ssbl') return ['SunBarL', 'Bars', 'AllStaff'];
   if (r.includes('sun bar right') || r === 'ssbr') return ['SunBarR', 'Bars', 'AllStaff'];
@@ -25,21 +14,15 @@ function allowedChannels(role) {
   if (r.includes('family fete bar') || r.includes('family bar') || r === 'ffb') return ['FamilyBar', 'Bars', 'AllStaff'];
   if (r.includes('cabaret bar') || r === 'cb') return ['CabBar', 'Bars', 'AllStaff'];
   if (r.includes('everything else') || r.includes('eec') || r === 'etecm' || r === 'mtm') return ['EverythingBar', 'Bars', 'AllStaff'];
-  if (r.includes('bar')) return ['Bars', 'AllStaff']; // generic bar
-
-  // Stages — their specific channel + AllStaff
+  if (r.includes('bar')) return ['Bars', 'AllStaff'];
   if (r.includes('moon stage') || r === 'msm') return ['MoonST', 'AllStaff'];
   if (r.includes('sun stage') || r === 'ssm') return ['SunST', 'AllStaff'];
   if (r.includes('lafayette stage') || r === 'lafm') return ['LafST', 'AllStaff'];
   if (r.includes('lagniappe stage') || r === 'lagm') return ['LagST', 'AllStaff'];
-  if (r.includes('family fete stage') || r === 'famsm') return ['FamST', 'AllStaff'];
-  if (r.includes('cabaret stage') || r === 'cabsm') return ['CabST', 'AllStaff'];
-  if (r.includes('stage')) return ['AllStaff']; // generic stage
-
-  // Hospitality
+  if (r.includes('family fete stage')) return ['FamST', 'AllStaff'];
+  if (r.includes('cabaret stage')) return ['CabST', 'AllStaff'];
+  if (r.includes('stage')) return ['AllStaff'];
   if (r.includes('hospitality') || r === 'hosp') return ['Hospitality', 'AllStaff'];
-
-  // Overnight, Merch, Greeters — AllStaff only
   return ['AllStaff'];
 }
 
@@ -67,17 +50,17 @@ exports.handler = async (event) => {
       const channel = f.Channel || '';
 
       if (isDM) {
-        // DMs: only show if user is a participant
+        // DMs: ONLY show if this user is directly involved (sender or recipient)
         const isParticipant = f.FromName === myName || f.ToName === myName;
         if (!isParticipant) continue;
       } else {
-        // Channel messages: check if allowed
+        // Channel messages: check role permissions
         if (allowed !== 'ALL') {
-          // Alerts visible to everyone
+          // Admin channel is admin-only
+          if (channel === 'Admin') continue;
+          // Alerts go to everyone
           if (!isAlert && !allowed.includes(channel)) continue;
         }
-        // Admin channel: Admin only
-        if (channel === 'Admin' && allowed !== 'ALL') continue;
       }
 
       const key = isDM

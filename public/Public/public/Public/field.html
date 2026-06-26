@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0a0a14"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026 — Worker App</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0a14"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 const {
   useState,
   useEffect,
@@ -1753,6 +1766,64 @@ function HomeView({
 }) {
   const [view, setView] = useState('home');
   const [callType, setCallType] = useState('');
+  const [unread, setUnread] = useState(0);
+  const [notif, setNotif] = useState(null); // {from, message, channel}
+  const [quickReply, setQuickReply] = useState('');
+  const [replySending, setReplySending] = useState(false);
+  const lastMsgId = React.useRef(null);
+  const notifTimer = React.useRef(null);
+
+  // Poll for new messages every 15 seconds when on home screen
+  React.useEffect(() => {
+    if (view !== 'home') return;
+    const poll = async () => {
+      try {
+        const ch = roleChannel(user.role);
+        const res = await fetch(`${API}/get-messages?channel=${ch}&limit=5`);
+        const data = await res.json();
+        const msgs = data.messages || [];
+        if (msgs.length === 0) return;
+        const latest = msgs[msgs.length - 1];
+        if (latest.id && latest.id !== lastMsgId.current && latest.fromName !== user.name) {
+          if (lastMsgId.current !== null) {
+            // New message from someone else
+            setUnread(p => p + 1);
+            setNotif({
+              from: latest.fromName,
+              message: latest.message,
+              channel: ch,
+              fromRole: latest.fromRole
+            });
+            if (notifTimer.current) clearTimeout(notifTimer.current);
+            notifTimer.current = setTimeout(() => setNotif(null), 8000);
+          }
+          lastMsgId.current = latest.id;
+        }
+      } catch (e) {}
+    };
+    poll();
+    const iv = setInterval(poll, 15000);
+    return () => clearInterval(iv);
+  }, [view]);
+  async function sendQuickReply() {
+    if (!quickReply.trim() || replySending || !notif) return;
+    setReplySending(true);
+    await fetch(`${API}/send-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        fromName: user.name,
+        fromRole: user.role,
+        channel: notif.channel,
+        message: quickReply.trim()
+      })
+    }).catch(() => {});
+    setQuickReply('');
+    setReplySending(false);
+    setNotif(null);
+  }
   function goCall(type) {
     setCallType(type);
     setView('call');
@@ -1806,7 +1877,105 @@ function HomeView({
     onClick: onLogout
   }, "Sign Out")), /*#__PURE__*/React.createElement("div", {
     style: S.body
-  }, /*#__PURE__*/React.createElement("button", {
+  }, notif && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 14,
+      border: '2px solid rgba(14,165,233,0.5)',
+      background: 'rgba(14,165,233,0.1)',
+      padding: '12px 14px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      animation: 'pulse 1s ease-in-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#38bdf8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em'
+    }
+  }, "💬 New Message — ", notif.channel), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: 'none',
+      border: 'none',
+      color: '#475569',
+      fontSize: 16,
+      cursor: 'pointer',
+      padding: 0
+    },
+    onClick: () => setNotif(null)
+  }, "✕")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: '#94a3b8'
+    }
+  }, notif.fromRole || notif.from), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      color: '#f1f5f9',
+      lineHeight: 1.4
+    }
+  }, notif.message), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      ...S.inp,
+      flex: 1,
+      padding: '9px 12px',
+      fontSize: 14
+    },
+    placeholder: "Quick reply...",
+    value: quickReply,
+    onChange: e => setQuickReply(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendQuickReply();
+      }
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: '9px 14px',
+      borderRadius: 10,
+      border: 'none',
+      background: quickReply.trim() ? 'linear-gradient(135deg,#0ea5e9,#0284c7)' : 'rgba(255,255,255,0.06)',
+      color: quickReply.trim() ? '#fff' : '#475569',
+      fontSize: 13,
+      fontWeight: 800,
+      cursor: 'pointer',
+      flexShrink: 0
+    },
+    onClick: sendQuickReply,
+    disabled: !quickReply.trim() || replySending
+  }, replySending ? '...' : 'Send')), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: 'none',
+      border: 'none',
+      color: '#38bdf8',
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: 'pointer',
+      textAlign: 'left',
+      padding: 0
+    },
+    onClick: () => {
+      setView('chat');
+      setNotif(null);
+      setUnread(0);
+    }
+  }, "Open in Chat →")), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.card,
       padding: '14px 16px',
@@ -1815,10 +1984,13 @@ function HomeView({
       alignItems: 'center',
       gap: 12,
       textAlign: 'left',
-      border: '1px solid rgba(14,165,233,0.2)',
-      background: 'rgba(14,165,233,0.06)'
+      border: `1px solid ${unread > 0 ? 'rgba(14,165,233,0.5)' : 'rgba(14,165,233,0.2)'}`,
+      background: unread > 0 ? 'rgba(14,165,233,0.1)' : 'rgba(14,165,233,0.06)'
     },
-    onClick: () => setView('chat')
+    onClick: () => {
+      setView('chat');
+      setUnread(0);
+    }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 44,
@@ -1830,9 +2002,26 @@ function HomeView({
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: 22,
-      flexShrink: 0
+      flexShrink: 0,
+      position: 'relative'
     }
-  }, "💬"), /*#__PURE__*/React.createElement("div", {
+  }, "💬", unread > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      background: '#ef4444',
+      color: '#fff',
+      fontSize: 10,
+      fontWeight: 900,
+      borderRadius: '50%',
+      width: 18,
+      height: 18,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, unread > 9 ? '9+' : unread)), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -1845,10 +2034,10 @@ function HomeView({
   }, "Festival Chat"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: '#64748b',
+      color: unread > 0 ? '#38bdf8' : '#64748b',
       marginTop: 2
     }
-  }, "Channels · Direct Messages · Alerts")), /*#__PURE__*/React.createElement("div", {
+  }, unread > 0 ? `${unread} new message${unread > 1 ? 's' : ''}` : ' Channels · Direct Messages · Alerts')), /*#__PURE__*/React.createElement("div", {
     style: {
       color: '#38bdf8',
       fontSize: 18
@@ -2102,4 +2291,5 @@ function FieldApp() {
     onLogout: () => setUser(null)
   });
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));
+</script></body></html>

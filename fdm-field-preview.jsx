@@ -639,6 +639,49 @@ Fête de Marquette 2026`;
 function HomeView({user,onLogout}){
   const [view,setView]=useState('home');
   const [callType,setCallType]=useState('');
+  const [unread,setUnread]=useState(0);
+  const [notif,setNotif]=useState(null); // {from, message, channel}
+  const [quickReply,setQuickReply]=useState('');
+  const [replySending,setReplySending]=useState(false);
+  const lastMsgId=React.useRef(null);
+  const notifTimer=React.useRef(null);
+
+  // Poll for new messages every 15 seconds when on home screen
+  React.useEffect(()=>{
+    if(view!=='home') return;
+    const poll=async()=>{
+      try{
+        const ch=roleChannel(user.role);
+        const res=await fetch(`${API}/get-messages?channel=${ch}&limit=5`);
+        const data=await res.json();
+        const msgs=data.messages||[];
+        if(msgs.length===0) return;
+        const latest=msgs[msgs.length-1];
+        if(latest.id&&latest.id!==lastMsgId.current&&latest.fromName!==user.name){
+          if(lastMsgId.current!==null){
+            // New message from someone else
+            setUnread(p=>p+1);
+            setNotif({from:latest.fromName,message:latest.message,channel:ch,fromRole:latest.fromRole});
+            if(notifTimer.current) clearTimeout(notifTimer.current);
+            notifTimer.current=setTimeout(()=>setNotif(null),8000);
+          }
+          lastMsgId.current=latest.id;
+        }
+      }catch(e){}
+    };
+    poll();
+    const iv=setInterval(poll,15000);
+    return()=>clearInterval(iv);
+  },[view]);
+
+  async function sendQuickReply(){
+    if(!quickReply.trim()||replySending||!notif) return;
+    setReplySending(true);
+    await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromName:user.name,fromRole:user.role,channel:notif.channel,message:quickReply.trim()})}).catch(()=>{});
+    setQuickReply('');
+    setReplySending(false);
+    setNotif(null);
+  }
 
   function goCall(type){setCallType(type);setView('call');}
 
@@ -661,12 +704,32 @@ function HomeView({user,onLogout}){
 
       <div style={S.body}>
 
+        {/* MESSAGE NOTIFICATION BANNER */}
+        {notif&&(
+          <div style={{borderRadius:14,border:'2px solid rgba(14,165,233,0.5)',background:'rgba(14,165,233,0.1)',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8,animation:'pulse 1s ease-in-out'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div style={{fontSize:11,fontWeight:800,color:'#38bdf8',textTransform:'uppercase',letterSpacing:'0.06em'}}>💬 New Message — {notif.channel}</div>
+              <button style={{background:'none',border:'none',color:'#475569',fontSize:16,cursor:'pointer',padding:0}} onClick={()=>setNotif(null)}>✕</button>
+            </div>
+            <div style={{fontSize:12,fontWeight:700,color:'#94a3b8'}}>{notif.fromRole||notif.from}</div>
+            <div style={{fontSize:15,color:'#f1f5f9',lineHeight:1.4}}>{notif.message}</div>
+            <div style={{display:'flex',gap:6}}>
+              <input style={{...S.inp,flex:1,padding:'9px 12px',fontSize:14}} placeholder="Quick reply..." value={quickReply} onChange={e=>setQuickReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();sendQuickReply();}}}/>
+              <button style={{padding:'9px 14px',borderRadius:10,border:'none',background:quickReply.trim()?'linear-gradient(135deg,#0ea5e9,#0284c7)':'rgba(255,255,255,0.06)',color:quickReply.trim()?'#fff':'#475569',fontSize:13,fontWeight:800,cursor:'pointer',flexShrink:0}} onClick={sendQuickReply} disabled={!quickReply.trim()||replySending}>{replySending?'...':'Send'}</button>
+            </div>
+            <button style={{background:'none',border:'none',color:'#38bdf8',fontSize:12,fontWeight:700,cursor:'pointer',textAlign:'left',padding:0}} onClick={()=>{setView('chat');setNotif(null);setUnread(0);}}>Open in Chat →</button>
+          </div>
+        )}
+
         {/* FESTIVAL CHAT — full width top */}
-        <button style={{...S.card,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left',border:'1px solid rgba(14,165,233,0.2)',background:'rgba(14,165,233,0.06)'}} onClick={()=>setView('chat')}>
-          <div style={{width:44,height:44,borderRadius:12,background:'rgba(14,165,233,0.15)',border:'1px solid rgba(14,165,233,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>💬</div>
+        <button style={{...S.card,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left',border:`1px solid ${unread>0?'rgba(14,165,233,0.5)':'rgba(14,165,233,0.2)'}`,background:unread>0?'rgba(14,165,233,0.1)':'rgba(14,165,233,0.06)'}} onClick={()=>{setView('chat');setUnread(0);}}>
+          <div style={{width:44,height:44,borderRadius:12,background:'rgba(14,165,233,0.15)',border:'1px solid rgba(14,165,233,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0,position:'relative'}}>
+            💬
+            {unread>0&&<div style={{position:'absolute',top:-6,right:-6,background:'#ef4444',color:'#fff',fontSize:10,fontWeight:900,borderRadius:'50%',width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{unread>9?'9+':unread}</div>}
+          </div>
           <div style={{flex:1}}>
             <div style={{fontSize:16,fontWeight:800,color:'#38bdf8'}}>Festival Chat</div>
-            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Channels · Direct Messages · Alerts</div>
+            <div style={{fontSize:12,color:unread>0?'#38bdf8':'#64748b',marginTop:2}}>{unread>0?`${unread} new message${unread>1?'s':''}`:' Channels · Direct Messages · Alerts'}</div>
           </div>
           <div style={{color:'#38bdf8',fontSize:18}}>→</div>
         </button>

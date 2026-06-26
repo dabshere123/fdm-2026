@@ -537,7 +537,8 @@ function ChatView({
   onBack
 }) {
   const [tab, setTab] = useState('channels'); // channels | dms
-  const [channel, setChannel] = useState(roleChannel(user.role));
+  const userChannels = roleChannels(user.role, user.secondaryRole);
+  const [channel, setChannel] = useState(userChannels[0] || 'AllStaff');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -1097,7 +1098,7 @@ function HomeView({
       fontSize: 12,
       color: '#64748b'
     }
-  }, user.role, " · ", user.location)), /*#__PURE__*/React.createElement("button", {
+  }, user.role, user.secondaryRole ? ` · ${user.secondaryRole}` : '', " · ", user.location)), /*#__PURE__*/React.createElement("button", {
     style: {
       background: 'rgba(255,255,255,0.06)',
       border: '1px solid rgba(255,255,255,0.1)',

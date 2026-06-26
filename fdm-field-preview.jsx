@@ -232,7 +232,8 @@ function NewCallView({user,onBack,onSubmit}){
 // ─── CHAT VIEW ───────────────────────────────────────────────
 function ChatView({user,onBack}){
   const [tab,setTab]=useState('channels'); // channels | dms
-  const [channel,setChannel]=useState(roleChannel(user.role));
+  const userChannels=roleChannels(user.role, user.secondaryRole);
+  const [channel,setChannel]=useState(userChannels[0]||'AllStaff');
   const [messages,setMessages]=useState([]);
   const [input,setInput]=useState('');
   const [sending,setSending]=useState(false);
@@ -467,7 +468,7 @@ function HomeView({user,onLogout}){
       <div style={S.hdr}>
         <div style={{flex:1}}>
           <div style={{fontSize:16,fontWeight:900,color:'#f1f5f9'}}>👋 {user.name.split(' ')[0]}</div>
-          <div style={{fontSize:12,color:'#64748b'}}>{user.role} · {user.location}</div>
+          <div style={{fontSize:12,color:'#64748b'}}>{user.role}{user.secondaryRole?` · ${user.secondaryRole}`:''} · {user.location}</div>
         </div>
         <button style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,color:'#64748b',fontSize:11,fontWeight:700,cursor:'pointer',padding:'6px 12px'}} onClick={onLogout}>Sign Out</button>
       </div>

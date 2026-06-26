@@ -54,7 +54,7 @@ exports.handler = async (event) => {
       .filter(r => r.fields.Status === 'Approved')
       .map(r => ({
         id: r.id,
-        name: (r.fields['Name1'] || r.fields['FullName'] || r.fields['Full Name'] || r.fields['Name'] || '').trim(),
+        name: (r.fields['Name'] || r.fields['FullName'] || r.fields['Full Name'] || r.fields['Name'] || '').trim(),
         role: (r.fields['Role'] || '').trim(),
         location: normalizeLocation(r.fields['Location'] || ''),
         phone: (r.fields['Phone'] || '').trim(),
@@ -64,6 +64,7 @@ exports.handler = async (event) => {
         shiftStart: r.fields['ShiftStart'] || '',
         shiftEnd: r.fields['ShiftEnd'] || '',
         smsConsent: r.fields['SMSConsent'] || '',
+        secondaryRole: (r.fields['SecondaryRole'] || r.fields['Secondary Role'] || '').trim(),
       }))
       .filter(s => s.name && s.name.length > 0)
       .sort((a, b) => a.name.localeCompare(b.name));

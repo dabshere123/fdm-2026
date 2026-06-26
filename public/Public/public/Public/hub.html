@@ -5156,7 +5156,7 @@ DATE/TIME: ${now()}`;
             date: now(),
             type: "security",
             label: `MPD Stand Down — ${o?.name}`,
-            msg: `Stand down sent to ${o?.name} (${o?.badge}) · ${c.location}\nVoice: "${MPD_STANDDOWN_VOICE(c.location)}"`
+            msg: `Stand down sent to ${o?.name} · ${c.location}\nVoice: "${MPD_STANDDOWN_VOICE(c.location)}"`
           }, ...prev]);
         };
         const simAck = oid => {

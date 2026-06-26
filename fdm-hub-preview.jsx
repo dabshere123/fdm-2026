@@ -2228,11 +2228,11 @@ Please respond immediately.
         {chatChannel!=="dms"&&chatChannel!=="alerts"&&(
           <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
             {/* Channel group picker */}
-            <div style={{overflowY:"auto",borderBottom:"1px solid rgba(255,255,255,0.06)",maxHeight:160}}>
+            <div style={{overflowY:"auto",borderBottom:"1px solid rgba(255,255,255,0.06)",maxHeight:260}}>
               {[
-                {label:"General",channels:[{id:"all",label:"All Channels",emoji:"📢"},{id:"AllStaff",label:"All Staff",emoji:"📢"}]},
+                {label:"General",channels:[{id:"AllStaff",label:"All Staff",emoji:"📢"},{id:"Hospitality",label:"Hospitality",emoji:"🎪"}]},
                 {label:"Bars",channels:[{id:"Bars",label:"All Bars",emoji:"🍺"},{id:"MoonBar",label:"Moon Bar",emoji:"🌙"},{id:"SunBarL",label:"Sun Bar L",emoji:"☀️"},{id:"SunBarR",label:"Sun Bar R",emoji:"☀️"},{id:"LafBar",label:"Lafayette Bar",emoji:"🎸"},{id:"LagBar",label:"Lagniappe Bar",emoji:"🎺"},{id:"FamilyBar",label:"Family Bar",emoji:"👨‍👩‍👧"},{id:"CabBar",label:"Cabaret Bar",emoji:"🎭"},{id:"EverythingBar",label:"EEC",emoji:"☕"}]},
-                {label:"Stages",channels:[{id:"MoonST",label:"Moon Stage",emoji:"🌙"},{id:"SunST",label:"Sun Stage",emoji:"☀️"},{id:"LafST",label:"Laf Stage",emoji:"🎸"},{id:"LagST",label:"Lag Stage",emoji:"🎺"}]},
+                {label:"Stages",channels:[{id:"MoonST",label:"Moon Stage",emoji:"🌙"},{id:"SunST",label:"Sun Stage",emoji:"☀️"},{id:"LafST",label:"Laf Stage",emoji:"🎸"},{id:"LagST",label:"Lag Stage",emoji:"🎺"},{id:"FamST",label:"Family Fete Stage",emoji:"👨‍👩‍👧"},{id:"CabST",label:"Cabaret Stage",emoji:"🎭"}]},
                 {label:"Admin & Med",channels:[{id:"Admin",label:"Admin",emoji:"⚡"},{id:"AdminMed",label:"Medical",emoji:"🏥"}]},
               ].map(group=>(
                 <div key={group.label} style={{padding:"6px 14px 4px"}}>

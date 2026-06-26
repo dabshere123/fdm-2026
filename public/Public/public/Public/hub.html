@@ -5519,10 +5519,102 @@ Reply YES to acknowledge.`
     onChange: e => setMpdSituation(e.target.value)
   })), /*#__PURE__*/React.createElement("div", {
     style: {
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: 12,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "8px 12px",
+      fontSize: 11,
+      fontWeight: 900,
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      borderBottom: "1px solid rgba(255,255,255,0.06)"
+    }
+  }, "Officer Status — ", mpdOfficers.filter(o => o.status !== "Off Duty").length, " on duty"), mpdOfficers.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "12px",
+      fontSize: 12,
+      color: "#374151",
+      textAlign: "center"
+    }
+  }, "No officers in system"), mpdOfficers.map(o => {
+    const isOff = (o.status || "").toLowerCase().includes("off");
+    return /*#__PURE__*/React.createElement("div", {
+      key: o.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 12px",
+        borderBottom: "1px solid rgba(255,255,255,0.04)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 8,
+        height: 8,
+        borderRadius: "50%",
+        background: isOff ? "#374151" : "#22c55e",
+        flexShrink: 0
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: isOff ? "#475569" : "#f1f5f9"
+      }
+    }, o.name), o.phone && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b"
+      }
+    }, o.phone)), /*#__PURE__*/React.createElement("button", {
+      style: {
+        padding: "5px 12px",
+        borderRadius: 8,
+        border: `1px solid ${isOff ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"}`,
+        background: isOff ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+        color: isOff ? "#4ade80" : "#fca5a5",
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: "pointer"
+      },
+      onClick: async () => {
+        const newStatus = isOff ? "Available" : "Off Duty";
+        await fetch("/.netlify/functions/update-mpd-status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id: o.id,
+            status: newStatus
+          })
+        }).catch(() => {});
+        setMpdOfficers(p => p.map(x => x.id === o.id ? {
+          ...x,
+          status: newStatus
+        } : x));
+      }
+    }, isOff ? "Set Online" : "Set Offline"));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 12,
       color: "#374151"
     }
-  }, mpdOfficers.length > 0 ? `${mpdOfficers.length} officer${mpdOfficers.length > 1 ? "s" : ""} on duty will be contacted` : "No MPD officers currently on duty"), /*#__PURE__*/React.createElement("button", {
+  }, "Only officers marked ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#4ade80",
+      fontWeight: 700
+    }
+  }, "online"), " will be contacted when you send the alert."), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "18px",
       borderRadius: 12,
@@ -5555,7 +5647,7 @@ Time: ${ts}
 Please respond immediately.
 — FDM 2026 Operations`;
       const voiceMsg = `This is Fête de Marquette Operations at McPike Park in Madison. Your presence is requested at ${loc}.${sit ? ` Situation: ${sit}.` : ""} Please respond immediately. This is Fête de Marquette Operations at McPike Park.`;
-      const phones = mpdOfficers.filter(o => o.phone).map(o => {
+      const phones = mpdOfficers.filter(o => o.phone && !(o.status || "").toLowerCase().includes("off")).map(o => {
         const d = String(o.phone).replace(/[^0-9]/g, "");
         return d.length === 10 ? `+1${d}` : `+${d}`;
       });

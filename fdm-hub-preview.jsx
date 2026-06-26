@@ -2035,8 +2035,32 @@ Reply YES to acknowledge.`
           <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Situation (optional)</div>
           <textarea style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none",minHeight:80,resize:"none"}} placeholder="e.g. Fight in progress, crowd control needed" value={mpdSituation} onChange={e=>setMpdSituation(e.target.value)}/>
         </div>
+        {/* Officer Status List */}
+        <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,overflow:"hidden"}}>
+          <div style={{padding:"8px 12px",fontSize:11,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+            Officer Status — {mpdOfficers.filter(o=>o.status!=="Off Duty").length} on duty
+          </div>
+          {mpdOfficers.length===0&&<div style={{padding:"12px",fontSize:12,color:"#374151",textAlign:"center"}}>No officers in system</div>}
+          {mpdOfficers.map(o=>{
+            const isOff=(o.status||"").toLowerCase().includes("off");
+            return(
+              <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:isOff?"#374151":"#22c55e",flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:isOff?"#475569":"#f1f5f9"}}>{o.name}</div>
+                  {o.phone&&<div style={{fontSize:11,color:"#64748b"}}>{o.phone}</div>}
+                </div>
+                <button style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${isOff?"rgba(34,197,94,0.4)":"rgba(239,68,68,0.4)"}`,background:isOff?"rgba(34,197,94,0.08)":"rgba(239,68,68,0.08)",color:isOff?"#4ade80":"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async()=>{
+                  const newStatus=isOff?"Available":"Off Duty";
+                  await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:newStatus})}).catch(()=>{});
+                  setMpdOfficers(p=>p.map(x=>x.id===o.id?{...x,status:newStatus}:x));
+                }}>{isOff?"Set Online":"Set Offline"}</button>
+              </div>
+            );
+          })}
+        </div>
         <div style={{fontSize:12,color:"#374151"}}>
-          {mpdOfficers.length>0?`${mpdOfficers.length} officer${mpdOfficers.length>1?"s":""} on duty will be contacted`:"No MPD officers currently on duty"}
+          Only officers marked <span style={{color:"#4ade80",fontWeight:700}}>online</span> will be contacted when you send the alert.
         </div>
         <button style={{padding:"18px",borderRadius:12,border:"none",background:mpdLocation.trim()&&mpdOfficers.length>0?"linear-gradient(135deg,rgba(37,99,235,0.9),rgba(29,78,216,0.9))":"rgba(255,255,255,0.06)",color:mpdLocation.trim()&&mpdOfficers.length>0?"#fff":"#475569",fontSize:16,fontWeight:900,cursor:mpdLocation.trim()&&mpdOfficers.length>0?"pointer":"not-allowed",opacity:mpdSending?0.6:1}} disabled={!mpdLocation.trim()||mpdOfficers.length===0||mpdSending} onClick={async()=>{
           setMpdSending(true);
@@ -2055,7 +2079,7 @@ Time: ${ts}
 Please respond immediately.
 — FDM 2026 Operations`;
           const voiceMsg=`This is Fête de Marquette Operations at McPike Park in Madison. Your presence is requested at ${loc}.${sit?` Situation: ${sit}.`:""} Please respond immediately. This is Fête de Marquette Operations at McPike Park.`;
-          const phones=mpdOfficers.filter(o=>o.phone).map(o=>{const d=String(o.phone).replace(/[^0-9]/g,"");return d.length===10?`+1${d}`:`+${d}`;});
+          const phones=mpdOfficers.filter(o=>o.phone&&!(o.status||"").toLowerCase().includes("off")).map(o=>{const d=String(o.phone).replace(/[^0-9]/g,"");return d.length===10?`+1${d}`:`+${d}`;});
           for(const phone of phones){
             await fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message:smsMsg})}).catch(()=>{});
           }

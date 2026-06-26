@@ -2252,23 +2252,23 @@ Please respond immediately.
         {chatChannel!=="dms"&&chatChannel!=="alerts"&&(
           <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
             {/* Channel group picker */}
-            <div style={{overflowY:"auto",borderBottom:"1px solid rgba(255,255,255,0.06)",maxHeight:"40vh"}}>
-              {[
-                {label:"General",channels:[{id:"AllStaff",label:"All Staff",emoji:"📢"},{id:"Hospitality",label:"Hospitality",emoji:"🎪"}]},
-                {label:"Bars",channels:[{id:"Bars",label:"All Bars",emoji:"🍺"},{id:"MoonBar",label:"Moon Bar",emoji:"🌙"},{id:"SunBarL",label:"Sun Bar L",emoji:"☀️"},{id:"SunBarR",label:"Sun Bar R",emoji:"☀️"},{id:"LafBar",label:"Lafayette Bar",emoji:"🎸"},{id:"LagBar",label:"Lagniappe Bar",emoji:"🎺"},{id:"FamilyBar",label:"Family Bar",emoji:"👨‍👩‍👧"},{id:"CabBar",label:"Cabaret Bar",emoji:"🎭"},{id:"EverythingBar",label:"EEC",emoji:"☕"}]},
-                {label:"Stages",channels:[{id:"MoonST",label:"Moon Stage",emoji:"🌙"},{id:"SunST",label:"Sun Stage",emoji:"☀️"},{id:"LafST",label:"Laf Stage",emoji:"🎸"},{id:"LagST",label:"Lag Stage",emoji:"🎺"},{id:"FamST",label:"Family Fete Stage",emoji:"👨‍👩‍👧"},{id:"CabST",label:"Cabaret Stage",emoji:"🎭"}]},
-                {label:"Admin & Med",channels:[{id:"Admin",label:"Admin",emoji:"⚡"},{id:"AdminMed",label:"Medical",emoji:"🏥"}]},
-              ].map(group=>(
-                <div key={group.label} style={{padding:"6px 14px 4px"}}>
-                  <div style={{fontSize:10,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>{group.label}</div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:4}}>
-                    {group.channels.map(ch=>{
-                      const active=chatChannel===ch.id;
-                      return <button key={ch.id} style={{padding:"4px 10px",borderRadius:14,border:`1px solid ${active?"rgba(14,165,233,0.5)":"rgba(255,255,255,0.08)"}`,background:active?"rgba(14,165,233,0.1)":"rgba(255,255,255,0.02)",color:active?"#38bdf8":"#64748b",fontSize:11,fontWeight:active?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.emoji} {ch.label}</button>;
-                    })}
-                  </div>
-                </div>
-              ))}
+            <div style={{borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"8px 14px 10px"}}>
+              <div style={{marginBottom:6}}>
+                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>General</span>
+                {[{id:"AllStaff",l:"All Staff"},{id:"Hospitality",l:"Hospitality"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
+              </div>
+              <div style={{marginBottom:6}}>
+                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>Bars</span>
+                {[{id:"Bars",l:"All Bars"},{id:"MoonBar",l:"Moon"},{id:"SunBarL",l:"Sun L"},{id:"SunBarR",l:"Sun R"},{id:"LafBar",l:"Lafayette"},{id:"LagBar",l:"Lagniappe"},{id:"FamilyBar",l:"Family"},{id:"CabBar",l:"Cabaret"},{id:"EverythingBar",l:"EEC"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
+              </div>
+              <div style={{marginBottom:6}}>
+                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>Stages</span>
+                {[{id:"MoonST",l:"Moon"},{id:"SunST",l:"Sun"},{id:"LafST",l:"Lafayette"},{id:"LagST",l:"Lagniappe"},{id:"FamST",l:"Family Fete"},{id:"CabST",l:"Cabaret"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
+              </div>
+              <div>
+                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>Admin & Med</span>
+                {[{id:"Admin",l:"Admin"},{id:"AdminMed",l:"Medical"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
+              </div>
             </div>
 
             {/* Messages */}

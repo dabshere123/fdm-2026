@@ -171,6 +171,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [medChatInput,setMedChatInput]=React.useState("");
   const [medChatSending,setMedChatSending]=React.useState(false);
   const [chatExpanded,setChatExpanded]=React.useState(false);
+  const [medChatOpen,setMedChatOpen]=React.useState(false);
   const [medChatChannel,setMedChatChannel]=React.useState("AdminMed");
   const [medDMThread,setMedDMThread]=React.useState(null);
   const [medDMList,setMedDMList]=React.useState([]);
@@ -299,11 +300,11 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
       {/* CHAT — collapsible, full access */}
       <div style={{margin:"6px 16px",background:"rgba(147,51,234,0.06)",border:"1px solid rgba(147,51,234,0.2)",borderRadius:12,overflow:"hidden"}}>
-        <button style={{width:"100%",padding:"16px 18px",background:"none",border:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}} onClick={()=>setChatExpanded(p=>!p)}>
+        <button style={{width:"100%",padding:"16px 18px",background:"none",border:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}} onClick={()=>setMedChatOpen(true)}>
           <div style={{width:46,height:46,borderRadius:12,background:"rgba(147,51,234,0.2)",border:"1px solid rgba(147,51,234,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>💬</div>
           <div style={{flex:1,textAlign:"left"}}>
             <div style={{fontSize:16,fontWeight:900,color:"#c4b5fd"}}>Festival Chat</div>
-            <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{medDMThread?`DM: ${medDMThread.otherName}`:MED_CHANNELS.find(c=>c.id===medChatChannel)?.label||"Admin & Med"}</div>
+            <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Tap to open messages</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             {medDMThread&&<button style={{fontSize:10,color:"#64748b",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"2px 7px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setMedDMThread(null);setMedChatMessages([]);}}>← Channels</button>}
@@ -498,6 +499,226 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
           </>
         )}
 
+      </div>
+    </div>
+  );
+}
+
+
+// ============================================================
+// SHARED INBOX CHAT COMPONENTS (hub version)
+// ============================================================
+const HUB_CHANNEL_LABELS={
+  AllStaff:'All Staff',Hospitality:'Hospitality',
+  Bars:'All Bars',MoonBar:'Moon Bar',SunBarL:'Sun Bar Left',SunBarR:'Sun Bar Right',
+  LafBar:'Lafayette Bar',LagBar:'Lagniappe Bar',FamilyBar:'Family Bar',
+  CabBar:'Cabaret Bar',EverythingBar:'EEC',
+  MoonST:'Moon Stage',SunST:'Sun Stage',LafST:'Lafayette Stage',
+  LagST:'Lagniappe Stage',FamST:'Family Fete Stage',CabST:'Cabaret Stage',
+  Admin:'Admin',AdminMed:'Medical',
+};
+const HUB_CHANNEL_GROUPS=[
+  {label:'General',channels:[{id:'AllStaff',label:'All Staff'},{id:'Hospitality',label:'Hospitality'}]},
+  {label:'Bars',channels:[{id:'Bars',label:'All Bars'},{id:'MoonBar',label:'Moon Bar'},{id:'SunBarL',label:'Sun Bar L'},{id:'SunBarR',label:'Sun Bar R'},{id:'LafBar',label:'Lafayette Bar'},{id:'LagBar',label:'Lagniappe Bar'},{id:'FamilyBar',label:'Family Bar'},{id:'CabBar',label:'Cabaret Bar'},{id:'EverythingBar',label:'EEC'}]},
+  {label:'Stages',channels:[{id:'MoonST',label:'Moon Stage'},{id:'SunST',label:'Sun Stage'},{id:'LafST',label:'Lafayette Stage'},{id:'LagST',label:'Lagniappe Stage'},{id:'FamST',label:'Family Fete Stage'},{id:'CabST',label:'Cabaret Stage'}]},
+  {label:'Admin & Med',channels:[{id:'Admin',label:'Admin'},{id:'AdminMed',label:'Medical'}]},
+];
+
+function HubConversationView({myName,myRole,convo,onBack}){
+  const [messages,setMessages]=React.useState([]);
+  const [input,setInput]=React.useState('');
+  const [sending,setSending]=React.useState(false);
+  const msgEnd=React.useRef(null);
+  const label=convo.isDM?(convo.otherName||'Direct Message'):(HUB_CHANNEL_LABELS[convo.channel]||convo.channel);
+
+  React.useEffect(()=>{
+    fetchMsgs();
+    const iv=setInterval(fetchMsgs,6000);
+    return()=>clearInterval(iv);
+  },[convo.id]);
+
+  async function fetchMsgs(){
+    try{
+      const url=convo.isDM
+        ?`/.netlify/functions/get-messages?dmThread=${encodeURIComponent(convo.id)}`
+        :`/.netlify/functions/get-messages?channel=${convo.channel}&limit=80`;
+      const res=await fetch(url);
+      const data=await res.json();
+      if(data.messages) setMessages(data.messages);
+      setTimeout(()=>msgEnd.current?.scrollIntoView({behavior:'smooth'}),100);
+    }catch(e){}
+  }
+
+  async function send(){
+    if(!input.trim()||sending) return;
+    setSending(true);
+    try{
+      const body=convo.isDM
+        ?{fromName:myName,fromRole:myRole,channel:`DM_${[myName,convo.otherName].sort().join('_')}`,message:input.trim(),isDM:true,toName:convo.otherName,threadId:convo.id}
+        :{fromName:myName,fromRole:myRole,channel:convo.channel,message:input.trim()};
+      await fetch('/.netlify/functions/send-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      setInput('');
+      await fetchMsgs();
+    }catch(e){}
+    setSending(false);
+  }
+
+  return(
+    <div style={{...S.root,display:"flex",flexDirection:"column",height:"100vh",maxHeight:"100vh"}}>
+      <div style={S.panel}>
+        <div style={S.panelHd}>
+          <BB onClick={onBack}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15,fontWeight:900,color:"#f1f5f9"}}>{label}</div>
+            {!convo.isDM&&<div style={{fontSize:11,color:"#64748b"}}>Group channel</div>}
+          </div>
+        </div>
+        <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8,minHeight:0}}>
+          {messages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No messages yet</div>}
+          {messages.map(msg=>{
+            const isMe=msg.fromName===myName||msg.fromRole===myRole;
+            const isAlert=msg.isAlert;
+            const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
+            if(isAlert) return(
+              <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"8px 12px"}}>
+                <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:2}}>🚨 ALERT · {time}</div>
+                <div style={{fontSize:13,color:"#fecaca"}}>{msg.message}</div>
+              </div>
+            );
+            return(
+              <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
+                {!isMe&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromRole||msg.fromName} · {time}</div>}
+                <div style={{maxWidth:"82%",background:isMe?"rgba(14,165,233,0.25)":"rgba(255,255,255,0.07)",border:`1px solid ${isMe?"rgba(14,165,233,0.5)":"rgba(255,255,255,0.1)"}`,borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"9px 13px"}}>
+                  <div style={{fontSize:14,color:"#f1f5f9",lineHeight:1.5}}>{msg.message}</div>
+                </div>
+                {isMe&&<div style={{fontSize:10,color:"#374151",marginRight:4}}>{time}</div>}
+              </div>
+            );
+          })}
+          <div ref={msgEnd}/>
+        </div>
+        <div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.06)",display:"flex",gap:8,background:"rgba(10,10,20,0.95)"}}>
+          <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder={`Message ${label}...`} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}/>
+          <button style={{padding:"11px 18px",borderRadius:10,border:"none",background:input.trim()?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.06)",color:input.trim()?"#fff":"#475569",fontSize:14,fontWeight:800,cursor:input.trim()?"pointer":"not-allowed",flexShrink:0}} onClick={send} disabled={!input.trim()||sending}>{sending?"...":"Send"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HubNewMessageView({myName,myRole,staffList,onBack,onOpen}){
+  const [search,setSearch]=React.useState('');
+  const filtered=search.length>=2?staffList.filter(s=>s.name!==myName&&((s.name||'').toLowerCase().includes(search.toLowerCase())||(s.role||'').toLowerCase().includes(search.toLowerCase()))):staffList.filter(s=>s.name!==myName);
+
+  function openCh(ch){onOpen({id:ch,isDM:false,channel:ch,lastMessage:'',lastFrom:'',lastAt:'',recipients:ch});}
+  function openDM(s){const tid=`DM_${[myName,s.name].sort().join('_')}`;onOpen({id:tid,isDM:true,channel:`DM_${[myName,s.name].sort().join('_')}`,otherName:s.name,lastMessage:'',lastFrom:'',lastAt:'',recipients:''});}
+
+  return(
+    <div style={{...S.root,display:"flex",flexDirection:"column",height:"100vh"}}>
+      <div style={S.panel}>
+        <div style={S.panelHd}>
+          <BB onClick={onBack}/>
+          <span style={S.panelTitle}>New Message</span>
+        </div>
+        <div style={{padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+          <input style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Search by name or role..." value={search} onChange={e=>setSearch(e.target.value)} autoFocus/>
+        </div>
+        <div style={{flex:1,overflowY:"auto"}}>
+          {!search&&<>
+            <div style={{padding:"8px 16px 4px",fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Channels</div>
+            {HUB_CHANNEL_GROUPS.flatMap(g=>g.channels).map(ch=>(
+              <button key={ch.id} style={{width:"100%",padding:"12px 16px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>openCh(ch.id)}>
+                <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#64748b",flexShrink:0}}>#</div>
+                <div style={{fontSize:14,color:"#f1f5f9"}}>{ch.label}</div>
+              </button>
+            ))}
+            <div style={{padding:"8px 16px 4px",fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Direct Messages</div>
+          </>}
+          {filtered.map(s=>(
+            <button key={s.id} style={{width:"100%",padding:"12px 16px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>openDM(s)}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(99,102,241,0.15)",border:"1px solid rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#a5b4fc",flexShrink:0}}>{(s.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
+              <div>
+                <div style={{fontSize:14,fontWeight:600,color:"#f1f5f9"}}>{s.role||s.name}</div>
+                {s.role&&s.name&&<div style={{fontSize:11,color:"#64748b",marginTop:1}}>{s.name}</div>}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HubChatInbox({myName,myRole,staffList,onBack}){
+  const [convos,setConvos]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+  const [openConvo,setOpenConvo]=React.useState(null);
+  const [newMsg,setNewMsg]=React.useState(false);
+
+  React.useEffect(()=>{
+    fetchConvos();
+    const iv=setInterval(fetchConvos,10000);
+    return()=>clearInterval(iv);
+  },[]);
+
+  async function fetchConvos(){
+    try{
+      const res=await fetch(`/.netlify/functions/get-conversations?myName=${encodeURIComponent(myName)}`);
+      const data=await res.json();
+      setConvos(data.conversations||[]);
+    }catch(e){}
+    setLoading(false);
+  }
+
+  if(openConvo) return <HubConversationView myName={myName} myRole={myRole} convo={openConvo} onBack={()=>{setOpenConvo(null);fetchConvos();}}/>;
+  if(newMsg) return <HubNewMessageView myName={myName} myRole={myRole} staffList={staffList} onBack={()=>setNewMsg(false)} onOpen={c=>{setNewMsg(false);setOpenConvo(c);}}/>;
+
+  function timeAgo(ts){
+    if(!ts) return '';
+    const d=new Date(ts),now=new Date(),diff=(now-d)/1000;
+    if(diff<60) return 'now';
+    if(diff<3600) return Math.floor(diff/60)+'m';
+    if(diff<86400) return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
+    return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  }
+
+  return(
+    <div style={{...S.root,display:"flex",flexDirection:"column",height:"100vh"}}>
+      <div style={S.panel}>
+        <div style={S.panelHd}>
+          <BB onClick={onBack}/>
+          <span style={{...S.panelTitle,flex:1}}>💬 Messages</span>
+          <button style={{padding:"7px 14px",borderRadius:10,border:"1px solid rgba(14,165,233,0.3)",background:"rgba(14,165,233,0.08)",color:"#38bdf8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setNewMsg(true)}>✏️ New</button>
+        </div>
+        {loading&&<div style={{textAlign:"center",color:"#475569",padding:32}}>Loading...</div>}
+        <div style={{flex:1,overflowY:"auto"}}>
+          {!loading&&convos.length===0&&(
+            <div style={{textAlign:"center",padding:40}}>
+              <div style={{fontSize:32,marginBottom:12}}>💬</div>
+              <div style={{fontSize:16,fontWeight:700,color:"#f1f5f9",marginBottom:4}}>No messages yet</div>
+              <button style={{marginTop:12,padding:"12px 24px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#0ea5e9,#0284c7)",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setNewMsg(true)}>Start a Conversation</button>
+            </div>
+          )}
+          {convos.map(c=>{
+            const label=c.isDM?(c.otherName||'DM'):(HUB_CHANNEL_LABELS[c.channel]||c.channel);
+            return(
+              <button key={c.id} style={{width:"100%",padding:"14px 16px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.05)",cursor:"pointer",textAlign:"left",display:"flex",gap:12,alignItems:"center"}} onClick={()=>setOpenConvo(c)}>
+                <div style={{width:46,height:46,borderRadius:"50%",background:c.isDM?"rgba(99,102,241,0.2)":"rgba(14,165,233,0.15)",border:`1px solid ${c.isDM?"rgba(99,102,241,0.4)":"rgba(14,165,233,0.3)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:c.isDM?14:18,flexShrink:0,color:c.isDM?"#a5b4fc":"#38bdf8",fontWeight:800}}>
+                  {c.isDM?(c.otherName||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase():'#'}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+                    <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap",maxWidth:"70%"}}>{label}</div>
+                    <div style={{fontSize:11,color:"#475569",flexShrink:0,marginLeft:8}}>{timeAgo(c.lastAt)}</div>
+                  </div>
+                  <div style={{fontSize:13,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>
+                    {c.lastFrom&&c.lastFrom!==myRole&&c.lastFrom!==myName?`${c.lastFrom}: `:""}{c.lastMessage}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -2233,134 +2454,12 @@ Please respond immediately.
   );
 
   if(view==="chat") return(
-    <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}>
-        <BB onClick={()=>setView("home")}/>
-        <span style={S.panelTitle}>💬 Festival Chat</span>
-        <button style={{marginLeft:"auto",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#64748b",fontSize:11,fontWeight:700,cursor:"pointer",padding:"5px 10px"}} onClick={()=>fetchHubChat(chatChannel)}>Refresh</button>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
-
-        {/* Tab bar */}
-        <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-          {[["channels","💬 Channels"],["dms","📨 DMs"],["alerts","🚨 Alerts"]].map(([t,l])=>(
-            <button key={t} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:`2px solid ${chatChannel===t?"#38bdf8":"transparent"}`,color:chatChannel===t?"#38bdf8":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setChatChannel(t);fetchHubChat(t);}}>{l}</button>
-          ))}
-        </div>
-
-        {/* CHANNELS TAB */}
-        {chatChannel!=="dms"&&chatChannel!=="alerts"&&(
-          <div style={{display:"flex",flexDirection:"column",flex:1,overflow:"hidden"}}>
-            {/* Channel group picker */}
-            <div style={{borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"8px 14px 10px"}}>
-              <div style={{marginBottom:6}}>
-                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>General</span>
-                {[{id:"AllStaff",l:"All Staff"},{id:"Hospitality",l:"Hospitality"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
-              </div>
-              <div style={{marginBottom:6}}>
-                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>Bars</span>
-                {[{id:"Bars",l:"All Bars"},{id:"MoonBar",l:"Moon"},{id:"SunBarL",l:"Sun L"},{id:"SunBarR",l:"Sun R"},{id:"LafBar",l:"Lafayette"},{id:"LagBar",l:"Lagniappe"},{id:"FamilyBar",l:"Family"},{id:"CabBar",l:"Cabaret"},{id:"EverythingBar",l:"EEC"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
-              </div>
-              <div style={{marginBottom:6}}>
-                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>Stages</span>
-                {[{id:"MoonST",l:"Moon"},{id:"SunST",l:"Sun"},{id:"LafST",l:"Lafayette"},{id:"LagST",l:"Lagniappe"},{id:"FamST",l:"Family Fete"},{id:"CabST",l:"Cabaret"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
-              </div>
-              <div>
-                <span style={{fontSize:9,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.1em",marginRight:6,display:"inline-block",marginBottom:4}}>Admin & Med</span>
-                {[{id:"Admin",l:"Admin"},{id:"AdminMed",l:"Medical"}].map(ch=>{const a=chatChannel===ch.id;return <button key={ch.id} style={{marginRight:4,marginBottom:4,padding:"4px 10px",borderRadius:12,border:`1px solid ${a?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:a?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.02)",color:a?"#38bdf8":"#64748b",fontSize:11,fontWeight:a?700:400,cursor:"pointer"}} onClick={()=>{setChatChannel(ch.id);fetchHubChat(ch.id);}}>{ch.l}</button>;})}
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
-              {chatMessages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:30}}>No messages in this channel</div>}
-              {chatMessages.map(msg=>{
-                const isAdmin=msg.fromName==="Admin";
-                const isAlert=msg.isAlert;
-                const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
-                const showChannel=chatChannel==="recent"&&msg.channel;
-                if(isAlert) return(
-                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"8px 12px"}}>
-                    <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:2}}>🚨 ALERT · {time}</div>
-                    <div style={{fontSize:13,color:"#fecaca"}}>{msg.message}</div>
-                  </div>
-                );
-                return(
-                  <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isAdmin?"flex-end":"flex-start",gap:2}}>
-                    {!isAdmin&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromName}{showChannel?` → ${msg.channel}`:""} · {time}</div>}
-                    <div style={{maxWidth:"80%",background:isAdmin?"rgba(14,165,233,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isAdmin?"rgba(14,165,233,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:isAdmin?"12px 12px 3px 12px":"12px 12px 12px 3px",padding:"8px 12px"}}>
-                      <div style={{fontSize:14,color:"#f1f5f9"}}>{msg.message}</div>
-                    </div>
-                    {isAdmin&&<div style={{fontSize:10,color:"#374151",marginRight:4}}>You · {time}</div>}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Input */}
-            <div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.06)",display:"flex",gap:8,background:"rgba(10,10,20,0.8)"}}>
-              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder={`Message ${chatChannel==="all"?"All Staff":chatChannel}...`} value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendHubMessage();}}}/>
-              <button style={{padding:"11px 18px",borderRadius:10,border:"none",background:chatInput.trim()?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.06)",color:chatInput.trim()?"#fff":"#475569",fontSize:14,fontWeight:800,cursor:chatInput.trim()?"pointer":"not-allowed",flexShrink:0}} onClick={sendHubMessage} disabled={!chatInput.trim()||chatSending}>{chatSending?"...":"Send"}</button>
-            </div>
-          </div>
-        )}
-
-        {/* DMS TAB */}
-        {chatChannel==="dms"&&(
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto",padding:"12px 16px",gap:8}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Message any staff member directly</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-              {staffList.map(s=>(
-                <button key={s.id} style={{padding:"6px 13px",borderRadius:20,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:12,cursor:"pointer"}} onClick={()=>{
-                  const tid=`DM_${["Admin",s.name].sort().join("_")}`;
-                  setChatChannel(`DM:${s.name}:${tid}`);
-                  fetchHubChat(`DM:${s.name}:${tid}`);
-                }}>{s.role||s.name}</button>
-              ))}
-            </div>
-            {chatChannel.startsWith("DM:")&&(
-              <>
-                <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:6,maxHeight:300}}>
-                  {chatMessages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:20}}>Start the conversation</div>}
-                  {chatMessages.map(msg=>{
-                    const isAdmin=msg.fromName==="Admin";
-                    const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
-                    return(
-                      <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isAdmin?"flex-end":"flex-start",gap:2}}>
-                        {!isAdmin&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromName} · {time}</div>}
-                        <div style={{maxWidth:"80%",background:isAdmin?"rgba(14,165,233,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isAdmin?"rgba(14,165,233,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:"12px",padding:"8px 12px"}}>
-                          <div style={{fontSize:13,color:"#f1f5f9"}}>{msg.message}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{display:"flex",gap:8}}>
-                  <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"11px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder={`Message ${chatChannel.split(":")[1]}...`} value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendHubMessage();}}}/>
-                  <button style={{padding:"11px 18px",borderRadius:10,border:"none",background:chatInput.trim()?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.06)",color:chatInput.trim()?"#fff":"#475569",fontSize:14,fontWeight:800,cursor:chatInput.trim()?"pointer":"not-allowed"}} onClick={sendHubMessage} disabled={!chatInput.trim()||chatSending}>{chatSending?"...":"Send"}</button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ALERTS TAB */}
-        {chatChannel==="alerts"&&(
-          <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
-            {chatMessages.filter(m=>m.isAlert).length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:30}}>No alerts yet</div>}
-            {chatMessages.filter(m=>m.isAlert).map(msg=>{
-              const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
-              return(
-                <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"12px 14px"}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:4}}>🚨 {msg.channel} · {time}</div>
-                  <div style={{fontSize:14,color:"#fecaca"}}>{msg.message}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div></div>
+    <HubChatInbox
+      myName={"Admin"}
+      myRole={"Admin"}
+      staffList={staffList}
+      onBack={()=>setView("home")}
+    />
   );
 
   if(view==="lostfound") return(

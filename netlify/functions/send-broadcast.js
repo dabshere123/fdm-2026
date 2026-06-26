@@ -78,5 +78,15 @@ exports.handler = async (event) => {
   const sent = results.filter(r => r.status === 'fulfilled').length;
   console.log(`Broadcast sent: ${sent}/${phones.length}`);
 
+  // Save to Messages table as alert — appears in all chat inboxes
+  if (process.env.AIRTABLE_TOKEN) {
+    const AT_BASE = 'appUVEp7kO9NeeJh0';
+    await fetch(`https://api.airtable.com/v0/${AT_BASE}/Messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { FromName:'Admin', FromRole:'Admin', Channel:'AllStaff', Message:message, SentAt:new Date().toISOString(), IsAlert:'Yes', IsDM:'No', IsFirst:'No' }})
+    }).catch(() => {});
+  }
+
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, sent, broadcastId: bId }) };
 };

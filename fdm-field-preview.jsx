@@ -168,8 +168,9 @@ function LoginView({onLogin}){
 }
 
 // ─── NEW CALL VIEW ───────────────────────────────────────────
-function NewCallView({user,onBack,onSubmit}){
-  const [type,setType]=useState('');
+function NewCallView(props){
+  const {user,onBack,onSubmit}=props;
+  const [type,setType]=useState(props.preType||'');
   const [location,setLocation]=useState(user.location||'');
   const [problem,setProblem]=useState('');
   const [sending,setSending]=useState(false);
@@ -248,6 +249,7 @@ function ChatView({user,onBack}){
   },[]);
 
   useEffect(()=>{
+    setMessages([]);
     fetchMessages();
     const iv=setInterval(fetchMessages,6000);
     return()=>clearInterval(iv);
@@ -349,7 +351,10 @@ function ChatView({user,onBack}){
 
       {/* Messages */}
       {(tab==='channels'||dmThread)&&<div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
-        {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:13,padding:'24px 0'}}>No messages yet</div>}
+        {messages.length===0&&<div style={{textAlign:'center',padding:'24px 0'}}>
+                <div style={{fontSize:13,color:'#374151',marginBottom:6}}>No messages yet in this channel</div>
+                <div style={{fontSize:11,color:'#1f2937'}}>Messages require the Airtable Messages table to be set up</div>
+              </div>}
         {messages.map(msg=>{
           const isMe=msg.fromName===user.name;
           const isAlert=msg.isAlert;
@@ -458,9 +463,10 @@ function LFView({user,onBack}){
 
 // ─── HOME VIEW ───────────────────────────────────────────────
 function HomeView({user,onLogout}){
-  const [view,setView]=useState('home'); // home | call | chat | lf
+  const [view,setView]=useState('home');
+  const [callType,setCallType]=useState(''); // home | call | chat | lf
 
-  if(view==='call') return <NewCallView user={user} onBack={()=>setView('home')} onSubmit={()=>setView('home')}/>;
+  if(view==='call') return <NewCallView user={user} preType={callType} onBack={()=>{setCallType('');setView('home');}} onSubmit={()=>{setCallType('');setView('home');}}/>;
   if(view==='chat') return <ChatView user={user} onBack={()=>setView('home')}/>;
   if(view==='lf') return <LFView user={user} onBack={()=>setView('home')}/>;
 
@@ -475,47 +481,33 @@ function HomeView({user,onLogout}){
       </div>
 
       <div style={S.body}>
-        {/* New Call */}
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Submit a Call</div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-            {CALL_TYPES.filter(ct=>!(ct.noRoles&&ct.noRoles.includes((user.role||'').toLowerCase()))).map(ct=>(
-              <button key={ct.id} style={{padding:'16px 8px',borderRadius:14,border:`2px solid ${ct.color}`,background:`${ct.color}18`,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:5}} onClick={()=>setView('call')}>
-                <span style={{fontSize:24}}>{ct.emoji}</span>
-                <span style={{fontSize:11,fontWeight:900,color:'#f1f5f9',textAlign:'center',lineHeight:1.2}}>{ct.label}</span>
-              </button>
-            ))}
-          </div>
+        {/* Submit a Call */}
+        <div style={{...S.section,overflow:'hidden'}}>
+          <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(255,255,255,0.06)',fontSize:12,fontWeight:900,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em'}}>Submit a Call</div>
+          {CALL_TYPES.filter(ct=>!(ct.noRoles&&ct.noRoles.includes((user.role||'').toLowerCase()))).map((ct,i,arr)=>(
+            <button key={ct.id} style={{width:'100%',padding:'14px 16px',background:'none',border:'none',borderBottom:i<arr.length-1?'1px solid rgba(255,255,255,0.05)':'none',color:'#f1f5f9',fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',justifyContent:'space-between',fontFamily:'inherit'}} onClick={()=>{setCallType(ct.id);setView('call');}}>
+              {ct.label}
+              <span style={{color:'#374151',fontSize:14}}>→</span>
+            </button>
+          ))}
         </div>
 
-        {/* Chat */}
-        <button style={{...S.section,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left'}} onClick={()=>setView('chat')}>
-          <div style={{width:44,height:44,borderRadius:12,background:'rgba(14,165,233,0.15)',border:'1px solid rgba(14,165,233,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>💬</div>
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:'#38bdf8'}}>Festival Chat</div>
-            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Groups · Direct Messages · Alerts</div>
-          </div>
-          <div style={{marginLeft:'auto',color:'#38bdf8',fontSize:16}}>→</div>
+        {/* Festival Chat */}
+        <button style={{...S.section,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between',textAlign:'left',width:'100%',border:'1px solid rgba(255,255,255,0.08)'}} onClick={()=>setView('chat')}>
+          <div style={{fontSize:15,fontWeight:700,color:'#f1f5f9'}}>Festival Chat</div>
+          <span style={{color:'#374151',fontSize:14}}>→</span>
         </button>
 
         {/* Lost & Found */}
-        <button style={{...S.section,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left'}} onClick={()=>setView('lf')}>
-          <div style={{width:44,height:44,borderRadius:12,background:'rgba(249,115,22,0.15)',border:'1px solid rgba(249,115,22,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>📦</div>
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:'#fb923c'}}>Lost & Found</div>
-            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Log a found item</div>
-          </div>
-          <div style={{marginLeft:'auto',color:'#fb923c',fontSize:16}}>→</div>
+        <button style={{...S.section,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between',textAlign:'left',width:'100%',border:'1px solid rgba(255,255,255,0.08)'}} onClick={()=>setView('lf')}>
+          <div style={{fontSize:15,fontWeight:700,color:'#f1f5f9'}}>Log Lost Item</div>
+          <span style={{color:'#374151',fontSize:14}}>→</span>
         </button>
 
         {/* L&F Lookup */}
-        <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{...S.section,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textDecoration:'none'}}>
-          <div style={{width:44,height:44,borderRadius:12,background:'rgba(139,92,246,0.15)',border:'1px solid rgba(139,92,246,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>🔍</div>
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:'#c4b5fd'}}>L&F Lookup</div>
-            <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Search all logged items</div>
-          </div>
-          <div style={{marginLeft:'auto',color:'#c4b5fd',fontSize:16}}>→</div>
+        <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{...S.section,padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between',textDecoration:'none',border:'1px solid rgba(255,255,255,0.08)'}}>
+          <div style={{fontSize:15,fontWeight:700,color:'#f1f5f9'}}>Lost & Found Lookup</div>
+          <span style={{color:'#374151',fontSize:14}}>→</span>
         </a>
       </div>
     </div>

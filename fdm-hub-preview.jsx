@@ -288,7 +288,17 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
   const lastMsg=medChatMessages[medChatMessages.length-1];
 
-  return(
+      // Med chat inbox early return
+    if(medChatOpen) return(
+      <HubChatInbox
+        myName={role}
+        myRole={role}
+        staffList={staffList||[]}
+        onBack={()=>setMedChatOpen(false)}
+      />
+    );
+
+    return(
     <div style={{display:"flex",flexDirection:"column",flex:1,overflowY:"auto"}}>
 
       {/* STATUS BAR */}
@@ -3487,4 +3497,14 @@ const S={
   actBtn:{border:"none",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"},
   persistAlert:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",gap:16,padding:"32px 24px",textAlign:"center",position:"relative",zIndex:1,width:"100%",maxWidth:768,boxSizing:"border-box"},
   empty:{textAlign:"center",color:"#475569",padding:"48px 0",fontSize:14},
-};
+}    // Med chat inbox early return
+    if(medChatOpen) return(
+      <HubChatInbox
+        myName={role}
+        myRole={role}
+        staffList={staffList||[]}
+        onBack={()=>setMedChatOpen(false)}
+      />
+    );
+
+    ;

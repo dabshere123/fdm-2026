@@ -23,7 +23,6 @@ exports.handler = async (event) => {
     const officers = (data.records || []).map(r => ({
       id:     r.id,
       name:   r.fields.Name   || '',
-      badge:  r.fields.Badge  || '',
       phone:  r.fields.Phone  || '',
       status: (r.fields.MPDStatus || 'On Duty').toLowerCase().replace(' ', '_'),
     }));

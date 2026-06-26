@@ -1918,7 +1918,7 @@ DATE/TIME: ${now()}`;
                     setOfficerNotifs(p=>({...p,[c.id]:{...p[c.id],[oid]:{...p[c.id]?.[oid],cancelled:true,cancelledAt:ts}}}));
                     setActivityLog(prev=>[{id:Date.now(),ts,date:now(),type:"security",
                       label:`MPD Stand Down — ${o?.name}`,
-                      msg:`Stand down sent to ${o?.name} (${o?.badge}) · ${c.location}\nVoice: "${MPD_STANDDOWN_VOICE(c.location)}"`
+                      msg:`Stand down sent to ${o?.name} (${${c.location}\nVoice: "${MPD_STANDDOWN_VOICE(c.location)}"`
                     },...prev]);
                   };
                   const simAck=(oid)=>{

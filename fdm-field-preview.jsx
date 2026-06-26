@@ -640,11 +640,11 @@ function HomeView({user,onLogout}){
   const [view,setView]=useState('home');
   const [callType,setCallType]=useState('');
   const [unread,setUnread]=useState(0);
-  const [notif,setNotif]=useState(null); // {from, message, channel}
+  const [notifQueue,setNotifQueue]=useState([]); // array of {from, message, channel, id}
+  const [notifIdx,setNotifIdx]=useState(0);       // which one we're viewing
   const [quickReply,setQuickReply]=useState('');
   const [replySending,setReplySending]=useState(false);
-  const lastMsgId=React.useRef(null);
-  const notifTimer=React.useRef(null);
+  const seenIds=React.useRef(new Set());
 
   // Poll for new messages every 15 seconds when on home screen
   React.useEffect(()=>{
@@ -657,14 +657,14 @@ function HomeView({user,onLogout}){
         const msgs=data.messages||[];
         if(msgs.length===0) return;
         const latest=msgs[msgs.length-1];
-        if(latest.id&&latest.id!==lastMsgId.current&&latest.fromName!==user.name){
-          if(lastMsgId.current!==null){
+        if(latest.id&&!seenIds.current.has(latest.id)&&latest.fromName!==user.name){
+          if(seenIds.current.size>0){
             // New message from someone else
             setUnread(p=>p+1);
             setNotif({from:latest.fromName,message:latest.message,channel:ch,fromRole:latest.fromRole});
             // Banner stays until dismissed or replied to
           }
-          lastMsgId.current=latest.id;
+          seenIds.current.add(latest.id);
         }
       }catch(e){}
     };
@@ -673,14 +673,19 @@ function HomeView({user,onLogout}){
     return()=>clearInterval(iv);
   },[view]);
 
+  const currentNotif=notifQueue[notifIdx]||null;
   async function sendQuickReply(){
-    if(!quickReply.trim()||replySending||!notif) return;
+    if(!quickReply.trim()||replySending||!currentNotif) return;
     setReplySending(true);
-    await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromName:user.name,fromRole:user.role,channel:notif.channel,message:quickReply.trim()})}).catch(()=>{});
+    await fetch(`${API}/send-message`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromName:user.name,fromRole:user.role,channel:currentNotif.channel,message:quickReply.trim()})}).catch(()=>{});
     setQuickReply('');
     setReplySending(false);
-    setNotif({...notif,sent:true});
-    setTimeout(()=>setNotif(null),2000);
+    dismissNotif();
+  }
+  function dismissNotif(){
+    setNotifQueue(q=>q.filter((_,i)=>i!==notifIdx));
+    setNotifIdx(0);
+    setQuickReply('');
   }
 
   function goCall(type){setCallType(type);setView('call');}
@@ -705,21 +710,30 @@ function HomeView({user,onLogout}){
       <div style={S.body}>
 
         {/* MESSAGE NOTIFICATION BANNER */}
-        {notif&&(
+        {currentNotif&&(
           <div style={{borderRadius:14,border:'2px solid rgba(249,115,22,0.8)',background:'linear-gradient(135deg,rgba(249,115,22,0.2),rgba(234,88,12,0.15))',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8,boxShadow:'0 0 20px rgba(249,115,22,0.3)'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <div style={{fontSize:11,fontWeight:800,color:'#fb923c',textTransform:'uppercase',letterSpacing:'0.06em'}}>💬 New Message — {notif.channel}</div>
-              <button style={{background:'none',border:'none',color:'#475569',fontSize:16,cursor:'pointer',padding:0}} onClick={()=>setNotif(null)}>✕</button>
+              <div style={{fontSize:11,fontWeight:800,color:'#fb923c',textTransform:'uppercase',letterSpacing:'0.06em'}}>
+                💬 {currentNotif.channel}
+                {notifQueue.length>1&&<span style={{marginLeft:8,background:'rgba(249,115,22,0.3)',borderRadius:10,padding:'1px 7px',fontSize:10}}>{notifIdx+1} of {notifQueue.length}</span>}
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                {notifQueue.length>1&&<>
+                  <button style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:6,color:'#f1f5f9',fontSize:12,cursor:'pointer',padding:'3px 8px'}} onClick={()=>setNotifIdx(p=>Math.max(0,p-1))} disabled={notifIdx===0}>←</button>
+                  <button style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:6,color:'#f1f5f9',fontSize:12,cursor:'pointer',padding:'3px 8px'}} onClick={()=>setNotifIdx(p=>Math.min(notifQueue.length-1,p+1))} disabled={notifIdx===notifQueue.length-1}>→</button>
+                </>}
+                <button style={{background:'none',border:'none',color:'#475569',fontSize:16,cursor:'pointer',padding:0}} onClick={()=>dismissNotif()}>✕</button>
+              </div>
             </div>
-            <div style={{fontSize:12,fontWeight:700,color:'#94a3b8'}}>{notif.fromRole||notif.from}</div>
-            <div style={{fontSize:15,color:'#f1f5f9',lineHeight:1.4}}>{notif.message}</div>
-            {notif.sent&&<div style={{fontSize:14,fontWeight:800,color:'#4ade80'}}>✅ Reply sent!</div>}
+            <div style={{fontSize:12,fontWeight:700,color:'#94a3b8'}}>{currentNotif.fromRole||currentNotif.from}</div>
+            <div style={{fontSize:15,color:'#f1f5f9',lineHeight:1.4}}>{currentNotif.message}</div>
+            {false&&<div style={{fontSize:14,fontWeight:800,color:'#4ade80'}}>✅ Reply sent!</div>}
             <div style={{display:'flex',flexDirection:'column',gap:6}}>
-              <div style={{fontSize:11,fontWeight:800,color:'#fb923c',textTransform:'uppercase',letterSpacing:'0.06em'}}>↩ Reply to {notif.channel}</div>
+              <div style={{fontSize:11,fontWeight:800,color:'#fb923c',textTransform:'uppercase',letterSpacing:'0.06em'}}>↩ Reply to {currentNotif.channel}</div>
               <textarea style={{...S.inp,minHeight:70,resize:'none',fontSize:15,borderColor:'rgba(249,115,22,0.4)'}} placeholder="Type your reply here..." value={quickReply} onChange={e=>setQuickReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendQuickReply();}}} autoFocus/>
               <div style={{display:'flex',gap:8}}>
                 <button style={{flex:1,padding:'12px',borderRadius:10,border:'none',background:quickReply.trim()?'linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))':'rgba(255,255,255,0.06)',color:quickReply.trim()?'#fff':'#475569',fontSize:14,fontWeight:900,cursor:'pointer'}} onClick={sendQuickReply} disabled={!quickReply.trim()||replySending}>{replySending?'Sending...':'Send Reply'}</button>
-                <button style={{padding:'12px 16px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'#64748b',fontSize:13,fontWeight:700,cursor:'pointer'}} onClick={()=>{setView('chat');setNotif(null);setUnread(0);}}>Open Chat</button>
+                <button style={{padding:'12px 16px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.04)',color:'#64748b',fontSize:13,fontWeight:700,cursor:'pointer'}} onClick={()=>{setView('chat');dismissNotif();setUnread(0);}}>Open Chat</button>
               </div>
             </div>
           </div>

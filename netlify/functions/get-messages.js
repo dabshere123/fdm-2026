@@ -17,7 +17,7 @@ exports.handler = async (event) => {
     if(dmThread){
       // DM thread between two people
       formula=`{ThreadID}="${dmThread}"`;
-    } else if(channel==='all'){
+    } else if(channel==='all'||channel==='recent'){
       formula='';
     } else if(channel){
       // Show channel messages + AllStaff + alerts

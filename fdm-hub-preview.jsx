@@ -2278,6 +2278,7 @@ Please respond immediately.
                 const isAdmin=msg.fromName==="Admin";
                 const isAlert=msg.isAlert;
                 const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
+                const showChannel=chatChannel==="recent"&&msg.channel;
                 if(isAlert) return(
                   <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"8px 12px"}}>
                     <div style={{fontSize:10,fontWeight:800,color:"#fca5a5",marginBottom:2}}>🚨 ALERT · {time}</div>
@@ -2286,7 +2287,7 @@ Please respond immediately.
                 );
                 return(
                   <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isAdmin?"flex-end":"flex-start",gap:2}}>
-                    {!isAdmin&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromName} · {time}</div>}
+                    {!isAdmin&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromName}{showChannel?` → ${msg.channel}`:""} · {time}</div>}
                     <div style={{maxWidth:"80%",background:isAdmin?"rgba(14,165,233,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isAdmin?"rgba(14,165,233,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:isAdmin?"12px 12px 3px 12px":"12px 12px 12px 3px",padding:"8px 12px"}}>
                       <div style={{fontSize:14,color:"#f1f5f9"}}>{msg.message}</div>
                     </div>

@@ -1,4 +1,4 @@
-// get-conversations.js — returns inbox: all channels + DM threads with last message
+// get-conversations.js — inbox: channels + DMs filtered to current user
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const BASE = 'appUVEp7kO9NeeJh0';
 
@@ -16,14 +16,22 @@ exports.handler = async (event) => {
     const data = await res.json();
     const records = data.records || [];
 
-    // Build conversation map keyed by channel (or DM thread)
     const convMap = {};
+
     for (const r of records) {
       const f = r.fields;
       const isDM = f.IsDM === 'Yes';
+
+      // For DMs: only include if this user is a participant
+      if (isDM) {
+        const isParticipant = f.FromName === myName || f.ToName === myName;
+        if (!isParticipant) continue; // Skip DMs the user is not part of
+      }
+
       const key = isDM
         ? (f.ThreadID || `DM_${[f.FromName, f.ToName].sort().join('_')}`)
         : f.Channel;
+
       if (!key) continue;
 
       if (!convMap[key]) {
@@ -31,11 +39,12 @@ exports.handler = async (event) => {
           id: key,
           isDM,
           channel: f.Channel || key,
-          otherName: isDM ? (f.FromName === myName ? f.ToName : f.FromName) : null,
+          otherName: isDM
+            ? (f.FromName === myName ? f.ToName : f.FromName)
+            : null,
           lastMessage: f.Message || '',
           lastFrom: f.FromRole || f.FromName || '',
           lastAt: f.SentAt || '',
-          unread: 0,
           recipients: f.Recipients || f.Channel || '',
         };
       }

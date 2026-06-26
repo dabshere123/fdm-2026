@@ -121,7 +121,7 @@ function LoginView({onLogin}){
       <div style={S.body}>
         <div style={{textAlign:'center',padding:'24px 0 8px'}}>
           <div style={{fontSize:22,fontWeight:900,color:'#f1f5f9',marginBottom:4}}>Staff Sign In</div>
-          <div style={{fontSize:14,color:'#64748b'}}>Enter your last name to find your account</div>
+          <div style={{fontSize:14,color:'#64748b'}}>Enter your first or last name to find your account</div>
         </div>
 
         {loading&&<Spinner/>}
@@ -130,7 +130,7 @@ function LoginView({onLogin}){
         {!loading&&!error&&<>
           <input
             style={{...S.inp,fontSize:18,padding:'14px'}}
-            placeholder="Last name..."
+            placeholder="First or last name..."
             value={query}
             onChange={e=>setQuery(e.target.value)}
             autoFocus

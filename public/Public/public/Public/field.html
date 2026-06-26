@@ -322,7 +322,7 @@ function LoginView({
       fontSize: 14,
       color: '#64748b'
     }
-  }, "Enter your last name to find your account")), loading && /*#__PURE__*/React.createElement(Spinner, null), error && /*#__PURE__*/React.createElement("div", {
+  }, "Enter your first or last name to find your account")), loading && /*#__PURE__*/React.createElement(Spinner, null), error && /*#__PURE__*/React.createElement("div", {
     style: {
       background: 'rgba(239,68,68,0.1)',
       border: '1px solid rgba(239,68,68,0.3)',
@@ -337,7 +337,7 @@ function LoginView({
       fontSize: 18,
       padding: '14px'
     },
-    placeholder: "Last name...",
+    placeholder: "First or last name...",
     value: query,
     onChange: e => setQuery(e.target.value),
     autoFocus: true

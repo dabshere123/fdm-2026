@@ -2124,16 +2124,29 @@ Please respond immediately.
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>
         <BB onClick={()=>setView("home")}/>
-        <span style={S.panelTitle}>👥 Staff</span>
+        <span style={S.panelTitle}>👥 Staff List</span>
         <span style={{fontSize:11,color:"#64748b",marginLeft:"auto"}}>{staffList.length} staff</span>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:6}}>
+      <div style={{flex:1,overflowY:"auto"}}>
+        {/* TABLE HEADER */}
+        <div style={{display:"grid",gridTemplateColumns:"1.5fr 1.2fr 1.2fr 1.5fr",gap:0,padding:"8px 14px",background:"rgba(255,255,255,0.04)",borderBottom:"1px solid rgba(255,255,255,0.08)",position:"sticky",top:0}}>
+          {["Name","Phone","Location","Schedule"].map(h=>(
+            <div key={h} style={{fontSize:10,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>{h}</div>
+          ))}
+        </div>
         {staffList.length===0&&<div style={{textAlign:"center",color:"#374151",padding:30}}>No staff loaded</div>}
         {staffList.map((s,i)=>(
-          <div key={s.id||i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:10,padding:"10px 14px"}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{s.name}</div>
-            <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{s.role}{s.location?` · ${s.location}`:""}</div>
-            {s.phone&&<div style={{fontSize:12,color:"#38bdf8",marginTop:2}}>📞 {s.phone}</div>}
+          <div key={s.id||i} style={{display:"grid",gridTemplateColumns:"1.5fr 1.2fr 1.2fr 1.5fr",gap:0,padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",background:i%2===0?"transparent":"rgba(255,255,255,0.015)"}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",lineHeight:1.3}}>{s.name}</div>
+              {s.role&&<div style={{fontSize:10,color:"#64748b",marginTop:2}}>{s.role}</div>}
+            </div>
+            <div style={{fontSize:12,color:"#38bdf8"}}>{s.phone||"—"}</div>
+            <div style={{fontSize:12,color:"#94a3b8"}}>{s.location||"—"}</div>
+            <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.4}}>
+              {s.days?<div>{s.days}</div>:"—"}
+              {s.shiftStart&&s.shiftEnd&&<div style={{fontSize:10,color:"#475569"}}>{s.shiftStart}–{s.shiftEnd}</div>}
+            </div>
           </div>
         ))}
       </div>

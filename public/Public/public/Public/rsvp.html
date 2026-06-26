@@ -253,6 +253,8 @@ function showNameField(){
   const inp=document.getElementById('name-input');
   inp.value=staffName;
   inp.oninput=()=>{setName(inp.value.trim());updateBtn();};
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>inp.focus(),400);
 }
 
 // ── Role selection

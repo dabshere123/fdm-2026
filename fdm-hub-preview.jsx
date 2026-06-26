@@ -3235,12 +3235,12 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
       </div>
 
     {/* ===== SUPPLIES ===== */}
-      <div style={{background:"rgba(120,53,15,0.06)",borderRadius:14,border:"1px solid rgba(180,83,9,0.25)",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{background:"rgba(245,158,11,0.06)",borderRadius:14,border:"1px solid rgba(245,158,11,0.2)",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <div style={{fontSize:13,fontWeight:800,color:"#d97706"}}>📦 Supplies Request</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>📦 Supplies Request</div>
           <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Log a supply or restock request</div>
         </div>
-        <button style={{padding:"8px 16px",borderRadius:8,border:"none",background:"rgba(180,83,9,0.3)",color:"#d97706",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>Request</button>
+        <button style={{padding:"8px 16px",borderRadius:8,border:"none",background:"rgba(245,158,11,0.15)",color:"#fbbf24",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>Request</button>
       </div>
 
     {/* ===== ROW 2: EQUIPMENT TRACKER | LOST & FOUND ===== */}

@@ -706,9 +706,9 @@ function HomeView({user,onLogout}){
 
         {/* MESSAGE NOTIFICATION BANNER */}
         {notif&&(
-          <div style={{borderRadius:14,border:'2px solid rgba(14,165,233,0.5)',background:'rgba(14,165,233,0.1)',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8,animation:'pulse 1s ease-in-out'}}>
+          <div style={{borderRadius:14,border:'2px solid rgba(249,115,22,0.8)',background:'linear-gradient(135deg,rgba(249,115,22,0.2),rgba(234,88,12,0.15))',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8,boxShadow:'0 0 20px rgba(249,115,22,0.3)'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <div style={{fontSize:11,fontWeight:800,color:'#38bdf8',textTransform:'uppercase',letterSpacing:'0.06em'}}>💬 New Message — {notif.channel}</div>
+              <div style={{fontSize:11,fontWeight:800,color:'#fb923c',textTransform:'uppercase',letterSpacing:'0.06em'}}>💬 New Message — {notif.channel}</div>
               <button style={{background:'none',border:'none',color:'#475569',fontSize:16,cursor:'pointer',padding:0}} onClick={()=>setNotif(null)}>✕</button>
             </div>
             <div style={{fontSize:12,fontWeight:700,color:'#94a3b8'}}>{notif.fromRole||notif.from}</div>
@@ -717,7 +717,7 @@ function HomeView({user,onLogout}){
               <input style={{...S.inp,flex:1,padding:'9px 12px',fontSize:14}} placeholder="Quick reply..." value={quickReply} onChange={e=>setQuickReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();sendQuickReply();}}}/>
               <button style={{padding:'9px 14px',borderRadius:10,border:'none',background:quickReply.trim()?'linear-gradient(135deg,#0ea5e9,#0284c7)':'rgba(255,255,255,0.06)',color:quickReply.trim()?'#fff':'#475569',fontSize:13,fontWeight:800,cursor:'pointer',flexShrink:0}} onClick={sendQuickReply} disabled={!quickReply.trim()||replySending}>{replySending?'...':'Send'}</button>
             </div>
-            <button style={{background:'none',border:'none',color:'#38bdf8',fontSize:12,fontWeight:700,cursor:'pointer',textAlign:'left',padding:0}} onClick={()=>{setView('chat');setNotif(null);setUnread(0);}}>Open in Chat →</button>
+            <button style={{background:'none',border:'none',color:'#fb923c',fontSize:12,fontWeight:700,cursor:'pointer',textAlign:'left',padding:0}} onClick={()=>{setView('chat');setNotif(null);setUnread(0);}}>Open in Chat →</button>
           </div>
         )}
 

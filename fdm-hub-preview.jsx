@@ -2084,7 +2084,7 @@ Reply YES to acknowledge.`
           const btn=event.target;
           btn.textContent="Sending...";btn.disabled=true;
           try{
-            const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,role,phone})});
+            const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,role,phone,saveToAirtable:true})});
             const data=await res.json();
             if(data.success){
               alert("✅ Text sent to "+name+"!");

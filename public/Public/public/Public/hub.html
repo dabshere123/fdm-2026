@@ -5756,7 +5756,8 @@ Reply YES to acknowledge.`
           body: JSON.stringify({
             name,
             role,
-            phone
+            phone,
+            saveToAirtable: true
           })
         });
         const data = await res.json();

@@ -31,6 +31,29 @@ exports.handler = async (event) => {
     const phone = String(rawPhone).replace(/[^0-9]/g,'');
     const smsConsent = body.smsConsent ?? body.fields?.SMSConsent ?? 'Yes';
 
+    // Save to Airtable if saveToAirtable flag is set (called from hub form)
+    if (body.saveToAirtable && process.env.AIRTABLE_TOKEN) {
+      await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/Staff`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.AIRTABLE_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fields: {
+            'Name1': name,
+            'Role': role || 'N/A',
+            'Phone': phone,
+            'Status': 'Approved',
+            'SMSConsent': 'Yes',
+            'Days': 'EVERYDAY',
+            'Shift Start': 0,
+            'Shift End': 0
+          }
+        })
+      });
+    }
+
     if (!name || !phone) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing name or phone' }) };
     }

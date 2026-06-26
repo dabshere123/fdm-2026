@@ -207,7 +207,7 @@ function ChatInbox({user,onBack}){
 
   async function fetchConvos(){
     try{
-      const res=await fetch(`${API}/get-conversations?myName=${encodeURIComponent(user.name)}`);
+      const res=await fetch(`${API}/get-conversations?myName=${encodeURIComponent(user.name)}&myRole=${encodeURIComponent(user.role||'')}`);
       const data=await res.json();
       setConvos(data.conversations||[]);
     }catch(e){}

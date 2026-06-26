@@ -673,7 +673,7 @@ function HubChatInbox({myName,myRole,staffList,onBack}){
 
   async function fetchConvos(){
     try{
-      const res=await fetch(`/.netlify/functions/get-conversations?myName=${encodeURIComponent(myName)}`);
+      const res=await fetch(`/.netlify/functions/get-conversations?myName=${encodeURIComponent(myName)}&myRole=${encodeURIComponent(myRole||'')}`);
       const data=await res.json();
       setConvos(data.conversations||[]);
     }catch(e){}

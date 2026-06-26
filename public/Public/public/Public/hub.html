@@ -756,6 +756,14 @@ function MedHome({
     }
   };
   const lastMsg = medChatMessages[medChatMessages.length - 1];
+
+  // Med chat inbox early return
+  if (medChatOpen) return /*#__PURE__*/React.createElement(HubChatInbox, {
+    myName: role,
+    myRole: role,
+    staffList: staffList || [],
+    onBack: () => setMedChatOpen(false)
+  });
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",

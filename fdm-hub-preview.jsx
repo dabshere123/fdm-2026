@@ -2055,6 +2055,53 @@ Reply YES to acknowledge.`
 
   // ─── LOST & FOUND VIEW ────────────────────────────────────────────────────────
 
+
+  if(view==="sendonboarding") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>setView("home")}/>
+        <span style={S.panelTitle}>📱 Send Onboarding Text</span>
+      </div>
+      <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
+        <div style={{fontSize:13,color:"#64748b",lineHeight:1.6}}>Enter staff member info and send them the onboarding text with the RSVP link.</div>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Full Name</div>
+          <input id="ob-name" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bryan Thornton"/>
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Role (optional)</div>
+          <input id="ob-role" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bar Manager"/>
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Phone Number</div>
+          <input id="ob-phone" type="tel" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="6085551234"/>
+        </div>
+        <button style={{padding:"16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",marginTop:4}} onClick={async()=>{
+          const name=document.getElementById("ob-name").value.trim();
+          const role=document.getElementById("ob-role").value.trim();
+          const phone=document.getElementById("ob-phone").value.trim();
+          if(!name||!phone){alert("Name and phone are required");return;}
+          const btn=event.target;
+          btn.textContent="Sending...";btn.disabled=true;
+          try{
+            const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,role,phone})});
+            const data=await res.json();
+            if(data.success){
+              alert("✅ Text sent to "+name+"!");
+              document.getElementById("ob-name").value="";
+              document.getElementById("ob-role").value="";
+              document.getElementById("ob-phone").value="";
+              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"onboarding",label:"Onboarding text sent to "+name},...p]);
+            } else {
+              alert("Error: "+(data.error||"Unknown error"));
+            }
+          }catch(e){alert("Failed: "+e.message);}
+          btn.textContent="Send Onboarding Text";btn.disabled=false;
+        }}>Send Onboarding Text →</button>
+      </div>
+    </div></div>
+  );
+
   if(view==="chat") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>
@@ -3135,6 +3182,9 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             <a href="https://fdm2026.netlify.app/register" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
               <span style={{fontSize:14}}>📝</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Register Staff</div>
             </a>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("sendonboarding")}>
+              <span style={{fontSize:14}}>📱</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Send Onboarding Text</div>
+            </button>
           </div>
         </div>
       </div>

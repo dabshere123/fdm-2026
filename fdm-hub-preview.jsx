@@ -515,6 +515,7 @@ function HubApp({onBack}){
     return null;
   });
   const [view,setView]=useState("home");
+  const [holdTexts,setHoldTexts]=useState(false);
   const [tick,setTick]=useState(0);
   const [lostChildBlink,setLostChildBlink]=useState(false);
   const [newCallView,setNewCallView]=useState(false);
@@ -2076,18 +2077,27 @@ Reply YES to acknowledge.`
           <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Phone Number</div>
           <input id="ob-phone" type="tel" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="6085551234"/>
         </div>
-        <button style={{padding:"16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",marginTop:4}} onClick={async()=>{
+        {/* Hold Texts toggle */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:holdTexts?"rgba(245,158,11,0.08)":"rgba(255,255,255,0.03)",border:`1px solid ${holdTexts?"rgba(245,158,11,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:10,padding:"12px 14px"}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:holdTexts?"#fcd34d":"#64748b"}}>{holdTexts?"🔕 Texts On Hold":"🔔 Texts Enabled"}</div>
+            <div style={{fontSize:11,color:"#475569",marginTop:2}}>{holdTexts?"Records save to Airtable but no texts sent":"Text fires immediately when you hit send"}</div>
+          </div>
+          <button style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${holdTexts?"rgba(245,158,11,0.5)":"rgba(255,255,255,0.12)"}`,background:holdTexts?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.06)",color:holdTexts?"#fcd34d":"#94a3b8",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>setHoldTexts(p=>!p)}>{holdTexts?"Release":"Hold"}</button>
+        </div>
+
+        <button style={{padding:"16px",borderRadius:12,border:"none",background:holdTexts?"rgba(255,255,255,0.08)":"linear-gradient(135deg,#10b981,#059669)",color:holdTexts?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:"pointer",marginTop:4}} onClick={async()=>{
           const name=document.getElementById("ob-name").value.trim();
           const role=document.getElementById("ob-role").value.trim();
           const phone=document.getElementById("ob-phone").value.trim();
           if(!name||!phone){alert("Name and phone are required");return;}
           const btn=event.target;
-          btn.textContent="Sending...";btn.disabled=true;
+          btn.textContent=holdTexts?"Saving...":"Sending...";btn.disabled=true;
           try{
-            const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,role,phone,saveToAirtable:true})});
+            const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,role,phone,saveToAirtable:true,holdTexts})});
             const data=await res.json();
             if(data.success){
-              alert("✅ Text sent to "+name+"!");
+              alert(holdTexts?"✅ "+name+" saved to Airtable (text on hold)":"✅ Text sent to "+name+"!");
               document.getElementById("ob-name").value="";
               document.getElementById("ob-role").value="";
               document.getElementById("ob-phone").value="";

@@ -62,6 +62,11 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ skipped: true, reason: 'SMS consent not given' }) };
     }
 
+    // Hold texts — save to Airtable only, no SMS
+    if (body.holdTexts === true) {
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, held: true, reason: 'Texts on hold' }) };
+    }
+
     const lastName = name.trim().split(' ').pop();
     const fmt = fmtPhone(phone);
 

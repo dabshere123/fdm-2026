@@ -485,7 +485,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         {tab==="lf"&&(
           <>
             <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",textDecoration:"none",marginBottom:4}}>
-              <span style={{fontSize:18}}>🔍</span><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup Page →</div>
+              <span style={{fontSize:18}}>🔍</span><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>L&F Lookup Page →</div>
             </a>
             {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"20px 0"}}>No active L&F items</div>}
             {(lfItems||[]).filter(i=>i.status!=="Claimed").slice(0,15).map(item=>(
@@ -2057,6 +2057,27 @@ Reply YES to acknowledge.`
   // ─── LOST & FOUND VIEW ────────────────────────────────────────────────────────
 
 
+
+  if(view==="stafflist") return(
+    <div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}>
+        <BB onClick={()=>setView("home")}/>
+        <span style={S.panelTitle}>👥 Staff</span>
+        <span style={{fontSize:11,color:"#64748b",marginLeft:"auto"}}>{staffList.length} staff</span>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:6}}>
+        {staffList.length===0&&<div style={{textAlign:"center",color:"#374151",padding:30}}>No staff loaded</div>}
+        {staffList.map((s,i)=>(
+          <div key={s.id||i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:10,padding:"10px 14px"}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{s.name}</div>
+            <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{s.role}{s.location?` · ${s.location}`:""}</div>
+            {s.phone&&<div style={{fontSize:12,color:"#38bdf8",marginTop:2}}>📞 {s.phone}</div>}
+          </div>
+        ))}
+      </div>
+    </div></div>
+  );
+
   if(view==="sendonboarding") return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>
@@ -2269,7 +2290,7 @@ Reply YES to acknowledge.`
           <>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
               <div style={{fontSize:13,color:"#64748b"}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed</div>
-              <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 Staff Lookup</a>
+              <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 L&F Lookup</a>
             </div>
 
             {/* LOG NEW ITEM FORM */}
@@ -3087,14 +3108,14 @@ Reply YES to acknowledge.`
                 <span style={{fontSize:22}}>🏥</span>
                 <div style={{textAlign:"left"}}>
                   <div style={{fontSize:13,fontWeight:900,color:"#d8b4fe"}}>MEDICAL / LIFE SAFETY</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Medical emergency · Fire · Unresponsive</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Medical emergency · Life threatening</div>
                 </div>
               </button>
               <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(37,99,235,0.6)",background:"linear-gradient(135deg,rgba(37,99,235,0.2),rgba(29,78,216,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(37,99,235,0.15)"}} onClick={()=>{setNewCallType("security");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
                 <span style={{fontSize:22}}>🛡</span>
                 <div style={{textAlign:"left"}}>
                   <div style={{fontSize:13,fontWeight:900,color:"#93c5fd"}}>SECURITY</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Disturbance · Ejection · Suspicious</div>
+                  
                 </div>
               </button>
               <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(180,83,9,0.6)",background:"linear-gradient(135deg,rgba(120,53,15,0.2),rgba(92,40,10,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(180,83,9,0.15)"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
@@ -3105,6 +3126,17 @@ Reply YES to acknowledge.`
                 </div>
               </button>
             </div>
+
+            {/* ALERT MPD BUTTON */}
+            <button style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{
+              const msg=`🚔 MPD ALERT — Fête de Marquette 2026\nMcPike Park, Madison WI\n\nAlert issued by Admin at ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}\nPlease respond.`;
+              const mpdPhones=mpdOfficers.filter(o=>o.phone).map(o=>{const d=String(o.phone).replace(/[^0-9]/g,"");return d.length===10?`+1${d}`:`+${d}`;});
+              mpdPhones.forEach(phone=>{
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message:msg})}).catch(()=>{});
+              });
+              if(mpdPhones.length>0) fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:mpdPhones,message:"Alert from Fete de Marquette Operations. Please respond to McPike Park immediately."})}).catch(()=>{});
+              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"security",label:"MPD Alert sent — SMS+Voice",msg},...p]);
+            }}>🚔 Alert MPD — SMS + Voice</button>
 
             {/* 911 COMPACT BUTTON */}
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨
@@ -3144,6 +3176,15 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             ))}
           </div>
         </div>
+      </div>
+
+    {/* ===== SUPPLIES ===== */}
+      <div style={{background:"rgba(120,53,15,0.06)",borderRadius:14,border:"1px solid rgba(180,83,9,0.25)",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontSize:13,fontWeight:800,color:"#d97706"}}>📦 Supplies Request</div>
+          <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Log a supply or restock request</div>
+        </div>
+        <button style={{padding:"8px 16px",borderRadius:8,border:"none",background:"rgba(180,83,9,0.3)",color:"#d97706",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>Request</button>
       </div>
 
     {/* ===== ROW 2: EQUIPMENT TRACKER | LOST & FOUND ===== */}
@@ -3194,8 +3235,11 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
           </div>
           <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:5}}>
             <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
-              <span style={{fontSize:14}}>🔍</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Staff Lookup</div>
+              <span style={{fontSize:14}}>🔍</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>L&F Lookup</div>
             </a>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setView("stafflist")}>
+              <span style={{fontSize:14}}>👥</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Staff List</div>
+            </button>
             <a href="https://fdm2026.netlify.app/register" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
               <span style={{fontSize:14}}>📝</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Register Staff</div>
             </a>

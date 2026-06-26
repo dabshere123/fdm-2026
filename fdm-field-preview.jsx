@@ -276,7 +276,7 @@ function ChatView({user,onBack}){
         </div>
       )}
       {(tab==='channels'||dmThread)&&<>
-        <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+        <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8,minHeight:0}}>
           {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:13,padding:'24px 0'}}>No messages yet</div>}
           {messages.map(msg=>{
             const isMe=msg.fromName===user.name;

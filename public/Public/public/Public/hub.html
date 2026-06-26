@@ -9799,46 +9799,7 @@ Please respond immediately.
       fontWeight: 900,
       color: "#93c5fd"
     }
-  }, "SECURITY"))), /*#__PURE__*/React.createElement("button", {
-    style: {
-      width: "100%",
-      padding: "14px 12px",
-      borderRadius: 12,
-      border: "2px solid rgba(180,83,9,0.6)",
-      background: "linear-gradient(135deg,rgba(120,53,15,0.2),rgba(92,40,10,0.1))",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      boxShadow: "0 0 10px rgba(180,83,9,0.15)"
-    },
-    onClick: () => {
-      setNewCallType("supplies");
-      setNewCallLocation("");
-      setNewCallProblem("");
-      setNewCallView(true);
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 22
-    }
-  }, "📦"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "left"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 900,
-      color: "#d97706"
-    }
-  }, "SUPPLIES"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#64748b",
-      marginTop: 1
-    }
-  }, "Request supplies or restock")))), /*#__PURE__*/React.createElement("button", {
+  }, "SECURITY")))), /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "12px",
@@ -10015,12 +9976,6 @@ Clear a path for emergency vehicles.`;
     }
   }, "Request")), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
       background: "rgba(234,179,8,0.06)",
       borderRadius: 14,
       border: "1px solid rgba(234,179,8,0.3)",
@@ -10041,7 +9996,7 @@ Clear a path for emergency vehicles.`;
       justifyContent: "space-between"
     },
     onClick: () => window.open("https://fdm2026.netlify.app/equipment", "_blank")
-  }, /*#__PURE__*/React.createElement("span", null, "⚙️ Equipment"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "⚙️ Equipment Tracker"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#fcd34d",
@@ -10082,12 +10037,12 @@ Clear a path for emergency vehicles.`;
       borderRadius: 20,
       padding: "1px 7px"
     }
-  }, lfItems.filter(i => i.status !== "Claimed").length)), /*#__PURE__*/React.createElement("div", {
+  }, lfItems.filter(i => i.status !== "Claimed").length, " active")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "8px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 5
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 6
     }
   }, /*#__PURE__*/React.createElement("button", {
     style: {
@@ -10108,7 +10063,7 @@ Clear a path for emergency vehicles.`;
     }
   }, "📋"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: 700,
       color: "#f1f5f9"
     }
@@ -10117,7 +10072,9 @@ Clear a path for emergency vehicles.`;
       fontSize: 11,
       color: "#64748b"
     }
-  }, "Log, box, mark claimed"))), /*#__PURE__*/React.createElement("button", {
+  }, "Log · box · clear"))), /*#__PURE__*/React.createElement("a", {
+    href: "https://fdm2026.netlify.app/lostfound",
+    target: "_blank",
     style: {
       display: "flex",
       alignItems: "center",
@@ -10126,26 +10083,24 @@ Clear a path for emergency vehicles.`;
       borderRadius: 8,
       border: "1px solid rgba(249,115,22,0.2)",
       background: "rgba(249,115,22,0.06)",
-      cursor: "pointer",
-      textAlign: "left"
-    },
-    onClick: () => setView("lostfound")
+      textDecoration: "none"
+    }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16
     }
-  }, "📷"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "🔍"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: 700,
       color: "#f1f5f9"
     }
-  }, "Log Found Item"), /*#__PURE__*/React.createElement("div", {
+  }, "L&F Lookup"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#64748b"
     }
-  }, "Photo · AI description")))))), /*#__PURE__*/React.createElement("div", {
+  }, "Search all items"))))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -10209,30 +10164,7 @@ Clear a path for emergency vehicles.`;
       flexDirection: "column",
       gap: 5
     }
-  }, /*#__PURE__*/React.createElement("a", {
-    href: "https://fdm2026.netlify.app/lostfound",
-    target: "_blank",
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "9px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(16,185,129,0.2)",
-      background: "rgba(16,185,129,0.06)",
-      textDecoration: "none"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14
-    }
-  }, "🔍"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#f1f5f9"
-    }
-  }, "L&F Lookup")), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     style: {
       display: "flex",
       alignItems: "center",

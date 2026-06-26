@@ -3180,13 +3180,7 @@ Please respond immediately.
                   
                 </div>
               </button>
-              <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(180,83,9,0.6)",background:"linear-gradient(135deg,rgba(120,53,15,0.2),rgba(92,40,10,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(180,83,9,0.15)"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-                <span style={{fontSize:22}}>📦</span>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:13,fontWeight:900,color:"#d97706"}}>SUPPLIES</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Request supplies or restock</div>
-                </div>
-              </button>
+              
             </div>
 
             {/* REQUEST MPD BUTTON */}
@@ -3243,32 +3237,28 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
         <button style={{padding:"8px 16px",borderRadius:8,border:"none",background:"rgba(245,158,11,0.15)",color:"#fbbf24",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>Request</button>
       </div>
 
-    {/* ===== ROW 2: EQUIPMENT TRACKER | LOST & FOUND ===== */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-
-        {/* EQUIPMENT TRACKER */}
-        <div style={{background:"rgba(234,179,8,0.06)",borderRadius:14,border:"1px solid rgba(234,179,8,0.3)",overflow:"hidden"}}>
-          <div style={{background:"rgba(234,179,8,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment","_blank")}>
-            <span>⚙️ Equipment</span>
-            <span style={{fontSize:11,color:"#fcd34d",fontWeight:400}}>Open →</span>
-          </div>
-          <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Track radios, readers and all festival gear.</div>
+    {/* ===== ROW 2: EQUIPMENT TRACKER ===== */}
+      <div style={{background:"rgba(234,179,8,0.06)",borderRadius:14,border:"1px solid rgba(234,179,8,0.3)",overflow:"hidden"}}>
+        <div style={{background:"rgba(234,179,8,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment","_blank")}>
+          <span>⚙️ Equipment Tracker</span>
+          <span style={{fontSize:11,color:"#fcd34d",fontWeight:400}}>Open →</span>
         </div>
+        <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Track radios, readers and all festival gear.</div>
+      </div>
 
-        {/* LOST & FOUND */}
-        <div style={{background:"rgba(249,115,22,0.06)",borderRadius:14,border:"1px solid rgba(249,115,22,0.25)",overflow:"hidden"}}>
-          <div style={{background:"rgba(249,115,22,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fdba74",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <span>📦 Lost & Found</span>
-            {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(249,115,22,0.4)",color:"#fed7aa",fontSize:10,fontWeight:800,borderRadius:20,padding:"1px 7px"}}>{lfItems.filter(i=>i.status!=="Claimed").length}</div>}
-          </div>
-          <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:5}}>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
-              <span style={{fontSize:16}}>📋</span><div><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Manage Items</div><div style={{fontSize:11,color:"#64748b"}}>Log, box, mark claimed</div></div>
-            </button>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
-              <span style={{fontSize:16}}>📷</span><div><div style={{fontSize:13,fontWeight:700,color:"#f1f5f9"}}>Log Found Item</div><div style={{fontSize:11,color:"#64748b"}}>Photo · AI description</div></div>
-            </button>
-          </div>
+    {/* ===== LOST & FOUND — SEPARATE SECTION ===== */}
+      <div style={{background:"rgba(249,115,22,0.06)",borderRadius:14,border:"1px solid rgba(249,115,22,0.25)",overflow:"hidden"}}>
+        <div style={{background:"rgba(249,115,22,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fdba74",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span>📦 Lost & Found</span>
+          {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(249,115,22,0.4)",color:"#fed7aa",fontSize:10,fontWeight:800,borderRadius:20,padding:"1px 7px"}}>{lfItems.filter(i=>i.status!=="Claimed").length} active</div>}
+        </div>
+        <div style={{padding:"8px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+          <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
+            <span style={{fontSize:16}}>📋</span><div><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Manage Items</div><div style={{fontSize:11,color:"#64748b"}}>Log · box · clear</div></div>
+          </button>
+          <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",textDecoration:"none"}}>
+            <span style={{fontSize:16}}>🔍</span><div><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>L&F Lookup</div><div style={{fontSize:11,color:"#64748b"}}>Search all items</div></div>
+          </a>
         </div>
       </div>
 
@@ -3290,9 +3280,7 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             👥 Staff
           </div>
           <div style={{padding:"8px",display:"flex",flexDirection:"column",gap:5}}>
-            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
-              <span style={{fontSize:14}}>🔍</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>L&F Lookup</div>
-            </a>
+
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setView("stafflist")}>
               <span style={{fontSize:14}}>👥</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Staff List</div>
             </button>

@@ -7,6 +7,7 @@ const CHANNEL_GROUPS=[
     id:'general',label:'General',
     channels:[
       {id:'AllStaff',label:'All Staff',emoji:'📢'},
+      {id:'Hospitality',label:'Hospitality',emoji:'🎪'},
     ]
   },
   {
@@ -53,7 +54,7 @@ const CALL_TYPES=[
   {id:'medical',label:'Medical',emoji:'🏥',color:'rgba(147,51,234,0.8)'},
   {id:'security',label:'Security',emoji:'🛡',color:'rgba(37,99,235,0.8)'},
   {id:'maintenance',label:'Maintenance',emoji:'🔧',color:'rgba(22,163,74,0.8)'},
-  {id:'supplies',label:'Supplies',emoji:'📦',color:'rgba(120,53,15,0.9)'},
+  {id:'supplies',label:'Supplies',emoji:'📦',color:'rgba(120,53,15,0.9)',noRoles:['hosp','hospitality']},
   {id:'fire',label:'Fire/Life Safety',emoji:'🔥',color:'rgba(220,38,38,0.8)'},
 ];
 
@@ -205,7 +206,7 @@ function NewCallView({user,onBack,onSubmit}){
         <div>
           <div style={S.label}>Call Type</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-            {CALL_TYPES.map(ct=>(
+            {CALL_TYPES.filter(ct=>!(ct.noRoles&&ct.noRoles.includes((user.role||'').toLowerCase()))).map(ct=>(
               <button key={ct.id} style={{padding:'14px 8px',borderRadius:12,border:`2px solid ${type===ct.id?ct.color:'rgba(255,255,255,0.08)'}`,background:type===ct.id?`${ct.color}22`:'rgba(255,255,255,0.03)',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:4}} onClick={()=>setType(ct.id)}>
                 <span style={{fontSize:22}}>{ct.emoji}</span>
                 <span style={{fontSize:11,fontWeight:800,color:type===ct.id?'#f1f5f9':'#64748b'}}>{ct.label}</span>
@@ -478,7 +479,7 @@ function HomeView({user,onLogout}){
         <div>
           <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Submit a Call</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-            {CALL_TYPES.map(ct=>(
+            {CALL_TYPES.filter(ct=>!(ct.noRoles&&ct.noRoles.includes((user.role||'').toLowerCase()))).map(ct=>(
               <button key={ct.id} style={{padding:'16px 8px',borderRadius:14,border:`2px solid ${ct.color}`,background:`${ct.color}18`,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:5}} onClick={()=>setView('call')}>
                 <span style={{fontSize:24}}>{ct.emoji}</span>
                 <span style={{fontSize:11,fontWeight:900,color:'#f1f5f9',textAlign:'center',lineHeight:1.2}}>{ct.label}</span>

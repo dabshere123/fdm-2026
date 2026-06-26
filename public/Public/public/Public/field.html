@@ -27,6 +27,10 @@ const CHANNEL_GROUPS = [{
     id: 'AllStaff',
     label: 'All Staff',
     emoji: '📢'
+  }, {
+    id: 'Hospitality',
+    label: 'Hospitality',
+    emoji: '🎪'
   }]
 }, {
   id: 'bars',
@@ -127,7 +131,8 @@ const CALL_TYPES = [{
   id: 'supplies',
   label: 'Supplies',
   emoji: '📦',
-  color: 'rgba(120,53,15,0.9)'
+  color: 'rgba(120,53,15,0.9)',
+  noRoles: ['hosp', 'hospitality']
 }, {
   id: 'fire',
   label: 'Fire/Life Safety',
@@ -479,7 +484,7 @@ function NewCallView({
       gridTemplateColumns: '1fr 1fr',
       gap: 8
     }
-  }, CALL_TYPES.map(ct => /*#__PURE__*/React.createElement("button", {
+  }, CALL_TYPES.filter(ct => !(ct.noRoles && ct.noRoles.includes((user.role || '').toLowerCase()))).map(ct => /*#__PURE__*/React.createElement("button", {
     key: ct.id,
     style: {
       padding: '14px 8px',
@@ -1127,7 +1132,7 @@ function HomeView({
       gridTemplateColumns: '1fr 1fr',
       gap: 8
     }
-  }, CALL_TYPES.map(ct => /*#__PURE__*/React.createElement("button", {
+  }, CALL_TYPES.filter(ct => !(ct.noRoles && ct.noRoles.includes((user.role || '').toLowerCase()))).map(ct => /*#__PURE__*/React.createElement("button", {
     key: ct.id,
     style: {
       padding: '16px 8px',

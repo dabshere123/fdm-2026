@@ -3097,6 +3097,13 @@ Reply YES to acknowledge.`
                   <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Disturbance · Ejection · Suspicious</div>
                 </div>
               </button>
+              <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(180,83,9,0.6)",background:"linear-gradient(135deg,rgba(120,53,15,0.2),rgba(92,40,10,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(180,83,9,0.15)"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+                <span style={{fontSize:22}}>📦</span>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontSize:13,fontWeight:900,color:"#d97706"}}>SUPPLIES</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Request supplies or restock</div>
+                </div>
+              </button>
             </div>
 
             {/* 911 COMPACT BUTTON */}

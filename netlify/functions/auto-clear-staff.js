@@ -82,6 +82,17 @@ exports.handler = async (event) => {
       // Also check if staff has NO shift fields for today — don't clear those
       // (they may not be working today, that's fine)
 
+      // Fallback: use ShiftEnd if no day-specific fields are set
+      if (!shouldClear && dayCode) {
+        const genericEnd = f['ShiftEnd'];
+        if (genericEnd !== undefined && genericEnd !== '' && genericEnd !== null && genericEnd !== '0') {
+          const endHour = parseFloat(genericEnd);
+          if (!isNaN(endHour) && endHour > 0 && currentHour >= endHour) {
+            shouldClear = true;
+          }
+        }
+      }
+
       if (shouldClear) {
         // Set Status to Inactive for today
         await fetch(`https://api.airtable.com/v0/${BASE}/Staff/${r.id}`, {

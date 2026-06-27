@@ -1045,23 +1045,30 @@ function HubApp({onBack}){
 
   // NWS Weather Alert System
   const [nwsAlerts,setNwsAlerts]=useState([]);
+  const sentAlertIds=React.useRef(new Set()); // track which alerts we've already SMS'd
   const [weatherAlertBanner,setWeatherAlertBanner]=useState(null);
   const [weatherDismissed,setWeatherDismissed]=useState([]);
   const [currentWeather,setCurrentWeather]=useState(null);
   const [radarVisible,setRadarVisible]=useState(false);
 
   // NWS Alert fetch — Dane County WI zone WIZ064
+  const SEVERE_TRIGGER=["Tornado Warning","Tornado Watch","Severe Thunderstorm Warning","Severe Thunderstorm Watch"];
+  const APPROACH_TRIGGER=["Thunderstorm","Special Weather Statement"];
+
   const fetchNWSAlerts=async()=>{
     try{
       const r=await fetch('https://api.weather.gov/alerts/active?zone=WIZ064');
       const d=await r.json();
-      const severe=(d.features||[]).filter(f=>{
+      const features=d.features||[];
+
+      const severe=features.filter(f=>{
         const ev=f.properties?.event||"";
         return ["Tornado Warning","Tornado Watch","Severe Thunderstorm Warning","Severe Thunderstorm Watch",
           "Flash Flood Warning","Flash Flood Watch","Special Weather Statement","Winter Storm Warning",
           "Blizzard Warning","High Wind Warning","Wind Advisory"].some(x=>ev.includes(x));
       });
       setNwsAlerts(severe);
+
       // Show banner for new alerts not yet dismissed
       if(severe.length>0){
         const top=severe[0];
@@ -1077,6 +1084,39 @@ function HubApp({onBack}){
         }
       } else {
         setWeatherAlertBanner(null);
+      }
+
+      // ── ADMIN SMS + VOICE FOR SEVERE ALERTS ────────────────────
+      for(const f of features){
+        const ev=f.properties?.event||"";
+        const alertId=f.properties?.id||ev;
+        if(sentAlertIds.current.has(alertId)) continue;
+
+        const isSevere=SEVERE_TRIGGER.some(x=>ev.toLowerCase().includes(x.toLowerCase()));
+        const isApproach=!isSevere&&APPROACH_TRIGGER.some(x=>ev.toLowerCase().includes(x.toLowerCase()));
+
+        if(isSevere||isApproach){
+          sentAlertIds.current.add(alertId);
+          const headline=f.properties?.headline||ev;
+          const smsMsg=isSevere
+            ?`🚨 WEATHER ALERT — FDM 2026\n\n${ev}\n${headline}\n\nMcPike Park, Madison WI\nUse Broadcast to notify staff if needed.`
+            :`⛈️ WEATHER ADVISORY — FDM 2026\n\n${ev}\n${headline}\n\nMonitor conditions at McPike Park.`;
+
+          // SMS to admin only
+          fetch("/.netlify/functions/send-sms",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({to:"+16082289692",message:smsMsg})
+          }).catch(()=>{});
+
+          // Voice call for severe (Tornado/Thunderstorm Warning/Watch) only
+          if(isSevere){
+            const voiceMsg=`Urgent weather alert for Fête de Marquette. A ${ev} has been issued for Dane County, Wisconsin. McPike Park may be affected. Please take immediate action for the safety of all festival attendees and staff. Use the broadcast system to notify all workers immediately.`;
+            fetch("/.netlify/functions/send-voice",{
+              method:"POST",headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({phones:["+16082289692"],message:voiceMsg})
+            }).catch(()=>{});
+          }
+        }
       }
     } catch(e){ console.log('NWS fetch error:',e.message); }
   };
@@ -1101,7 +1141,7 @@ function HubApp({onBack}){
     fetchNWSAlerts();
     fetchWeather();
     fetchLostFound();
-    const alertInterval=setInterval(fetchNWSAlerts,5*60*1000);
+    const alertInterval=setInterval(fetchNWSAlerts,30*1000); // every 30 seconds
     const weatherInterval=setInterval(fetchWeather,10*60*1000);
     return()=>{clearInterval(alertInterval);clearInterval(weatherInterval);};
   },[]);

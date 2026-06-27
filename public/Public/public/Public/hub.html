@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026 Hub</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 const {
   useState,
   useEffect,
@@ -2716,21 +2729,26 @@ function HubApp({
 
   // NWS Weather Alert System
   const [nwsAlerts, setNwsAlerts] = useState([]);
+  const sentAlertIds = React.useRef(new Set()); // track which alerts we've already SMS'd
   const [weatherAlertBanner, setWeatherAlertBanner] = useState(null);
   const [weatherDismissed, setWeatherDismissed] = useState([]);
   const [currentWeather, setCurrentWeather] = useState(null);
   const [radarVisible, setRadarVisible] = useState(false);
 
   // NWS Alert fetch — Dane County WI zone WIZ064
+  const SEVERE_TRIGGER = ["Tornado Warning", "Tornado Watch", "Severe Thunderstorm Warning", "Severe Thunderstorm Watch"];
+  const APPROACH_TRIGGER = ["Thunderstorm", "Special Weather Statement"];
   const fetchNWSAlerts = async () => {
     try {
       const r = await fetch('https://api.weather.gov/alerts/active?zone=WIZ064');
       const d = await r.json();
-      const severe = (d.features || []).filter(f => {
+      const features = d.features || [];
+      const severe = features.filter(f => {
         const ev = f.properties?.event || "";
         return ["Tornado Warning", "Tornado Watch", "Severe Thunderstorm Warning", "Severe Thunderstorm Watch", "Flash Flood Warning", "Flash Flood Watch", "Special Weather Statement", "Winter Storm Warning", "Blizzard Warning", "High Wind Warning", "Wind Advisory"].some(x => ev.includes(x));
       });
       setNwsAlerts(severe);
+
       // Show banner for new alerts not yet dismissed
       if (severe.length > 0) {
         const top = severe[0];
@@ -2746,6 +2764,47 @@ function HubApp({
         }
       } else {
         setWeatherAlertBanner(null);
+      }
+
+      // ── ADMIN SMS + VOICE FOR SEVERE ALERTS ────────────────────
+      for (const f of features) {
+        const ev = f.properties?.event || "";
+        const alertId = f.properties?.id || ev;
+        if (sentAlertIds.current.has(alertId)) continue;
+        const isSevere = SEVERE_TRIGGER.some(x => ev.toLowerCase().includes(x.toLowerCase()));
+        const isApproach = !isSevere && APPROACH_TRIGGER.some(x => ev.toLowerCase().includes(x.toLowerCase()));
+        if (isSevere || isApproach) {
+          sentAlertIds.current.add(alertId);
+          const headline = f.properties?.headline || ev;
+          const smsMsg = isSevere ? `🚨 WEATHER ALERT — FDM 2026\n\n${ev}\n${headline}\n\nMcPike Park, Madison WI\nUse Broadcast to notify staff if needed.` : `⛈️ WEATHER ADVISORY — FDM 2026\n\n${ev}\n${headline}\n\nMonitor conditions at McPike Park.`;
+
+          // SMS to admin only
+          fetch("/.netlify/functions/send-sms", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              to: "+16082289692",
+              message: smsMsg
+            })
+          }).catch(() => {});
+
+          // Voice call for severe (Tornado/Thunderstorm Warning/Watch) only
+          if (isSevere) {
+            const voiceMsg = `Urgent weather alert for Fête de Marquette. A ${ev} has been issued for Dane County, Wisconsin. McPike Park may be affected. Please take immediate action for the safety of all festival attendees and staff. Use the broadcast system to notify all workers immediately.`;
+            fetch("/.netlify/functions/send-voice", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                phones: ["+16082289692"],
+                message: voiceMsg
+              })
+            }).catch(() => {});
+          }
+        }
       }
     } catch (e) {
       console.log('NWS fetch error:', e.message);
@@ -2773,7 +2832,7 @@ function HubApp({
     fetchNWSAlerts();
     fetchWeather();
     fetchLostFound();
-    const alertInterval = setInterval(fetchNWSAlerts, 5 * 60 * 1000);
+    const alertInterval = setInterval(fetchNWSAlerts, 30 * 1000); // every 30 seconds
     const weatherInterval = setInterval(fetchWeather, 10 * 60 * 1000);
     return () => {
       clearInterval(alertInterval);
@@ -10846,4 +10905,5 @@ const S = {
     fontSize: 14
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));
+</script></body></html>

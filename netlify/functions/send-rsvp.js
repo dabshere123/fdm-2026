@@ -71,6 +71,29 @@ exports.handler = async (event) => {
       }).catch(() => {});
     }
 
+    // Auto-save to Airtable Staff table so they can log into the Worker App immediately
+    if (process.env.AIRTABLE_TOKEN) {
+      const existing = await fetch(
+        `https://api.airtable.com/v0/appUVEp7kO9NeeJh0/Staff?filterByFormula={Name1}="${name.replace(/"/g,'\"')}"`,
+        { headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_TOKEN}` } }
+      ).then(r => r.json()).catch(() => ({ records: [] }));
+
+      if (!existing.records || existing.records.length === 0) {
+        // New staff member — add them with Worker App access (no hub role)
+        await fetch('https://api.airtable.com/v0/appUVEp7kO9NeeJh0/Staff', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: {
+            'Name1': name,
+            'Role': role || '',   // Their RSVP role (reference only until you assign a code)
+            'Phone': phone || '',
+            'Status': 'Approved',
+            'SMSConsent': 'Yes',
+          }})
+        }).catch(() => {});
+      }
+    }
+
     return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

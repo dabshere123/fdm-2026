@@ -1144,9 +1144,12 @@ function HubApp({onBack}){
     fetchNWSAlerts();
     fetchWeather();
     fetchLostFound();
+    // Auto-clear staff whose shift has ended
+    fetch("/.netlify/functions/auto-clear-staff").catch(()=>{});
     const alertInterval=setInterval(fetchNWSAlerts,30*1000); // every 30 seconds
     const weatherInterval=setInterval(fetchWeather,10*60*1000);
-    return()=>{clearInterval(alertInterval);clearInterval(weatherInterval);};
+    const clearInterval2=setInterval(()=>fetch("/.netlify/functions/auto-clear-staff").catch(()=>{}),30*60*1000);
+    return()=>{clearInterval(alertInterval);clearInterval(weatherInterval);clearInterval(clearInterval2);};
   },[]);
   const [emsAcked,setEmsAcked]=useState(false);
   const [emsAlertDismissed,setEmsAlertDismissed]=useState(false);

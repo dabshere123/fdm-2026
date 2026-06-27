@@ -1102,18 +1102,21 @@ function HubApp({onBack}){
             ?`🚨 WEATHER ALERT — FDM 2026\n\n${ev}\n${headline}\n\nMcPike Park, Madison WI\nUse Broadcast to notify staff if needed.`
             :`⛈️ WEATHER ADVISORY — FDM 2026\n\n${ev}\n${headline}\n\nMonitor conditions at McPike Park.`;
 
-          // SMS to admin only
-          fetch("/.netlify/functions/send-sms",{
-            method:"POST",headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({to:"+16082289692",message:smsMsg})
-          }).catch(()=>{});
+          // SMS to Devin + Gary
+          const ADMIN_PHONES=["+16082289692","+16082352925"];
+          for(const ph of ADMIN_PHONES){
+            fetch("/.netlify/functions/send-sms",{
+              method:"POST",headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({to:ph,message:smsMsg})
+            }).catch(()=>{});
+          }
 
           // Voice call for severe (Tornado/Thunderstorm Warning/Watch) only
           if(isSevere){
             const voiceMsg=`Urgent weather alert for Fête de Marquette. A ${ev} has been issued for Dane County, Wisconsin. McPike Park may be affected. Please take immediate action for the safety of all festival attendees and staff. Use the broadcast system to notify all workers immediately.`;
             fetch("/.netlify/functions/send-voice",{
               method:"POST",headers:{"Content-Type":"application/json"},
-              body:JSON.stringify({phones:["+16082289692"],message:voiceMsg})
+              body:JSON.stringify({phones:ADMIN_PHONES,message:voiceMsg})
             }).catch(()=>{});
           }
         }

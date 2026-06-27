@@ -2778,17 +2778,20 @@ function HubApp({
           const headline = f.properties?.headline || ev;
           const smsMsg = isSevere ? `🚨 WEATHER ALERT — FDM 2026\n\n${ev}\n${headline}\n\nMcPike Park, Madison WI\nUse Broadcast to notify staff if needed.` : `⛈️ WEATHER ADVISORY — FDM 2026\n\n${ev}\n${headline}\n\nMonitor conditions at McPike Park.`;
 
-          // SMS to admin only
-          fetch("/.netlify/functions/send-sms", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              to: "+16082289692",
-              message: smsMsg
-            })
-          }).catch(() => {});
+          // SMS to Devin + Gary
+          const ADMIN_PHONES = ["+16082289692", "+16082352925"];
+          for (const ph of ADMIN_PHONES) {
+            fetch("/.netlify/functions/send-sms", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                to: ph,
+                message: smsMsg
+              })
+            }).catch(() => {});
+          }
 
           // Voice call for severe (Tornado/Thunderstorm Warning/Watch) only
           if (isSevere) {
@@ -2799,7 +2802,7 @@ function HubApp({
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                phones: ["+16082289692"],
+                phones: ADMIN_PHONES,
                 message: voiceMsg
               })
             }).catch(() => {});

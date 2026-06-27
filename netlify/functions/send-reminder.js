@@ -43,7 +43,7 @@ exports.handler = async (event) => {
       const firstName = s.name.split(' ')[0];
       const encodedName = encodeURIComponent(s.name.trim());
       const msg =
-        `FDM 2026 — This is NOT spam\n\n` +
+        `FDM 2026 - Fête de Marquette 2026 — This is NOT spam\n\n` +
         `Hey ${firstName} — this is Devin Abshere reaching out personally about Fête de Marquette 2026. You're receiving this because you're part of our festival crew and I have your number on file.\n\n` +
         `I'm still waiting on your worker registration — it takes less than 2 minutes:\n\n` +
         `👉 fdm2026.netlify.app/rsvp?name=${encodedName}\n\n` +

@@ -3480,6 +3480,9 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             <a href="https://fdm2026.netlify.app/register" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
               <span style={{fontSize:14}}>📝</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Register Staff</div>
             </a>
+            <a href="/.netlify/functions/export-staff" download="FDM-2026-Staff.csv" style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",textDecoration:"none"}}>
+              <span style={{fontSize:14}}>⬇️</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Export Staff to Spreadsheet</div>
+            </a>
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("sendonboarding")}>
               <span style={{fontSize:14}}>📱</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Send Onboarding Text</div>
             </button>

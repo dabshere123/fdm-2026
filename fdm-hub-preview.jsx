@@ -3480,6 +3480,21 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("sendonboarding")}>
               <span style={{fontSize:14}}>📱</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Send Onboarding Text</div>
             </button>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",cursor:"pointer",textAlign:"left"}} onClick={async()=>{
+              if(!window.confirm(`Send registration reminder to all staff who haven\'t submitted their RSVP yet?`)) return;
+              const btn=event.target.closest("button");
+              btn.style.opacity="0.5";
+              btn.disabled=true;
+              try{
+                const res=await fetch("/.netlify/functions/send-reminder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
+                const data=await res.json();
+                alert(`✅ Reminder sent to ${data.sent} staff\n${data.skipped} already submitted — skipped`);
+                setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"broadcast",label:`RSVP reminders sent to ${data.sent} staff`},...p]);
+              }catch(e){alert("Error: "+e.message);}
+              btn.style.opacity="";btn.disabled=false;
+            }}>
+              <span style={{fontSize:14}}>🔔</span><div style={{fontSize:12,fontWeight:700,color:"#fbbf24"}}>Send RSVP Reminders</div>
+            </button>
           </div>
         </div>
       </div>

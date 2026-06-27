@@ -87,7 +87,9 @@ exports.handler = async (event) => {
         const genericEnd = f['ShiftEnd'];
         if (genericEnd !== undefined && genericEnd !== '' && genericEnd !== null && genericEnd !== '0') {
           const endHour = parseFloat(genericEnd);
-          if (!isNaN(endHour) && endHour > 0 && currentHour >= endHour) {
+          // 24 = midnight end of shift, 26 = 2am, etc.
+          // Never clear if end is 0 (invalid) or blank
+          if (!isNaN(endHour) && endHour > 0 && endHour <= 24 && currentHour >= endHour) {
             shouldClear = true;
           }
         }

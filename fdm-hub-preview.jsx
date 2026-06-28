@@ -78,7 +78,7 @@ function now(){return new Date().toLocaleString("en-US",{weekday:"short",month:"
 function tShort(){return new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
 function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)",overflow:"hidden"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/></div>);}
 function BB({onClick,label="← Back"}){return(
-  <button style={{position:"sticky",top:8,zIndex:10,background:"rgba(255,255,255,0.1)",border:"2px solid rgba(255,255,255,0.25)",color:"#f1f5f9",padding:"12px 20px",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:800,backdropFilter:"blur(8px)",boxShadow:"0 2px 12px rgba(0,0,0,0.3)"}} onClick={onClick}>{label}</button>
+  <button style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,255,255,0.2)",color:"#f1f5f9",padding:"9px 16px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800,flexShrink:0,whiteSpace:"nowrap"}} onClick={onClick}>{label}</button>
 );
 }
 function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={S.lbl}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}

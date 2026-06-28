@@ -1,17 +1,4 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
-<title>FDM 2026 Hub</title>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#0d0d0d"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
-</head><body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 const {
   useState,
   useEffect,
@@ -263,19 +250,16 @@ function BB({
 }) {
   return /*#__PURE__*/React.createElement("button", {
     style: {
-      position: "sticky",
-      top: 8,
-      zIndex: 10,
-      background: "rgba(255,255,255,0.1)",
-      border: "2px solid rgba(255,255,255,0.25)",
+      background: "rgba(255,255,255,0.08)",
+      border: "1.5px solid rgba(255,255,255,0.2)",
       color: "#f1f5f9",
-      padding: "12px 20px",
-      borderRadius: 12,
+      padding: "9px 16px",
+      borderRadius: 10,
       cursor: "pointer",
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: 800,
-      backdropFilter: "blur(8px)",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.3)"
+      flexShrink: 0,
+      whiteSpace: "nowrap"
     },
     onClick: onClick
   }, label);
@@ -10980,5 +10964,4 @@ const S = {
     fontSize: 14
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));
-</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>

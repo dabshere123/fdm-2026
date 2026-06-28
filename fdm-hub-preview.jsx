@@ -451,9 +451,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
           <div style={{fontSize:10,fontWeight:900,color:"#475569",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Safety</div>
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
-            <button style={{width:"100%",padding:"10px",borderRadius:10,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:10}} onClick={()=>setMpdRequestView(true)}>
-              <span>🚔</span> Request MPD Officer
-            </button>
+
             <button style={{width:"100%",padding:"9px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});}}}>
               {nineOneOne.active?"🚨 911 ACTIVE":"🚨 911 Activation"}
             </button>
@@ -3429,10 +3427,7 @@ Please respond immediately.
               
             </div>
 
-            {/* REQUEST MPD BUTTON */}
-            <button style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>setMpdRequestView(true)}>
-              🚔 Request MPD Officer
-            </button>
+
 
             {/* 911 COMPACT BUTTON */}
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨

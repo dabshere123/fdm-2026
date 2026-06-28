@@ -769,6 +769,26 @@ Fête de Marquette 2026`;
           <button style={{width:'100%',padding:'18px',borderRadius:14,border:'2px solid rgba(255,255,255,0.7)',background:'linear-gradient(135deg,rgba(245,158,11,0.5),rgba(202,138,4,0.5))',color:'#fff',fontSize:17,fontWeight:900,cursor:'pointer'}} onClick={()=>setLostChildAlert(null)}>
             ✅ ACKNOWLEDGED — SEARCHING
           </button>
+
+          {/* Stage manager announcement popup */}
+          {showStagePopup&&(
+            <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.88)',display:'flex',alignItems:'flex-end',zIndex:999}} onClick={()=>setShowStagePopup(false)}>
+              <div style={{width:'100%',background:'#1a0a00',borderRadius:'20px 20px 0 0',padding:'24px 20px 40px',border:'2px solid rgba(234,179,8,0.7)'}} onClick={e=>e.stopPropagation()}>
+                <div style={{fontSize:32,textAlign:'center',marginBottom:12}}>📢</div>
+                <div style={{fontSize:20,fontWeight:900,color:'#fcd34d',textAlign:'center',marginBottom:12}}>STAGE MANAGER ACTION</div>
+                <div style={{background:'rgba(234,179,8,0.12)',border:'1px solid rgba(234,179,8,0.4)',borderRadius:12,padding:'16px',fontSize:15,color:'#fef08a',lineHeight:1.7,marginBottom:16}}>
+                  Notify your <strong>stage announcer</strong> immediately to make a lost child announcement from the stage microphone.
+                </div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.7)',lineHeight:1.6,marginBottom:16}}>
+                  Suggested announcement:<br/>
+                  <em style={{color:'#fcd34d'}}>"Attention festival guests — we are looking for a lost child last seen near {lostChildAlert?.location}. If you have information please come to the festival information booth immediately or see any staff member in an orange vest."</em>
+                </div>
+                <button style={{width:'100%',padding:'16px',borderRadius:12,border:'none',background:'linear-gradient(135deg,rgba(234,179,8,0.8),rgba(202,138,4,0.8))',color:'#fff',fontSize:16,fontWeight:900,cursor:'pointer'}} onClick={()=>setShowStagePopup(false)}>
+                  ✅ Announcer Notified
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -946,6 +966,7 @@ function HomeView({user,onLogout}){
   const [notifIdx,setNotifIdx]=useState(0);       // which one we're viewing
   const [lostChildAlert,setLostChildAlert]=useState(null); // {location, description, at}
   const [lcBlink,setLcBlink]=useState(false);
+  const [showStagePopup,setShowStagePopup]=useState(false);
   const [quickReply,setQuickReply]=useState('');
   const [replySending,setReplySending]=useState(false);
   const seenIds=React.useRef(new Set());

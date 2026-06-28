@@ -298,6 +298,124 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
       />
     );
 
+    // ── FULL PAGE PRIORITY CALL (locked until cleared + report done) ──
+    const activePriorityCall = myActive[0] || null;
+    const [showMeetupModal,setShowMeetupModal]=React.useState(false);
+    const [meetupLoc,setMeetupLoc]=React.useState('');
+    const [isOnScene,setIsOnScene]=React.useState(false);
+    const [nineOneOneActive,setNineOneOneActive]=React.useState(false);
+    const [incidentDone,setIncidentDone]=React.useState(false);
+    const [waitingReport,setWaitingReport]=React.useState(false);
+
+    if(activePriorityCall&&!incidentDone){
+      const pc=activePriorityCall;
+      const cc=CALL_COLORS[pc.type]||CALL_COLORS.medical;
+      function activate911(){
+        const msg=`🚨 911 ACTIVATED — FDM 2026
+
+Location: ${pc.location}
+Call: ${pc.problem}
+Activated by: ${role}
+Meet EMS at: ${meetupLoc||"TBD"}
+Time: ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"})}
+
+Madison Fire/EMS INBOUND — McPike Park`;
+        const voiceMsg=`911 has been activated at Fête de Marquette by ${role}. Location: ${pc.location}. Meet EMS at ${meetupLoc||"the main entrance"}. EMS is now inbound to McPike Park.`;
+        const adminPhones=["+16082289692","+16082352925"];
+        adminPhones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg})}).catch(()=>{});});
+        fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:adminPhones,message:voiceMsg})}).catch(()=>{});
+        const otherMedR=(role||"").toLowerCase().includes("1")?"m2":"m1";
+        (staffList||[]).filter(s=>(s.role||"").toLowerCase()===otherMedR&&s.phone).forEach(s=>{
+          const d=String(s.phone).replace(/[^0-9]/g,"");const fmt=d.length===10?`+1${d}`:`+${d}`;
+          fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg})}).catch(()=>{});
+          fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:[fmt],message:voiceMsg})}).catch(()=>{});
+        });
+        set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:pc.id,info:{location:pc.location,nature:pc.problem}});
+        setNineOneOneActive(true);
+        setShowMeetupModal(false);
+      }
+
+      return(
+        <div style={{position:"fixed",inset:0,background:"#050510",display:"flex",flexDirection:"column",zIndex:9999,overflowY:"auto"}}>
+          {/* Header */}
+          <div style={{padding:"16px",background:cc.bg,borderBottom:`2px solid ${cc.border}`,flexShrink:0}}>
+            <div style={{fontSize:11,fontWeight:900,color:cc.text,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>{cc.icon} {cc.label} — PRIORITY CALL ACTIVE</div>
+            <div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>📍 {pc.location}</div>
+            {nineOneOneActive&&<div style={{marginTop:6,padding:"6px 10px",background:"rgba(239,68,68,0.2)",border:"1px solid rgba(239,68,68,0.5)",borderRadius:8,fontSize:12,fontWeight:800,color:"#fca5a5"}}>🚨 911 ACTIVATED — EMS INBOUND</div>}
+          </div>
+
+          {/* Call info */}
+          <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12,flex:1}}>
+            <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"14px"}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#64748b",marginBottom:8,textTransform:"uppercase"}}>Call Details</div>
+              <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",marginBottom:6}}>{pc.problem}</div>
+              {pc.details&&<div style={{fontSize:13,color:"#94a3b8"}}>{pc.details}</div>}
+              <div style={{fontSize:12,color:"#475569",marginTop:8}}>
+                Called in: {pc.timestamp||"--"} · Assigned to: {role}
+              </div>
+              {nineOneOneActive&&meetupLoc&&(
+                <div style={{marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24"}}>🚒 EMS Meetup: {meetupLoc}</div>
+              )}
+            </div>
+
+            {/* Status */}
+            <div style={{display:"flex",gap:8}}>
+              <div style={{flex:1,padding:"10px",borderRadius:10,background:isOnScene?"rgba(16,185,129,0.15)":"rgba(255,255,255,0.04)",border:`1px solid ${isOnScene?"rgba(16,185,129,0.4)":"rgba(255,255,255,0.08)"}`,textAlign:"center"}}>
+                <div style={{fontSize:11,color:"#64748b"}}>Status</div>
+                <div style={{fontSize:14,fontWeight:800,color:isOnScene?"#4ade80":"#fbbf24"}}>{isOnScene?"On Scene":"En Route"}</div>
+              </div>
+              <div style={{flex:1,padding:"10px",borderRadius:10,background:nineOneOneActive?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.04)",border:`1px solid ${nineOneOneActive?"rgba(239,68,68,0.4)":"rgba(255,255,255,0.08)"}`,textAlign:"center"}}>
+                <div style={{fontSize:11,color:"#64748b"}}>911</div>
+                <div style={{fontSize:14,fontWeight:800,color:nineOneOneActive?"#fca5a5":"#475569"}}>{nineOneOneActive?"ACTIVATED":"Not Called"}</div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {!isOnScene&&(
+                <button style={{width:"100%",padding:"16px",borderRadius:12,border:"2px solid rgba(16,185,129,0.6)",background:"rgba(16,185,129,0.12)",color:"#4ade80",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>{
+                  setIsOnScene(true);
+                  setCalls(p=>p.map(c=>c.id===pc.id?{...c,status:"on_scene"}:c));
+                  if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:pc.id,status:"On Scene",unit:role})}).catch(()=>{});
+                }}>✅ On Scene</button>
+              )}
+              {isOnScene&&<div style={{textAlign:"center",padding:"10px",color:"#4ade80",fontWeight:700,fontSize:14}}>✅ On Scene — You are at the location</div>}
+
+              {!nineOneOneActive&&(
+                <button style={{width:"100%",padding:"16px",borderRadius:12,border:"2px solid rgba(239,68,68,0.6)",background:"rgba(239,68,68,0.12)",color:"#fca5a5",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShowMeetupModal(true)}>
+                  🚨 Activate 911
+                </button>
+              )}
+
+              <button style={{width:"100%",padding:"16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.06)",color:"#f1f5f9",fontSize:15,fontWeight:800,cursor:!isOnScene?"not-allowed":"pointer",opacity:!isOnScene?0.4:1}} disabled={!isOnScene} onClick={()=>{
+                if(!isOnScene) return;
+                setWaitingReport(true);
+                setClearIncView(pc);
+                triggerIncident(pc);
+              }}>
+                {!isOnScene?"Clear Call (must be On Scene first)":"Clear Call → Complete Report"}
+              </button>
+            </div>
+          </div>
+
+          {/* 911 meetup modal */}
+          {showMeetupModal&&(
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",zIndex:10000}}>
+              <div style={{width:"100%",background:"#0d0d1a",borderRadius:"20px 20px 0 0",padding:"24px 20px",display:"flex",flexDirection:"column",gap:14}}>
+                <div style={{fontSize:18,fontWeight:900,color:"#fca5a5"}}>🚨 Activate 911</div>
+                <div style={{fontSize:14,color:"#94a3b8"}}>Specify where EMS should meet you</div>
+                <input style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Main gate on Ingersoll, North parking lot..." value={meetupLoc} onChange={e=>setMeetupLoc(e.target.value)} autoFocus/>
+                <div style={{display:"flex",gap:10}}>
+                  <button style={{flex:1,padding:"14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setShowMeetupModal(false)}>Cancel</button>
+                  <button style={{flex:2,padding:"14px",borderRadius:10,border:"none",background:meetupLoc.trim()?"linear-gradient(135deg,rgba(239,68,68,0.9),rgba(185,28,28,0.9))":"rgba(255,255,255,0.06)",color:meetupLoc.trim()?"#fff":"#475569",fontSize:14,fontWeight:900,cursor:meetupLoc.trim()?"pointer":"not-allowed"}} disabled={!meetupLoc.trim()} onClick={activate911}>🚨 CONFIRM — Activate 911</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return(
     <div style={{display:"flex",flexDirection:"column",flex:1,overflowY:"auto"}}>
 
@@ -308,86 +426,25 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         ))}
       </div>
 
-      {/* CHAT — collapsible, full access */}
-      <div style={{margin:"6px 16px",background:"rgba(147,51,234,0.06)",border:"1px solid rgba(147,51,234,0.2)",borderRadius:12,overflow:"hidden"}}>
-        <button style={{width:"100%",padding:"16px 18px",background:"none",border:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}} onClick={()=>setMedChatOpen(true)}>
+      {/* FESTIVAL CHAT — inbox button */}
+      <div style={{margin:"6px 16px"}}>
+        <button style={{width:"100%",padding:"16px 18px",borderRadius:12,border:"1px solid rgba(147,51,234,0.3)",background:"rgba(147,51,234,0.08)",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}} onClick={()=>setMedChatOpen(true)}>
           <div style={{width:46,height:46,borderRadius:12,background:"rgba(147,51,234,0.2)",border:"1px solid rgba(147,51,234,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>💬</div>
           <div style={{flex:1,textAlign:"left"}}>
             <div style={{fontSize:16,fontWeight:900,color:"#c4b5fd"}}>Festival Chat</div>
-            <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Tap to open messages</div>
+            <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Tap to open messages</div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            {medDMThread&&<button style={{fontSize:10,color:"#64748b",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"2px 7px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();setMedDMThread(null);setMedChatMessages([]);}}>← Channels</button>}
-            <span style={{fontSize:11,color:"#64748b"}}>{chatExpanded?"▲":"▼"}</span>
-          </div>
+          <div style={{color:"#c4b5fd",fontSize:18}}>→</div>
         </button>
-        {chatExpanded&&(
-          <div style={{borderTop:"1px solid rgba(147,51,234,0.15)",padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
-            {/* Channel / DM tabs */}
-            {!medDMThread&&<div style={{display:"flex",gap:4,marginBottom:4}}>
-              <button style={{flex:1,padding:"5px",borderRadius:6,border:`1px solid ${medChatTab==="channels"?"rgba(147,51,234,0.5)":"rgba(255,255,255,0.08)"}`,background:medChatTab==="channels"?"rgba(147,51,234,0.12)":"rgba(255,255,255,0.03)",color:medChatTab==="channels"?"#c4b5fd":"#64748b",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setMedChatTab("channels")}>Channels</button>
-              <button style={{flex:1,padding:"5px",borderRadius:6,border:`1px solid ${medChatTab==="dms"?"rgba(147,51,234,0.5)":"rgba(255,255,255,0.08)"}`,background:medChatTab==="dms"?"rgba(147,51,234,0.12)":"rgba(255,255,255,0.03)",color:medChatTab==="dms"?"#c4b5fd":"#64748b",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setMedChatTab("dms")}>Direct Messages</button>
-            </div>}
-            {/* Channel picker */}
-            {!medDMThread&&medChatTab==="channels"&&<div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:4}}>
-              {MED_CHANNELS.map(ch=>(
-                <button key={ch.id} style={{padding:"3px 8px",borderRadius:12,border:`1px solid ${medChatChannel===ch.id?"rgba(147,51,234,0.6)":"rgba(255,255,255,0.08)"}`,background:medChatChannel===ch.id?"rgba(147,51,234,0.15)":"rgba(255,255,255,0.03)",color:medChatChannel===ch.id?"#c4b5fd":"#64748b",fontSize:10,fontWeight:600,cursor:"pointer"}} onClick={()=>{setMedChatChannel(ch.id);setMedChatMessages([]);}}>{ch.emoji} {ch.label}</button>
-              ))}
-            </div>}
-            {/* DM list */}
-            {!medDMThread&&medChatTab==="dms"&&<div style={{marginBottom:4}}>
-              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                {staffList.filter(s=>s.name!==role).slice(0,12).map(s=>(
-                  <button key={s.id} style={{padding:"3px 8px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:10,cursor:"pointer"}} onClick={()=>startMedDM(s)}>{s.name}</button>
-                ))}
-              </div>
-              {medDMList.map(dm=>(
-                <button key={dm.threadId} style={{width:"100%",padding:"6px 8px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",display:"flex",gap:8,alignItems:"center"}} onClick={()=>{setMedDMThread({otherName:dm.otherName,threadId:dm.threadId});setMedChatMessages([]);}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#f1f5f9",flex:1}}>{dm.otherName}</div>
-                  <div style={{fontSize:10,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap",maxWidth:120}}>{dm.lastMessage}</div>
-                </button>
-              ))}
-            </div>}
-            {/* Messages */}
-            {(medChatTab==="channels"||medDMThread)&&<div style={{maxHeight:150,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
-              {medChatMessages.length===0&&<div style={{fontSize:11,color:"#374151",textAlign:"center",padding:"8px 0"}}>No messages yet</div>}
-              {medChatMessages.map(msg=>{
-                const isMe=msg.fromName===role;
-                const isAlert=msg.isAlert;
-                const time=msg.sentAt?new Date(msg.sentAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):"";
-                if(isAlert) return(
-                  <div key={msg.id} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"4px 8px"}}>
-                    <div style={{fontSize:9,fontWeight:800,color:"#fca5a5"}}>🚨 {time}</div>
-                    <div style={{fontSize:11,color:"#fecaca"}}>{msg.message}</div>
-                  </div>
-                );
-                return(
-                  <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:1}}>
-                    {!isMe&&<div style={{fontSize:9,color:"#64748b",marginLeft:3}}>{msg.fromName} · {time}</div>}
-                    <div style={{maxWidth:"85%",background:isMe?"rgba(147,51,234,0.2)":"rgba(255,255,255,0.06)",border:`1px solid ${isMe?"rgba(147,51,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:"10px",padding:"5px 9px"}}>
-                      <div style={{fontSize:12,color:"#f1f5f9"}}>{msg.message}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>}
-            {/* Input */}
-            {(medChatTab==="channels"||medDMThread)&&<div style={{display:"flex",gap:6}}>
-              <input style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"8px 11px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder={medDMThread?`Message ${medDMThread.otherName}...`:`Message ${MED_CHANNELS.find(c=>c.id===medChatChannel)?.label||medChatChannel}...`} value={medChatInput} onChange={e=>setMedChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendMedChat();}}}/>
-              <button style={{padding:"8px 14px",borderRadius:8,border:"none",background:medChatInput.trim()?"linear-gradient(135deg,#7c3aed,#6d28d9)":"rgba(255,255,255,0.06)",color:medChatInput.trim()?"#fff":"#475569",fontSize:12,fontWeight:800,cursor:medChatInput.trim()?"pointer":"not-allowed"}} onClick={sendMedChat} disabled={!medChatInput.trim()||medChatSending}>{medChatSending?"...":"Send"}</button>
-            </div>}
-          </div>
-        )}
-        {!chatExpanded&&medChatMessages.length>0&&(()=>{const lm=medChatMessages[medChatMessages.length-1];return<div style={{padding:"0 14px 8px",fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{lm.fromName}: {lm.message.slice(0,60)}{lm.message.length>60?"...":""}</div>;})()}
       </div>
 
-      {/* NEW CALL BUTTON */}
+            {/* NEW CALL BUTTON */}
       <div style={{padding:"6px 16px 4px"}}>
         <button style={{width:"100%",padding:"16px",borderRadius:14,border:"2px solid rgba(147,51,234,0.7)",background:"linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 0 16px rgba(147,51,234,0.2)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
           <span style={{fontSize:26}}>🏥</span>
           <div style={{textAlign:"left"}}>
             <div style={{fontSize:16,fontWeight:900,color:"#d8b4fe"}}>NEW MEDICAL CALL</div>
-            <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Submit call · alerts all units</div>
+            <div style={{fontSize:11,color:"#e2e8f0",marginTop:2}}>Submit call · alerts all units</div>
           </div>
         </button>
       </div>
@@ -398,7 +455,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
           <span style={{fontSize:26}}>🧒</span>
           <div style={{textAlign:"left"}}>
             <div style={{fontSize:16,fontWeight:900,color:"#fcd34d"}}>REPORT LOST CHILD</div>
-            <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Alerts all staff immediately</div>
+            <div style={{fontSize:11,color:"#e2e8f0",marginTop:2}}>Alerts all staff immediately</div>
           </div>
         </button>
       </div>
@@ -426,7 +483,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
                   </div>
                   <div style={{fontSize:18,fontWeight:900,color:"#f1f5f9"}}>📍 {call.location}</div>
                   <div style={{fontSize:14,color:"#e2e8f0"}}>{call.problem}</div>
-                  {call.details&&<div style={{fontSize:12,color:"#94a3b8"}}>{call.details}</div>}
+                  {call.details&&<div style={{fontSize:12,color:"#e2e8f0"}}>{call.details}</div>}
                   <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                     {call.status!=="on_scene"&&(
                       <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(16,185,129,0.5)",background:"rgba(16,185,129,0.12)",color:"#6ee7b7",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{
@@ -435,7 +492,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
                       }}>✅ On Scene</button>
                     )}
                     <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:call.id,info:{location:call.location,nature:call.problem}})}>🚨 911</button>
-                    <button style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(100,116,139,0.4)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>clearCall(call.id)}>Clear Call →</button>
+                    <button style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(100,116,139,0.4)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>clearCall(call.id)}>Clear Call →</button>
                   </div>
                 </div>
               );
@@ -467,26 +524,26 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
         {/* ADDITIONAL RESOURCES TAB */}
         {tab==="resources"&&(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <div style={{fontSize:12,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Request Additional Units</div>
+            <div style={{fontSize:12,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Request Additional Units</div>
             <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(147,51,234,0.5)",background:"rgba(147,51,234,0.1)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>requestResource("med")}>
               <span style={{fontSize:24}}>🩺</span>
               <div>
                 <div style={{fontSize:14,fontWeight:900,color:"#d8b4fe"}}>Request {otherRole}</div>
-                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>GroupMe + SMS to Admin · Medical channel</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>GroupMe + SMS to Admin · Medical channel</div>
               </div>
             </button>
             <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>requestResource("admin")}>
               <span style={{fontSize:24}}>📢</span>
               <div>
                 <div style={{fontSize:14,fontWeight:900,color:"#fcd34d"}}>Request Admin</div>
-                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>GroupMe + SMS to Admin</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>GroupMe + SMS to Admin</div>
               </div>
             </button>
             <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>setMpdRequestView(true)}>
               <span style={{fontSize:24}}>🚔</span>
               <div>
                 <div style={{fontSize:14,fontWeight:900,color:"#93c5fd"}}>Request MPD</div>
-                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>SMS + Voice call to officers on duty</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>SMS + Voice call to officers on duty</div>
               </div>
             </button>
           </div>
@@ -503,7 +560,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
               <div key={item.id} style={{borderRadius:10,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",padding:"10px 12px"}}>
                 <div style={{fontSize:12,fontWeight:800,color:"#c4b5fd",marginBottom:2}}>{item.itemNumber||"—"}</div>
                 <div style={{fontSize:13,color:"#f1f5f9"}}>{item.description}</div>
-                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>📍 {item.location} · {item.status}</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>📍 {item.location} · {item.status}</div>
               </div>
             ))}
           </>
@@ -580,7 +637,7 @@ function HubConversationView({myName,myRole,convo,onBack}){
           <BB onClick={onBack}/>
           <div style={{flex:1}}>
             <div style={{fontSize:15,fontWeight:900,color:"#f1f5f9"}}>{label}</div>
-            {!convo.isDM&&<div style={{fontSize:11,color:"#64748b"}}>Group channel</div>}
+            {!convo.isDM&&<div style={{fontSize:11,color:"#94a3b8"}}>Group channel</div>}
           </div>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8,minHeight:0}}>
@@ -597,7 +654,7 @@ function HubConversationView({myName,myRole,convo,onBack}){
             );
             return(
               <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
-                {!isMe&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{hubDisplayRole(msg.fromRole)||msg.fromName} · {time}</div>}
+                {!isMe&&<div style={{fontSize:10,color:"#94a3b8",marginLeft:4}}>{hubDisplayRole(msg.fromRole)||msg.fromName} · {time}</div>}
                 <div style={{maxWidth:"82%",background:isMe?"rgba(14,165,233,0.25)":"rgba(255,255,255,0.07)",border:`1px solid ${isMe?"rgba(14,165,233,0.5)":"rgba(255,255,255,0.1)"}`,borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"9px 13px"}}>
                   <div style={{fontSize:14,color:"#f1f5f9",lineHeight:1.5}}>{msg.message}</div>
                 </div>
@@ -635,21 +692,21 @@ function HubNewMessageView({myName,myRole,staffList,onBack,onOpen}){
         </div>
         <div style={{flex:1,overflowY:"auto"}}>
           {!search&&<>
-            <div style={{padding:"8px 16px 4px",fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Channels</div>
+            <div style={{padding:"8px 16px 4px",fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em"}}>Channels</div>
             {HUB_CHANNEL_GROUPS.flatMap(g=>g.channels).map(ch=>(
               <button key={ch.id} style={{width:"100%",padding:"12px 16px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>openCh(ch.id)}>
-                <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#64748b",flexShrink:0}}>#</div>
+                <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#94a3b8",flexShrink:0}}>#</div>
                 <div style={{fontSize:14,color:"#f1f5f9"}}>{ch.label}</div>
               </button>
             ))}
-            <div style={{padding:"8px 16px 4px",fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Direct Messages</div>
+            <div style={{padding:"8px 16px 4px",fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em"}}>Direct Messages</div>
           </>}
           {filtered.map(s=>(
             <button key={s.id} style={{width:"100%",padding:"12px 16px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>openDM(s)}>
               <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(99,102,241,0.15)",border:"1px solid rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#a5b4fc",flexShrink:0}}>{(s.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
               <div>
                 <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{s.name}</div>
-                {s.location&&<div style={{fontSize:11,color:"#64748b",marginTop:1}}>{s.location}</div>}
+                {s.location&&<div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{s.location}</div>}
               </div>
             </button>
           ))}
@@ -721,7 +778,7 @@ function HubChatInbox({myName,myRole,staffList,onBack}){
                     <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap",maxWidth:"70%"}}>{label}</div>
                     <div style={{fontSize:11,color:"#475569",flexShrink:0,marginLeft:8}}>{timeAgo(c.lastAt)}</div>
                   </div>
-                  <div style={{fontSize:13,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>
+                  <div style={{fontSize:13,color:"#94a3b8",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>
                     {c.lastFrom&&c.lastFrom!==myRole&&c.lastFrom!==myName?`${hubDisplayRole(c.lastFrom)||c.lastFrom}: `:""}{c.lastMessage}
                   </div>
                 </div>
@@ -1465,11 +1522,22 @@ function HubApp({onBack}){
               </div>
               {!nineOneOne.active&&<button style={{width:"100%",border:"2px solid rgba(220,38,38,0.7)",borderRadius:12,padding:"14px",color:"#fca5a5",fontSize:14,fontWeight:900,cursor:"pointer",background:"rgba(180,0,0,0.2)"}}
                 onClick={()=>{
-                  const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${alertCall.location}\nCALL: ${alertCall.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
+                  const msg911=`🚨 911 ACTIVATED — FDM 2026\n\nLocation: ${alertCall.location}\nCall: ${alertCall.problem}\nActivated by: ${role}\nTime: ${tShort()}\n\nMadison Fire / EMS INBOUND — McPike Park`;
                   set911({active:true,by:role,at:now(),callId:alertCall.id,info:{location:alertCall.location,nature:alertCall.problem}});
-                  sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
-                  const phones=[...new Set([ADMIN2_PHONE,...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
-                  phones.forEach(p=>{const d=p.replace(/\D/g,"");const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 activated by ${role} at Fete de Marquette. Responding to ${alertCall.location}. ${alertCall.problem}. EMS inbound. Clear a path.`})}).catch(()=>{});});
+                  // SMS + Voice to Devin + Gary (admin)
+                  const adminPhones=["+16082289692","+16082352925"];
+                  adminPhones.forEach(p=>{
+                    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});
+                  });
+                  fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:adminPhones,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`})}).catch(()=>{});
+                  // SMS + Voice to OTHER med unit (not the one activating 911)
+                  const otherMedRole=(role||"").toLowerCase()==="med 1"||role==="M1"?"m2":"m1";
+                  const otherMed=(staffList||[]).filter(s=>(s.role||"").toLowerCase()===otherMedRole&&s.phone);
+                  otherMed.forEach(s=>{
+                    const d=String(s.phone).replace(/[^0-9]/g,"");const fmt=d.length===10?`+1${d}`:`+${d}`;
+                    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});
+                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:[fmt],message:`911 has been activated at Fête de Marquette. Location: ${alertCall.location}. EMS is inbound. Please stand by for coordination.`})}).catch(()=>{});
+                  });
                 }}>🚨 Activate 911 from This Call</button>}
               {nineOneOne.active&&<div style={{textAlign:"center",color:"#fca5a5",fontWeight:900,padding:"10px",background:"rgba(180,0,0,0.2)",borderRadius:10}}>🚨 911 ACTIVE</div>}
             </div>
@@ -1496,13 +1564,13 @@ function HubApp({onBack}){
       <div style={{textAlign:"center",padding:"28px 16px 12px"}}>
         <div style={{fontSize:48}}>⚡</div>
         <div style={{fontSize:18,fontWeight:900,color:"#fff",marginTop:4}}>Operations Hub</div>
-        <div style={{fontSize:11,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>Fête de Marquette 2026</div>
+        <div style={{fontSize:11,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>Fête de Marquette 2026</div>
       </div>
-      <div style={{padding:"0 16px 6px",fontSize:12,color:"#64748b",fontWeight:600}}>Select your role:</div>
+      <div style={{padding:"0 16px 6px",fontSize:12,color:"#94a3b8",fontWeight:600}}>Select your role:</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 16px 20px"}}>
         {[["ADMIN","⚡","Command / Admin · Full access","rgba(245,158,11,0.1)","#f59e0b"],["Med 1","🩺","Medical Unit 1","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"],["Med 2","🩺","Medical Unit 2","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"]].map(([r,em,tp,bg,bc])=>(
           <button key={r} style={{display:"flex",alignItems:"center",gap:12,padding:"16px",borderRadius:12,border:`2px solid ${bc}`,background:bg,cursor:"pointer",textAlign:"left"}} onClick={()=>{setRole(r);if(r==="Med 1"||r==="Med 2")setLiveMode(true);}}>
-            <span style={{fontSize:24,minWidth:32}}>{em}</span><div><div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{r}</div><div style={{fontSize:11,color:"#64748b",marginTop:2}}>{tp}</div></div>
+            <span style={{fontSize:24,minWidth:32}}>{em}</span><div><div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{r}</div><div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>{tp}</div></div>
           </button>
         ))}
       </div>
@@ -1529,7 +1597,7 @@ function HubApp({onBack}){
             {RESOURCE_TYPES.map(t=>(
               <button key={t.id} style={{display:"flex",alignItems:"center",gap:14,padding:"16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.12)",background:"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left"}} onClick={()=>setResourceType(t.id)}>
                 <span style={{fontSize:26,minWidth:34}}>{t.emoji}</span>
-                <div><div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{t.label}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{t.desc}</div></div>
+                <div><div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{t.label}</div><div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>{t.desc}</div></div>
               </button>
             ))}
           </div>
@@ -1537,11 +1605,11 @@ function HubApp({onBack}){
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:22}}>{RESOURCE_TYPES.find(t=>t.id===resourceType)?.emoji}</span>
             <span style={{fontSize:16,fontWeight:700,color:"#f1f5f9"}}>{RESOURCE_TYPES.find(t=>t.id===resourceType)?.label}</span>
-            <button style={{marginLeft:"auto",background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer"}} onClick={()=>setResourceType(null)}>Change</button>
+            <button style={{marginLeft:"auto",background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer"}} onClick={()=>setResourceType(null)}>Change</button>
           </div>
           {/* SUPPLIES — worker app style */}
           {resourceType==="supplies"&&<>
-            <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>What do you need?</div>
+            <div style={{fontSize:12,color:"#e2e8f0",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>What do you need?</div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {[{id:"ice",label:"Ice",emoji:"🧊"},{id:"beer_cups",label:"Beer Cup Sleeves",emoji:"🍺"},{id:"wine_cups",label:"Wine Cup Sleeves",emoji:"🍷"},{id:"paper_towels",label:"Paper Towels",emoji:"🧻"},{id:"bar_towels",label:"Bar Towels",emoji:"🧼"},{id:"water",label:"Bottled Water (24-pack)",emoji:"💧"},{id:"other",label:"Other",emoji:"➕"}].map(item=>(
                 <button key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${adminSupplyItem===item.id?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:adminSupplyItem===item.id?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>{setAdminSupplyItem(item.id);setAdminSupplyQty("");}}>
@@ -1552,7 +1620,7 @@ function HubApp({onBack}){
               ))}
             </div>
             {adminSupplyItem&&adminSupplyItem!=="other"&&<>
-              <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Quantity?</div>
+              <div style={{fontSize:12,color:"#e2e8f0",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Quantity?</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
                 {["1","2","3","4","5","6","7","8","9","10+"].map(q=>(
                   <button key={q} style={{padding:"14px 0",borderRadius:10,border:`2px solid ${adminSupplyQty===q?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.08)"}`,background:adminSupplyQty===q?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",fontSize:16,fontWeight:adminSupplyQty===q?900:400,color:adminSupplyQty===q?"#fcd34d":"#f1f5f9",textAlign:"center"}} onClick={()=>setAdminSupplyQty(q)}>{q}</button>
@@ -1580,7 +1648,7 @@ DATE/TIME: ${now()}`;
 
           {/* MAINTENANCE — nice form */}
           {resourceType==="maintenance"&&<>
-            <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>What's the issue?</div>
+            <div style={{fontSize:12,color:"#e2e8f0",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>What's the issue?</div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {["Generator / Power","Sound / PA System","Lighting","Tent / Structure","Plumbing / Water","Trash / Cleanup","Equipment Breakdown","Other"].map(item=>(
                 <button key={item} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",borderRadius:12,border:`2px solid ${adminMaintProblem===item?"rgba(16,185,129,0.7)":"rgba(255,255,255,0.08)"}`,background:adminMaintProblem===item?"rgba(16,185,129,0.15)":"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setAdminMaintProblem(item)}>
@@ -1663,13 +1731,13 @@ DATE/TIME: ${now()}`;
           <label style={S.lbl}>Message — Edit as needed</label>
           {/* DATE/TIME OF BROADCAST */}
           <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"12px 14px",marginBottom:4}}>
-            <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Date & Time of Broadcast</div>
+            <div style={{fontSize:11,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Date & Time of Broadcast</div>
             <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>{new Date().toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</div>
           </div>
 
           {/* GROUPME CHANNEL SELECTOR */}
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Send to GroupMe Channels</label>
+            <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Send to GroupMe Channels</label>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {[
                 {id:"all_staff",label:"All Staff"},
@@ -1697,7 +1765,7 @@ DATE/TIME: ${now()}`;
 
           {/* SEND VIA SMS / VOICE */}
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>SMS + Voice Recipients</label>
+            <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>SMS + Voice Recipients</label>
             <div style={{fontSize:11,color:"#475569"}}>Select who receives SMS and voice call</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {[
@@ -1730,7 +1798,7 @@ DATE/TIME: ${now()}`;
           {/* WEATHER TYPE — for weather_imminent */}
           {t.requiresWeatherType&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Type of Weather *</label>
+              <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Type of Weather *</label>
               <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                 {["Thunderstorm","Rain Storm","High Winds","Severe Thunderstorm","Tornado Watch","Tornado Warning","Torrential Rain / Downpour","Custom..."].map(w=>{
                   const selected=(alertFields._weatherTypes||[]);
@@ -1764,8 +1832,8 @@ DATE/TIME: ${now()}`;
             return(
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Areas Affected</label>
-                  {alertFields._areasOverridden&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:11,cursor:"pointer"}} onClick={()=>setAlertFields(p=>({...p,_areasOverridden:false,_targetAreas:[]}))}>↩ Reset to auto</button>}
+                  <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Areas Affected</label>
+                  {alertFields._areasOverridden&&<button style={{background:"none",border:"none",color:"#94a3b8",fontSize:11,cursor:"pointer"}} onClick={()=>setAlertFields(p=>({...p,_areasOverridden:false,_targetAreas:[]}))}>↩ Reset to auto</button>}
                 </div>
                 {isHeavy&&!alertFields._areasOverridden&&<div style={{fontSize:12,color:"#ef4444",background:"rgba(220,38,38,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(220,38,38,0.2)",fontWeight:700}}>⚡ ALL AREAS — Full shutdown protocol</div>}
                 {isRain&&!isHeavy&&!alertFields._areasOverridden&&<div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(245,158,11,0.2)",fontWeight:700}}>🌧 Moon Stage stays open (tent). All other areas notified.</div>}
@@ -1800,7 +1868,7 @@ DATE/TIME: ${now()}`;
           {/* ESTIMATED ARRIVAL (for weather/delays) */}
           {(t.id==="weather_imminent"||t.id==="event_delayed")&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Estimated Storm Arrival / Duration</label>
+              <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Estimated Storm Arrival / Duration</label>
               <input style={{...S.inp,fontSize:14}} placeholder="e.g. 8:15 PM arrival · 45 min duration" value={alertFields._eta||""} onChange={e=>{setAlertFields(p=>({...p,_eta:e.target.value}));setEditedMsg("");}}/>
             </div>
           )}
@@ -1808,7 +1876,7 @@ DATE/TIME: ${now()}`;
           {/* REASON PICKER — for postponed/cancelled */}
           {t?.requiresReason&&(
             <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:4}}>
-              <label style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Reason *</label>
+              <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Reason *</label>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
                 {(t.reasonType==="postpone"?POSTPONE_REASONS:CANCEL_REASONS).map(r=>(
                   <button key={r} style={{padding:"14px 16px",borderRadius:10,border:`2px solid ${alertFields._reason===r?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.12)"}`,background:alertFields._reason===r?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.04)",color:alertFields._reason===r?"#fbbf24":"#e2e8f0",fontSize:19,fontWeight:800,cursor:"pointer",textAlign:"left",letterSpacing:"0.01em"}} onClick={()=>{setAlertFields(p=>({...p,_reason:r}));setEditedMsg("");}}>
@@ -1822,7 +1890,7 @@ DATE/TIME: ${now()}`;
             </div>
           )}
           <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[TIME]",alertFields.eta||"time TBD"));}}/>
-          {editedMsg&&<button style={{background:"none",border:"none",color:"#64748b",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
+          {editedMsg&&<button style={{background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{
   const msg=editedMsg||preview;
@@ -1902,7 +1970,7 @@ DATE/TIME: ${now()}`;
         <span style={{...S.panelTitle}}>➕ New Call</span>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Call Type</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Call Type</div>
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {[
             {type:"medical",label:"🩺 Medical",color:"#a855f7"},
@@ -1912,9 +1980,9 @@ DATE/TIME: ${now()}`;
             <button key={type} style={{padding:"14px",borderRadius:10,border:`2px solid ${newCallType===type?color:color+"44"}`,background:newCallType===type?color+"22":"rgba(255,255,255,0.03)",color:newCallType===type?"#f1f5f9":"#64748b",fontWeight:800,fontSize:14,cursor:"pointer",textAlign:"left"}} onClick={()=>setNewCallType(type)}>{label}</button>
           ))}
         </div>
-        <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Location *</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Location *</div>
         <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none"}} placeholder="e.g. Sun Stage · Moon Bar · First Aid" value={newCallLocation} onChange={e=>setNewCallLocation(e.target.value)}/>
-        <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>Problem / Description *</div>
+        <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Problem / Description *</div>
         <textarea style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none",minHeight:80,resize:"none",fontFamily:"inherit"}} placeholder="What's happening?" value={newCallProblem} onChange={e=>setNewCallProblem(e.target.value)}/>
         <button style={{padding:"16px",borderRadius:12,border:"none",background:(!newCallType||!newCallLocation||!newCallProblem)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#ef4444,#dc2626)",color:(!newCallType||!newCallLocation||!newCallProblem)?"#475569":"#fff",fontWeight:800,fontSize:16,cursor:"pointer",opacity:(!newCallType||!newCallLocation||!newCallProblem)?0.5:1}}
           disabled={!newCallType||!newCallLocation||!newCallProblem}
@@ -1956,11 +2024,11 @@ DATE/TIME: ${now()}`;
       <div style={S.cWrap}>
         <div style={{background:"rgba(5,150,105,0.08)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:10,padding:"12px",fontSize:13}}>
           <div style={{fontWeight:800,color:"#6ee7b7",marginBottom:2}}>🔧 {mc2.location}</div>
-          <div style={{color:"#94a3b8"}}>{mc2.problem}</div>
+          <div style={{color:"#e2e8f0"}}>{mc2.problem}</div>
         </div>
         <Fld label="What was done? *" value={incFields.maintNarrative||""} onChange={e=>setIncFields(p=>({...p,maintNarrative:e.target.value}))} ph="e.g. Replaced fuse, cleared drain, fixed sound cable..." multi/>
         <Fld label="Resolved by" value={incFields.maintBy||clearBy2||""} onChange={e=>setIncFields(p=>({...p,maintBy:e.target.value}))} ph="Name or role"/>
-        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px",fontSize:12,color:"#64748b"}}>📅 {ts}</div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px",fontSize:12,color:"#94a3b8"}}>📅 {ts}</div>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#059669,#047857)",opacity:!incFields.maintNarrative?0.5:1}} disabled={!incFields.maintNarrative} onClick={()=>{
           const ts2=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
           const maintMsg=`🔧 MAINTENANCE CLEARED\nLOCATION: ${mc2.location}\nISSUE: ${mc2.problem}\nWHAT WAS DONE: ${incFields.maintNarrative}\nCLEARED BY: ${incFields.maintBy||clearBy2}\nDATE/TIME: ${ts2}`;
@@ -1995,7 +2063,7 @@ DATE/TIME: ${now()}`;
         <Fld label="Found By" value={incFields.foundBy||""} onChange={e=>setIncFields(p=>({...p,foundBy:e.target.value}))} ph="Name of staff member who found child"/>
         <Fld label="Reunited With" value={incFields.reunitedWith||""} onChange={e=>setIncFields(p=>({...p,reunitedWith:e.target.value}))} ph="Parent/guardian name"/>
         <Fld label="Additional Notes" value={incFields.foundNotes||""} onChange={e=>setIncFields(p=>({...p,foundNotes:e.target.value}))} ph="Any other details..." multi/>
-        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px",fontSize:12,color:"#64748b"}}>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px",fontSize:12,color:"#94a3b8"}}>
           📅 Date/Time: {ts}
         </div>
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>{
@@ -2023,14 +2091,14 @@ DATE/TIME: ${now()}`;
       <div style={S.cWrap}>
         <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"12px 14px",fontSize:13}}>
           <div style={{fontWeight:800,color:"#f59e0b",marginBottom:4}}>{typeLabels[cc.type]||cc.type}</div>
-          <div style={{color:"#94a3b8"}}>📍 {cc.location}</div>
-          <div style={{color:"#94a3b8"}}>🔍 {cc.problem}</div>
+          <div style={{color:"#e2e8f0"}}>📍 {cc.location}</div>
+          <div style={{color:"#e2e8f0"}}>🔍 {cc.problem}</div>
         </div>
         <Fld label="Responding Unit" value={incFields.respondingUnit||clearBy||""} onChange={e=>setIncFields(p=>({...p,respondingUnit:e.target.value}))} ph="Med 1, Admin, etc."/>
         <Fld label="Individual Description" value={incFields.individualDescription||""} onChange={e=>setIncFields(p=>({...p,individualDescription:e.target.value}))} ph="Age, appearance..." multi/>
         <Fld label="Interventions" value={incFields.interventions||""} onChange={e=>setIncFields(p=>({...p,interventions:e.target.value}))} ph="Vitals, AED, oxygen..." multi/>
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <label style={{fontSize:12,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700}}>Disposition</label>
+          <label style={{fontSize:12,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700}}>Disposition</label>
           <select style={{...S.sel}} value={incFields.disposition||""} onChange={e=>setIncFields(p=>({...p,disposition:e.target.value}))}>
             <option value="">Select disposition...</option>
             {DISPOSITIONS.map(d=><option key={d} value={d}>{d}</option>)}
@@ -2041,7 +2109,7 @@ DATE/TIME: ${now()}`;
         <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)"}} onClick={()=>submitAndClearCall(cc,clearBy,{...incFields,respondingUnit:incFields.respondingUnit||clearBy})}>
           📋 Submit Report & Clear Call
         </button>
-        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#64748b",border:"1px solid rgba(255,255,255,0.1)",fontSize:13}} onClick={()=>submitAndClearCall(cc,clearBy,{respondingUnit:clearBy})}>
+        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#94a3b8",border:"1px solid rgba(255,255,255,0.1)",fontSize:13}} onClick={()=>submitAndClearCall(cc,clearBy,{respondingUnit:clearBy})}>
           ⏭ Skip — Auto Report
         </button>
         <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}} onClick={()=>{setClearIncView(null);setIncFields({});}}>
@@ -2058,11 +2126,11 @@ DATE/TIME: ${now()}`;
       </div>
       <div style={S.cWrap}>
         <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"12px 14px",display:"flex",flexDirection:"column",gap:4}}>
-          <div style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Auto-filled from call</div>
+          <div style={{fontSize:11,color:"#94a3b8",fontWeight:700,textTransform:"uppercase"}}>Auto-filled from call</div>
           <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>{incidentView.type?.toUpperCase()} — {incidentView.location}</div>
-          <div style={{fontSize:13,color:"#94a3b8"}}>{incidentView.problem}</div>
-          {incidentView.details&&<div style={{fontSize:12,color:"#64748b"}}>{incidentView.details}</div>}
-          <div style={{fontSize:12,color:"#64748b"}}>Reported by: {incidentView.requestedBy} · Unit: {incFields.respondingUnit}</div>
+          <div style={{fontSize:13,color:"#e2e8f0"}}>{incidentView.problem}</div>
+          {incidentView.details&&<div style={{fontSize:12,color:"#94a3b8"}}>{incidentView.details}</div>}
+          <div style={{fontSize:12,color:"#94a3b8"}}>Reported by: {incidentView.requestedBy} · Unit: {incFields.respondingUnit}</div>
         </div>
         <Fld label="Individual Description" value={incFields.individualDescription||""} onChange={e=>setIncFields(p=>({...p,individualDescription:e.target.value}))} ph="Age, gender, appearance, condition" multi/>
         <Fld label="Interventions Performed" value={incFields.interventions||""} onChange={e=>setIncFields(p=>({...p,interventions:e.target.value}))} ph="e.g. CPR, AED, oxygen, bandaging, verbal de-escalation" multi/>
@@ -2098,7 +2166,7 @@ DATE/TIME: ${now()}`;
           }}>
           📋 SUBMIT INCIDENT REPORT
         </button>
-        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#64748b",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});setView("home");}}>Skip & Return to Hub</button>
+        <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});setView("home");}}>Skip & Return to Hub</button>
       </div>
     </div></div>
   );
@@ -2146,7 +2214,7 @@ DATE/TIME: ${now()}`;
           </div>}
           {/* ACKED LIST — always open */}
           {acked.length>0&&<>
-            {unacked.length>0&&<div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:"0.08em",padding:"4px 0 8px"}}>── Acknowledged</div>}
+            {unacked.length>0&&<div style={{fontSize:11,fontWeight:800,color:"#94a3b8",letterSpacing:"0.08em",padding:"4px 0 8px"}}>── Acknowledged</div>}
             {acked.map(c=>{
               const color=ALERT_COLORS[c.type]||ALERT_COLORS.medical;
               const statuses={acknowledged:{label:"ACKNOWLEDGED",color:"#10b981"},dispatched:{label:"DISPATCHED",color:"#6366f1"},on_scene:{label:"ON SCENE",color:"#ef4444"},delivered:{label:"DELIVERED",color:"#10b981"},cleared:{label:"CLEARED",color:"#10b981"}};
@@ -2154,7 +2222,7 @@ DATE/TIME: ${now()}`;
               return(<div key={c.id} style={{borderRadius:12,border:`2px solid ${color.border}`,padding:"14px",display:"flex",flexDirection:"column",gap:10,background:color.bg}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div style={{display:"inline-flex",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:800,color:"#fff",background:st.color}}>{st.label}</div>
-                  <span style={{fontSize:11,color:"#64748b"}}>{c.history[0]?.ts}</span>
+                  <span style={{fontSize:11,color:"#94a3b8"}}>{c.history[0]?.ts}</span>
                 </div>
                 <div style={{fontSize:17,fontWeight:900,color:"#f1f5f9"}}>📍 {c.location}</div>
                 <div style={{fontSize:14,color:"#e2e8f0",lineHeight:1.4}}>{c.problem}</div>
@@ -2166,11 +2234,11 @@ DATE/TIME: ${now()}`;
                 )}
                 {/* HISTORY */}
                 <div style={{display:"flex",flexDirection:"column",gap:3,background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px"}}>
-                  {c.history.map((h,i)=><div key={i} style={{display:"flex",gap:8,fontSize:12}}><span style={{color:"#64748b",minWidth:50}}>{h.ts}</span><span style={{color:"#cbd5e1"}}>{h.status}{h.unit?` · ${h.unit}`:""}</span></div>)}
+                  {c.history.map((h,i)=><div key={i} style={{display:"flex",gap:8,fontSize:12}}><span style={{color:"#94a3b8",minWidth:50}}>{h.ts}</span><span style={{color:"#cbd5e1"}}>{h.status}{h.unit?` · ${h.unit}`:""}</span></div>)}
                 </div>
                 {/* ASSIGN UNIT — ADMIN ONLY */}
                 {isAdmin&&<div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  <label style={{fontSize:11,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Assign Unit</label>
+                  <label style={{fontSize:11,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Assign Unit</label>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {(c.type==="medical"||c.type==="walk_in"
                       ?["Med 1","Med 2","Both","Admin"]
@@ -2229,7 +2297,7 @@ DATE/TIME: ${now()}`;
                   return(
                     <div style={{background:"rgba(29,78,216,0.08)",border:"1px solid rgba(59,130,246,0.35)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
                       <div style={{fontSize:12,fontWeight:800,color:"#93c5fd",textTransform:"uppercase",letterSpacing:"0.06em"}}>👮 Officers Notified — {c.location}</div>
-                      <div style={{fontSize:11,color:"#64748b",lineHeight:1.5}}>SMS + Voice fired to all on-duty officers. Cancel any not needed.</div>
+                      <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.5}}>SMS + Voice fired to all on-duty officers. Cancel any not needed.</div>
 
                       {/* AUTO-FIRE ON OPEN */}
                       {justOpened&&(()=>{
@@ -2261,10 +2329,10 @@ Reply YES to acknowledge.`
                               <span style={{fontSize:20,flexShrink:0}}>{isAcked?"✅":isCancelled?"❌":"📞"}</span>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:700,color:isCancelled?"#64748b":"#f1f5f9"}}>{o.name}</div>
-                                <div style={{fontSize:11,color:"#64748b"}}>{o.badge} · {o.phone}</div>
+                                <div style={{fontSize:11,color:"#94a3b8"}}>{o.badge} · {o.phone}</div>
                                 {isNotified&&!isAcked&&<div style={{fontSize:11,color:"#60a5fa",fontWeight:600,marginTop:2}}>📞 Notified {notif?.notifiedAt} · Awaiting YES</div>}
                                 {isAcked&&<div style={{fontSize:11,color:"#10b981",fontWeight:700,marginTop:2}}>✅ Acknowledged · {notif?.ackedAt}</div>}
-                                {isCancelled&&<div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>❌ Stood down {notif?.cancelledAt}</div>}
+                                {isCancelled&&<div style={{fontSize:11,color:"#e2e8f0",marginTop:2}}>❌ Stood down {notif?.cancelledAt}</div>}
                               </div>
                               <div style={{display:"flex",gap:6,flexShrink:0}}>
                                 {isNotified&&!isAcked&&<button style={{fontSize:11,padding:"4px 8px",borderRadius:6,border:"1px solid rgba(16,185,129,0.4)",background:"rgba(16,185,129,0.1)",color:"#6ee7b7",fontWeight:700,cursor:"pointer"}} onClick={()=>simAck(o.id)}>Sim YES</button>}
@@ -2280,7 +2348,7 @@ Reply YES to acknowledge.`
                         <div style={{flex:1,fontSize:12,color:"#93c5fd",background:"rgba(59,130,246,0.06)",borderRadius:10,padding:"10px 12px",lineHeight:1.6}}>
                           📞 {Object.values(cNotifs).filter(n=>n.notified&&!n.cancelled).length} active · ✅ {Object.values(cNotifs).filter(n=>n.acked).length} acknowledged · ❌ {Object.values(cNotifs).filter(n=>n.cancelled).length} stood down
                         </div>
-                        <button style={{padding:"10px 20px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0}} onClick={()=>setAssignPanel(null)}>Done</button>
+                        <button style={{padding:"10px 20px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0}} onClick={()=>setAssignPanel(null)}>Done</button>
                       </div>
                     </div>
                   );
@@ -2297,9 +2365,9 @@ Reply YES to acknowledge.`
               <div style={{display:"inline-flex",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:800,color:"#fff",background:"#10b981",alignSelf:"flex-start"}}>✅ COMPLETED</div>
               <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9",marginTop:4}}>📍 {c.location}</div>
               <div style={{fontSize:13,color:"#cbd5e1"}}>{c.problem}</div>
-              {c.clearedBy&&<div style={{fontSize:12,color:"#64748b"}}>Cleared by: {c.clearedBy} · {c.clearedAt}</div>}
+              {c.clearedBy&&<div style={{fontSize:12,color:"#94a3b8"}}>Cleared by: {c.clearedBy} · {c.clearedAt}</div>}
               <div style={{display:"flex",flexDirection:"column",gap:3,background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px"}}>
-                {c.history.map((h,i)=><div key={i} style={{display:"flex",gap:8,fontSize:12}}><span style={{color:"#64748b",minWidth:50}}>{h.ts}</span><span style={{color:"#cbd5e1"}}>{h.status}{h.unit?` · ${h.unit}`:""}</span></div>)}
+                {c.history.map((h,i)=><div key={i} style={{display:"flex",gap:8,fontSize:12}}><span style={{color:"#94a3b8",minWidth:50}}>{h.ts}</span><span style={{color:"#cbd5e1"}}>{h.status}{h.unit?` · ${h.unit}`:""}</span></div>)}
               </div>
             </div>
           ))}
@@ -2320,19 +2388,19 @@ Reply YES to acknowledge.`
       <div style={{padding:"20px 16px",display:"flex",flexDirection:"column",gap:14}}>
         <div style={{background:"rgba(37,99,235,0.08)",border:"1px solid rgba(37,99,235,0.25)",borderRadius:12,padding:"14px"}}>
           <div style={{fontSize:13,color:"#93c5fd",fontWeight:700,marginBottom:4}}>How it works</div>
-          <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Each officer on duty will receive an SMS text AND a voice call with your location and situation details.</div>
+          <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Each officer on duty will receive an SMS text AND a voice call with your location and situation details.</div>
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>📍 Where do they need to go?</div>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>📍 Where do they need to go?</div>
           <input style={{width:"100%",padding:"14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Moon Stage Left, near the bar" value={mpdLocation} onChange={e=>setMpdLocation(e.target.value)}/>
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Situation (optional)</div>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Situation (optional)</div>
           <textarea style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none",minHeight:80,resize:"none"}} placeholder="e.g. Fight in progress, crowd control needed" value={mpdSituation} onChange={e=>setMpdSituation(e.target.value)}/>
         </div>
         {/* Officer Status List */}
         <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,overflow:"hidden"}}>
-          <div style={{padding:"8px 12px",fontSize:11,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+          <div style={{padding:"8px 12px",fontSize:11,fontWeight:900,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
             Officer Status — {mpdOfficers.filter(o=>o.status!=="Off Duty").length} on duty
           </div>
           {mpdOfficers.length===0&&<div style={{padding:"12px",fontSize:12,color:"#374151",textAlign:"center"}}>No officers in system</div>}
@@ -2343,7 +2411,7 @@ Reply YES to acknowledge.`
                 <div style={{width:8,height:8,borderRadius:"50%",background:isOff?"#374151":"#22c55e",flexShrink:0}}/>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:isOff?"#475569":"#f1f5f9"}}>{o.name}</div>
-                  {o.phone&&<div style={{fontSize:11,color:"#64748b"}}>{o.phone}</div>}
+                  {o.phone&&<div style={{fontSize:11,color:"#94a3b8"}}>{o.phone}</div>}
                 </div>
                 <button style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${isOff?"rgba(34,197,94,0.4)":"rgba(239,68,68,0.4)"}`,background:isOff?"rgba(34,197,94,0.08)":"rgba(239,68,68,0.08)",color:isOff?"#4ade80":"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async()=>{
                   const newStatus=isOff?"Available":"Off Duty";
@@ -2444,13 +2512,13 @@ Please respond immediately.
       <div style={S.panelHd}>
         <BB onClick={()=>setView("home")}/>
         <span style={S.panelTitle}>👥 Staff List</span>
-        <span style={{fontSize:11,color:"#64748b",marginLeft:"auto"}}>{staffList.length} staff</span>
+        <span style={{fontSize:11,color:"#94a3b8",marginLeft:"auto"}}>{staffList.length} staff</span>
       </div>
       <div style={{flex:1,overflowY:"auto"}}>
         {/* TABLE HEADER */}
         <div style={{display:"grid",gridTemplateColumns:"1.5fr 1.2fr 1.2fr 1.5fr",gap:0,padding:"8px 14px",background:"rgba(255,255,255,0.04)",borderBottom:"1px solid rgba(255,255,255,0.08)",position:"sticky",top:0}}>
           {["Name","Phone","Location","Schedule"].map(h=>(
-            <div key={h} style={{fontSize:10,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>{h}</div>
+            <div key={h} style={{fontSize:10,fontWeight:900,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em"}}>{h}</div>
           ))}
         </div>
         {staffList.length===0&&<div style={{textAlign:"center",color:"#374151",padding:30}}>No staff loaded</div>}
@@ -2458,11 +2526,11 @@ Please respond immediately.
           <div key={s.id||i} style={{display:"grid",gridTemplateColumns:"1.5fr 1.2fr 1.2fr 1.5fr",gap:0,padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",background:i%2===0?"transparent":"rgba(255,255,255,0.015)"}}>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",lineHeight:1.3}}>{s.name}</div>
-              {s.role&&<div style={{fontSize:10,color:"#64748b",marginTop:2}}>{hubDisplayRole(s.role)}</div>}
+              {s.role&&<div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{hubDisplayRole(s.role)}</div>}
             </div>
             <div style={{fontSize:12,color:"#38bdf8"}}>{s.phone||"—"}</div>
-            <div style={{fontSize:12,color:"#94a3b8"}}>{s.location||"—"}</div>
-            <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.4}}>
+            <div style={{fontSize:12,color:"#e2e8f0"}}>{s.location||"—"}</div>
+            <div style={{fontSize:11,color:"#e2e8f0",lineHeight:1.4}}>
               {s.days?<div>{s.days}</div>:"—"}
               {s.shiftStart&&s.shiftEnd&&<div style={{fontSize:10,color:"#475569"}}>{s.shiftStart}–{s.shiftEnd}</div>}
             </div>
@@ -2479,17 +2547,17 @@ Please respond immediately.
         <span style={S.panelTitle}>📱 Send Onboarding Text</span>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:13,color:"#64748b",lineHeight:1.6}}>Enter staff member info and send them the onboarding text with the RSVP link.</div>
+        <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>Enter staff member info and send them the onboarding text with the RSVP link.</div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Full Name</div>
+          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Full Name</div>
           <input id="ob-name" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bryan Thornton"/>
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Role (optional)</div>
+          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Role (optional)</div>
           <input id="ob-role" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bar Manager"/>
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Phone Number</div>
+          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Phone Number</div>
           <input id="ob-phone" type="tel" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="6085551234"/>
         </div>
         {/* Hold Texts toggle */}
@@ -2547,7 +2615,7 @@ Please respond immediately.
         {lfClaimView?(
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>Mark as Claimed — #{lfClaimView.itemNumber}</div>
-            <div style={{fontSize:13,color:"#94a3b8"}}>{lfClaimView.description}</div>
+            <div style={{fontSize:13,color:"#e2e8f0"}}>{lfClaimView.description}</div>
             <Fld label="Claimed By (Name) *" value={lfClaimBy} onChange={e=>setLfClaimBy(e.target.value)} ph="Full name of person claiming"/>
             <Fld label="ID Verification" value={lfClaimID} onChange={e=>setLfClaimID(e.target.value)} ph="e.g. DL #123456"/>
             <Fld label="Phone Number" value={lfClaimPhone} onChange={e=>setLfClaimPhone(e.target.value)} ph="(608) 555-1234"/>
@@ -2557,12 +2625,12 @@ Please respond immediately.
                 setLfClaimView(null);setLfClaimBy("");setLfClaimID("");setLfClaimPhone("");
                 fetchLostFound();
               }}>✅ Mark as Claimed</button>
-            <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#94a3b8"}} onClick={()=>setLfClaimView(null)}>Cancel</button>
+            <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#e2e8f0"}} onClick={()=>setLfClaimView(null)}>Cancel</button>
           </div>
         ):(
           <>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-              <div style={{fontSize:13,color:"#64748b"}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed</div>
+              <div style={{fontSize:13,color:"#94a3b8"}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed</div>
               <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 L&F Lookup</a>
             </div>
 
@@ -2586,7 +2654,7 @@ Please respond immediately.
                     if(data.itemNumber) setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lf",label:`L&F Logged — #${data.itemNumber}: ${lfNewFields.description.slice(0,30)}`},...p]);
                     fetchLostFound();
                   }}>Log Item</button>
-                  <button style={{padding:"12px 18px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setLfNewItem(false);setLfNewFields({});}}>Cancel</button>
+                  <button style={{padding:"12px 18px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setLfNewItem(false);setLfNewFields({});}}>Cancel</button>
                 </div>
               </div>
             ):(
@@ -2594,8 +2662,8 @@ Please respond immediately.
                 + Log New Found Item
               </button>
             )}
-            {lfLoading&&<div style={{textAlign:"center",color:"#64748b",padding:"20px"}}>Loading...</div>}
-            {!lfLoading&&lfItems.length===0&&<div style={{textAlign:"center",color:"#64748b",padding:"20px"}}>No lost & found items yet.</div>}
+            {lfLoading&&<div style={{textAlign:"center",color:"#94a3b8",padding:"20px"}}>Loading...</div>}
+            {!lfLoading&&lfItems.length===0&&<div style={{textAlign:"center",color:"#94a3b8",padding:"20px"}}>No lost & found items yet.</div>}
             {lfItems.map(item=>(
               <div key={item.id} style={{borderRadius:12,border:`1px solid ${item.status==="Claimed"?"rgba(16,185,129,0.3)":item.status==="In Box"?"rgba(139,92,246,0.5)":"rgba(139,92,246,0.3)"}`,background:item.status==="Claimed"?"rgba(16,185,129,0.05)":"rgba(139,92,246,0.06)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:6}}>
 
@@ -2622,7 +2690,7 @@ Please respond immediately.
                 <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{item.description}</div>
 
                 {/* Locations */}
-                <div style={{display:"flex",flexDirection:"column",gap:3,fontSize:12,color:"#94a3b8"}}>
+                <div style={{display:"flex",flexDirection:"column",gap:3,fontSize:12,color:"#e2e8f0"}}>
                   <div>📍 Found at: <strong style={{color:"#e2e8f0"}}>{item.location}</strong></div>
                   {item.currentLocation&&item.currentLocation!==item.location&&<div>📌 Now at: <strong style={{color:"#e2e8f0"}}>{item.currentLocation}</strong></div>}
                   <div>👤 {item.foundBy} · 🕐 {item.foundAt||""}</div>
@@ -2664,17 +2732,17 @@ Please respond immediately.
           const tot=ALL_LOCS.length,conf=Object.keys(a.acks||{}).length,pct=Math.round(conf/tot*100);
           return(<div key={i} style={{background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",padding:"14px",marginBottom:8}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-              <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{a.label}</div><div style={{fontSize:11,color:"#64748b"}}>{a.date}</div></div>
+              <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{a.label}</div><div style={{fontSize:11,color:"#94a3b8"}}>{a.date}</div></div>
               <button style={{background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)",color:"#fca5a5",fontSize:11,borderRadius:6,padding:"4px 8px",cursor:"pointer"}} onClick={()=>setBroadcastAlerts(p=>p.filter((_,j)=>j!==i))}>✕</button>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
               <div style={{flex:1,height:6,background:"rgba(255,255,255,0.08)",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",background:"linear-gradient(90deg,#10b981,#059669)",borderRadius:3,width:`${pct}%`,transition:"width 0.4s"}}/></div>
-              <span style={{fontSize:12,color:"#94a3b8"}}>{conf}/{tot}</span>
+              <span style={{fontSize:12,color:"#e2e8f0"}}>{conf}/{tot}</span>
             </div>
             {ALL_LOCS.map(loc=>{const t=a.acks?.[loc];return(<div key={loc} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 10px",borderRadius:8,border:`1px solid ${t?"#10b981":"rgba(239,68,68,0.2)"}`,background:t?"rgba(16,185,129,0.06)":"rgba(239,68,68,0.03)",marginBottom:3}}>
               <span style={{width:8,height:8,borderRadius:"50%",background:t?"#10b981":"#ef4444",display:"inline-block",flexShrink:0}}/>
               <span style={{flex:1,fontSize:12,color:"#cbd5e1"}}>{loc}</span>
-              {t?<span style={{fontSize:11,color:"#10b981",fontWeight:600}}>{t}</span>:<button style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"none",color:"#94a3b8",borderRadius:4,padding:"2px 6px",cursor:"pointer"}} onClick={()=>setBroadcastAlerts(prev=>prev.map((al,j)=>j!==i?al:{...al,acks:{...al.acks,[loc]:"Override"}}))}>Override</button>}
+              {t?<span style={{fontSize:11,color:"#10b981",fontWeight:600}}>{t}</span>:<button style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"none",color:"#e2e8f0",borderRadius:4,padding:"2px 6px",cursor:"pointer"}} onClick={()=>setBroadcastAlerts(prev=>prev.map((al,j)=>j!==i?al:{...al,acks:{...al.acks,[loc]:"Override"}}))}>Override</button>}
             </div>);})}
           </div>);
         })}
@@ -2699,7 +2767,7 @@ Please respond immediately.
                 <span style={{fontSize:18,minWidth:24,textAlign:"center"}}>{typeEmoji}</span>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.label}</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>{e.date||e.ts}</div>
+                  <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{e.date||e.ts}</div>
                 </div>
                 <span style={{fontSize:11,color:typeColor,fontWeight:700,flexShrink:0}}>{e.ts}</span>
                 <span style={{fontSize:12,color:"#475569",flexShrink:0,marginLeft:4}}>{isOpen?"▲":"▼"}</span>
@@ -2709,13 +2777,13 @@ Please respond immediately.
                 <div style={{padding:"0 12px 14px",display:"flex",flexDirection:"column",gap:8,borderTop:"1px solid rgba(255,255,255,0.06)"}}>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap",paddingTop:10}}>
                     {e.type&&<span style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:`${typeColor}22`,color:typeColor,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em"}}>{e.type.replace("_"," ")}</span>}
-                    {e.ts&&<span style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.06)",color:"#94a3b8",fontWeight:600}}>⏰ {e.ts}</span>}
-                    {e.date&&e.date!==e.ts&&<span style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.06)",color:"#64748b"}}>📅 {e.date}</span>}
+                    {e.ts&&<span style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.06)",color:"#e2e8f0",fontWeight:600}}>⏰ {e.ts}</span>}
+                    {e.date&&e.date!==e.ts&&<span style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:"rgba(255,255,255,0.06)",color:"#94a3b8"}}>📅 {e.date}</span>}
                   </div>
-                  {e.location&&<div style={{display:"flex",gap:8,alignItems:"flex-start"}}><span style={{fontSize:12,color:"#64748b",minWidth:60,fontWeight:600}}>Location</span><span style={{fontSize:13,color:"#f1f5f9",fontWeight:700}}>📍 {e.location}</span></div>}
-                  {e.msg&&<div style={{display:"flex",gap:8,alignItems:"flex-start"}}><span style={{fontSize:12,color:"#64748b",minWidth:60,fontWeight:600,flexShrink:0}}>Details</span><span style={{fontSize:13,color:"#e2e8f0",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{e.msg}</span></div>}
-                  {e.unit&&<div style={{display:"flex",gap:8}}><span style={{fontSize:12,color:"#64748b",minWidth:60,fontWeight:600}}>Unit</span><span style={{fontSize:13,color:"#f1f5f9"}}>👤 {e.unit}</span></div>}
-                  {e.requestedBy&&<div style={{display:"flex",gap:8}}><span style={{fontSize:12,color:"#64748b",minWidth:60,fontWeight:600}}>From</span><span style={{fontSize:13,color:"#f1f5f9"}}>{e.requestedBy}</span></div>}
+                  {e.location&&<div style={{display:"flex",gap:8,alignItems:"flex-start"}}><span style={{fontSize:12,color:"#94a3b8",minWidth:60,fontWeight:600}}>Location</span><span style={{fontSize:13,color:"#f1f5f9",fontWeight:700}}>📍 {e.location}</span></div>}
+                  {e.msg&&<div style={{display:"flex",gap:8,alignItems:"flex-start"}}><span style={{fontSize:12,color:"#94a3b8",minWidth:60,fontWeight:600,flexShrink:0}}>Details</span><span style={{fontSize:13,color:"#e2e8f0",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{e.msg}</span></div>}
+                  {e.unit&&<div style={{display:"flex",gap:8}}><span style={{fontSize:12,color:"#94a3b8",minWidth:60,fontWeight:600}}>Unit</span><span style={{fontSize:13,color:"#f1f5f9"}}>👤 {e.unit}</span></div>}
+                  {e.requestedBy&&<div style={{display:"flex",gap:8}}><span style={{fontSize:12,color:"#94a3b8",minWidth:60,fontWeight:600}}>From</span><span style={{fontSize:13,color:"#f1f5f9"}}>{e.requestedBy}</span></div>}
                   {!e.msg&&!e.location&&!e.unit&&!e.requestedBy&&<div style={{fontSize:12,color:"#475569",fontStyle:"italic"}}>No additional details</div>}
                 </div>
               )}
@@ -2738,17 +2806,17 @@ Please respond immediately.
       <div style={S.cWrap}>
         <div style={{background:"rgba(99,102,241,0.08)",borderRadius:12,border:"1px solid rgba(99,102,241,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
           <div style={{fontSize:14,fontWeight:800,color:"#a5b4fc"}}>Tonight's Summary</div>
-          <div style={{fontSize:13,color:"#94a3b8"}}>Date: {new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
+          <div style={{fontSize:13,color:"#e2e8f0"}}>Date: {new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{[...calls,...completed].length}</div><div style={{fontSize:11,color:"#64748b"}}>Total Calls</div></div>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{lfItems.length}</div><div style={{fontSize:11,color:"#64748b"}}>L&F Items</div></div>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{broadcastAlerts.length}</div><div style={{fontSize:11,color:"#64748b"}}>Broadcasts</div></div>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{activityLog.length}</div><div style={{fontSize:11,color:"#64748b"}}>Log Entries</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{[...calls,...completed].length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Total Calls</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{lfItems.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>L&F Items</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{broadcastAlerts.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Broadcasts</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{activityLog.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Log Entries</div></div>
           </div>
         </div>
 
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Call Breakdown</div>
+          <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase"}}>Call Breakdown</div>
           {[["medical","🩺 Medical"],["fire","🔥 Fire/Safety"],["security","🛡 Security"],["supplies","📦 Supplies"],["maintenance","🔧 Maintenance"],["lost_child","🧒 Lost Child"]].map(([type,label])=>{
             const count=[...calls,...completed].filter(c=>c.type===type).length;
             return count>0?(<div key={type} style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:"rgba(255,255,255,0.03)",borderRadius:8}}><span style={{fontSize:13,color:"#f1f5f9"}}>{label}</span><span style={{fontSize:13,fontWeight:700,color:"#a5b4fc"}}>{count}</span></div>):null;
@@ -2979,7 +3047,7 @@ Please respond immediately.
           <div style={{fontSize:11,fontWeight:800,color:color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{typeLabels[mc.type]||mc.type} — ACTIVE CALL</div>
           <div style={{fontSize:20,fontWeight:900,color:"#f1f5f9",marginBottom:4}}>📍 {mc.location}</div>
           <div style={{fontSize:15,color:"#cbd5e1",marginBottom:4}}>🔍 {mc.problem}</div>
-          {mc.details&&<div style={{fontSize:13,color:"#94a3b8"}}>ℹ️ {mc.details}</div>}
+          {mc.details&&<div style={{fontSize:13,color:"#e2e8f0"}}>ℹ️ {mc.details}</div>}
           <div style={{fontSize:12,color:"#64748b",marginTop:6}}>Reported by {mc.requestedBy} · Acked by {mc.unit} · {mc.acknowledgedAt}</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 0 12px"}}>
@@ -3117,9 +3185,9 @@ Please respond immediately.
           {nineOneOne.info?.location&&<div style={{fontSize:22,fontWeight:900,color:"#fff"}}>📍 {nineOneOne.info.location}</div>}
           {nineOneOne.info?.nature&&<div style={{fontSize:14,fontWeight:700,color:"#fca5a5"}}>{nineOneOne.info.nature}</div>}
           <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-            {nineOneOne.info?.patients&&<div style={{fontSize:12,color:"#94a3b8"}}>👤 {nineOneOne.info.patients} patient{nineOneOne.info.patients!=="1"?"s":""}</div>}
-            {nineOneOne.info?.age_sex&&<div style={{fontSize:12,color:"#94a3b8"}}>{nineOneOne.info.age_sex}</div>}
-            {nineOneOne.info?.conscious&&<div style={{fontSize:12,color:"#94a3b8"}}>{nineOneOne.info.conscious}</div>}
+            {nineOneOne.info?.patients&&<div style={{fontSize:12,color:"#e2e8f0"}}>👤 {nineOneOne.info.patients} patient{nineOneOne.info.patients!=="1"?"s":""}</div>}
+            {nineOneOne.info?.age_sex&&<div style={{fontSize:12,color:"#e2e8f0"}}>{nineOneOne.info.age_sex}</div>}
+            {nineOneOne.info?.conscious&&<div style={{fontSize:12,color:"#e2e8f0"}}>{nineOneOne.info.conscious}</div>}
             {emsForm.eta&&<div style={{fontSize:12,color:"#fbbf24",fontWeight:700}}>⏱ ETA: {emsForm.eta}</div>}
           </div>
           {nineOneOne.info?.interventions&&<div style={{fontSize:13,color:"#e2e8f0"}}>Interventions: {nineOneOne.info.interventions}</div>}
@@ -3146,11 +3214,11 @@ Please respond immediately.
             </div>
             <div style={{fontSize:19,fontWeight:900,color:"#fff"}}>📍 {c.location}</div>
             {c.problem&&<div style={{fontSize:14,fontWeight:600,color:"#e2e8f0",lineHeight:1.5}}>{c.problem}</div>}
-            {c.details&&<div style={{fontSize:13,color:"#94a3b8",lineHeight:1.5}}>{c.details}</div>}
+            {c.details&&<div style={{fontSize:13,color:"#e2e8f0",lineHeight:1.5}}>{c.details}</div>}
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:2}}>
-              {c.unit&&<div style={{fontSize:12,color:"#94a3b8"}}>👤 Unit: <span style={{color:"#f1f5f9",fontWeight:700}}>{c.unit}</span></div>}
-              {c.requestedBy&&<div style={{fontSize:12,color:"#94a3b8"}}>From: <span style={{color:"#f1f5f9",fontWeight:700}}>{c.requestedBy}</span></div>}
-              <div style={{fontSize:12,color:"#94a3b8"}}>⏰ <span style={{color:"#f1f5f9",fontWeight:700}}>{c.ackedAt}</span></div>
+              {c.unit&&<div style={{fontSize:12,color:"#e2e8f0"}}>👤 Unit: <span style={{color:"#f1f5f9",fontWeight:700}}>{c.unit}</span></div>}
+              {c.requestedBy&&<div style={{fontSize:12,color:"#e2e8f0"}}>From: <span style={{color:"#f1f5f9",fontWeight:700}}>{c.requestedBy}</span></div>}
+              <div style={{fontSize:12,color:"#e2e8f0"}}>⏰ <span style={{color:"#f1f5f9",fontWeight:700}}>{c.ackedAt}</span></div>
             </div>
           </div>
         );
@@ -3181,7 +3249,7 @@ Please respond immediately.
             <button style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,color:"#64748b",fontSize:12,cursor:"pointer",fontWeight:600,padding:"4px 10px"}} onClick={()=>{setWeatherDismissed(p=>[...p,weatherAlertBanner.id]);setWeatherAlertBanner(null);}}>Dismiss</button>
           </div>
           {weatherAlertBanner.headline&&<div style={{fontSize:14,fontWeight:700,color:"#fca5a5",lineHeight:1.5,borderLeft:"3px solid #ef4444",paddingLeft:10}}>{weatherAlertBanner.headline}</div>}
-          {weatherAlertBanner.description&&<div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{weatherAlertBanner.description}...</div>}
+          {weatherAlertBanner.description&&<div style={{fontSize:12,color:"#e2e8f0",lineHeight:1.6}}>{weatherAlertBanner.description}...</div>}
           <button style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#dc2626,#1d4ed8)",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",letterSpacing:"0.04em"}}
             onClick={()=>{setAlertView("weather_imminent");setView("alert");setAlertFields({_weatherAlert:weatherAlertBanner});}}>
             🚨 SEND WEATHER ALERT NOW
@@ -3189,31 +3257,43 @@ Please respond immediately.
         </div>
       )}
 
-      {/* CURRENT WEATHER WIDGET */}
-      {currentWeather&&isAdmin&&(
-        <div style={{borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",padding:"12px 16px",display:"flex",alignItems:"center",gap:16}}>
-          <div style={{fontSize:32,fontWeight:900,color:"#f1f5f9"}}>{currentWeather.temp!=null?`${currentWeather.temp}°F`:"--"}</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{currentWeather.desc||"Madison, WI"}</div>
-            <div style={{fontSize:12,color:"#64748b"}}>
-              {currentWeather.wind!=null?`Wind: ${currentWeather.wind} mph · `:""}
-              {currentWeather.humidity!=null?`Humidity: ${currentWeather.humidity}%`:""}
-            </div>
+      {/* WEATHER SIDEBAR — top of admin home */}
+      {isAdmin&&(
+        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+          {/* LEFT: Weather panel */}
+          <div style={{width:130,flexShrink:0,background:"rgba(14,165,233,0.07)",border:"1px solid rgba(14,165,233,0.2)",borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{fontSize:9,fontWeight:900,color:"#38bdf8",textTransform:"uppercase",letterSpacing:"0.1em"}}>🌤 McPike Park</div>
+            <div style={{fontSize:28,fontWeight:900,color:"#f1f5f9",lineHeight:1}}>{currentWeather?.temp!=null?`${currentWeather.temp}°F`:"--°F"}</div>
+            <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.3}}>{currentWeather?.desc||"Loading..."}</div>
+            {currentWeather?.wind!=null&&<div style={{fontSize:10,color:"#64748b"}}>💨 {currentWeather.wind} mph</div>}
+            {currentWeather?.humidity!=null&&<div style={{fontSize:10,color:"#64748b"}}>💧 {currentWeather.humidity}%</div>}
+            {nwsAlerts.length>0&&<div style={{fontSize:10,fontWeight:800,color:"#fbbf24",background:"rgba(245,158,11,0.15)",borderRadius:6,padding:"3px 6px"}}>⚠️ {nwsAlerts.length} Alert{nwsAlerts.length>1?"s":""}</div>}
+            <button style={{marginTop:2,padding:"5px 8px",borderRadius:8,border:"1px solid rgba(14,165,233,0.3)",background:"rgba(14,165,233,0.08)",color:"#38bdf8",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setRadarVisible(p=>!p)}>
+              {radarVisible?"Hide Radar":"📡 Radar"}
+            </button>
           </div>
-          <button style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={()=>setRadarVisible(p=>!p)}>
-            {radarVisible?"Hide":"Radar"}
-          </button>
+          {/* RIGHT: Weather alerts or quick status */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
+            {nwsAlerts.slice(0,2).map((a,i)=>(
+              <div key={i} style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"8px 10px"}}>
+                <div style={{fontSize:11,fontWeight:800,color:"#fca5a5"}}>🚨 {a.properties?.event}</div>
+                <div style={{fontSize:10,color:"#94a3b8",marginTop:2,lineHeight:1.3}}>{(a.properties?.headline||"").slice(0,80)}...</div>
+              </div>
+            ))}
+            {nwsAlerts.length===0&&currentWeather&&(
+              <div style={{background:"rgba(34,197,94,0.06)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:10,padding:"8px 10px"}}>
+                <div style={{fontSize:11,fontWeight:800,color:"#4ade80"}}>✅ No Active Alerts</div>
+                <div style={{fontSize:10,color:"#64748b",marginTop:2}}>Conditions clear at McPike Park</div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* LIVE RADAR */}
       {radarVisible&&isAdmin&&(
         <div style={{borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)"}}>
-          <iframe
-            src="https://radar.weather.gov/station/KMKX/standard"
-            style={{width:"100%",height:300,border:"none"}}
-            title="NWS Radar"
-          />
+          <iframe src="https://radar.weather.gov/station/KMKX/standard" style={{width:"100%",height:260,border:"none"}} title="NWS Radar"/>
         </div>
       )}
 
@@ -3250,7 +3330,7 @@ Please respond immediately.
                   </div>
                   {ac.details&&<div style={{display:"flex",gap:6,fontSize:12}}>
                     <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>DESCRIPTION:</span>
-                    <span style={{color:"#94a3b8"}}>{ac.details}</span>
+                    <span style={{color:"#e2e8f0"}}>{ac.details}</span>
                   </div>}
                   <div style={{display:"flex",gap:6,fontSize:12}}>
                     <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>UNIT ASSIGNED:</span>
@@ -3258,7 +3338,7 @@ Please respond immediately.
                   </div>
                   <div style={{display:"flex",gap:6,fontSize:12}}>
                     <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>REPORTING PARTY:</span>
-                    <span style={{color:"#94a3b8"}}>{ac.requestedBy}</span>
+                    <span style={{color:"#e2e8f0"}}>{ac.requestedBy}</span>
                   </div>
                   <div style={{display:"flex",gap:16,fontSize:11,marginTop:4,flexWrap:"wrap"}}>
                     <span style={{color:"#475569"}}>📞 Called: {ts}</span>

@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026 Hub</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 const {
   useState,
   useEffect,
@@ -751,6 +764,389 @@ function MedHome({
     staffList: staffList || [],
     onBack: () => setMedChatOpen(false)
   });
+
+  // ── FULL PAGE PRIORITY CALL (locked until cleared + report done) ──
+  const activePriorityCall = myActive[0] || null;
+  const [showMeetupModal, setShowMeetupModal] = React.useState(false);
+  const [meetupLoc, setMeetupLoc] = React.useState('');
+  const [isOnScene, setIsOnScene] = React.useState(false);
+  const [nineOneOneActive, setNineOneOneActive] = React.useState(false);
+  const [incidentDone, setIncidentDone] = React.useState(false);
+  const [waitingReport, setWaitingReport] = React.useState(false);
+  if (activePriorityCall && !incidentDone) {
+    const pc = activePriorityCall;
+    const cc = CALL_COLORS[pc.type] || CALL_COLORS.medical;
+    function activate911() {
+      const msg = `🚨 911 ACTIVATED — FDM 2026
+
+Location: ${pc.location}
+Call: ${pc.problem}
+Activated by: ${role}
+Meet EMS at: ${meetupLoc || "TBD"}
+Time: ${new Date().toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/Chicago"
+      })}
+
+Madison Fire/EMS INBOUND — McPike Park`;
+      const voiceMsg = `911 has been activated at Fête de Marquette by ${role}. Location: ${pc.location}. Meet EMS at ${meetupLoc || "the main entrance"}. EMS is now inbound to McPike Park.`;
+      const adminPhones = ["+16082289692", "+16082352925"];
+      adminPhones.forEach(p => {
+        fetch("/.netlify/functions/send-sms", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: p,
+            message: msg
+          })
+        }).catch(() => {});
+      });
+      fetch("/.netlify/functions/send-voice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          phones: adminPhones,
+          message: voiceMsg
+        })
+      }).catch(() => {});
+      const otherMedR = (role || "").toLowerCase().includes("1") ? "m2" : "m1";
+      (staffList || []).filter(s => (s.role || "").toLowerCase() === otherMedR && s.phone).forEach(s => {
+        const d = String(s.phone).replace(/[^0-9]/g, "");
+        const fmt = d.length === 10 ? `+1${d}` : `+${d}`;
+        fetch("/.netlify/functions/send-sms", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: fmt,
+            message: msg
+          })
+        }).catch(() => {});
+        fetch("/.netlify/functions/send-voice", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            phones: [fmt],
+            message: voiceMsg
+          })
+        }).catch(() => {});
+      });
+      set911({
+        active: true,
+        by: role,
+        at: new Date().toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit"
+        }),
+        callId: pc.id,
+        info: {
+          location: pc.location,
+          nature: pc.problem
+        }
+      });
+      setNineOneOneActive(true);
+      setShowMeetupModal(false);
+    }
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "#050510",
+        display: "flex",
+        flexDirection: "column",
+        zIndex: 9999,
+        overflowY: "auto"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "16px",
+        background: cc.bg,
+        borderBottom: `2px solid ${cc.border}`,
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 900,
+        color: cc.text,
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        marginBottom: 4
+      }
+    }, cc.icon, " ", cc.label, " — PRIORITY CALL ACTIVE"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 22,
+        fontWeight: 900,
+        color: "#f1f5f9"
+      }
+    }, "📍 ", pc.location), nineOneOneActive && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 6,
+        padding: "6px 10px",
+        background: "rgba(239,68,68,0.2)",
+        border: "1px solid rgba(239,68,68,0.5)",
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 800,
+        color: "#fca5a5"
+      }
+    }, "🚨 911 ACTIVATED — EMS INBOUND")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 12,
+        padding: "14px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: "#64748b",
+        marginBottom: 8,
+        textTransform: "uppercase"
+      }
+    }, "Call Details"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 700,
+        color: "#f1f5f9",
+        marginBottom: 6
+      }
+    }, pc.problem), pc.details && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#94a3b8"
+      }
+    }, pc.details), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#475569",
+        marginTop: 8
+      }
+    }, "Called in: ", pc.timestamp || "--", " · Assigned to: ", role), nineOneOneActive && meetupLoc && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 8,
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#fbbf24"
+      }
+    }, "🚒 EMS Meetup: ", meetupLoc)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        padding: "10px",
+        borderRadius: 10,
+        background: isOnScene ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${isOnScene ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.08)"}`,
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b"
+      }
+    }, "Status"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 800,
+        color: isOnScene ? "#4ade80" : "#fbbf24"
+      }
+    }, isOnScene ? "On Scene" : "En Route")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        padding: "10px",
+        borderRadius: 10,
+        background: nineOneOneActive ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${nineOneOneActive ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.08)"}`,
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#64748b"
+      }
+    }, "911"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 800,
+        color: nineOneOneActive ? "#fca5a5" : "#475569"
+      }
+    }, nineOneOneActive ? "ACTIVATED" : "Not Called"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }
+    }, !isOnScene && /*#__PURE__*/React.createElement("button", {
+      style: {
+        width: "100%",
+        padding: "16px",
+        borderRadius: 12,
+        border: "2px solid rgba(16,185,129,0.6)",
+        background: "rgba(16,185,129,0.12)",
+        color: "#4ade80",
+        fontSize: 16,
+        fontWeight: 900,
+        cursor: "pointer"
+      },
+      onClick: () => {
+        setIsOnScene(true);
+        setCalls(p => p.map(c => c.id === pc.id ? {
+          ...c,
+          status: "on_scene"
+        } : c));
+        if (liveMode) fetch("/.netlify/functions/update-call", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id: pc.id,
+            status: "On Scene",
+            unit: role
+          })
+        }).catch(() => {});
+      }
+    }, "✅ On Scene"), isOnScene && /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        padding: "10px",
+        color: "#4ade80",
+        fontWeight: 700,
+        fontSize: 14
+      }
+    }, "✅ On Scene — You are at the location"), !nineOneOneActive && /*#__PURE__*/React.createElement("button", {
+      style: {
+        width: "100%",
+        padding: "16px",
+        borderRadius: 12,
+        border: "2px solid rgba(239,68,68,0.6)",
+        background: "rgba(239,68,68,0.12)",
+        color: "#fca5a5",
+        fontSize: 16,
+        fontWeight: 900,
+        cursor: "pointer"
+      },
+      onClick: () => setShowMeetupModal(true)
+    }, "🚨 Activate 911"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        width: "100%",
+        padding: "16px",
+        borderRadius: 12,
+        border: "1px solid rgba(255,255,255,0.15)",
+        background: "rgba(255,255,255,0.06)",
+        color: "#f1f5f9",
+        fontSize: 15,
+        fontWeight: 800,
+        cursor: !isOnScene ? "not-allowed" : "pointer",
+        opacity: !isOnScene ? 0.4 : 1
+      },
+      disabled: !isOnScene,
+      onClick: () => {
+        if (!isOnScene) return;
+        setWaitingReport(true);
+        setClearIncView(pc);
+        triggerIncident(pc);
+      }
+    }, !isOnScene ? "Clear Call (must be On Scene first)" : "Clear Call → Complete Report"))), showMeetupModal && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.85)",
+        display: "flex",
+        alignItems: "flex-end",
+        zIndex: 10000
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: "100%",
+        background: "#0d0d1a",
+        borderRadius: "20px 20px 0 0",
+        padding: "24px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 18,
+        fontWeight: 900,
+        color: "#fca5a5"
+      }
+    }, "🚨 Activate 911"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: "#94a3b8"
+      }
+    }, "Specify where EMS should meet you"), /*#__PURE__*/React.createElement("input", {
+      style: {
+        background: "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(239,68,68,0.4)",
+        borderRadius: 10,
+        padding: "14px",
+        color: "#f1f5f9",
+        fontSize: 16,
+        fontFamily: "inherit",
+        outline: "none"
+      },
+      placeholder: "e.g. Main gate on Ingersoll, North parking lot...",
+      value: meetupLoc,
+      onChange: e => setMeetupLoc(e.target.value),
+      autoFocus: true
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        flex: 1,
+        padding: "14px",
+        borderRadius: 10,
+        border: "1px solid rgba(255,255,255,0.1)",
+        background: "rgba(255,255,255,0.05)",
+        color: "#94a3b8",
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: "pointer"
+      },
+      onClick: () => setShowMeetupModal(false)
+    }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        flex: 2,
+        padding: "14px",
+        borderRadius: 10,
+        border: "none",
+        background: meetupLoc.trim() ? "linear-gradient(135deg,rgba(239,68,68,0.9),rgba(185,28,28,0.9))" : "rgba(255,255,255,0.06)",
+        color: meetupLoc.trim() ? "#fff" : "#475569",
+        fontSize: 14,
+        fontWeight: 900,
+        cursor: meetupLoc.trim() ? "pointer" : "not-allowed"
+      },
+      disabled: !meetupLoc.trim(),
+      onClick: activate911
+    }, "🚨 CONFIRM — Activate 911")))));
+  }
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -780,18 +1176,15 @@ function MedHome({
     onClick: () => setMedStatus(s)
   }, l))), /*#__PURE__*/React.createElement("div", {
     style: {
-      margin: "6px 16px",
-      background: "rgba(147,51,234,0.06)",
-      border: "1px solid rgba(147,51,234,0.2)",
-      borderRadius: 12,
-      overflow: "hidden"
+      margin: "6px 16px"
     }
   }, /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "16px 18px",
-      background: "none",
-      border: "none",
+      borderRadius: 12,
+      border: "1px solid rgba(147,51,234,0.3)",
+      background: "rgba(147,51,234,0.08)",
       display: "flex",
       alignItems: "center",
       gap: 14,
@@ -825,281 +1218,15 @@ function MedHome({
   }, "Festival Chat"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, "Tap to open messages")), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6
+      color: "#c4b5fd",
+      fontSize: 18
     }
-  }, medDMThread && /*#__PURE__*/React.createElement("button", {
-    style: {
-      fontSize: 10,
-      color: "#64748b",
-      background: "rgba(255,255,255,0.06)",
-      border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: 6,
-      padding: "2px 7px",
-      cursor: "pointer"
-    },
-    onClick: e => {
-      e.stopPropagation();
-      setMedDMThread(null);
-      setMedChatMessages([]);
-    }
-  }, "← Channels"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "#64748b"
-    }
-  }, chatExpanded ? "▲" : "▼"))), chatExpanded && /*#__PURE__*/React.createElement("div", {
-    style: {
-      borderTop: "1px solid rgba(147,51,234,0.15)",
-      padding: "8px 12px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 6
-    }
-  }, !medDMThread && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 4,
-      marginBottom: 4
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      flex: 1,
-      padding: "5px",
-      borderRadius: 6,
-      border: `1px solid ${medChatTab === "channels" ? "rgba(147,51,234,0.5)" : "rgba(255,255,255,0.08)"}`,
-      background: medChatTab === "channels" ? "rgba(147,51,234,0.12)" : "rgba(255,255,255,0.03)",
-      color: medChatTab === "channels" ? "#c4b5fd" : "#64748b",
-      fontSize: 10,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => setMedChatTab("channels")
-  }, "Channels"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      flex: 1,
-      padding: "5px",
-      borderRadius: 6,
-      border: `1px solid ${medChatTab === "dms" ? "rgba(147,51,234,0.5)" : "rgba(255,255,255,0.08)"}`,
-      background: medChatTab === "dms" ? "rgba(147,51,234,0.12)" : "rgba(255,255,255,0.03)",
-      color: medChatTab === "dms" ? "#c4b5fd" : "#64748b",
-      fontSize: 10,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => setMedChatTab("dms")
-  }, "Direct Messages")), !medDMThread && medChatTab === "channels" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 4,
-      flexWrap: "wrap",
-      marginBottom: 4
-    }
-  }, MED_CHANNELS.map(ch => /*#__PURE__*/React.createElement("button", {
-    key: ch.id,
-    style: {
-      padding: "3px 8px",
-      borderRadius: 12,
-      border: `1px solid ${medChatChannel === ch.id ? "rgba(147,51,234,0.6)" : "rgba(255,255,255,0.08)"}`,
-      background: medChatChannel === ch.id ? "rgba(147,51,234,0.15)" : "rgba(255,255,255,0.03)",
-      color: medChatChannel === ch.id ? "#c4b5fd" : "#64748b",
-      fontSize: 10,
-      fontWeight: 600,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      setMedChatChannel(ch.id);
-      setMedChatMessages([]);
-    }
-  }, ch.emoji, " ", ch.label))), !medDMThread && medChatTab === "dms" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 4
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 4,
-      marginBottom: 6
-    }
-  }, staffList.filter(s => s.name !== role).slice(0, 12).map(s => /*#__PURE__*/React.createElement("button", {
-    key: s.id,
-    style: {
-      padding: "3px 8px",
-      borderRadius: 12,
-      border: "1px solid rgba(255,255,255,0.1)",
-      background: "rgba(255,255,255,0.03)",
-      color: "#94a3b8",
-      fontSize: 10,
-      cursor: "pointer"
-    },
-    onClick: () => startMedDM(s)
-  }, s.name))), medDMList.map(dm => /*#__PURE__*/React.createElement("button", {
-    key: dm.threadId,
-    style: {
-      width: "100%",
-      padding: "6px 8px",
-      background: "none",
-      border: "none",
-      borderBottom: "1px solid rgba(255,255,255,0.04)",
-      cursor: "pointer",
-      textAlign: "left",
-      display: "flex",
-      gap: 8,
-      alignItems: "center"
-    },
-    onClick: () => {
-      setMedDMThread({
-        otherName: dm.otherName,
-        threadId: dm.threadId
-      });
-      setMedChatMessages([]);
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#f1f5f9",
-      flex: 1
-    }
-  }, dm.otherName), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: "#64748b",
-      textOverflow: "ellipsis",
-      overflow: "hidden",
-      whiteSpace: "nowrap",
-      maxWidth: 120
-    }
-  }, dm.lastMessage)))), (medChatTab === "channels" || medDMThread) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      maxHeight: 150,
-      overflowY: "auto",
-      display: "flex",
-      flexDirection: "column",
-      gap: 4
-    }
-  }, medChatMessages.length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#374151",
-      textAlign: "center",
-      padding: "8px 0"
-    }
-  }, "No messages yet"), medChatMessages.map(msg => {
-    const isMe = msg.fromName === role;
-    const isAlert = msg.isAlert;
-    const time = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: "America/Chicago"
-    }) : "";
-    if (isAlert) return /*#__PURE__*/React.createElement("div", {
-      key: msg.id,
-      style: {
-        background: "rgba(239,68,68,0.1)",
-        border: "1px solid rgba(239,68,68,0.3)",
-        borderRadius: 6,
-        padding: "4px 8px"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 9,
-        fontWeight: 800,
-        color: "#fca5a5"
-      }
-    }, "🚨 ", time), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: "#fecaca"
-      }
-    }, msg.message));
-    return /*#__PURE__*/React.createElement("div", {
-      key: msg.id,
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: isMe ? "flex-end" : "flex-start",
-        gap: 1
-      }
-    }, !isMe && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 9,
-        color: "#64748b",
-        marginLeft: 3
-      }
-    }, msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
-      style: {
-        maxWidth: "85%",
-        background: isMe ? "rgba(147,51,234,0.2)" : "rgba(255,255,255,0.06)",
-        border: `1px solid ${isMe ? "rgba(147,51,234,0.4)" : "rgba(255,255,255,0.08)"}`,
-        borderRadius: "10px",
-        padding: "5px 9px"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "#f1f5f9"
-      }
-    }, msg.message)));
-  })), (medChatTab === "channels" || medDMThread) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    style: {
-      flex: 1,
-      background: "rgba(255,255,255,0.06)",
-      border: "1px solid rgba(255,255,255,0.12)",
-      borderRadius: 8,
-      padding: "8px 11px",
-      color: "#f1f5f9",
-      fontSize: 14,
-      fontFamily: "inherit",
-      outline: "none"
-    },
-    placeholder: medDMThread ? `Message ${medDMThread.otherName}...` : `Message ${MED_CHANNELS.find(c => c.id === medChatChannel)?.label || medChatChannel}...`,
-    value: medChatInput,
-    onChange: e => setMedChatInput(e.target.value),
-    onKeyDown: e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendMedChat();
-      }
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "8px 14px",
-      borderRadius: 8,
-      border: "none",
-      background: medChatInput.trim() ? "linear-gradient(135deg,#7c3aed,#6d28d9)" : "rgba(255,255,255,0.06)",
-      color: medChatInput.trim() ? "#fff" : "#475569",
-      fontSize: 12,
-      fontWeight: 800,
-      cursor: medChatInput.trim() ? "pointer" : "not-allowed"
-    },
-    onClick: sendMedChat,
-    disabled: !medChatInput.trim() || medChatSending
-  }, medChatSending ? "..." : "Send"))), !chatExpanded && medChatMessages.length > 0 && (() => {
-    const lm = medChatMessages[medChatMessages.length - 1];
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: "0 14px 8px",
-        fontSize: 11,
-        color: "#64748b",
-        textOverflow: "ellipsis",
-        overflow: "hidden",
-        whiteSpace: "nowrap"
-      }
-    }, lm.fromName, ": ", lm.message.slice(0, 60), lm.message.length > 60 ? "..." : "");
-  })()), /*#__PURE__*/React.createElement("div", {
+  }, "→"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "6px 16px 4px"
     }
@@ -1139,7 +1266,7 @@ function MedHome({
   }, "NEW MEDICAL CALL"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       marginTop: 2
     }
   }, "Submit call · alerts all units")))), /*#__PURE__*/React.createElement("div", {
@@ -1177,7 +1304,7 @@ function MedHome({
   }, "REPORT LOST CHILD"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       marginTop: 2
     }
   }, "Alerts all staff immediately")))), /*#__PURE__*/React.createElement("div", {
@@ -1267,7 +1394,7 @@ function MedHome({
     }, call.problem), call.details && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, call.details), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -1336,7 +1463,7 @@ function MedHome({
         borderRadius: 8,
         border: "1px solid rgba(100,116,139,0.4)",
         background: "rgba(255,255,255,0.04)",
-        color: "#94a3b8",
+        color: "#e2e8f0",
         fontSize: 12,
         fontWeight: 700,
         cursor: "pointer"
@@ -1423,7 +1550,7 @@ function MedHome({
     style: {
       fontSize: 12,
       fontWeight: 800,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em",
       marginBottom: 4
@@ -1454,7 +1581,7 @@ function MedHome({
   }, "Request ", otherRole), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, "GroupMe + SMS to Admin · Medical channel"))), /*#__PURE__*/React.createElement("button", {
@@ -1483,7 +1610,7 @@ function MedHome({
   }, "Request Admin"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, "GroupMe + SMS to Admin"))), /*#__PURE__*/React.createElement("button", {
@@ -1512,7 +1639,7 @@ function MedHome({
   }, "Request MPD"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, "SMS + Voice call to officers on duty")))), tab === "lf" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("a", {
@@ -1569,7 +1696,7 @@ function MedHome({
   }, item.description), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, "📍 ", item.location, " · ", item.status))))));
@@ -1753,7 +1880,7 @@ function HubConversationView({
   }, label), !convo.isDM && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, "Group channel"))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1812,7 +1939,7 @@ function HubConversationView({
     }, !isMe && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
-        color: "#64748b",
+        color: "#94a3b8",
         marginLeft: 4
       }
     }, hubDisplayRole(msg.fromRole) || msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
@@ -1962,7 +2089,7 @@ function HubNewMessageView({
       padding: "8px 16px 4px",
       fontSize: 11,
       fontWeight: 800,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em"
     }
@@ -1991,7 +2118,7 @@ function HubNewMessageView({
       alignItems: "center",
       justifyContent: "center",
       fontSize: 14,
-      color: "#64748b",
+      color: "#94a3b8",
       flexShrink: 0
     }
   }, "#"), /*#__PURE__*/React.createElement("div", {
@@ -2004,7 +2131,7 @@ function HubNewMessageView({
       padding: "8px 16px 4px",
       fontSize: 11,
       fontWeight: 800,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em"
     }
@@ -2047,7 +2174,7 @@ function HubNewMessageView({
   }, s.name), s.location && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 1
     }
   }, s.location)))))));
@@ -2246,7 +2373,7 @@ function HubChatInbox({
     }, timeAgo(c.lastAt))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
-        color: "#64748b",
+        color: "#94a3b8",
         textOverflow: "ellipsis",
         overflow: "hidden",
         whiteSpace: "nowrap"
@@ -3480,7 +3607,7 @@ function HubApp({
           background: "rgba(180,0,0,0.2)"
         },
         onClick: () => {
-          const msg911 = `🚨 911 ACTIVATED — ${role}\nLOCATION: ${alertCall.location}\nCALL: ${alertCall.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
+          const msg911 = `🚨 911 ACTIVATED — FDM 2026\n\nLocation: ${alertCall.location}\nCall: ${alertCall.problem}\nActivated by: ${role}\nTime: ${tShort()}\n\nMadison Fire / EMS INBOUND — McPike Park`;
           set911({
             active: true,
             by: role,
@@ -3491,11 +3618,36 @@ function HubApp({
               nature: alertCall.problem
             }
           });
-          sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`, ["admin", "medical"]);
-          const phones = [...new Set([ADMIN2_PHONE, ...(staffList || []).filter(s => ["m1", "m2", "a1", "a2"].some(r => (s.role || "").toLowerCase().startsWith(r))).map(s => s.phone).filter(Boolean)])];
-          phones.forEach(p => {
-            const d = p.replace(/\D/g, "");
-            const fmt = d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === "1" ? `+${d}` : p;
+          // SMS + Voice to Devin + Gary (admin)
+          const adminPhones = ["+16082289692", "+16082352925"];
+          adminPhones.forEach(p => {
+            fetch("/.netlify/functions/send-sms", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                to: p,
+                message: msg911
+              })
+            }).catch(() => {});
+          });
+          fetch("/.netlify/functions/send-voice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              phones: adminPhones,
+              message: `911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`
+            })
+          }).catch(() => {});
+          // SMS + Voice to OTHER med unit (not the one activating 911)
+          const otherMedRole = (role || "").toLowerCase() === "med 1" || role === "M1" ? "m2" : "m1";
+          const otherMed = (staffList || []).filter(s => (s.role || "").toLowerCase() === otherMedRole && s.phone);
+          otherMed.forEach(s => {
+            const d = String(s.phone).replace(/[^0-9]/g, "");
+            const fmt = d.length === 10 ? `+1${d}` : `+${d}`;
             fetch("/.netlify/functions/send-sms", {
               method: "POST",
               headers: {
@@ -3512,8 +3664,8 @@ function HubApp({
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                to: fmt,
-                message: `911 activated by ${role} at Fete de Marquette. Responding to ${alertCall.location}. ${alertCall.problem}. EMS inbound. Clear a path.`
+                phones: [fmt],
+                message: `911 has been activated at Fête de Marquette. Location: ${alertCall.location}. EMS is inbound. Please stand by for coordination.`
               })
             }).catch(() => {});
           });
@@ -3584,7 +3736,7 @@ function HubApp({
   }, "Operations Hub"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em",
       marginTop: 2
@@ -3593,7 +3745,7 @@ function HubApp({
     style: {
       padding: "0 16px 6px",
       fontSize: 12,
-      color: "#64748b",
+      color: "#94a3b8",
       fontWeight: 600
     }
   }, "Select your role:"), /*#__PURE__*/React.createElement("div", {
@@ -3634,7 +3786,7 @@ function HubApp({
   }, r), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, tp))))), /*#__PURE__*/React.createElement("div", {
@@ -3727,7 +3879,7 @@ function HubApp({
   }, t.label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, t.desc)))))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
@@ -3751,7 +3903,7 @@ function HubApp({
       marginLeft: "auto",
       background: "none",
       border: "none",
-      color: "#64748b",
+      color: "#94a3b8",
       fontSize: 12,
       cursor: "pointer"
     },
@@ -3759,7 +3911,7 @@ function HubApp({
   }, "Change")), resourceType === "supplies" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       fontWeight: 700,
       textTransform: "uppercase",
       letterSpacing: "0.06em"
@@ -3836,7 +3988,7 @@ function HubApp({
   }, "✓")))), adminSupplyItem && adminSupplyItem !== "other" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       fontWeight: 700,
       textTransform: "uppercase",
       letterSpacing: "0.06em"
@@ -3934,7 +4086,7 @@ DATE/TIME: ${now()}`;
   }, "📦 Send Supplies Request")), resourceType === "maintenance" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       fontWeight: 700,
       textTransform: "uppercase",
       letterSpacing: "0.06em"
@@ -4238,7 +4390,7 @@ DATE/TIME: ${now()}`;
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
-        color: "#64748b",
+        color: "#94a3b8",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.06em",
@@ -4265,7 +4417,7 @@ DATE/TIME: ${now()}`;
     }, /*#__PURE__*/React.createElement("label", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.06em"
@@ -4329,7 +4481,7 @@ DATE/TIME: ${now()}`;
     }, /*#__PURE__*/React.createElement("label", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.06em"
@@ -4377,7 +4529,7 @@ DATE/TIME: ${now()}`;
     }, /*#__PURE__*/React.createElement("label", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.06em"
@@ -4437,7 +4589,7 @@ DATE/TIME: ${now()}`;
       }, /*#__PURE__*/React.createElement("label", {
         style: {
           fontSize: 12,
-          color: "#64748b",
+          color: "#94a3b8",
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.06em"
@@ -4446,7 +4598,7 @@ DATE/TIME: ${now()}`;
         style: {
           background: "none",
           border: "none",
-          color: "#64748b",
+          color: "#94a3b8",
           fontSize: 11,
           cursor: "pointer"
         },
@@ -4530,7 +4682,7 @@ DATE/TIME: ${now()}`;
     }, /*#__PURE__*/React.createElement("label", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.06em"
@@ -4559,7 +4711,7 @@ DATE/TIME: ${now()}`;
     }, /*#__PURE__*/React.createElement("label", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.06em"
@@ -4622,7 +4774,7 @@ DATE/TIME: ${now()}`;
       style: {
         background: "none",
         border: "none",
-        color: "#64748b",
+        color: "#94a3b8",
         fontSize: 12,
         cursor: "pointer",
         padding: 0
@@ -4822,7 +4974,7 @@ DATE/TIME: ${now()}`;
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
       marginBottom: 4
@@ -4867,7 +5019,7 @@ DATE/TIME: ${now()}`;
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
       marginTop: 4
@@ -4889,7 +5041,7 @@ DATE/TIME: ${now()}`;
     style: {
       fontSize: 12,
       fontWeight: 700,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em"
     }
@@ -5014,7 +5166,7 @@ DATE/TIME: ${now()}`;
       }
     }, "🔧 ", mc2.location), /*#__PURE__*/React.createElement("div", {
       style: {
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, mc2.problem)), /*#__PURE__*/React.createElement(Fld, {
       label: "What was done? *",
@@ -5040,7 +5192,7 @@ DATE/TIME: ${now()}`;
         borderRadius: 8,
         padding: "10px",
         fontSize: 12,
-        color: "#64748b"
+        color: "#94a3b8"
       }
     }, "📅 ", ts), /*#__PURE__*/React.createElement("button", {
       style: {
@@ -5186,7 +5338,7 @@ DATE/TIME: ${now()}`;
         borderRadius: 8,
         padding: "10px",
         fontSize: 12,
-        color: "#64748b"
+        color: "#94a3b8"
       }
     }, "📅 Date/Time: ", ts), /*#__PURE__*/React.createElement("button", {
       style: {
@@ -5257,11 +5409,11 @@ DATE/TIME: ${now()}`;
       }
     }, typeLabels[cc.type] || cc.type), /*#__PURE__*/React.createElement("div", {
       style: {
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, "📍 ", cc.location), /*#__PURE__*/React.createElement("div", {
       style: {
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, "🔍 ", cc.problem)), /*#__PURE__*/React.createElement(Fld, {
       label: "Responding Unit",
@@ -5298,7 +5450,7 @@ DATE/TIME: ${now()}`;
     }, /*#__PURE__*/React.createElement("label", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         textTransform: "uppercase",
         letterSpacing: "0.06em",
         fontWeight: 700
@@ -5347,7 +5499,7 @@ DATE/TIME: ${now()}`;
       style: {
         ...S.sendBtn,
         background: "rgba(255,255,255,0.06)",
-        color: "#64748b",
+        color: "#94a3b8",
         border: "1px solid rgba(255,255,255,0.1)",
         fontSize: 13
       },
@@ -5394,7 +5546,7 @@ DATE/TIME: ${now()}`;
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       fontWeight: 700,
       textTransform: "uppercase"
     }
@@ -5407,17 +5559,17 @@ DATE/TIME: ${now()}`;
   }, incidentView.type?.toUpperCase(), " — ", incidentView.location), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, incidentView.problem), incidentView.details && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, incidentView.details), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, "Reported by: ", incidentView.requestedBy, " · Unit: ", incFields.respondingUnit)), /*#__PURE__*/React.createElement(Fld, {
     label: "Individual Description",
@@ -5526,7 +5678,7 @@ DATE/TIME: ${now()}`;
     style: {
       ...S.sendBtn,
       background: "rgba(255,255,255,0.05)",
-      color: "#64748b",
+      color: "#94a3b8",
       fontSize: 14
     },
     onClick: () => {
@@ -5676,7 +5828,7 @@ DATE/TIME: ${now()}`;
       style: {
         fontSize: 11,
         fontWeight: 800,
-        color: "#64748b",
+        color: "#94a3b8",
         letterSpacing: "0.08em",
         padding: "4px 0 8px"
       }
@@ -5738,7 +5890,7 @@ DATE/TIME: ${now()}`;
       }, st.label), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
-          color: "#64748b"
+          color: "#94a3b8"
         }
       }, c.history[0]?.ts)), /*#__PURE__*/React.createElement("div", {
         style: {
@@ -5797,7 +5949,7 @@ DATE/TIME: ${now()}`;
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: "#64748b",
+          color: "#94a3b8",
           minWidth: 50
         }
       }, h.ts), /*#__PURE__*/React.createElement("span", {
@@ -5813,7 +5965,7 @@ DATE/TIME: ${now()}`;
       }, /*#__PURE__*/React.createElement("label", {
         style: {
           fontSize: 11,
-          color: "#64748b",
+          color: "#94a3b8",
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.06em"
@@ -5970,7 +6122,7 @@ DATE/TIME: ${now()}`;
         }, "👮 Officers Notified — ", c.location), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
-            color: "#64748b",
+            color: "#94a3b8",
             lineHeight: 1.5
           }
         }, "SMS + Voice fired to all on-duty officers. Cancel any not needed."), justOpened && (() => {
@@ -6047,7 +6199,7 @@ Reply YES to acknowledge.`
           }, o.name), /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
-              color: "#64748b"
+              color: "#94a3b8"
             }
           }, o.badge, " · ", o.phone), isNotified && !isAcked && /*#__PURE__*/React.createElement("div", {
             style: {
@@ -6066,7 +6218,7 @@ Reply YES to acknowledge.`
           }, "✅ Acknowledged · ", notif?.ackedAt), isCancelled && /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
-              color: "#94a3b8",
+              color: "#e2e8f0",
               marginTop: 2
             }
           }, "❌ Stood down ", notif?.cancelledAt)), /*#__PURE__*/React.createElement("div", {
@@ -6122,7 +6274,7 @@ Reply YES to acknowledge.`
             borderRadius: 10,
             border: "1px solid rgba(255,255,255,0.1)",
             background: "rgba(255,255,255,0.04)",
-            color: "#64748b",
+            color: "#94a3b8",
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
@@ -6168,7 +6320,7 @@ Reply YES to acknowledge.`
     }, c.problem), c.clearedBy && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
-        color: "#64748b"
+        color: "#94a3b8"
       }
     }, "Cleared by: ", c.clearedBy, " · ", c.clearedAt), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6188,7 +6340,7 @@ Reply YES to acknowledge.`
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: "#64748b",
+        color: "#94a3b8",
         minWidth: 50
       }
     }, h.ts), /*#__PURE__*/React.createElement("span", {
@@ -6235,14 +6387,14 @@ Reply YES to acknowledge.`
   }, "How it works"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#64748b",
+      color: "#94a3b8",
       lineHeight: 1.6
     }
   }, "Each officer on duty will receive an SMS text AND a voice call with your location and situation details.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em",
       marginBottom: 8
@@ -6266,7 +6418,7 @@ Reply YES to acknowledge.`
     style: {
       fontSize: 11,
       fontWeight: 800,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em",
       marginBottom: 8
@@ -6300,7 +6452,7 @@ Reply YES to acknowledge.`
       padding: "8px 12px",
       fontSize: 11,
       fontWeight: 900,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em",
       borderBottom: "1px solid rgba(255,255,255,0.06)"
@@ -6344,7 +6496,7 @@ Reply YES to acknowledge.`
     }, o.name), o.phone && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
-        color: "#64748b"
+        color: "#94a3b8"
       }
     }, o.phone)), /*#__PURE__*/React.createElement("button", {
       style: {
@@ -6681,7 +6833,7 @@ Please respond immediately.
   }, "👥 Staff List"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
-      color: "#64748b",
+      color: "#94a3b8",
       marginLeft: "auto"
     }
   }, staffList.length, " staff")), /*#__PURE__*/React.createElement("div", {
@@ -6705,7 +6857,7 @@ Please respond immediately.
     style: {
       fontSize: 10,
       fontWeight: 900,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.08em"
     }
@@ -6735,7 +6887,7 @@ Please respond immediately.
   }, s.name), s.role && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
-      color: "#64748b",
+      color: "#94a3b8",
       marginTop: 2
     }
   }, hubDisplayRole(s.role))), /*#__PURE__*/React.createElement("div", {
@@ -6746,12 +6898,12 @@ Please respond immediately.
   }, s.phone || "—"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, s.location || "—"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       lineHeight: 1.4
     }
   }, s.days ? /*#__PURE__*/React.createElement("div", null, s.days) : "—", s.shiftStart && s.shiftEnd && /*#__PURE__*/React.createElement("div", {
@@ -6780,14 +6932,14 @@ Please respond immediately.
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
-      color: "#64748b",
+      color: "#94a3b8",
       lineHeight: 1.6
     }
   }, "Enter staff member info and send them the onboarding text with the RSVP link."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
       marginBottom: 6
@@ -6810,7 +6962,7 @@ Please respond immediately.
     style: {
       fontSize: 11,
       fontWeight: 700,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
       marginBottom: 6
@@ -6833,7 +6985,7 @@ Please respond immediately.
     style: {
       fontSize: 11,
       fontWeight: 700,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
       marginBottom: 6
@@ -6993,7 +7145,7 @@ Please respond immediately.
   }, "Mark as Claimed — #", lfClaimView.itemNumber), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, lfClaimView.description), /*#__PURE__*/React.createElement(Fld, {
     label: "Claimed By (Name) *",
@@ -7040,7 +7192,7 @@ Please respond immediately.
     style: {
       ...S.sendBtn,
       background: "rgba(255,255,255,0.06)",
-      color: "#94a3b8"
+      color: "#e2e8f0"
     },
     onClick: () => setLfClaimView(null)
   }, "Cancel")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
@@ -7054,7 +7206,7 @@ Please respond immediately.
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, lfItems.length, " items · ", lfItems.filter(i => i.status === "Unclaimed").length, " unclaimed"), /*#__PURE__*/React.createElement("a", {
     href: "https://fdm2026.netlify.app/lostfound",
@@ -7184,7 +7336,7 @@ Please respond immediately.
       borderRadius: 10,
       border: "1px solid rgba(255,255,255,0.1)",
       background: "rgba(255,255,255,0.04)",
-      color: "#64748b",
+      color: "#94a3b8",
       fontSize: 13,
       fontWeight: 700,
       cursor: "pointer"
@@ -7213,13 +7365,13 @@ Please respond immediately.
   }, "+ Log New Found Item"), lfLoading && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      color: "#64748b",
+      color: "#94a3b8",
       padding: "20px"
     }
   }, "Loading..."), !lfLoading && lfItems.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      color: "#64748b",
+      color: "#94a3b8",
       padding: "20px"
     }
   }, "No lost & found items yet."), lfItems.map(item => /*#__PURE__*/React.createElement("div", {
@@ -7336,7 +7488,7 @@ Please respond immediately.
       flexDirection: "column",
       gap: 3,
       fontSize: 12,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, /*#__PURE__*/React.createElement("div", null, "📍 Found at: ", /*#__PURE__*/React.createElement("strong", {
     style: {
@@ -7502,7 +7654,7 @@ Please respond immediately.
     }, a.label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
-        color: "#64748b"
+        color: "#94a3b8"
       }
     }, a.date)), /*#__PURE__*/React.createElement("button", {
       style: {
@@ -7541,7 +7693,7 @@ Please respond immediately.
     })), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, conf, "/", tot)), ALL_LOCS.map(loc => {
       const t = a.acks?.[loc];
@@ -7583,7 +7735,7 @@ Please respond immediately.
           fontSize: 10,
           background: "rgba(255,255,255,0.06)",
           border: "none",
-          color: "#94a3b8",
+          color: "#e2e8f0",
           borderRadius: 4,
           padding: "2px 6px",
           cursor: "pointer"
@@ -7700,7 +7852,7 @@ Please respond immediately.
     }, e.label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
-        color: "#64748b",
+        color: "#94a3b8",
         marginTop: 1
       }
     }, e.date || e.ts)), /*#__PURE__*/React.createElement("span", {
@@ -7749,7 +7901,7 @@ Please respond immediately.
         padding: "3px 8px",
         borderRadius: 6,
         background: "rgba(255,255,255,0.06)",
-        color: "#94a3b8",
+        color: "#e2e8f0",
         fontWeight: 600
       }
     }, "⏰ ", e.ts), e.date && e.date !== e.ts && /*#__PURE__*/React.createElement("span", {
@@ -7758,7 +7910,7 @@ Please respond immediately.
         padding: "3px 8px",
         borderRadius: 6,
         background: "rgba(255,255,255,0.06)",
-        color: "#64748b"
+        color: "#94a3b8"
       }
     }, "📅 ", e.date)), e.location && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -7769,7 +7921,7 @@ Please respond immediately.
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         minWidth: 60,
         fontWeight: 600
       }
@@ -7788,7 +7940,7 @@ Please respond immediately.
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         minWidth: 60,
         fontWeight: 600,
         flexShrink: 0
@@ -7808,7 +7960,7 @@ Please respond immediately.
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         minWidth: 60,
         fontWeight: 600
       }
@@ -7825,7 +7977,7 @@ Please respond immediately.
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
-        color: "#64748b",
+        color: "#94a3b8",
         minWidth: 60,
         fontWeight: 600
       }
@@ -7878,7 +8030,7 @@ Please respond immediately.
   }, "Tonight's Summary"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, "Date: ", new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -7908,7 +8060,7 @@ Please respond immediately.
   }, [...calls, ...completed].length), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, "Total Calls")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7926,7 +8078,7 @@ Please respond immediately.
   }, lfItems.length), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, "L&F Items")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7944,7 +8096,7 @@ Please respond immediately.
   }, broadcastAlerts.length), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, "Broadcasts")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7962,7 +8114,7 @@ Please respond immediately.
   }, activityLog.length), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#64748b"
+      color: "#94a3b8"
     }
   }, "Log Entries")))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7973,7 +8125,7 @@ Please respond immediately.
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#64748b",
+      color: "#94a3b8",
       fontWeight: 700,
       textTransform: "uppercase"
     }
@@ -8647,7 +8799,7 @@ Please respond immediately.
     }, "🔍 ", mc.problem), mc.details && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, "ℹ️ ", mc.details), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9221,17 +9373,17 @@ Please respond immediately.
   }, nineOneOne.info?.patients && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, "👤 ", nineOneOne.info.patients, " patient", nineOneOne.info.patients !== "1" ? "s" : ""), nineOneOne.info?.age_sex && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, nineOneOne.info.age_sex), nineOneOne.info?.conscious && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8"
+      color: "#e2e8f0"
     }
   }, nineOneOne.info.conscious), emsForm.eta && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9325,7 +9477,7 @@ Please respond immediately.
     }, c.problem), c.details && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
-        color: "#94a3b8",
+        color: "#e2e8f0",
         lineHeight: 1.5
       }
     }, c.details), /*#__PURE__*/React.createElement("div", {
@@ -9338,7 +9490,7 @@ Please respond immediately.
     }, c.unit && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, "👤 Unit: ", /*#__PURE__*/React.createElement("span", {
       style: {
@@ -9348,7 +9500,7 @@ Please respond immediately.
     }, c.unit)), c.requestedBy && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, "From: ", /*#__PURE__*/React.createElement("span", {
       style: {
@@ -9358,7 +9510,7 @@ Please respond immediately.
     }, c.requestedBy)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, "⏰ ", /*#__PURE__*/React.createElement("span", {
       style: {
@@ -9474,7 +9626,7 @@ Please respond immediately.
   }, weatherAlertBanner.headline), weatherAlertBanner.description && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       lineHeight: 1.6
     }
   }, weatherAlertBanner.description, "..."), /*#__PURE__*/React.createElement("button", {
@@ -9497,50 +9649,125 @@ Please respond immediately.
         _weatherAlert: weatherAlertBanner
       });
     }
-  }, "🚨 SEND WEATHER ALERT NOW")), currentWeather && isAdmin && /*#__PURE__*/React.createElement("div", {
+  }, "🚨 SEND WEATHER ALERT NOW")), isAdmin && /*#__PURE__*/React.createElement("div", {
     style: {
-      borderRadius: 12,
-      border: "1px solid rgba(255,255,255,0.08)",
-      background: "rgba(255,255,255,0.03)",
-      padding: "12px 16px",
       display: "flex",
-      alignItems: "center",
-      gap: 16
+      gap: 10,
+      alignItems: "flex-start"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 32,
+      width: 130,
+      flexShrink: 0,
+      background: "rgba(14,165,233,0.07)",
+      border: "1px solid rgba(14,165,233,0.2)",
+      borderRadius: 12,
+      padding: "10px 12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
       fontWeight: 900,
-      color: "#f1f5f9"
+      color: "#38bdf8",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em"
     }
-  }, currentWeather.temp != null ? `${currentWeather.temp}°F` : "--"), /*#__PURE__*/React.createElement("div", {
+  }, "🌤 McPike Park"), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      fontSize: 28,
+      fontWeight: 900,
+      color: "#f1f5f9",
+      lineHeight: 1
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, currentWeather?.temp != null ? `${currentWeather.temp}°F` : "--°F"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: "#f1f5f9"
+      fontSize: 11,
+      color: "#94a3b8",
+      lineHeight: 1.3
     }
-  }, currentWeather.desc || "Madison, WI"), /*#__PURE__*/React.createElement("div", {
+  }, currentWeather?.desc || "Loading..."), currentWeather?.wind != null && /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12,
+      fontSize: 10,
       color: "#64748b"
     }
-  }, currentWeather.wind != null ? `Wind: ${currentWeather.wind} mph · ` : "", currentWeather.humidity != null ? `Humidity: ${currentWeather.humidity}%` : "")), /*#__PURE__*/React.createElement("button", {
+  }, "💨 ", currentWeather.wind, " mph"), currentWeather?.humidity != null && /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "8px 12px",
+      fontSize: 10,
+      color: "#64748b"
+    }
+  }, "💧 ", currentWeather.humidity, "%"), nwsAlerts.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 800,
+      color: "#fbbf24",
+      background: "rgba(245,158,11,0.15)",
+      borderRadius: 6,
+      padding: "3px 6px"
+    }
+  }, "⚠️ ", nwsAlerts.length, " Alert", nwsAlerts.length > 1 ? "s" : ""), /*#__PURE__*/React.createElement("button", {
+    style: {
+      marginTop: 2,
+      padding: "5px 8px",
       borderRadius: 8,
-      border: "1px solid rgba(255,255,255,0.1)",
-      background: "rgba(255,255,255,0.05)",
-      color: "#94a3b8",
-      fontSize: 12,
-      fontWeight: 600,
+      border: "1px solid rgba(14,165,233,0.3)",
+      background: "rgba(14,165,233,0.08)",
+      color: "#38bdf8",
+      fontSize: 10,
+      fontWeight: 700,
       cursor: "pointer"
     },
     onClick: () => setRadarVisible(p => !p)
-  }, radarVisible ? "Hide" : "Radar")), radarVisible && isAdmin && /*#__PURE__*/React.createElement("div", {
+  }, radarVisible ? "Hide Radar" : "📡 Radar")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, nwsAlerts.slice(0, 2).map((a, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      background: "rgba(239,68,68,0.08)",
+      border: "1px solid rgba(239,68,68,0.3)",
+      borderRadius: 10,
+      padding: "8px 10px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: "#fca5a5"
+    }
+  }, "🚨 ", a.properties?.event), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#94a3b8",
+      marginTop: 2,
+      lineHeight: 1.3
+    }
+  }, (a.properties?.headline || "").slice(0, 80), "..."))), nwsAlerts.length === 0 && currentWeather && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(34,197,94,0.06)",
+      border: "1px solid rgba(34,197,94,0.2)",
+      borderRadius: 10,
+      padding: "8px 10px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: "#4ade80"
+    }
+  }, "✅ No Active Alerts"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#64748b",
+      marginTop: 2
+    }
+  }, "Conditions clear at McPike Park")))), radarVisible && isAdmin && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       overflow: "hidden",
@@ -9550,7 +9777,7 @@ Please respond immediately.
     src: "https://radar.weather.gov/station/KMKX/standard",
     style: {
       width: "100%",
-      height: 300,
+      height: 260,
       border: "none"
     },
     title: "NWS Radar"
@@ -9718,7 +9945,7 @@ Please respond immediately.
       }
     }, "DESCRIPTION:"), /*#__PURE__*/React.createElement("span", {
       style: {
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, ac.details)), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9751,7 +9978,7 @@ Please respond immediately.
       }
     }, "REPORTING PARTY:"), /*#__PURE__*/React.createElement("span", {
       style: {
-        color: "#94a3b8"
+        color: "#e2e8f0"
       }
     }, ac.requestedBy)), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -11014,4 +11241,5 @@ const S = {
     fontSize: 14
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));
+</script></body></html>

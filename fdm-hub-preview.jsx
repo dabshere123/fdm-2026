@@ -3297,147 +3297,25 @@ Please respond immediately.
         </div>
       )}
 
-      {/* ACTIVE CALLS — Colored boxes at top of Admin home */}
-      {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").length>0&&(
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>Active Calls — Tap for Details</div>
-          {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").map(ac=>{
-            const colors={
-              medical:{bg:"rgba(30,64,175,0.15)",border:"rgba(59,130,246,0.6)",header:"#1e40af",text:"#93c5fd",label:"MEDICAL ALERT — ACTIVE CALL"},
-              fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(239,68,68,0.6)",header:"#dc2626",text:"#fca5a5",label:"FIRE / LIFE SAFETY — ACTIVE CALL"},
-              security:{bg:"rgba(15,15,20,0.6)",border:"rgba(100,116,139,0.5)",header:"#1e1e2e",text:"#94a3b8",label:"SECURITY — ACTIVE CALL"},
-              walk_in:{bg:"rgba(124,58,237,0.15)",border:"rgba(167,139,250,0.5)",header:"#7c3aed",text:"#c4b5fd",label:"WALK-IN PATIENT — ACTIVE CALL"},
-              maintenance:{bg:"rgba(5,150,105,0.12)",border:"rgba(16,185,129,0.5)",header:"#059669",text:"#6ee7b7",label:"MAINTENANCE — ACTIVE CALL"},
-              supplies:{bg:"rgba(217,119,6,0.12)",border:"rgba(245,158,11,0.5)",header:"#d97706",text:"#fcd34d",label:"SUPPLY REQUEST — ACTIVE CALL"},
-            };
-            const c2=colors[ac.type]||colors.medical;
-            const ts=ac.timestamp||new Date(ac.firedAt||Date.now()).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
-            return(
-              <div key={ac.id} style={{background:c2.bg,border:`2px solid ${c2.border}`,borderRadius:14,overflow:"hidden",cursor:"pointer"}} onClick={()=>setAdminCallDetail(ac)}>
-                <div style={{background:c2.header,padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{fontSize:12,fontWeight:900,color:"#fff",textTransform:"uppercase",letterSpacing:"0.06em"}}>{c2.label}</div>
-                  {!ac.acknowledged&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:800,borderRadius:6,padding:"2px 8px"}}>UNACK'D</div>}
-                  {ac.status==="on_scene"&&<div style={{background:"#10b981",color:"#fff",fontSize:10,fontWeight:800,borderRadius:6,padding:"2px 8px"}}>ON SCENE</div>}
-                </div>
-                <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:5}}>
-                  <div style={{display:"flex",gap:6,fontSize:13}}>
-                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>LOCATION:</span>
-                    <span style={{color:"#f1f5f9",fontWeight:600}}>{ac.location}</span>
-                  </div>
-                  <div style={{display:"flex",gap:6,fontSize:13}}>
-                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>PROBLEM:</span>
-                    <span style={{color:"#f1f5f9",fontWeight:600}}>{ac.problem}</span>
-                  </div>
-                  {ac.details&&<div style={{display:"flex",gap:6,fontSize:12}}>
-                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>DESCRIPTION:</span>
-                    <span style={{color:"#e2e8f0"}}>{ac.details}</span>
-                  </div>}
-                  <div style={{display:"flex",gap:6,fontSize:12}}>
-                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>UNIT ASSIGNED:</span>
-                    <span style={{color:c2.text,fontWeight:700}}>{ac.unit||"Unassigned"}</span>
-                  </div>
-                  <div style={{display:"flex",gap:6,fontSize:12}}>
-                    <span style={{color:"#64748b",fontWeight:700,minWidth:120}}>REPORTING PARTY:</span>
-                    <span style={{color:"#e2e8f0"}}>{ac.requestedBy}</span>
-                  </div>
-                  <div style={{display:"flex",gap:16,fontSize:11,marginTop:4,flexWrap:"wrap"}}>
-                    <span style={{color:"#475569"}}>📞 Called: {ts}</span>
-                    {ac.acknowledgedAt&&<span style={{color:"#475569"}}>✅ Ack'd: {ac.acknowledgedAt}</span>}
-                    {ac.status==="on_scene"&&<span style={{color:"#10b981"}}>📍 On Scene</span>}
-                  </div>
-                  {nineOneOne.active&&nineOneOne.callId===ac.id&&(
-                    <div style={{marginTop:6,background:"rgba(220,38,38,0.2)",border:"1px solid rgba(220,38,38,0.5)",borderRadius:8,padding:"6px 10px",fontSize:11,fontWeight:700,color:"#fca5a5"}}>
-                      🚨 911 ACTIVATED by {nineOneOne.by} · Staging: {nineOneOne.info?.staging||"Unknown"}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
-      {/* VENDOR CHECK-IN TOASTS */}
-    {vendorToasts.map(t=>(
-      <div key={t.id} style={{background:"linear-gradient(135deg,rgba(16,185,129,0.25),rgba(5,150,105,0.2))",borderBottom:"2px solid rgba(16,185,129,0.6)",padding:"12px 16px",display:"flex",alignItems:"center",gap:12,animation:"pulse 2s infinite"}}>
-        <span style={{fontSize:24}}>🎪</span>
-        <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:900,color:"#6ee7b7"}}>Vendor Checked In</div>
-          <div style={{fontSize:12,color:"rgba(110,231,183,0.8)"}}>{t.business} — Plot {t.plot} · {t.contact}</div>
-        </div>
-        <button style={{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"rgba(255,255,255,0.7)",padding:"4px 10px",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:700}} onClick={()=>setVendorToasts(p=>p.filter(x=>x.id!==t.id))}>✕</button>
-      </div>
-    ))}
-
-    {/* ===== ACTIVE CALLS SUMMARY ===== */}
-      <div style={{background:"rgba(255,255,255,0.02)",borderRadius:14,border:"1px solid rgba(255,255,255,0.08)",padding:"10px 12px"}}>
-        <div style={{fontSize:11,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
-          Active Calls
-          {activeCalls.length>0&&<span style={{background:"#ef4444",color:"#fff",fontSize:9,borderRadius:20,padding:"1px 7px",fontWeight:900}}>{activeCalls.length}</span>}
-        </div>
-        {activeCalls.length===0&&<div style={{fontSize:12,color:"#374151",padding:"4px 0"}}>No active calls</div>}
-        <div style={{display:"flex",flexDirection:"column",gap:5}}>
-          {activeCalls.map(call=>{
-            const colors={
-              medical:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
-              walk_in:{bg:"rgba(147,51,234,0.15)",border:"rgba(147,51,234,0.5)",text:"#d8b4fe",emoji:"🏥"},
-              fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(220,38,38,0.5)",text:"#fca5a5",emoji:"🔥"},
-              maintenance:{bg:"rgba(22,163,74,0.12)",border:"rgba(22,163,74,0.4)",text:"#86efac",emoji:"🔧"},
-              security:{bg:"rgba(37,99,235,0.15)",border:"rgba(37,99,235,0.5)",text:"#93c5fd",emoji:"🛡"},
-              supplies:{bg:"rgba(120,53,15,0.2)",border:"rgba(180,83,9,0.5)",text:"#d97706",emoji:"📦"},
-              lost_child:{bg:"rgba(234,179,8,0.15)",border:"rgba(234,179,8,0.5)",text:"#fcd34d",emoji:"🧒"},
-            };
-            const c=colors[call.type]||{bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.15)",text:"#94a3b8",emoji:"📋"};
-            return(
-              <button key={call.id} style={{width:"100%",padding:"7px 10px",borderRadius:10,border:`1px solid ${c.border}`,background:c.bg,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:8}} onClick={()=>setAdminCallDetail(call)}>
-                <span style={{fontSize:14}}>{c.emoji}</span>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:12,fontWeight:800,color:c.text,textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.location}</div>
-                  <div style={{fontSize:11,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{call.problem}</div>
-                </div>
-                <div style={{fontSize:9,fontWeight:700,color:c.text,background:`${c.border}33`,borderRadius:6,padding:"2px 5px",whiteSpace:"nowrap"}}>{call.status==="acknowledged"?"ACK":"NEW"}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-    {/* ===== MED STATUS ===== */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        {[["med1","Med 1"],["med2","Med 2"]].map(([key,label])=>{
-          const st=medSt[key]||{status:"available"};
-          const isAvail=st.status==="available";
-          const isOnCall=st.status==="on_call";
-          const isClear=st.status==="cleared";
-          const color=isOnCall?"rgba(147,51,234,0.4)":isClear?"rgba(16,185,129,0.2)":"rgba(255,255,255,0.04)";
-          const border=isOnCall?"rgba(147,51,234,0.7)":isClear?"rgba(16,185,129,0.5)":"rgba(255,255,255,0.12)";
-          const textColor=isOnCall?"#d8b4fe":isClear?"#6ee7b7":"#64748b";
-          const statusLabel=isOnCall?"🟣 On Call":isClear?"🟢 Cleared":"⚪ Available";
-          return(
-            <div key={key} style={{background:color,borderRadius:12,border:`1px solid ${border}`,padding:"10px 12px"}}>
-              <div style={{fontSize:13,fontWeight:900,color:"#f1f5f9",marginBottom:3}}>🩺 {label}</div>
-              <div style={{fontSize:11,fontWeight:700,color:textColor}}>{statusLabel}</div>
-              {st.since&&<div style={{fontSize:10,color:"#374151",marginTop:2}}>{st.since}</div>}
-            </div>
-          );
-        })}
-      </div>
 
     {/* ===== CHAT BOX ===== */}
-      <button style={{width:"100%",background:"rgba(14,165,233,0.06)",borderRadius:14,border:"1px solid rgba(14,165,233,0.2)",padding:"14px 16px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>{setView("chat");setChatUnread(0);fetchHubChat();}}>
-        <div style={{background:"rgba(14,165,233,0.15)",borderRadius:10,padding:"10px",fontSize:20}}>💬</div>
+      <button style={{width:"100%",background:"rgba(14,165,233,0.08)",borderRadius:16,border:"2px solid rgba(14,165,233,0.25)",padding:"18px 18px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}} onClick={()=>{setView("chat");setChatUnread(0);fetchHubChat();}}>
+        <div style={{background:"rgba(14,165,233,0.18)",borderRadius:14,padding:"14px",fontSize:28,flexShrink:0,position:"relative"}}>
+          💬
+          {chatUnread>0&&<div style={{position:"absolute",top:-6,right:-6,background:"#ef4444",color:"#fff",fontSize:11,fontWeight:900,borderRadius:"50%",width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center"}}>{chatUnread>9?"9+":chatUnread}</div>}
+        </div>
         <div style={{flex:1}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#38bdf8"}}>Festival Chat</div>
-            {chatUnread>0&&<div style={{background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"2px 8px"}}>{chatUnread} new</div>}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+            <div style={{fontSize:18,fontWeight:900,color:"#38bdf8"}}>Festival Chat</div>
           </div>
-          <div style={{fontSize:12,color:"#64748b"}}>
-            {chatMessages.length>0
-              ?`${chatMessages[chatMessages.length-1].fromName}: ${chatMessages[chatMessages.length-1].message.slice(0,60)}${chatMessages[chatMessages.length-1].message.length>60?"...":""}`
-              :"No messages yet — tap to open chat"}
+          <div style={{fontSize:13,color:chatUnread>0?"#38bdf8":"#64748b",fontWeight:chatUnread>0?700:400}}>
+            {chatUnread>0?`${chatUnread} new message${chatUnread>1?"s":""}`:chatMessages.length>0
+              ?`${chatMessages[chatMessages.length-1].fromName}: ${chatMessages[chatMessages.length-1].message.slice(0,55)}${chatMessages[chatMessages.length-1].message.length>55?"...":""}`
+              :"Tap to open messages"}
           </div>
         </div>
-        <div style={{fontSize:14,color:"#38bdf8",fontWeight:700}}>→</div>
+        <div style={{fontSize:18,color:"#38bdf8",fontWeight:700}}>→</div>
       </button>
 
     {/* ===== ROW 1: SAFETY | BROADCAST ===== */}

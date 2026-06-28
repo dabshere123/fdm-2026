@@ -2599,31 +2599,6 @@ Please respond immediately.
         }}>Send Onboarding Text →</button>
       </div>
     </div></div>
-      {/* 911 POPUP OVERLAY */}
-      {show911Popup&&popup911Data&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",zIndex:9999}} onClick={()=>setShow911Popup(false)}>
-          <div style={{width:"100%",background:"#0d0d1a",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",display:"flex",flexDirection:"column",gap:14}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <div style={{fontSize:36}}>🚨</div>
-              <div>
-                <div style={{fontSize:20,fontWeight:900,color:"#fca5a5"}}>911 ACTIVATED</div>
-                <div style={{fontSize:13,color:"#64748b"}}>By {popup911Data.by} at {popup911Data.at}</div>
-              </div>
-            </div>
-            <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:12,padding:"14px"}}>
-              <div style={{fontSize:12,fontWeight:800,color:"#94a3b8",marginBottom:6,textTransform:"uppercase"}}>Call Details</div>
-              <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",marginBottom:4}}>📍 {popup911Data.location}</div>
-              <div style={{fontSize:14,color:"#e2e8f0"}}>{popup911Data.problem}</div>
-            </div>
-            <div style={{fontSize:14,color:"#fbbf24",fontWeight:700}}>⚠️ EMS and Fire are inbound. Clear the path.</div>
-            <button style={{padding:"16px",borderRadius:12,border:"none",background:"rgba(239,68,68,0.8)",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShow911Popup(false)}>✅ Acknowledged</button>
-          </div>
-        </div>
-      )}
-  );
-
-  if(view==="chat") return(
-    <HubChatInbox
       myName={"Admin"}
       myRole={"Admin"}
       staffList={staffList}
@@ -2747,6 +2722,31 @@ Please respond immediately.
           </>
         )}
       </div>
+      {/* 911 POPUP OVERLAY */}
+      {show911Popup&&popup911Data&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",zIndex:9999}} onClick={()=>setShow911Popup(false)}>
+          <div style={{width:"100%",background:"#0d0d1a",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",display:"flex",flexDirection:"column",gap:14}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{fontSize:36}}>🚨</div>
+              <div>
+                <div style={{fontSize:20,fontWeight:900,color:"#fca5a5"}}>911 ACTIVATED</div>
+                <div style={{fontSize:13,color:"#64748b"}}>By {popup911Data.by} at {popup911Data.at}</div>
+              </div>
+            </div>
+            <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:12,padding:"14px"}}>
+              <div style={{fontSize:12,fontWeight:800,color:"#94a3b8",marginBottom:6,textTransform:"uppercase"}}>Call Details</div>
+              <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",marginBottom:4}}>📍 {popup911Data.location}</div>
+              <div style={{fontSize:14,color:"#e2e8f0"}}>{popup911Data.problem}</div>
+            </div>
+            <div style={{fontSize:14,color:"#fbbf24",fontWeight:700}}>⚠️ EMS and Fire are inbound. Clear the path.</div>
+            <button style={{padding:"16px",borderRadius:12,border:"none",background:"rgba(239,68,68,0.8)",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShow911Popup(false)}>✅ Acknowledged</button>
+          </div>
+        </div>
+      )}
+  );
+
+  if(view==="chat") return(
+    <HubChatInbox
     </div></div>
   );
 

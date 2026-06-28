@@ -44,7 +44,8 @@ exports.handler = async (event) => {
     // Trim photoData if too large (Airtable field limit ~100KB base64 safe)
     const safePhoto = photoData && photoData.length > 80000 ? photoData.slice(0, 80000) : (photoData || '');
 
-    const fields = {
+    // Try with photo first, fall back without if field doesn't exist in Airtable
+    const fieldsWithPhoto = {
       Description:     description,
       FoundAt:         foundAt,
       CurrentLocation: currentLocation || 'With finder',
@@ -56,12 +57,33 @@ exports.handler = async (event) => {
       AtFestOffice:    atFestOffice || 'No',
     };
 
-    const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
+    const fieldsBasic = {
+      Description:     description,
+      FoundAt:         foundAt,
+      CurrentLocation: currentLocation || 'With finder',
+      DayFound:        dayFound || 'Unknown',
+      FoundBy:         foundBy || 'Staff',
+      Status:          'Found',
+      ItemNumber:      itemNumber,
+    };
+
+    let res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields })
+      body: JSON.stringify({ fields: fieldsWithPhoto })
     });
-    const data = await res.json();
+    let data = await res.json();
+
+    // If Airtable says unknown field, retry without photo/office fields
+    if (!res.ok && JSON.stringify(data).includes('UNKNOWN_FIELD_NAME')) {
+      console.log('Retrying without optional fields (add PhotoData + AtFestOffice to Airtable LostFound table)');
+      res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: fieldsBasic })
+      });
+      data = await res.json();
+    }
 
     if (!res.ok) throw new Error(JSON.stringify(data));
 

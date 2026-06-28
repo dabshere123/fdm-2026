@@ -681,8 +681,7 @@ Fête de Marquette 2026`;
           <div style={{fontSize:22,fontWeight:900,color:'#fff'}}>📍 {lostChildAlert.location}</div>
           {lostChildAlert.problem&&(
             <div style={{fontSize:15,color:'rgba(255,255,255,0.92)',background:'rgba(0,0,0,0.25)',borderRadius:12,padding:'14px 16px',width:'100%',lineHeight:1.7,textAlign:'left'}}>
-              {lostChildAlert.problem}{lostChildAlert.details?'
-'+lostChildAlert.details:''}
+              {lostChildAlert.problem}{lostChildAlert.details&&<><br/>{lostChildAlert.details}</>}
             </div>
           )}
           <div style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.85)'}}>

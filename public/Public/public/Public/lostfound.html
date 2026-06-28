@@ -162,9 +162,15 @@
     let currentPickupNum = '';
     let currentClaimId = '';
 
-    // Back button — go back or to field app
+    // Back button — go to correct app based on ?from= param
     function goBack() {
-      if (document.referrer && document.referrer !== window.location.href) {
+      const params = new URLSearchParams(window.location.search);
+      const from = params.get('from');
+      if (from === 'hub') {
+        window.location.href = '/hub';
+      } else if (from === 'field') {
+        window.location.href = '/field';
+      } else if (document.referrer && document.referrer !== window.location.href) {
         window.history.back();
       } else {
         window.location.href = '/field';

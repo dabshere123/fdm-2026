@@ -552,7 +552,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         {/* L&F TAB */}
         {tab==="lf"&&(
           <>
-            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",textDecoration:"none",marginBottom:4}}>
+            <a href="https://fdm2026.netlify.app/lostfound?from=hub" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",textDecoration:"none",marginBottom:4}}>
               <span style={{fontSize:18}}>🔍</span><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>L&F Lookup Page →</div>
             </a>
             {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"20px 0"}}>No active L&F items</div>}
@@ -2631,7 +2631,7 @@ Please respond immediately.
           <>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
               <div style={{fontSize:13,color:"#94a3b8"}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed</div>
-              <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 L&F Lookup</a>
+              <a href="https://fdm2026.netlify.app/lostfound?from=hub" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 L&F Lookup</a>
             </div>
 
             {/* LOG NEW ITEM FORM */}
@@ -3425,7 +3425,7 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
           <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
             <span style={{fontSize:16}}>📋</span><div><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Manage Items</div><div style={{fontSize:11,color:"#64748b"}}>Log · box · clear</div></div>
           </button>
-          <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",textDecoration:"none"}}>
+          <a href="https://fdm2026.netlify.app/lostfound?from=hub" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",textDecoration:"none"}}>
             <span style={{fontSize:16}}>🔍</span><div><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>L&F Lookup</div><div style={{fontSize:11,color:"#64748b"}}>Search all items</div></div>
           </a>
         </div>

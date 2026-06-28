@@ -763,7 +763,7 @@ Fête de Marquette 2026`;
               </div>
               <span style={{color:'#fb923c'}}>→</span>
             </button>
-            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{...S.card,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,textDecoration:'none',border:'1px solid rgba(139,92,246,0.2)',background:'rgba(139,92,246,0.06)'}}>
+            <a href="https://fdm2026.netlify.app/lostfound?from=field" target="_blank" style={{...S.card,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,textDecoration:'none',border:'1px solid rgba(139,92,246,0.2)',background:'rgba(139,92,246,0.06)'}}>
               <span style={{fontSize:20}}>🔍</span>
               <div style={{flex:1}}>
                 <div style={{fontSize:14,fontWeight:800,color:'#c4b5fd'}}>L&F Lookup</div>
@@ -1003,7 +1003,7 @@ function HomeView({user,onLogout}){
               <div style={{fontSize:13,fontWeight:800,color:'#fb923c'}}>Log Found Item</div>
               <div style={{fontSize:11,color:'#64748b',marginTop:2}}>Add to L&F</div>
             </button>
-            <a href="https://fdm2026.netlify.app/lostfound" target="_blank" style={{padding:'14px 10px',borderRadius:12,border:'1px solid rgba(139,92,246,0.4)',background:'rgba(139,92,246,0.06)',cursor:'pointer',textDecoration:'none',display:'block'}}>
+            <a href="https://fdm2026.netlify.app/lostfound?from=field" target="_blank" style={{padding:'14px 10px',borderRadius:12,border:'1px solid rgba(139,92,246,0.4)',background:'rgba(139,92,246,0.06)',cursor:'pointer',textDecoration:'none',display:'block'}}>
               <div style={{fontSize:13,fontWeight:800,color:'#c4b5fd'}}>L&F Lookup</div>
               <div style={{fontSize:11,color:'#64748b',marginTop:2}}>Search all items</div>
             </a>

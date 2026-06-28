@@ -2,9 +2,6 @@
   publish = "public/Public/public/Public"
   functions = "netlify/functions"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
 [functions]
   node_bundler = "esbuild"
 

@@ -169,7 +169,6 @@ function NewCallView({user,callType,onBack}){
 
   const TYPES=[
     {id:'medical',label:'Medical',color:'rgba(147,51,234,0.8)'},
-    {id:'walk_in',label:'Walk-In Patient',color:'rgba(99,102,241,0.8)'},
     {id:'fire',label:'Fire / Life Safety',color:'rgba(220,38,38,0.8)'},
     {id:'security',label:'Security',color:'rgba(37,99,235,0.8)'},
     {id:'supplies',label:'Supplies',color:'rgba(120,53,15,0.9)'},

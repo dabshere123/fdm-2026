@@ -470,6 +470,17 @@ Madison Fire/EMS INBOUND — McPike Park`;
         </button>
       </div>
 
+      {/* WALK-IN PATIENT BUTTON */}
+      <div style={{padding:"4px 16px 4px"}}>
+        <button style={{width:"100%",padding:"14px 16px",borderRadius:14,border:"2px solid rgba(99,102,241,0.6)",background:"linear-gradient(135deg,rgba(99,102,241,0.2),rgba(79,70,229,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:14}} onClick={()=>{setNewCallType("walk_in");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+          <span style={{fontSize:24}}>🚶</span>
+          <div style={{textAlign:"left"}}>
+            <div style={{fontSize:15,fontWeight:900,color:"#a5b4fc"}}>WALK-IN PATIENT</div>
+            <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Patient walked in for medical attention</div>
+          </div>
+        </button>
+      </div>
+
       {/* LOST CHILD BUTTON */}
       <div style={{padding:"4px 16px 8px"}}>
         <button style={{width:"100%",padding:"16px",borderRadius:14,border:"2px solid #eab308",background:"linear-gradient(135deg,rgba(202,138,4,0.3),rgba(161,98,7,0.2))",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 0 16px rgba(234,179,8,0.2)"}} onClick={openLostChild}>

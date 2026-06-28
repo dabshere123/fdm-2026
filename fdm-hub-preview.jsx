@@ -648,8 +648,8 @@ function HubNewMessageView({myName,myRole,staffList,onBack,onOpen}){
             <button key={s.id} style={{width:"100%",padding:"12px 16px",background:"none",border:"none",borderBottom:"1px solid rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={()=>openDM(s)}>
               <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(99,102,241,0.15)",border:"1px solid rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#a5b4fc",flexShrink:0}}>{(s.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
               <div>
-                <div style={{fontSize:14,fontWeight:600,color:"#f1f5f9"}}>{s.role||s.name}</div>
-                {s.role&&s.name&&<div style={{fontSize:11,color:"#64748b",marginTop:1}}>{s.name}</div>}
+                <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>{s.name}</div>
+                {s.location&&<div style={{fontSize:11,color:"#64748b",marginTop:1}}>{s.location}</div>}
               </div>
             </button>
           ))}

@@ -32,16 +32,37 @@ const CHANNEL_GROUPS=[
 const CHANNELS=CHANNEL_GROUPS.flatMap(g=>g.channels);
 
 const ROLE_CHANNEL={
+  // Admin & Med
   a1:'Admin',a2:'Admin',a3:'Admin',
   m1:'AdminMed',m2:'AdminMed',
+  // Bars — new codes
+  mb1:'MoonBar',
+  lagb:'LagBar',
+  lafb:'LafBar',
+  slb:'SunBarL',
+  srb:'SunBarR',
+  cb:'CabBar',
+  ffb:'FamilyBar',
+  etb:'EverythingBar',
+  // Bars — old codes (backward compat)
   msb1:'MoonBar',msb2:'MoonBar',
   ssbl:'SunBarL',ssbr:'SunBarR',
-  lafb:'LafBar',lagb:'LagBar',
-  ffb:'FamilyBar',cb:'CabBar',
-  etecm:'EverythingBar',
+  etecm:'EverythingBar',mtm:'EverythingBar',
+  // Stages — new codes
+  ms:'MoonST',
+  lags:'LagST',
+  lafs:'LafST',
+  sst:'SunST',
+  cst:'CabST',
+  ffs:'FamST',
+  // Stages — old codes (backward compat)
   msm:'MoonST',ssm:'SunST',lafm:'LafST',lagm:'LagST',
-  mtm:'EverythingBar',
-  hosp:'Hospitality',hospitality:'Hospitality',
+  // Misc
+  hos:'Hospitality',hosp:'Hospitality',hospitality:'Hospitality',
+  mt:'AllStaff',  // Merch Tent
+  ovn:'AllStaff', // Overnight — handled separately by role name check
+  misc:'AllStaff',
+  gil:'AllStaff',gir:'AllStaff',gf:'AllStaff', // Greeters
   maint:'AllStaff',maintenance:'AllStaff',
 };
 function roleChannel(r){return ROLE_CHANNEL[(r||'').toLowerCase()]||'AllStaff';}
@@ -98,6 +119,8 @@ function LoginView({onLogin}){
               if(r==='m1') {window.location.href='/hub?role=med1';return;}
               if(r==='m2') {window.location.href='/hub?role=med2';return;}
               if(r==='a1'||r==='a2'||r==='a3') {window.location.href='/hub';return;}
+              // Overnight role check (by name or code)
+              if(r==='ovn'||r.includes('overnight')) {onLogin({...s,role:'Overnight Team'});return;}
               onLogin(s);
             }}>
               <div style={{width:42,height:42,borderRadius:10,background:'rgba(14,165,233,0.15)',border:'1px solid rgba(14,165,233,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:'#38bdf8',flexShrink:0}}>

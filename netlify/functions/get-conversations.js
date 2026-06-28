@@ -4,25 +4,30 @@ const BASE = 'appUVEp7kO9NeeJh0';
 
 function allowedChannels(role) {
   const r = (role || '').toLowerCase();
-  if (r === 'admin' || r === 'a1' || r === 'a2' || r === 'a3' || r.includes('admin')) return 'ALL';
-  if (r === 'm1' || r === 'm2' || r === 'med 1' || r === 'med 2' || r.includes('med unit') || r.includes('medical')) return ['AdminMed', 'AllStaff'];
-  if (r.includes('moon bar') || r === 'msb1' || r === 'msb2') return ['MoonBar', 'Bars', 'AllStaff'];
-  if (r.includes('sun bar left') || r === 'ssbl') return ['SunBarL', 'Bars', 'AllStaff'];
-  if (r.includes('sun bar right') || r === 'ssbr') return ['SunBarR', 'Bars', 'AllStaff'];
-  if (r.includes('lafayette bar') || r === 'lafb') return ['LafBar', 'Bars', 'AllStaff'];
-  if (r.includes('lagniappe bar') || r === 'lagb') return ['LagBar', 'Bars', 'AllStaff'];
-  if (r.includes('family fete bar') || r.includes('family bar') || r === 'ffb') return ['FamilyBar', 'Bars', 'AllStaff'];
-  if (r.includes('cabaret bar') || r === 'cb') return ['CabBar', 'Bars', 'AllStaff'];
-  if (r.includes('everything else') || r.includes('eec') || r === 'etecm' || r === 'mtm') return ['EverythingBar', 'Bars', 'AllStaff'];
+  // Admin sees all
+  if (r === 'a1' || r === 'a2' || r === 'a3' || r.includes('admin')) return 'ALL';
+  // Med
+  if (r === 'm1' || r === 'm2' || r.includes('med')) return ['AdminMed', 'AllStaff'];
+  // Bars — new codes
+  if (r === 'mb1' || r.includes('moon bar') || r === 'msb1' || r === 'msb2') return ['MoonBar', 'Bars', 'AllStaff'];
+  if (r === 'slb' || r.includes('sun left') || r === 'ssbl') return ['SunBarL', 'Bars', 'AllStaff'];
+  if (r === 'srb' || r.includes('sun right') || r === 'ssbr') return ['SunBarR', 'Bars', 'AllStaff'];
+  if (r === 'lafb' || r.includes('lafayette bar')) return ['LafBar', 'Bars', 'AllStaff'];
+  if (r === 'lagb' || r.includes('lagniappe bar')) return ['LagBar', 'Bars', 'AllStaff'];
+  if (r === 'ffb' || r.includes('family fete bar') || r.includes('family bar')) return ['FamilyBar', 'Bars', 'AllStaff'];
+  if (r === 'cb' || r.includes('cabaret bar')) return ['CabBar', 'Bars', 'AllStaff'];
+  if (r === 'etb' || r.includes('everything else') || r === 'etecm' || r === 'mtm') return ['EverythingBar', 'Bars', 'AllStaff'];
   if (r.includes('bar')) return ['Bars', 'AllStaff'];
-  if (r.includes('moon stage') || r === 'msm') return ['MoonST', 'AllStaff'];
-  if (r.includes('sun stage') || r === 'ssm') return ['SunST', 'AllStaff'];
-  if (r.includes('lafayette stage') || r === 'lafm') return ['LafST', 'AllStaff'];
-  if (r.includes('lagniappe stage') || r === 'lagm') return ['LagST', 'AllStaff'];
-  if (r.includes('family fete stage')) return ['FamST', 'AllStaff'];
-  if (r.includes('cabaret stage')) return ['CabST', 'AllStaff'];
+  // Stages — new codes
+  if (r === 'ms' || r.includes('moon stage') || r === 'msm') return ['MoonST', 'AllStaff'];
+  if (r === 'sst' || r.includes('sun stage') || r === 'ssm') return ['SunST', 'AllStaff'];
+  if (r === 'lafs' || r.includes('lafayette stage') || r === 'lafm') return ['LafST', 'AllStaff'];
+  if (r === 'lags' || r.includes('lagniappe stage') || r === 'lagm') return ['LagST', 'AllStaff'];
+  if (r === 'ffs' || r.includes('family fete stage')) return ['FamST', 'AllStaff'];
+  if (r === 'cst' || r.includes('cabaret stage')) return ['CabST', 'AllStaff'];
   if (r.includes('stage')) return ['AllStaff'];
-  if (r.includes('hospitality') || r === 'hosp') return ['Hospitality', 'AllStaff'];
+  // Misc
+  if (r === 'hos' || r.includes('hospitality')) return ['Hospitality', 'AllStaff'];
   return ['AllStaff'];
 }
 

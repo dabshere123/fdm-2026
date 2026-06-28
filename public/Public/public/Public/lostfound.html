@@ -10,250 +10,350 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;font-family:'DM Sans',sans-serif;}
-    body{background:#0a0a14;color:#f1f5f9;min-height:100vh;padding-bottom:60px;}
-    .hdr{padding:14px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12;}
-    .back{padding:7px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#f1f5f9;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .title{font-size:17px;font-weight:900;color:#f1f5f9;}
-    .body{padding:16px;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:12;}
-    .search{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:13px 16px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
+    html,body{overflow-x:hidden;font-size:16px;font-family:'DM Sans',sans-serif;}
+    body{background:#0a0a14;color:#f1f5f9;min-height:100vh;padding-bottom:80px;}
+    .hdr{padding:14px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);}
+    .back{padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#f1f5f9;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
+    .title{font-size:17px;font-weight:900;color:#f1f5f9;flex:1;}
+    .body{padding:14px;max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:10;}
+    .search{width:100%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:13px 16px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
     .search::placeholder{color:#475569;}
-    .filters{display:flex;gap:8px;flex-wrap:wrap;}
+    .filters{display:flex;gap:7px;flex-wrap:wrap;}
     .fbtn{padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
     .fbtn.active{border-color:rgba(139,92,246,0.6);background:rgba(139,92,246,0.12);color:#c4b5fd;}
-    .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;margin-bottom:10px;}
-    .card-photo{width:100%;max-height:200px;object-fit:cover;display:block;}
+    .admin-bar{display:flex;gap:8px;flex-wrap:wrap;}
+    .admin-btn{padding:10px 14px;border-radius:10px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);color:#fcd34d;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex:1;}
+    .admin-btn.green{border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.06);color:#4ade80;}
+    .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;margin-bottom:8px;}
+    .card-photo{width:100%;max-height:220px;object-fit:cover;display:block;border-bottom:1px solid rgba(255,255,255,0.08);}
     .card-body{padding:14px;}
-    .tag-num{font-size:12px;font-weight:900;color:#fb923c;letter-spacing:0.06em;margin-bottom:4px;}
-    .item-desc{font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:6px;}
-    .meta{font-size:12px;color:#64748b;margin-bottom:4px;}
-    .at-office{font-size:14px;font-weight:900;color:#4ade80;margin:8px 0 4px;}
-    .status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:0.04em;}
-    .status-found{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;}
-    .status-office{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#4ade80;}
-    .status-claimed{background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);color:#94a3b8;text-decoration:line-through;}
-    .pickup-btn{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1px solid rgba(139,92,246,0.4);background:rgba(139,92,246,0.08);color:#c4b5fd;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .office-btn{width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.06);color:#4ade80;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .empty{text-align:center;padding:48px 0;color:#374151;font-size:14px;}
-    .loading{text-align:center;padding:48px 0;color:#475569;}
-    .section-hdr{font-size:11px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin:8px 0 4px;}
-    /* Admin modal */
-    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:flex-end;z-index:100;}
-    .modal{width:100%;background:#0d0d1a;border-radius:20px 20px 0 0;padding:24px 20px;display:flex;flex-direction:column;gap:14px;}
+    .tag-num{font-size:13px;font-weight:900;color:#fb923c;letter-spacing:0.05em;margin-bottom:5px;}
+    .item-desc{font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:8px;}
+    .at-office{font-size:15px;font-weight:900;color:#4ade80;margin:8px 0;letter-spacing:0.03em;}
+    .meta{font-size:12px;color:#64748b;margin-bottom:3px;}
+    .status-row{display:flex;align-items:center;gap:8px;margin:10px 0 6px;}
+    .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;}
+    .badge-found{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;}
+    .badge-office{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#4ade80;}
+    .badge-claimed{background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);color:#64748b;}
+    .badge-pickup{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);color:#c4b5fd;}
+    .pickup-btn{width:100%;margin-top:10px;padding:13px;border-radius:10px;border:1.5px solid rgba(139,92,246,0.4);background:rgba(139,92,246,0.08);color:#c4b5fd;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .office-btn{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.05);color:#4ade80;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .claim-btn{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1px solid rgba(100,116,139,0.3);background:rgba(100,116,139,0.05);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .section-hdr{font-size:11px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin:12px 0 6px;}
+    .empty{text-align:center;padding:48px 0;color:#475569;font-size:14px;}
+    .loading{text-align:center;padding:48px 0;color:#475569;font-size:14px;}
+    .error-msg{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;color:#fca5a5;font-size:13px;text-align:center;}
+    /* Modal */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;z-index:100;-webkit-overflow-scrolling:touch;}
+    .modal{width:100%;background:#0d0d1a;border-radius:20px 20px 0 0;padding:24px 20px 40px;display:flex;flex-direction:column;gap:12;max-height:85vh;overflow-y:auto;}
     .modal h2{font-size:18px;font-weight:900;color:#f1f5f9;}
-    .inp{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:13px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
-    .btn-row{display:flex;gap:10px;}
+    .modal-sub{font-size:13px;color:#64748b;}
+    .inp{width:100%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:13px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
+    .inp::placeholder{color:#475569;}
+    .btn-row{display:flex;gap:10px;margin-top:4px;}
     .btn-cancel{flex:1;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
     .btn-confirm{flex:2;padding:14px;border-radius:10px;border:none;background:linear-gradient(135deg,rgba(139,92,246,0.9),rgba(109,40,217,0.9));color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;}
+    .btn-confirm.orange{background:linear-gradient(135deg,rgba(245,158,11,0.9),rgba(217,119,6,0.9));}
+    .btn-confirm.green{background:linear-gradient(135deg,rgba(34,197,94,0.9),rgba(22,163,74,0.9));}
+    .day-row{display:flex;gap:8px;}
+    .day-btn{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .day-btn.active{border-color:rgba(14,165,233,0.6);background:rgba(14,165,233,0.12);color:#38bdf8;}
+    .lbl{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+    .check-row{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;border:1px solid rgba(34,197,94,0.2);background:rgba(34,197,94,0.04);cursor:pointer;}
+    .check-row input{width:20px;height:20px;cursor:pointer;accent-color:#4ade80;}
+    .check-row span{font-size:14px;font-weight:700;color:#4ade80;}
   </style>
 </head>
 <body>
   <div class="hdr">
-    <button class="back" onclick="history.back()">← Back</button>
-    <div class="title">📦 Lost & Found</div>
+    <button class="back" onclick="goBack()">← Back</button>
+    <div class="title">📦 Lost &amp; Found</div>
   </div>
 
   <div class="body">
     <input class="search" id="searchInput" placeholder="Search by description or item #..." oninput="filterItems()"/>
-    <div class="filters" id="dayFilters">
-      <button class="fbtn active" onclick="setDay('')" id="all-btn">All Days</button>
-      <button class="fbtn" onclick="setDay('Thu')" id="Thu-btn">Thursday</button>
-      <button class="fbtn" onclick="setDay('Fri')" id="Fri-btn">Friday</button>
-      <button class="fbtn" onclick="setDay('Sat')" id="Sat-btn">Saturday</button>
-      <button class="fbtn" onclick="setDay('Sun')" id="Sun-btn">Sunday</button>
+
+    <div class="filters">
+      <button class="fbtn active" onclick="setDay('')" id="btn-all">All Days</button>
+      <button class="fbtn" onclick="setDay('Thu')" id="btn-Thu">Thursday</button>
+      <button class="fbtn" onclick="setDay('Fri')" id="btn-Fri">Friday</button>
+      <button class="fbtn" onclick="setDay('Sat')" id="btn-Sat">Saturday</button>
+      <button class="fbtn" onclick="setDay('Sun')" id="btn-Sun">Sunday</button>
     </div>
 
-    <!-- Admin: Add item + Mark at office -->
-    <button style="padding:11px;border-radius:10px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);color:#fcd34d;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;" onclick="openAdminModal()">
-      ➕ Admin: Add Item / Mark AT FEST OFFICE
-    </button>
+    <!-- Admin buttons — no PIN required -->
+    <div class="admin-bar">
+      <button class="admin-btn" onclick="openAddModal()">➕ Add Found Item</button>
+      <button class="admin-btn green" onclick="location.reload()">🔄 Refresh</button>
+    </div>
 
     <div id="itemList"><div class="loading">Loading items...</div></div>
   </div>
 
-  <!-- Admin PIN modal -->
-  <div class="modal-bg" id="pinModal" style="display:none;">
+  <!-- Add Item Modal (Admin) -->
+  <div class="modal-bg" id="addModal" style="display:none;">
     <div class="modal">
-      <h2>Admin Access</h2>
-      <div style="font-size:14px;color:#94a3b8;">Enter admin PIN to add items or mark AT FEST OFFICE</div>
-      <input class="inp" id="pinInput" type="password" inputmode="numeric" placeholder="PIN" onkeydown="if(event.key==='Enter')checkPin()"/>
-      <div class="btn-row">
-        <button class="btn-cancel" onclick="closePinModal()">Cancel</button>
-        <button class="btn-confirm" onclick="checkPin()">Enter</button>
-      </div>
-    </div>
-  </div>
+      <h2>📦 Add Found Item</h2>
+      <p class="modal-sub">Log an item directly to Lost &amp; Found</p>
 
-  <!-- Admin action modal -->
-  <div class="modal-bg" id="adminModal" style="display:none;">
-    <div class="modal">
-      <h2>Admin — Add Item</h2>
-      <div style="font-size:13px;color:#94a3b8;">Add a found item directly to the system</div>
-      <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">Day Found</div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="setAdminDay('Thu')" id="aday-Thu" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Thu</button>
-        <button onclick="setAdminDay('Fri')" id="aday-Fri" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Fri</button>
-        <button onclick="setAdminDay('Sat')" id="aday-Sat" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Sat</button>
-        <button onclick="setAdminDay('Sun')" id="aday-Sun" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Sun</button>
+      <div class="lbl">Day Found</div>
+      <div class="day-row">
+        <button class="day-btn" onclick="setAddDay('Thu')" id="add-Thu">Thu</button>
+        <button class="day-btn" onclick="setAddDay('Fri')" id="add-Fri">Fri</button>
+        <button class="day-btn" onclick="setAddDay('Sat')" id="add-Sat">Sat</button>
+        <button class="day-btn" onclick="setAddDay('Sun')" id="add-Sun">Sun</button>
       </div>
-      <input class="inp" id="adminDesc" placeholder="Item description *"/>
-      <input class="inp" id="adminLoc" placeholder="Where found *"/>
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-        <input type="checkbox" id="atOfficeCheck" style="width:20px;height:20px;cursor:pointer;"/>
-        <span style="font-size:14px;font-weight:700;color:#4ade80;">Mark as AT FEST OFFICE</span>
+
+      <div class="lbl">Description *</div>
+      <input class="inp" id="addDesc" placeholder="What is the item?"/>
+
+      <div class="lbl">Where Found *</div>
+      <input class="inp" id="addLoc" placeholder="e.g. Near Moon Stage"/>
+
+      <label class="check-row" for="atOfficeCheck">
+        <input type="checkbox" id="atOfficeCheck"/>
+        <span>Mark as AT FEST OFFICE</span>
       </label>
+
       <div class="btn-row">
-        <button class="btn-cancel" onclick="closeAdminModal()">Cancel</button>
-        <button class="btn-confirm" onclick="adminAddItem()">Add Item</button>
+        <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+        <button class="btn-confirm orange" onclick="submitAddItem()">Add Item</button>
       </div>
     </div>
   </div>
 
-  <!-- Pickup request modal -->
+  <!-- Pickup Request Modal -->
   <div class="modal-bg" id="pickupModal" style="display:none;">
     <div class="modal">
       <h2>Request Item Pickup</h2>
-      <div style="font-size:14px;color:#94a3b8;" id="pickupItemLabel"></div>
-      <input class="inp" id="pickupName" placeholder="Your name *"/>
-      <input class="inp" id="pickupDesc" placeholder="Describe your item to confirm it's yours *"/>
+      <p class="modal-sub" id="pickupItemDesc" style="color:#fb923c;font-weight:700;"></p>
+
+      <div class="lbl">Your Name *</div>
+      <input class="inp" id="pickupName" placeholder="Your full name"/>
+
+      <div class="lbl">Describe your item to confirm it's yours *</div>
+      <textarea class="inp" id="pickupDesc" placeholder="Describe specific details about the item..." style="min-height:80px;resize:none;"></textarea>
+
       <div class="btn-row">
-        <button class="btn-cancel" onclick="closePickup()">Cancel</button>
+        <button class="btn-cancel" onclick="closePickupModal()">Cancel</button>
         <button class="btn-confirm" onclick="submitPickup()">Send Request</button>
       </div>
     </div>
   </div>
 
-  <script>
-    let allItems=[];
-    let currentDay='';
-    let currentPickupId='';
-    let adminDay='';
-    const ADMIN_PIN='8510';
+  <!-- Mark Claimed Modal -->
+  <div class="modal-bg" id="claimModal" style="display:none;">
+    <div class="modal">
+      <h2>Mark as Claimed</h2>
+      <p class="modal-sub">Item <span id="claimItemNum" style="color:#fb923c;font-weight:900;"></span> — confirm it's been picked up</p>
+      <div class="btn-row">
+        <button class="btn-cancel" onclick="closeClaimModal()">Cancel</button>
+        <button class="btn-confirm green" onclick="confirmClaim()">✅ Confirm Claimed</button>
+      </div>
+    </div>
+  </div>
 
-    async function loadItems(){
-      try{
-        const r=await fetch('/.netlify/functions/get-lost-found');
-        const d=await r.json();
-        allItems=d.items||[];
-        renderItems(allItems);
-      }catch(e){
-        document.getElementById('itemList').innerHTML='<div class="empty">Could not load items. Please refresh.</div>';
+  <script>
+    let allItems = [];
+    let currentDay = '';
+    let addDay = '';
+    let currentPickupId = '';
+    let currentPickupNum = '';
+    let currentClaimId = '';
+
+    // Back button — go back or to field app
+    function goBack() {
+      if (document.referrer && document.referrer !== window.location.href) {
+        window.history.back();
+      } else {
+        window.location.href = '/field';
       }
     }
 
-    function setDay(d){
-      currentDay=d;
-      document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
-      document.getElementById((d||'all')+'-btn').classList.add('active');
+    // Load items
+    async function loadItems() {
+      try {
+        const r = await fetch('/.netlify/functions/get-lost-found');
+        if (!r.ok) throw new Error('Server error ' + r.status);
+        const d = await r.json();
+        allItems = d.items || [];
+        filterItems();
+      } catch (e) {
+        document.getElementById('itemList').innerHTML =
+          `<div class="error-msg">Could not load items: ${e.message}<br><br><button onclick="loadItems()" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#fca5a5;cursor:pointer;font-family:inherit;">Retry</button></div>`;
+      }
+    }
+
+    function setDay(d) {
+      currentDay = d;
+      document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-' + (d || 'all')).classList.add('active');
       filterItems();
     }
 
-    function filterItems(){
-      const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
-      let items=allItems;
-      if(currentDay) items=items.filter(i=>(i.dayFound||'').toLowerCase().startsWith(currentDay.toLowerCase()));
-      if(q) items=items.filter(i=>(i.description||'').toLowerCase().includes(q)||(i.itemNumber||'').toLowerCase().includes(q)||(i.foundAt||'').toLowerCase().includes(q));
-      renderItems(items);
+    function filterItems() {
+      const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      let items = allItems.filter(i => i.status !== 'Claimed');
+      const claimed = allItems.filter(i => i.status === 'Claimed');
+      if (currentDay) items = items.filter(i => (i.dayFound || '').toLowerCase().startsWith(currentDay.toLowerCase()));
+      if (q) {
+        const all = [...items, ...claimed].filter(i =>
+          (i.description || '').toLowerCase().includes(q) ||
+          (i.itemNumber || '').toLowerCase().includes(q) ||
+          (i.foundAt || '').toLowerCase().includes(q)
+        );
+        renderItems(all, []);
+        return;
+      }
+      renderItems(items, claimed);
     }
 
-    function renderItems(items){
-      const el=document.getElementById('itemList');
-      if(items.length===0){el.innerHTML='<div class="empty">No items found</div>';return;}
-      const active=items.filter(i=>i.status!=='Claimed');
-      const claimed=items.filter(i=>i.status==='Claimed');
-      let html='';
-      if(active.length>0){
-        html+=`<div class="section-hdr">${active.length} item${active.length!==1?'s':''} in Lost & Found</div>`;
-        active.forEach(i=>html+=renderCard(i));
+    function renderItems(active, claimed) {
+      const el = document.getElementById('itemList');
+      if (active.length === 0 && claimed.length === 0) {
+        el.innerHTML = '<div class="empty">No items found</div>';
+        return;
       }
-      if(claimed.length>0){
-        html+=`<div class="section-hdr" style="margin-top:16px;">Claimed (${claimed.length})</div>`;
-        claimed.forEach(i=>html+=renderCard(i));
+      let html = '';
+      if (active.length > 0) {
+        html += `<div class="section-hdr">${active.length} item${active.length !== 1 ? 's' : ''} in Lost &amp; Found</div>`;
+        active.forEach(i => { html += renderCard(i); });
       }
-      el.innerHTML=html;
+      if (claimed.length > 0) {
+        html += `<div class="section-hdr" style="margin-top:16px;">Claimed (${claimed.length})</div>`;
+        claimed.forEach(i => { html += renderCard(i); });
+      }
+      el.innerHTML = html;
     }
 
-    function renderCard(i){
-      const atOffice=i.atFestOffice==='Yes'||i.atFestOffice===true;
-      const claimed=i.status==='Claimed';
-      let badge='';
-      if(claimed) badge='<span class="status-badge status-claimed">Claimed</span>';
-      else if(atOffice) badge='<span class="status-badge status-office">At Fest Office</span>';
-      else badge='<span class="status-badge status-found">In L&F</span>';
+    function renderCard(i) {
+      const atOffice = i.atFestOffice === 'Yes' || i.atFestOffice === true;
+      const isClaimed = i.status === 'Claimed';
+      const isPickup = i.status === 'Pickup Requested';
+
+      let badge = '';
+      if (isClaimed)      badge = '<span class="badge badge-claimed">Claimed</span>';
+      else if (isPickup)  badge = '<span class="badge badge-pickup">Pickup Requested</span>';
+      else if (atOffice)  badge = '<span class="badge badge-office">At Fest Office</span>';
+      else                badge = '<span class="badge badge-found">In L&F</span>';
+
+      const safeDesc = (i.description || 'Unknown item').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const safeNum  = (i.itemNumber || '???').replace(/'/g, "\\'");
+      const safeId   = i.id || '';
 
       return `<div class="card">
-        ${i.photoData?`<img class="card-photo" src="${i.photoData}" alt="Found item"/>`:''}
+        ${i.photoData ? `<img class="card-photo" src="${i.photoData}" alt="Found item" onerror="this.style.display='none'"/>` : ''}
         <div class="card-body">
-          <div class="tag-num">TAG #${i.itemNumber||'???'}</div>
-          <div class="item-desc">${i.description||'Unknown item'}</div>
-          ${atOffice?`<div class="at-office">📍 AT FEST OFFICE</div>`:''}
-          <div class="meta">📍 Found at: ${i.foundAt||'Unknown'}</div>
-          <div class="meta">📅 ${i.dayFound||''}</div>
-          ${badge}
-          ${!claimed?`<button class="pickup-btn" onclick="openPickup('${i.id}','${(i.itemNumber||'').replace(/'/g,"\\'")}','${(i.description||'').replace(/'/g,"\\'")}')">Request Pickup</button>`:''}
-          ${atOffice&&!claimed?`<button class="office-btn" onclick="markOffice('${i.id}')">✅ Mark as Claimed</button>`:''}
+          <div class="tag-num">TAG #${i.itemNumber || '???'}</div>
+          <div class="item-desc">${i.description || 'Unknown item'}</div>
+          ${atOffice ? `<div class="at-office">📍 AT FEST OFFICE</div>` : ''}
+          <div class="meta">Found at: ${i.foundAt || '—'}</div>
+          <div class="meta">Day: ${i.dayFound || '—'}</div>
+          <div class="status-row">${badge}</div>
+          ${!isClaimed ? `<button class="pickup-btn" onclick="openPickup('${safeId}','${safeNum}','${safeDesc}')">Request Item Pickup</button>` : ''}
+          ${!isClaimed ? `<button class="claim-btn" onclick="openClaim('${safeId}','${safeNum}')">✅ Mark as Claimed (Admin)</button>` : ''}
+          ${!atOffice && !isClaimed ? `<button class="office-btn" onclick="markAtOffice('${safeId}')">📍 Move to Fest Office</button>` : ''}
         </div>
       </div>`;
     }
 
-    // Pickup request
-    function openPickup(id,num,desc){
-      currentPickupId=id;
-      document.getElementById('pickupItemLabel').textContent=`Item #${num}: ${desc}`;
-      document.getElementById('pickupName').value='';
-      document.getElementById('pickupDesc').value='';
-      document.getElementById('pickupModal').style.display='flex';
+    // Add item (no PIN)
+    function openAddModal() {
+      addDay = '';
+      document.getElementById('addDesc').value = '';
+      document.getElementById('addLoc').value = '';
+      document.getElementById('atOfficeCheck').checked = false;
+      ['Thu','Fri','Sat','Sun'].forEach(d => {
+        const b = document.getElementById('add-' + d);
+        if (b) { b.classList.remove('active'); }
+      });
+      document.getElementById('addModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('addDesc').focus(), 200);
     }
-    function closePickup(){document.getElementById('pickupModal').style.display='none';}
-    async function submitPickup(){
-      const name=document.getElementById('pickupName').value.trim();
-      const desc=document.getElementById('pickupDesc').value.trim();
-      if(!name||!desc){alert('Please fill in both fields.');return;}
-      try{
-        await fetch('/.netlify/functions/lf-pickup-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itemId:currentPickupId,claimantName:name,description:desc})});
-        closePickup();
-        alert('Request sent! Staff will verify and bring your item.');
-      }catch(e){alert('Error sending request. Please try again.');}
-    }
-
-    // Admin flow
-    function openAdminModal(){document.getElementById('pinModal').style.display='flex';setTimeout(()=>document.getElementById('pinInput').focus(),100);}
-    function closePinModal(){document.getElementById('pinModal').style.display='none';document.getElementById('pinInput').value='';}
-    function checkPin(){
-      const p=document.getElementById('pinInput').value.trim();
-      if(p===ADMIN_PIN){closePinModal();document.getElementById('adminModal').style.display='flex';}
-      else{document.getElementById('pinInput').value='';document.getElementById('pinInput').placeholder='Wrong PIN';}
-    }
-    function closeAdminModal(){document.getElementById('adminModal').style.display='none';adminDay='';}
-    function setAdminDay(d){
-      adminDay=d;
-      ['Thu','Fri','Sat','Sun'].forEach(x=>{
-        const btn=document.getElementById('aday-'+x);
-        btn.style.borderColor=x===d?'rgba(14,165,233,0.6)':'rgba(255,255,255,0.1)';
-        btn.style.background=x===d?'rgba(14,165,233,0.12)':'rgba(255,255,255,0.04)';
-        btn.style.color=x===d?'#38bdf8':'#64748b';
+    function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+    function setAddDay(d) {
+      addDay = d;
+      ['Thu','Fri','Sat','Sun'].forEach(x => {
+        const b = document.getElementById('add-' + x);
+        if (b) b.className = 'day-btn' + (x === d ? ' active' : '');
       });
     }
-    async function adminAddItem(){
-      const desc=document.getElementById('adminDesc').value.trim();
-      const loc=document.getElementById('adminLoc').value.trim();
-      const atOffice=document.getElementById('atOfficeCheck').checked;
-      if(!desc||!loc){alert('Please fill in description and location.');return;}
-      try{
-        await fetch('/.netlify/functions/submit-lost-found',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc,foundAt:loc,dayFound:adminDay||'Unknown',foundBy:'Admin (Devin)',role:'Admin',atFestOffice:atOffice?'Yes':'No'})});
-        closeAdminModal();
-        document.getElementById('adminDesc').value='';
-        document.getElementById('adminLoc').value='';
-        document.getElementById('atOfficeCheck').checked=false;
+    async function submitAddItem() {
+      const desc = document.getElementById('addDesc').value.trim();
+      const loc  = document.getElementById('addLoc').value.trim();
+      const atOffice = document.getElementById('atOfficeCheck').checked;
+      if (!desc || !loc) { alert('Please fill in description and location.'); return; }
+      try {
+        const r = await fetch('/.netlify/functions/submit-lost-found', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description: desc, foundAt: loc, dayFound: addDay || 'Unknown',
+            foundBy: 'Admin (Devin)', role: 'Admin', atFestOffice: atOffice ? 'Yes' : 'No' })
+        });
+        const data = await r.json();
+        closeAddModal();
+        alert(`✅ Item added!\nItem Number: ${data.itemNumber || '?'}`);
         loadItems();
-        alert('Item added successfully!');
-      }catch(e){alert('Error adding item.');}
+      } catch (e) { alert('Error: ' + e.message); }
     }
-    async function markOffice(id){
-      try{
-        await fetch('/.netlify/functions/update-lost-found',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'Claimed'})});
+
+    // Pickup request
+    function openPickup(id, num, desc) {
+      currentPickupId = id;
+      currentPickupNum = num;
+      document.getElementById('pickupItemDesc').textContent = `Item #${num}: ${desc}`;
+      document.getElementById('pickupName').value = '';
+      document.getElementById('pickupDesc').value = '';
+      document.getElementById('pickupModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('pickupName').focus(), 200);
+    }
+    function closePickupModal() { document.getElementById('pickupModal').style.display = 'none'; }
+    async function submitPickup() {
+      const name = document.getElementById('pickupName').value.trim();
+      const desc = document.getElementById('pickupDesc').value.trim();
+      if (!name || !desc) { alert('Please fill in your name and describe the item.'); return; }
+      try {
+        await fetch('/.netlify/functions/lf-pickup-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId: currentPickupId, itemNumber: currentPickupNum, claimantName: name, description: desc })
+        });
+        closePickupModal();
+        alert('✅ Pickup request sent! Staff will verify and bring your item to you.');
         loadItems();
-      }catch(e){}
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    // Mark claimed
+    function openClaim(id, num) {
+      currentClaimId = id;
+      document.getElementById('claimItemNum').textContent = '#' + num;
+      document.getElementById('claimModal').style.display = 'flex';
+    }
+    function closeClaimModal() { document.getElementById('claimModal').style.display = 'none'; }
+    async function confirmClaim() {
+      try {
+        await fetch('/.netlify/functions/update-lost-found', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentClaimId, status: 'Claimed' })
+        });
+        closeClaimModal();
+        loadItems();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    // Move to fest office
+    async function markAtOffice(id) {
+      try {
+        await fetch('/.netlify/functions/update-lost-found', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, atFestOffice: 'Yes' })
+        });
+        loadItems();
+      } catch (e) { alert('Error: ' + e.message); }
     }
 
     loadItems();

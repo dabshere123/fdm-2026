@@ -459,30 +459,69 @@ function LFView({user,onBack}){
   const [currentLoc,setCurrentLoc]=useState(user.location||'');
   const [day,setDay]=useState('');
   const [sending,setSending]=useState(false);
-  const [sent,setSent]=useState(false);
+  const [step,setStep]=useState('form'); // form | photo | confirm | done
   const [itemNumber,setItemNumber]=useState('');
+  const [photo,setPhoto]=useState(null); // base64 data URL
+  const photoRef=useRef(null);
 
-  async function submit(){
-    if(!description||!location) return;
-    setSending(true);
-    try{
-      const res=await fetch(`${API}/submit-lost-found`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description,foundAt:location,currentLocation:currentLoc,dayFound:day,foundBy:user.name,role:user.role})});
-      const data=await res.json();
-      setItemNumber(data.itemNumber||'');
-      setSent(true);
-    }catch(e){setSending(false);}
+  function compressImage(file,cb){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=600; // Keep small for Airtable field limit
+        let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        cb(canvas.toDataURL('image/jpeg',0.6)); // More compressed
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
-  if(sent) return(
-    <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:32}}>
-      <div style={{fontSize:56}}>📦</div>
-      <div style={{fontSize:20,fontWeight:900}}>Item Logged</div>
-      {itemNumber&&<div style={{background:'rgba(249,115,22,0.12)',border:'2px solid rgba(249,115,22,0.5)',borderRadius:14,padding:'16px 28px',textAlign:'center'}}>
-        <div style={{fontSize:12,fontWeight:700,color:'#94a3b8',letterSpacing:'0.08em',marginBottom:6}}>ITEM NUMBER</div>
-        <div style={{fontSize:30,fontWeight:900,color:'#fb923c'}}>{itemNumber}</div>
-        <div style={{fontSize:12,color:'#64748b',marginTop:4}}>Write on tag and attach to item</div>
-      </div>}
-      <button style={{padding:'12px 24px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={onBack}>← Back</button>
+  async function submit(){
+    if(!description||!location||!photo) return;
+    setSending(true);
+    try{
+      const res=await fetch(`${API}/submit-lost-found`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description,foundAt:location,currentLocation:currentLoc,dayFound:day,foundBy:user.name,role:user.role,photoData:photo})});
+      const data=await res.json();
+      setItemNumber(data.itemNumber||'???');
+      setStep('confirm');
+    }catch(e){}
+    setSending(false);
+  }
+
+  // STEP: DONE confirmation
+  if(step==='done') return(
+    <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:32,textAlign:'center'}}>
+      <div style={{fontSize:52}}>✅</div>
+      <div style={{fontSize:18,fontWeight:900,color:'#4ade80'}}>Item Tagged & Boxed</div>
+      <div style={{fontSize:13,color:'#64748b'}}>Item #{itemNumber} is in the Lost & Found</div>
+      <button style={{padding:'12px 24px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={onBack}>← Back to Home</button>
+    </div>
+  );
+
+  // STEP: CONFIRM — show item number, instruct to tag and box
+  if(step==='confirm') return(
+    <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:24,textAlign:'center'}}>
+      <div style={{fontSize:52}}>📦</div>
+      <div style={{fontSize:20,fontWeight:900,color:'#f1f5f9'}}>Item Logged!</div>
+      <div style={{width:'100%',background:'rgba(249,115,22,0.12)',border:'2px solid rgba(249,115,22,0.5)',borderRadius:14,padding:'20px',display:'flex',flexDirection:'column',gap:8,alignItems:'center'}}>
+        <div style={{fontSize:11,fontWeight:800,color:'#94a3b8',letterSpacing:'0.1em',textTransform:'uppercase'}}>Item Number</div>
+        <div style={{fontSize:40,fontWeight:900,color:'#fb923c'}}>{itemNumber}</div>
+      </div>
+      <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:'16px',width:'100%',textAlign:'left',display:'flex',flexDirection:'column',gap:8}}>
+        <div style={{fontSize:15,fontWeight:800,color:'#f1f5f9'}}>Next Steps:</div>
+        <div style={{fontSize:14,color:'#e2e8f0'}}>1. Write <strong style={{color:'#fb923c'}}>#{itemNumber}</strong> on the tag</div>
+        <div style={{fontSize:14,color:'#e2e8f0'}}>2. Attach tag securely to the item</div>
+        <div style={{fontSize:14,color:'#e2e8f0'}}>3. Place item in the <strong style={{color:'#fb923c'}}>Lost & Found box</strong></div>
+      </div>
+      <button style={{width:'100%',padding:'18px',borderRadius:12,border:'none',background:'linear-gradient(135deg,rgba(34,197,94,0.8),rgba(16,185,129,0.8))',color:'#fff',fontSize:17,fontWeight:900,cursor:'pointer'}} onClick={()=>setStep('done')}>
+        ✅ Done — Item Tagged & In Box
+      </button>
     </div>
   );
 
@@ -496,25 +535,42 @@ function LFView({user,onBack}){
         <div>
           <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Day Found</div>
           <div style={{display:'flex',gap:6}}>
-            {[['Thu','Blue'],['Fri','Orange'],['Sat','Green'],['Sun','Purple']].map(([d,c])=>(
+            {['Thu','Fri','Sat','Sun'].map(d=>(
               <button key={d} style={{flex:1,padding:'10px 4px',borderRadius:8,border:`1px solid ${day===d?'rgba(14,165,233,0.5)':'rgba(255,255,255,0.1)'}`,background:day===d?'rgba(14,165,233,0.1)':'rgba(255,255,255,0.03)',color:day===d?'#38bdf8':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer'}} onClick={()=>setDay(d)}>{d}</button>
             ))}
           </div>
         </div>
         <div>
           <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Where Was It Found?</div>
-          <input style={S.inp} placeholder="e.g. Near Moon Stage Left" value={location} onChange={e=>setLocation(e.target.value)}/>
-        </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Where Is It Now?</div>
-          <input style={S.inp} placeholder="e.g. Behind the bar counter" value={currentLoc} onChange={e=>setCurrentLoc(e.target.value)}/>
+          <input style={S.inp} placeholder="e.g. Near Moon Stage" value={location} onChange={e=>setLocation(e.target.value)}/>
         </div>
         <div>
           <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Description</div>
-          <textarea style={{...S.inp,minHeight:80,resize:'none'}} placeholder="Describe the item..." value={description} onChange={e=>setDescription(e.target.value)}/>
+          <textarea style={{...S.inp,minHeight:80,resize:'none'}} placeholder="Describe the item in detail..." value={description} onChange={e=>setDescription(e.target.value)}/>
         </div>
-        <button style={{padding:'16px',borderRadius:12,border:'none',background:'rgba(249,115,22,0.8)',color:'#fff',fontSize:16,fontWeight:900,cursor:'pointer',opacity:(!description||!location||sending)?0.4:1}} disabled={!description||!location||sending} onClick={submit}>
-          {sending?'Logging...':'Log Item'}
+
+        {/* PHOTO — REQUIRED */}
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:photo?'#4ade80':'#ef4444',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>
+            📷 Photo {photo?'✅ Captured':'— Required'}
+          </div>
+          {photo?(
+            <div style={{position:'relative'}}>
+              <img src={photo} alt="Found item" style={{width:'100%',borderRadius:12,border:'2px solid rgba(34,197,94,0.4)',maxHeight:220,objectFit:'cover'}}/>
+              <button style={{position:'absolute',top:8,right:8,background:'rgba(0,0,0,0.7)',border:'none',borderRadius:8,color:'#f1f5f9',fontSize:12,fontWeight:700,cursor:'pointer',padding:'4px 10px'}} onClick={()=>setPhoto(null)}>Retake</button>
+            </div>
+          ):(
+            <label style={{display:'block',padding:'24px',borderRadius:12,border:'2px dashed rgba(239,68,68,0.4)',background:'rgba(239,68,68,0.05)',textAlign:'center',cursor:'pointer'}}>
+              <div style={{fontSize:32,marginBottom:8}}>📸</div>
+              <div style={{fontSize:14,fontWeight:700,color:'#fca5a5'}}>Tap to take photo</div>
+              <div style={{fontSize:12,color:'#64748b',marginTop:4}}>Photo is required to log item</div>
+              <input ref={photoRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{if(e.target.files[0])compressImage(e.target.files[0],setPhoto);}}/>
+            </label>
+          )}
+        </div>
+
+        <button style={{padding:'16px',borderRadius:12,border:'none',background:(!description||!location||!photo||sending)?'rgba(255,255,255,0.06)':'rgba(249,115,22,0.85)',color:(!description||!location||!photo||sending)?'#475569':'#fff',fontSize:16,fontWeight:900,cursor:(!description||!location||!photo||sending)?'not-allowed':'pointer',transition:'all 0.2s'}} disabled={!description||!location||!photo||sending} onClick={submit}>
+          {sending?'Logging...':`Log Item ${!photo?'(Photo Required)':!description?'(Add Description)':!location?'(Add Location)':''}`}
         </button>
       </div>
     </div>

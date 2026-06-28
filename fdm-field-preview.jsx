@@ -671,6 +671,26 @@ Fête de Marquette 2026`;
     setEodSending(false);
   }
 
+  // LOST CHILD FULL-SCREEN ALERT
+  if(lostChildAlert){
+    return(
+      <div style={{...S.root,background:lcBlink?'rgba(180,120,0,0.95)':'rgba(150,100,0,0.90)',transition:'background 0.5s',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh'}}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16,padding:'32px 24px',textAlign:'center',maxWidth:380,width:'100%'}}>
+          <div style={{fontSize:80}}>{lcBlink?'🧒':'⚠️'}</div>
+          <div style={{fontSize:30,fontWeight:900,color:'#fff',letterSpacing:'0.06em'}}>🚨 LOST CHILD 🚨</div>
+          <div style={{fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.9)',background:'rgba(0,0,0,0.25)',borderRadius:12,padding:'14px 16px',width:'100%',lineHeight:1.6}}>{lostChildAlert.location}</div>
+          <div style={{fontSize:14,color:'rgba(255,255,255,0.8)'}}>Alert received at {lostChildAlert.at}</div>
+          <div style={{fontSize:16,fontWeight:800,color:'#fef08a',background:'rgba(0,0,0,0.2)',borderRadius:10,padding:'12px 16px',width:'100%'}}>
+            Search your area immediately and radio in if found
+          </div>
+          <button style={{width:'100%',padding:'18px',borderRadius:14,border:'2px solid rgba(255,255,255,0.6)',background:'rgba(245,158,11,0.4)',color:'#fff',fontSize:17,fontWeight:900,cursor:'pointer'}} onClick={()=>setLostChildAlert(null)}>
+            ✅ ACKNOWLEDGED — SEARCHING
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return(
     <div style={S.root}>
       {/* HEADER */}
@@ -841,9 +861,18 @@ function HomeView({user,onLogout}){
   const [unread,setUnread]=useState(0);
   const [notifQueue,setNotifQueue]=useState([]); // array of {from, message, channel, id}
   const [notifIdx,setNotifIdx]=useState(0);       // which one we're viewing
+  const [lostChildAlert,setLostChildAlert]=useState(null); // {location, description, at}
+  const [lcBlink,setLcBlink]=useState(false);
   const [quickReply,setQuickReply]=useState('');
   const [replySending,setReplySending]=useState(false);
   const seenIds=React.useRef(new Set());
+
+  // Blink lost child alert
+  React.useEffect(()=>{
+    if(!lostChildAlert) return;
+    const iv=setInterval(()=>setLcBlink(p=>!p),600);
+    return()=>clearInterval(iv);
+  },[lostChildAlert]);
 
   // Poll for new messages every 15 seconds when on home screen
   React.useEffect(()=>{

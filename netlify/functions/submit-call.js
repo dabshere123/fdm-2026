@@ -87,6 +87,20 @@ exports.handler = async (event) => {
       }
     }
 
+    // Lost child: also broadcast to AllStaff chat so everyone's worker app shows alert
+    if (type === 'lost_child') {
+      const alertMsg = `🚨 LOST CHILD ALERT 🚨 Location: ${location}. ${problem}. Search your area immediately and report to admin if found.`;
+      await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/Messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: {
+          FromName: 'Admin', FromRole: 'Admin', Channel: 'AllStaff',
+          Message: alertMsg, SentAt: new Date().toISOString(),
+          IsAlert: 'Yes', IsDM: 'No', IsFirst: 'No',
+        }})
+      }).catch(() => {});
+    }
+
     console.log('Call saved:', data.id, type, location);
     return { statusCode: 200, headers, body: JSON.stringify({ success: true, id: data.id }) };
   } catch(e) {

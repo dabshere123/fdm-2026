@@ -3255,27 +3255,7 @@ Please respond immediately.
       )}
 
       {/* NWS WEATHER ALERT BANNER */}
-      {weatherAlertBanner&&isAdmin&&(
-        <div style={{borderRadius:14,border:"3px solid #ef4444",background:"linear-gradient(135deg,rgba(239,68,68,0.18),rgba(37,99,235,0.12))",padding:"16px",display:"flex",flexDirection:"column",gap:10,boxShadow:"0 0 24px rgba(239,68,68,0.35),0 0 48px rgba(37,99,235,0.15)",animation:"pulse 2s infinite"}}>
-          <style>{`@keyframes pulse{0%,100%{box-shadow:0 0 24px rgba(239,68,68,0.35),0 0 48px rgba(37,99,235,0.15);}50%{box-shadow:0 0 40px rgba(239,68,68,0.6),0 0 80px rgba(37,99,235,0.3);}}`}</style>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:24}}>🚨</span>
-              <div>
-                <div style={{fontSize:15,fontWeight:900,color:"#ef4444",letterSpacing:"0.06em",textTransform:"uppercase",lineHeight:1.2}}>NWS WEATHER ALERT</div>
-                <div style={{fontSize:13,fontWeight:800,color:"#93c5fd"}}>{weatherAlertBanner.event}</div>
-              </div>
-            </div>
-            <button style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,color:"#64748b",fontSize:12,cursor:"pointer",fontWeight:600,padding:"4px 10px"}} onClick={()=>{setWeatherDismissed(p=>[...p,weatherAlertBanner.id]);setWeatherAlertBanner(null);}}>Dismiss</button>
-          </div>
-          {weatherAlertBanner.headline&&<div style={{fontSize:14,fontWeight:700,color:"#fca5a5",lineHeight:1.5,borderLeft:"3px solid #ef4444",paddingLeft:10}}>{weatherAlertBanner.headline}</div>}
-          {weatherAlertBanner.description&&<div style={{fontSize:12,color:"#e2e8f0",lineHeight:1.6}}>{weatherAlertBanner.description}...</div>}
-          <button style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#dc2626,#1d4ed8)",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",letterSpacing:"0.04em"}}
-            onClick={()=>{setAlertView("weather_imminent");setView("alert");setAlertFields({_weatherAlert:weatherAlertBanner});}}>
-            🚨 SEND WEATHER ALERT NOW
-          </button>
-        </div>
-      )}
+
 
       {/* WEATHER SIDEBAR — top of admin home */}
       {isAdmin&&(

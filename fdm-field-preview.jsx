@@ -159,6 +159,13 @@ function NewCallView({user,callType,onBack}){
   const [problem,setProblem]=useState('');
   const [sending,setSending]=useState(false);
   const [sent,setSent]=useState(false);
+  // Lost child specific fields
+  const [lcName,setLcName]=useState('');
+  const [lcAge,setLcAge]=useState('');
+  const [lcHair,setLcHair]=useState('');
+  const [lcClothing,setLcClothing]=useState('');
+  const [lcLastWith,setLcLastWith]=useState('');
+  const [lcGuardian,setLcGuardian]=useState('');
 
   const TYPES=[
     {id:'medical',label:'Medical',color:'rgba(147,51,234,0.8)'},
@@ -169,11 +176,37 @@ function NewCallView({user,callType,onBack}){
     {id:'lost_child',label:'Lost Child',color:'rgba(234,179,8,0.8)'},
   ];
 
+  const isLostChild=type==='lost_child';
+  const lcReady=lcLocation&&(lcName||lcAge)&&lcClothing;
+  const lcLocation=location;
+
   async function submit(){
+    if(isLostChild){
+      if(!lcLocation||(!lcName&&!lcAge)||!lcClothing) return;
+      const prob=[
+        lcName?`Child: ${lcName}`:'Unknown name',
+        lcAge?`Age: ${lcAge}`:'',
+        lcHair?`Hair: ${lcHair}`:'',
+        `Clothing: ${lcClothing}`,
+        lcLastWith?`Last seen with: ${lcLastWith}`:'',
+        lcGuardian?`Guardian: ${lcGuardian}`:'',
+      ].filter(Boolean).join(' · ');
+      setSending(true);
+      try{
+        await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          type:'lost_child',location:lcLocation,problem:prob,
+          details:`Name: ${lcName||'Unknown'} | Age: ${lcAge||'?'} | Hair: ${lcHair||'?'} | Clothing: ${lcClothing} | Last with: ${lcLastWith||'?'} | Guardian: ${lcGuardian||'?'}`,
+          requestedBy:user.name,role:user.role
+        })});
+        setSent(true);
+        setTimeout(onBack,2500);
+      }catch(e){setSending(false);}
+      return;
+    }
     if(!type||!location||!problem) return;
     setSending(true);
     try{
-      await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,location,problem,submittedBy:user.name,role:user.role})});
+      await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,location,problem,requestedBy:user.name,role:user.role})});
       setSent(true);
       setTimeout(onBack,2000);
     }catch(e){setSending(false);}
@@ -181,9 +214,9 @@ function NewCallView({user,callType,onBack}){
 
   if(sent) return(
     <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12,padding:32}}>
-      <div style={{fontSize:56}}>✅</div>
-      <div style={{fontSize:20,fontWeight:900}}>Call Submitted</div>
-      <div style={{fontSize:14,color:'#64748b'}}>Admin and relevant units notified</div>
+      <div style={{fontSize:isLostChild?52:56}}>{isLostChild?'🧒':'✅'}</div>
+      <div style={{fontSize:20,fontWeight:900}}>{isLostChild?'Lost Child Reported':'Call Submitted'}</div>
+      <div style={{fontSize:14,color:'#64748b'}}>{isLostChild?'All staff and admin alerted immediately':'Admin and relevant units notified'}</div>
     </div>
   );
 
@@ -191,7 +224,7 @@ function NewCallView({user,callType,onBack}){
     <div style={S.root}>
       <div style={S.hdr}>
         <BackBtn onBack={onBack}/>
-        <div style={{fontSize:16,fontWeight:900}}>Submit a Call</div>
+        <div style={{fontSize:16,fontWeight:900}}>{isLostChild?'🧒 Lost Child Report':'Submit a Call'}</div>
       </div>
       <div style={S.body}>
         {!callType&&<>
@@ -202,18 +235,61 @@ function NewCallView({user,callType,onBack}){
             ))}
           </div>
         </>}
-        {callType&&<div style={{background:`rgba(255,255,255,0.04)`,border:'1px solid rgba(255,255,255,0.1)',borderRadius:10,padding:'12px 14px',fontSize:15,fontWeight:700,color:'#f1f5f9'}}>{TYPES.find(t=>t.id===callType)?.label||callType}</div>}
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Location</div>
-          <input style={S.inp} placeholder="Where is this happening?" value={location} onChange={e=>setLocation(e.target.value)}/>
-        </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Description</div>
-          <textarea style={{...S.inp,minHeight:90,resize:'none'}} placeholder="Describe the situation..." value={problem} onChange={e=>setProblem(e.target.value)}/>
-        </div>
-        <button style={{padding:'16px',borderRadius:12,border:'none',background:'rgba(220,38,38,0.8)',color:'#fff',fontSize:16,fontWeight:900,cursor:'pointer',opacity:(!type||!location||!problem||sending)?0.4:1}} disabled={!type||!location||!problem||sending} onClick={submit}>
-          {sending?'Submitting...':'Submit Call'}
-        </button>
+        {callType&&!isLostChild&&<div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:10,padding:'12px 14px',fontSize:15,fontWeight:700,color:'#f1f5f9'}}>{TYPES.find(t=>t.id===callType)?.label||callType}</div>}
+
+        {/* ── LOST CHILD SPECIFIC FORM ── */}
+        {isLostChild&&<>
+          <div style={{background:'rgba(234,179,8,0.1)',border:'2px solid rgba(234,179,8,0.4)',borderRadius:12,padding:'12px 14px'}}>
+            <div style={{fontSize:14,fontWeight:900,color:'#fcd34d',marginBottom:2}}>🧒 Lost Child Report</div>
+            <div style={{fontSize:12,color:'#94a3b8'}}>Fill in as much as you know — all fields help</div>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Last Seen Location <span style={{color:'#ef4444'}}>*</span></div>
+            <input style={S.inp} placeholder="e.g. Near Moon Stage, Main Gate..." value={location} onChange={e=>setLocation(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Child's Name</div>
+            <input style={S.inp} placeholder="First name if known" value={lcName} onChange={e=>setLcName(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Age / Estimated Age</div>
+            <input style={S.inp} placeholder="e.g. 6 years old, or looks about 8" value={lcAge} onChange={e=>setLcAge(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Hair Color / Description</div>
+            <input style={S.inp} placeholder="e.g. Short brown hair, pigtails..." value={lcHair} onChange={e=>setLcHair(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Clothing Description <span style={{color:'#ef4444'}}>*</span></div>
+            <input style={S.inp} placeholder="e.g. Red shirt, blue shorts, white shoes" value={lcClothing} onChange={e=>setLcClothing(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Last Seen With</div>
+            <input style={S.inp} placeholder="e.g. Mom with brown hair, group of adults" value={lcLastWith} onChange={e=>setLcLastWith(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Parent / Guardian Name & Description</div>
+            <input style={S.inp} placeholder="e.g. Sarah, blonde, blue shirt" value={lcGuardian} onChange={e=>setLcGuardian(e.target.value)}/>
+          </div>
+          <button style={{padding:'18px',borderRadius:12,border:'2px solid rgba(234,179,8,0.6)',background:(!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending)?'rgba(255,255,255,0.04)':'linear-gradient(135deg,rgba(202,138,4,0.8),rgba(161,98,7,0.8))',color:(!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending)?'#475569':'#fff',fontSize:16,fontWeight:900,cursor:(!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending)?'not-allowed':'pointer'}} disabled={!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending} onClick={submit}>
+            {sending?'Reporting...':'🚨 Report Lost Child — Alert All Staff'}
+          </button>
+        </>}
+
+        {/* ── STANDARD CALL FORM ── */}
+        {!isLostChild&&<>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Location</div>
+            <input style={S.inp} placeholder="Where is this happening?" value={location} onChange={e=>setLocation(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Description</div>
+            <textarea style={{...S.inp,minHeight:90,resize:'none'}} placeholder="Describe the situation..." value={problem} onChange={e=>setProblem(e.target.value)}/>
+          </div>
+          <button style={{padding:'16px',borderRadius:12,border:'none',background:'rgba(220,38,38,0.8)',color:'#fff',fontSize:16,fontWeight:900,cursor:'pointer',opacity:(!type||!location||!problem||sending)?0.4:1}} disabled={!type||!location||!problem||sending} onClick={submit}>
+            {sending?'Submitting...':'Submit Call'}
+          </button>
+        </>}
       </div>
     </div>
   );

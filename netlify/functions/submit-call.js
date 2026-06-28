@@ -87,9 +87,18 @@ exports.handler = async (event) => {
       }
     }
 
-    // Lost child: also broadcast to AllStaff chat so everyone's worker app shows alert
+    // Lost child: broadcast structured alert to AllStaff so all worker apps show full-screen alert
     if (type === 'lost_child') {
-      const alertMsg = `🚨 LOST CHILD ALERT 🚨 Location: ${location}. ${problem}. Search your area immediately and report to admin if found.`;
+      const ts = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
+      // Use JSON in the message so worker apps can parse structured data
+      const alertMsg = JSON.stringify({
+        _lostChild: true,
+        location: location || '',
+        problem: problem || '',
+        details: details || '',
+        reportedBy: requestedBy || 'Staff',
+        at: ts,
+      });
       await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/Messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },

@@ -674,16 +674,24 @@ Fête de Marquette 2026`;
   // LOST CHILD FULL-SCREEN ALERT
   if(lostChildAlert){
     return(
-      <div style={{...S.root,background:lcBlink?'rgba(180,120,0,0.95)':'rgba(150,100,0,0.90)',transition:'background 0.5s',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh'}}>
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16,padding:'32px 24px',textAlign:'center',maxWidth:380,width:'100%'}}>
-          <div style={{fontSize:80}}>{lcBlink?'🧒':'⚠️'}</div>
-          <div style={{fontSize:30,fontWeight:900,color:'#fff',letterSpacing:'0.06em'}}>🚨 LOST CHILD 🚨</div>
-          <div style={{fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.9)',background:'rgba(0,0,0,0.25)',borderRadius:12,padding:'14px 16px',width:'100%',lineHeight:1.6}}>{lostChildAlert.location}</div>
-          <div style={{fontSize:14,color:'rgba(255,255,255,0.8)'}}>Alert received at {lostChildAlert.at}</div>
-          <div style={{fontSize:16,fontWeight:800,color:'#fef08a',background:'rgba(0,0,0,0.2)',borderRadius:10,padding:'12px 16px',width:'100%'}}>
-            Search your area immediately and radio in if found
+      <div style={{...S.root,background:lcBlink?'rgba(202,138,4,0.95)':'rgba(161,98,7,0.90)',transition:'background 0.5s',display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',overflowY:'auto'}}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16,padding:'32px 24px',textAlign:'center',maxWidth:400,width:'100%'}}>
+          <div style={{fontSize:72}}>{lcBlink?'🧒':'⚠️'}</div>
+          <div style={{fontSize:28,fontWeight:900,color:'#fff',letterSpacing:'0.06em'}}>LOST CHILD</div>
+          <div style={{fontSize:22,fontWeight:900,color:'#fff'}}>📍 {lostChildAlert.location}</div>
+          {lostChildAlert.problem&&(
+            <div style={{fontSize:15,color:'rgba(255,255,255,0.92)',background:'rgba(0,0,0,0.25)',borderRadius:12,padding:'14px 16px',width:'100%',lineHeight:1.7,textAlign:'left'}}>
+              {lostChildAlert.problem}{lostChildAlert.details?'
+'+lostChildAlert.details:''}
+            </div>
+          )}
+          <div style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.85)'}}>
+            Reported by: {lostChildAlert.reportedBy} · {lostChildAlert.at}
           </div>
-          <button style={{width:'100%',padding:'18px',borderRadius:14,border:'2px solid rgba(255,255,255,0.6)',background:'rgba(245,158,11,0.4)',color:'#fff',fontSize:17,fontWeight:900,cursor:'pointer'}} onClick={()=>setLostChildAlert(null)}>
+          <div style={{fontSize:16,fontWeight:800,color:'#fef08a',background:'rgba(0,0,0,0.2)',borderRadius:10,padding:'12px 16px',width:'100%'}}>
+            Search your area immediately and notify admin if found
+          </div>
+          <button style={{width:'100%',padding:'18px',borderRadius:14,border:'2px solid rgba(255,255,255,0.7)',background:'linear-gradient(135deg,rgba(245,158,11,0.5),rgba(202,138,4,0.5))',color:'#fff',fontSize:17,fontWeight:900,cursor:'pointer'}} onClick={()=>setLostChildAlert(null)}>
             ✅ ACKNOWLEDGED — SEARCHING
           </button>
         </div>

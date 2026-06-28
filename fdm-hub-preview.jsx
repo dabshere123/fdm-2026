@@ -3257,35 +3257,68 @@ Please respond immediately.
       {/* NWS WEATHER ALERT BANNER */}
 
 
-      {/* WEATHER SIDEBAR — top of admin home */}
+      {/* WEATHER + MED STATUS LEFT | ALERTS + ACTIVE CALLS RIGHT */}
       {isAdmin&&(
         <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-          {/* LEFT: Weather panel */}
-          <div style={{width:130,flexShrink:0,background:"rgba(14,165,233,0.07)",border:"1px solid rgba(14,165,233,0.2)",borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6}}>
-            <div style={{fontSize:9,fontWeight:900,color:"#38bdf8",textTransform:"uppercase",letterSpacing:"0.1em"}}>🌤 McPike Park</div>
-            <div style={{fontSize:28,fontWeight:900,color:"#f1f5f9",lineHeight:1}}>{currentWeather?.temp!=null?`${currentWeather.temp}°F`:"--°F"}</div>
-            <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.3}}>{currentWeather?.desc||"Loading..."}</div>
-            {currentWeather?.wind!=null&&<div style={{fontSize:10,color:"#64748b"}}>💨 {currentWeather.wind} mph</div>}
-            {currentWeather?.humidity!=null&&<div style={{fontSize:10,color:"#64748b"}}>💧 {currentWeather.humidity}%</div>}
-            {nwsAlerts.length>0&&<div style={{fontSize:10,fontWeight:800,color:"#fbbf24",background:"rgba(245,158,11,0.15)",borderRadius:6,padding:"3px 6px"}}>⚠️ {nwsAlerts.length} Alert{nwsAlerts.length>1?"s":""}</div>}
-            <button style={{marginTop:2,padding:"5px 8px",borderRadius:8,border:"1px solid rgba(14,165,233,0.3)",background:"rgba(14,165,233,0.08)",color:"#38bdf8",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setRadarVisible(p=>!p)}>
-              {radarVisible?"Hide Radar":"📡 Radar"}
-            </button>
+          {/* LEFT: Weather + Med Status */}
+          <div style={{width:130,flexShrink:0,display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{background:"rgba(14,165,233,0.07)",border:"1px solid rgba(14,165,233,0.2)",borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",gap:5}}>
+              <div style={{fontSize:9,fontWeight:900,color:"#38bdf8",textTransform:"uppercase",letterSpacing:"0.1em"}}>🌤 McPike Park</div>
+              <div style={{fontSize:26,fontWeight:900,color:"#f1f5f9",lineHeight:1}}>{currentWeather?.temp!=null?`${currentWeather.temp}°F`:"--°F"}</div>
+              <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.3}}>{currentWeather?.desc||"Loading..."}</div>
+              {currentWeather?.wind!=null&&<div style={{fontSize:10,color:"#64748b"}}>💨 {currentWeather.wind} mph</div>}
+              {currentWeather?.humidity!=null&&<div style={{fontSize:10,color:"#64748b"}}>💧 {currentWeather.humidity}%</div>}
+              <button style={{marginTop:2,padding:"4px 8px",borderRadius:8,border:"1px solid rgba(14,165,233,0.3)",background:"rgba(14,165,233,0.08)",color:"#38bdf8",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setRadarVisible(p=>!p)}>
+                {radarVisible?"Hide Radar":"📡 Radar"}
+              </button>
+            </div>
+            {/* Med 1 + Med 2 Status */}
+            {[["med1","Med 1"],["med2","Med 2"]].map(([key,label])=>{
+              const st=medSt[key]||{status:"available"};
+              const isOnCall=st.status==="on_call";
+              const isClear=st.status==="cleared";
+              const bg=isOnCall?"rgba(147,51,234,0.15)":isClear?"rgba(16,185,129,0.1)":"rgba(255,255,255,0.03)";
+              const br=isOnCall?"rgba(147,51,234,0.5)":isClear?"rgba(16,185,129,0.4)":"rgba(255,255,255,0.1)";
+              const tc=isOnCall?"#d8b4fe":isClear?"#6ee7b7":"#64748b";
+              const sl=isOnCall?"🟣 On Call":isClear?"🟢 Cleared":"⚪ Available";
+              return(
+                <div key={key} style={{background:bg,borderRadius:10,border:`1px solid ${br}`,padding:"9px 11px"}}>
+                  <div style={{fontSize:12,fontWeight:900,color:"#f1f5f9",marginBottom:2}}>🩺 {label}</div>
+                  <div style={{fontSize:11,fontWeight:700,color:tc}}>{sl}</div>
+                  {st.since&&<div style={{fontSize:9,color:"#374151",marginTop:1}}>{st.since}</div>}
+                </div>
+              );
+            })}
           </div>
-          {/* RIGHT: Weather alerts or quick status */}
-          <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
+          {/* RIGHT: Alerts + Active calls */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",gap:8,minWidth:0}}>
             {nwsAlerts.slice(0,2).map((a,i)=>(
               <div key={i} style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"8px 10px"}}>
                 <div style={{fontSize:11,fontWeight:800,color:"#fca5a5"}}>🚨 {a.properties?.event}</div>
-                <div style={{fontSize:10,color:"#94a3b8",marginTop:2,lineHeight:1.3}}>{(a.properties?.headline||"").slice(0,80)}...</div>
+                <div style={{fontSize:10,color:"#94a3b8",marginTop:2,lineHeight:1.3}}>{(a.properties?.headline||"").slice(0,80)}</div>
               </div>
             ))}
-            {nwsAlerts.length===0&&currentWeather&&(
-              <div style={{background:"rgba(34,197,94,0.06)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:10,padding:"8px 10px"}}>
-                <div style={{fontSize:11,fontWeight:800,color:"#4ade80"}}>✅ No Active Alerts</div>
-                <div style={{fontSize:10,color:"#64748b",marginTop:2}}>Conditions clear at McPike Park</div>
+            {nwsAlerts.length===0&&(
+              <div style={{background:"rgba(34,197,94,0.05)",border:"1px solid rgba(34,197,94,0.15)",borderRadius:10,padding:"8px 10px"}}>
+                <div style={{fontSize:11,fontWeight:800,color:"#4ade80"}}>✅ No Weather Alerts</div>
+                <div style={{fontSize:10,color:"#374151",marginTop:2}}>Conditions clear</div>
               </div>
             )}
+            {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").map(ac=>{
+              const cc={medical:{bg:"rgba(30,64,175,0.15)",border:"rgba(59,130,246,0.6)",text:"#93c5fd",label:"🩺 Medical"},fire:{bg:"rgba(220,38,38,0.15)",border:"rgba(239,68,68,0.6)",text:"#fca5a5",label:"🔥 Fire"},security:{bg:"rgba(15,15,20,0.6)",border:"rgba(100,116,139,0.5)",text:"#94a3b8",label:"🔒 Security"},walk_in:{bg:"rgba(124,58,237,0.15)",border:"rgba(167,139,250,0.5)",text:"#c4b5fd",label:"🚶 Walk-In"},maintenance:{bg:"rgba(5,150,105,0.12)",border:"rgba(16,185,129,0.5)",text:"#6ee7b7",label:"🔧 Maint"},supplies:{bg:"rgba(217,119,6,0.12)",border:"rgba(245,158,11,0.5)",text:"#fcd34d",label:"📦 Supplies"}};
+              const c2=cc[ac.type]||cc.medical;
+              return(
+                <div key={ac.id} style={{background:c2.bg,border:`2px solid ${c2.border}`,borderRadius:10,padding:"8px 10px",cursor:"pointer"}} onClick={()=>setAdminCallDetail(ac)}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                    <div style={{fontSize:11,fontWeight:900,color:c2.text}}>{c2.label}</div>
+                    {!ac.acknowledged&&<div style={{background:"#ef4444",color:"#fff",fontSize:9,fontWeight:800,borderRadius:5,padding:"1px 5px"}}>NEW</div>}
+                    {ac.status==="on_scene"&&<div style={{background:"#10b981",color:"#fff",fontSize:9,fontWeight:800,borderRadius:5,padding:"1px 5px"}}>ON SCENE</div>}
+                  </div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>{ac.location}</div>
+                  <div style={{fontSize:10,color:"#94a3b8",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{ac.problem}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

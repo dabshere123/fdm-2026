@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026 Hub</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 const {
   useState,
   useEffect,
@@ -9596,13 +9609,19 @@ Please respond immediately.
     style: {
       width: 130,
       flexShrink: 0,
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       background: "rgba(14,165,233,0.07)",
       border: "1px solid rgba(14,165,233,0.2)",
       borderRadius: 12,
       padding: "10px 12px",
       display: "flex",
       flexDirection: "column",
-      gap: 6
+      gap: 5
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9614,7 +9633,7 @@ Please respond immediately.
     }
   }, "🌤 McPike Park"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 28,
+      fontSize: 26,
       fontWeight: 900,
       color: "#f1f5f9",
       lineHeight: 1
@@ -9635,19 +9654,10 @@ Please respond immediately.
       fontSize: 10,
       color: "#64748b"
     }
-  }, "💧 ", currentWeather.humidity, "%"), nwsAlerts.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 800,
-      color: "#fbbf24",
-      background: "rgba(245,158,11,0.15)",
-      borderRadius: 6,
-      padding: "3px 6px"
-    }
-  }, "⚠️ ", nwsAlerts.length, " Alert", nwsAlerts.length > 1 ? "s" : ""), /*#__PURE__*/React.createElement("button", {
+  }, "💧 ", currentWeather.humidity, "%"), /*#__PURE__*/React.createElement("button", {
     style: {
       marginTop: 2,
-      padding: "5px 8px",
+      padding: "4px 8px",
       borderRadius: 8,
       border: "1px solid rgba(14,165,233,0.3)",
       background: "rgba(14,165,233,0.08)",
@@ -9657,12 +9667,51 @@ Please respond immediately.
       cursor: "pointer"
     },
     onClick: () => setRadarVisible(p => !p)
-  }, radarVisible ? "Hide Radar" : "📡 Radar")), /*#__PURE__*/React.createElement("div", {
+  }, radarVisible ? "Hide Radar" : "📡 Radar")), [["med1", "Med 1"], ["med2", "Med 2"]].map(([key, label]) => {
+    const st = medSt[key] || {
+      status: "available"
+    };
+    const isOnCall = st.status === "on_call";
+    const isClear = st.status === "cleared";
+    const bg = isOnCall ? "rgba(147,51,234,0.15)" : isClear ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.03)";
+    const br = isOnCall ? "rgba(147,51,234,0.5)" : isClear ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.1)";
+    const tc = isOnCall ? "#d8b4fe" : isClear ? "#6ee7b7" : "#64748b";
+    const sl = isOnCall ? "🟣 On Call" : isClear ? "🟢 Cleared" : "⚪ Available";
+    return /*#__PURE__*/React.createElement("div", {
+      key: key,
+      style: {
+        background: bg,
+        borderRadius: 10,
+        border: `1px solid ${br}`,
+        padding: "9px 11px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 900,
+        color: "#f1f5f9",
+        marginBottom: 2
+      }
+    }, "🩺 ", label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: tc
+      }
+    }, sl), st.since && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: "#374151",
+        marginTop: 1
+      }
+    }, st.since));
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       display: "flex",
       flexDirection: "column",
-      gap: 8
+      gap: 8,
+      minWidth: 0
     }
   }, nwsAlerts.slice(0, 2).map((a, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -9685,10 +9734,10 @@ Please respond immediately.
       marginTop: 2,
       lineHeight: 1.3
     }
-  }, (a.properties?.headline || "").slice(0, 80), "..."))), nwsAlerts.length === 0 && currentWeather && /*#__PURE__*/React.createElement("div", {
+  }, (a.properties?.headline || "").slice(0, 80)))), nwsAlerts.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "rgba(34,197,94,0.06)",
-      border: "1px solid rgba(34,197,94,0.2)",
+      background: "rgba(34,197,94,0.05)",
+      border: "1px solid rgba(34,197,94,0.15)",
       borderRadius: 10,
       padding: "8px 10px"
     }
@@ -9698,13 +9747,109 @@ Please respond immediately.
       fontWeight: 800,
       color: "#4ade80"
     }
-  }, "✅ No Active Alerts"), /*#__PURE__*/React.createElement("div", {
+  }, "✅ No Weather Alerts"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
-      color: "#64748b",
+      color: "#374151",
       marginTop: 2
     }
-  }, "Conditions clear at McPike Park")))), radarVisible && isAdmin && /*#__PURE__*/React.createElement("div", {
+  }, "Conditions clear")), activeCalls.filter(c => c.status !== "cleared" && c.type !== "lost_child").map(ac => {
+    const cc = {
+      medical: {
+        bg: "rgba(30,64,175,0.15)",
+        border: "rgba(59,130,246,0.6)",
+        text: "#93c5fd",
+        label: "🩺 Medical"
+      },
+      fire: {
+        bg: "rgba(220,38,38,0.15)",
+        border: "rgba(239,68,68,0.6)",
+        text: "#fca5a5",
+        label: "🔥 Fire"
+      },
+      security: {
+        bg: "rgba(15,15,20,0.6)",
+        border: "rgba(100,116,139,0.5)",
+        text: "#94a3b8",
+        label: "🔒 Security"
+      },
+      walk_in: {
+        bg: "rgba(124,58,237,0.15)",
+        border: "rgba(167,139,250,0.5)",
+        text: "#c4b5fd",
+        label: "🚶 Walk-In"
+      },
+      maintenance: {
+        bg: "rgba(5,150,105,0.12)",
+        border: "rgba(16,185,129,0.5)",
+        text: "#6ee7b7",
+        label: "🔧 Maint"
+      },
+      supplies: {
+        bg: "rgba(217,119,6,0.12)",
+        border: "rgba(245,158,11,0.5)",
+        text: "#fcd34d",
+        label: "📦 Supplies"
+      }
+    };
+    const c2 = cc[ac.type] || cc.medical;
+    return /*#__PURE__*/React.createElement("div", {
+      key: ac.id,
+      style: {
+        background: c2.bg,
+        border: `2px solid ${c2.border}`,
+        borderRadius: 10,
+        padding: "8px 10px",
+        cursor: "pointer"
+      },
+      onClick: () => setAdminCallDetail(ac)
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 3
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 900,
+        color: c2.text
+      }
+    }, c2.label), !ac.acknowledged && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#ef4444",
+        color: "#fff",
+        fontSize: 9,
+        fontWeight: 800,
+        borderRadius: 5,
+        padding: "1px 5px"
+      }
+    }, "NEW"), ac.status === "on_scene" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#10b981",
+        color: "#fff",
+        fontSize: 9,
+        fontWeight: 800,
+        borderRadius: 5,
+        padding: "1px 5px"
+      }
+    }, "ON SCENE")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#f1f5f9"
+      }
+    }, ac.location), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#94a3b8",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        whiteSpace: "nowrap"
+      }
+    }, ac.problem));
+  }))), radarVisible && isAdmin && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       overflow: "hidden",
@@ -10727,4 +10872,5 @@ const S = {
     fontSize: 14
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));
+</script></body></html>

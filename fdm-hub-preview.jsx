@@ -78,7 +78,7 @@ function now(){return new Date().toLocaleString("en-US",{weekday:"short",month:"
 function tShort(){return new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
 function Bg(){return(<div style={{position:"fixed",inset:0,zIndex:0,background:"radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, #0d0d1a 60%)",overflow:"hidden"}}><div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)",backgroundSize:"32px 32px"}}/></div>);}
 function BB({onClick,label="← Back"}){return(
-  <button style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,255,255,0.2)",color:"#f1f5f9",padding:"9px 16px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:800,flexShrink:0,whiteSpace:"nowrap"}} onClick={onClick}>{label}</button>
+  <button style={{position:"sticky",top:8,zIndex:10,background:"rgba(255,255,255,0.1)",border:"2px solid rgba(255,255,255,0.25)",color:"#f1f5f9",padding:"12px 20px",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:800,backdropFilter:"blur(8px)",boxShadow:"0 2px 12px rgba(0,0,0,0.3)"}} onClick={onClick}>{label}</button>
 );
 }
 function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={S.lbl}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}
@@ -383,13 +383,15 @@ Madison Fire/EMS INBOUND — McPike Park`;
               {isOnScene&&<div style={{textAlign:"center",padding:"10px",color:"#4ade80",fontWeight:700,fontSize:14}}>✅ On Scene — You are at the location</div>}
 
               {!nineOneOneActive&&(
-                <div style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,padding:"10px 12px",marginBottom:4}}>
-                  <div style={{fontSize:12,fontWeight:800,color:"#fca5a5",marginBottom:3}}>⚠️ IMPORTANT</div>
-                  <div style={{fontSize:12,color:"#fecaca",lineHeight:1.5}}>This button notifies admin and other med units of a 911 activation. <strong style={{color:"#f87171"}}>YOU MUST CALL 911 YOURSELF</strong> — this does NOT automatically contact emergency services.</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,padding:"10px 12px"}}>
+                    <div style={{fontSize:12,fontWeight:800,color:"#fca5a5",marginBottom:3}}>⚠️ IMPORTANT</div>
+                    <div style={{fontSize:12,color:"#fecaca",lineHeight:1.5}}>This notifies admin &amp; med units only. <strong style={{color:"#f87171"}}>YOU MUST CALL 911 YOURSELF</strong> — this does NOT contact emergency services automatically.</div>
+                  </div>
+                  <button style={{width:"100%",padding:"16px",borderRadius:12,border:"2px solid rgba(239,68,68,0.6)",background:"rgba(239,68,68,0.12)",color:"#fca5a5",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShowMeetupModal(true)}>
+                    🚨 Activate 911 — Notify Admin & Med
+                  </button>
                 </div>
-                <button style={{width:"100%",padding:"16px",borderRadius:12,border:"2px solid rgba(239,68,68,0.6)",background:"rgba(239,68,68,0.12)",color:"#fca5a5",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShowMeetupModal(true)}>
-                  🚨 Activate 911 — Notify Admin & Med
-                </button>
               )}
 
               <button style={{width:"100%",padding:"16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.06)",color:"#f1f5f9",fontSize:15,fontWeight:800,cursor:!isOnScene?"not-allowed":"pointer",opacity:!isOnScene?0.4:1}} disabled={!isOnScene} onClick={()=>{
@@ -445,14 +447,14 @@ Madison Fire/EMS INBOUND — McPike Park`;
       </div>
 
             {/* SAFETY SECTION */}
-      <div style={{padding:"6px 16px 4px"}}>
-        <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"12px",marginBottom:10}}>
+      <div style={{padding:"4px 16px 0"}}>
+        <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
           <div style={{fontSize:10,fontWeight:900,color:"#475569",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Safety</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <button style={{width:"100%",padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:10}} onClick={()=>setMpdRequestView(true)}>
+          <div style={{display:"flex",flexDirection:"column",gap:7}}>
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:10}} onClick={()=>setMpdRequestView(true)}>
               <span>🚔</span> Request MPD Officer
             </button>
-            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});}}}>
+            <button style={{width:"100%",padding:"9px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});}}}>
               {nineOneOne.active?"🚨 911 ACTIVE":"🚨 911 Activation"}
             </button>
           </div>

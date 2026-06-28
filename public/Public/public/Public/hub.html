@@ -9301,11 +9301,45 @@ Please respond immediately.
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 13,
       fontWeight: 700,
       color: liveMode ? "#10b981" : "#f59e0b"
     }
-  }, liveMode ? "⚡ LIVE MODE — Real calls from staff" : "🎭 DEMO MODE — Showing sample data"), /*#__PURE__*/React.createElement("button", {
+  }, liveMode ? "⚡ LIVE MODE — Real calls from staff" : "🎭 DEMO MODE — Showing sample data"), !liveMode && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#374151",
+      marginTop: 2
+    }
+  }, "Switching to Live clears all demo calls")), liveMode && /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "none",
+      border: "1px solid rgba(239,68,68,0.3)",
+      borderRadius: 6,
+      padding: "4px 10px",
+      color: "#fca5a5",
+      fontSize: 11,
+      cursor: "pointer",
+      fontWeight: 600,
+      marginRight: 4
+    },
+    onClick: async () => {
+      if (!window.confirm("Clear ALL active calls from Airtable? Use before going live.")) return;
+      try {
+        await fetch("/.netlify/functions/clear-test-calls", {
+          method: "POST"
+        });
+        setLiveCalls([]);
+        alert("All test calls cleared from Airtable.");
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    }
+  }, "🗑 Clear Test Calls"), /*#__PURE__*/React.createElement("button", {
     style: {
       background: "none",
       border: "1px solid rgba(255,255,255,0.1)",
@@ -9316,7 +9350,16 @@ Please respond immediately.
       cursor: "pointer",
       fontWeight: 600
     },
-    onClick: () => setLiveMode(p => !p)
+    onClick: () => {
+      setLiveMode(p => {
+        if (!p) {
+          // Switching TO live — clear demo calls so they don't bleed in
+          setCalls([]);
+          setLiveCalls([]);
+        }
+        return !p;
+      });
+    }
   }, "Switch")), nineOneOne?.active && emsAcked && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,

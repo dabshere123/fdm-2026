@@ -3171,8 +3171,28 @@ Please respond immediately.
 
       {/* LIVE/DEMO MODE INDICATOR */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:liveMode?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)",border:`1px solid ${liveMode?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.3)"}`,borderRadius:10,padding:"10px 14px"}}>
-        <div style={{fontSize:13,fontWeight:700,color:liveMode?"#10b981":"#f59e0b"}}>{liveMode?"⚡ LIVE MODE — Real calls from staff":"🎭 DEMO MODE — Showing sample data"}</div>
-        <button style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px",color:"#64748b",fontSize:11,cursor:"pointer",fontWeight:600}} onClick={()=>setLiveMode(p=>!p)}>Switch</button>
+        <div style={{flex:1}}>
+          <div style={{fontSize:13,fontWeight:700,color:liveMode?"#10b981":"#f59e0b"}}>{liveMode?"⚡ LIVE MODE — Real calls from staff":"🎭 DEMO MODE — Showing sample data"}</div>
+          {!liveMode&&<div style={{fontSize:10,color:"#374151",marginTop:2}}>Switching to Live clears all demo calls</div>}
+        </div>
+        {liveMode&&<button style={{background:"none",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"4px 10px",color:"#fca5a5",fontSize:11,cursor:"pointer",fontWeight:600,marginRight:4}} onClick={async()=>{
+          if(!window.confirm("Clear ALL active calls from Airtable? Use before going live.")) return;
+          try{
+            await fetch("/.netlify/functions/clear-test-calls",{method:"POST"});
+            setLiveCalls([]);
+            alert("All test calls cleared from Airtable.");
+          }catch(e){alert("Error: "+e.message);}
+        }}>🗑 Clear Test Calls</button>}
+        <button style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px",color:"#64748b",fontSize:11,cursor:"pointer",fontWeight:600}} onClick={()=>{
+          setLiveMode(p=>{
+            if(!p){
+              // Switching TO live — clear demo calls so they don't bleed in
+              setCalls([]);
+              setLiveCalls([]);
+            }
+            return !p;
+          });
+        }}>Switch</button>
       </div>
 
       {/* 911 INBOUND BANNER — Admin home — shows full info when acknowledged, stays until incident closed */}

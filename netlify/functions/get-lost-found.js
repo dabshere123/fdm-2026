@@ -14,7 +14,20 @@ exports.handler = async (event) => {
       records = records.concat(data.records || []);
       offset = data.offset || null;
     } while (offset);
-    const items = records.map(r => ({ id: r.id, ...r.fields }));
+    const items = records.map(r => ({
+      id: r.id,
+      itemNumber: r.fields.ItemNumber || '',
+      description: r.fields.Description || '',
+      foundAt: r.fields.FoundAt || '',
+      currentLocation: r.fields.CurrentLocation || '',
+      dayFound: r.fields.DayFound || '',
+      foundBy: r.fields.FoundBy || '',
+      status: r.fields.Status || 'Found',
+      photoData: r.fields.PhotoData || '',
+      atFestOffice: r.fields.AtFestOffice || 'No',
+      claimantName: r.fields.ClaimantName || '',
+      createdAt: r.fields.CreatedAt || '',
+    }));
     return { statusCode: 200, headers, body: JSON.stringify({ items }) };
   } catch(e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message, items: [] }) };

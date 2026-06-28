@@ -6,8 +6,10 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
   try {
-    // Fetch all non-cleared calls
-    const formula = encodeURIComponent(`NOT({Status}="Cleared")`);
+    // Fetch non-cleared calls from the last 24 hours only
+    // This prevents old test calls from polluting live mode
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const formula = encodeURIComponent(`AND(NOT({Status}="Cleared"),{Timestamp}>="${cutoff}")`);
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}?filterByFormula=${formula}&sort[0][field]=Timestamp&sort[0][direction]=desc`;
 
     const res = await fetch(url, {

@@ -67,6 +67,20 @@ const ROLE_CHANNEL={
 };
 function roleChannel(r){return ROLE_CHANNEL[(r||'').toLowerCase()]||'AllStaff';}
 
+// Display-friendly role label
+const ROLE_DISPLAY={
+  mb1:'Moon Bar Manager', lagb:'Lagniappe Bar Manager', lafb:'Lafayette Bar Manager',
+  slb:'Sun Bar Left Manager', srb:'Sun Bar Right Manager', cb:'Cabaret Bar Manager',
+  ffb:'Family Fete Bar Manager', etb:'Everything Else Cafe Manager',
+  ms:'Moon Stage Manager', lags:'Lagniappe Stage Manager', lafs:'Lafayette Stage Manager',
+  sst:'Sun Stage Manager', cst:'Cabaret Stage Manager', ffs:'Family Fete Stage Manager',
+  a1:'Admin', a2:'Admin', a3:'Admin Marketing',
+  m1:'Med Unit 1', m2:'Med Unit 2',
+  hos:'Hospitality', mt:'Merch Tent', ovn:'Overnight Crew',
+  misc:'Miscellaneous', gil:'Greeter — Ingersoll Left', gir:'Greeter — Ingersoll Right', gf:'Greeter — Few St',
+};
+function displayRole(r){return ROLE_DISPLAY[(r||'').toLowerCase()]||r||'';}
+
 const bg='#0a0a14';
 const S={
   root:{minHeight:'100vh',background:bg,fontFamily:"'DM Sans',sans-serif",color:'#f1f5f9'},
@@ -128,7 +142,7 @@ function LoginView({onLogin}){
               </div>
               <div>
                 <div style={{fontSize:16,fontWeight:700}}>{s.name}</div>
-                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{s.role}{s.location?` · ${s.location}`:''}</div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{displayRole(s.role)}{s.location?` · ${s.location}`:''}</div>
               </div>
             </button>
           ))}
@@ -833,7 +847,7 @@ function HomeView({user,onLogout}){
       <div style={S.hdr}>
         <div style={{flex:1}}>
           <div style={{fontSize:16,fontWeight:900}}>{user.name.split(' ')[0]}</div>
-          <div style={{fontSize:11,color:'#64748b'}}>{user.role}{user.location?` · ${user.location}`:''}</div>
+          <div style={{fontSize:11,color:'#64748b'}}>{displayRole(user.role)}{user.location?` · ${user.location}`:''}</div>
         </div>
         <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#64748b',fontSize:11,fontWeight:700,cursor:'pointer',padding:'6px 12px'}} onClick={onLogout}>Sign Out</button>
       </div>

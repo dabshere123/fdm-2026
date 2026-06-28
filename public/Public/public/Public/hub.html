@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026 Hub</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 const {
   useState,
   useEffect,
@@ -2253,6 +2266,48 @@ function HubChatInbox({
       }
     }, c.lastFrom && c.lastFrom !== myRole && c.lastFrom !== myName ? `${c.lastFrom}: ` : "", c.lastMessage)));
   }))));
+}
+const HUB_ROLE_DISPLAY = {
+  mb1: 'Moon Bar Manager',
+  lagb: 'Lagniappe Bar Manager',
+  lafb: 'Lafayette Bar Manager',
+  slb: 'Sun Bar Left Manager',
+  srb: 'Sun Bar Right Manager',
+  cb: 'Cabaret Bar Manager',
+  ffb: 'Family Fete Bar Manager',
+  etb: 'Everything Else Cafe Manager',
+  ms: 'Moon Stage Manager',
+  lags: 'Lagniappe Stage Manager',
+  lafs: 'Lafayette Stage Manager',
+  sst: 'Sun Stage Manager',
+  cst: 'Cabaret Stage Manager',
+  ffs: 'Family Fete Stage Manager',
+  a1: 'Admin',
+  a2: 'Admin',
+  a3: 'Admin Marketing',
+  m1: 'Med Unit 1',
+  m2: 'Med Unit 2',
+  hos: 'Hospitality',
+  mt: 'Merch Tent',
+  ovn: 'Overnight Crew',
+  misc: 'Miscellaneous',
+  gil: 'Greeter — Ingersoll Left',
+  gir: 'Greeter — Ingersoll Right',
+  gf: 'Greeter — Few St',
+  // old codes
+  msb1: 'Moon Bar Manager',
+  msb2: 'Moon Bar Manager',
+  ssbl: 'Sun Bar Left Manager',
+  ssbr: 'Sun Bar Right Manager',
+  etecm: 'Everything Else Cafe Manager',
+  mtm: 'Everything Else Cafe Manager',
+  msm: 'Moon Stage Manager',
+  ssm: 'Sun Stage Manager',
+  lafm: 'Lafayette Stage Manager',
+  lagm: 'Lagniappe Stage Manager'
+};
+function hubDisplayRole(r) {
+  return HUB_ROLE_DISPLAY[(r || '').toLowerCase()] || r || '';
 }
 function HubApp({
   onBack
@@ -6696,7 +6751,7 @@ Please respond immediately.
       color: "#64748b",
       marginTop: 2
     }
-  }, s.role)), /*#__PURE__*/React.createElement("div", {
+  }, hubDisplayRole(s.role))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#38bdf8"
@@ -10972,4 +11027,5 @@ const S = {
     fontSize: 14
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));
+</script></body></html>

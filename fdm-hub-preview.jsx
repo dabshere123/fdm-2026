@@ -735,6 +735,24 @@ function HubChatInbox({myName,myRole,staffList,onBack}){
 }
 
 
+const HUB_ROLE_DISPLAY={
+  mb1:'Moon Bar Manager', lagb:'Lagniappe Bar Manager', lafb:'Lafayette Bar Manager',
+  slb:'Sun Bar Left Manager', srb:'Sun Bar Right Manager', cb:'Cabaret Bar Manager',
+  ffb:'Family Fete Bar Manager', etb:'Everything Else Cafe Manager',
+  ms:'Moon Stage Manager', lags:'Lagniappe Stage Manager', lafs:'Lafayette Stage Manager',
+  sst:'Sun Stage Manager', cst:'Cabaret Stage Manager', ffs:'Family Fete Stage Manager',
+  a1:'Admin', a2:'Admin', a3:'Admin Marketing',
+  m1:'Med Unit 1', m2:'Med Unit 2',
+  hos:'Hospitality', mt:'Merch Tent', ovn:'Overnight Crew',
+  misc:'Miscellaneous', gil:'Greeter — Ingersoll Left', gir:'Greeter — Ingersoll Right', gf:'Greeter — Few St',
+  // old codes
+  msb1:'Moon Bar Manager', msb2:'Moon Bar Manager',
+  ssbl:'Sun Bar Left Manager', ssbr:'Sun Bar Right Manager',
+  etecm:'Everything Else Cafe Manager', mtm:'Everything Else Cafe Manager',
+  msm:'Moon Stage Manager', ssm:'Sun Stage Manager', lafm:'Lafayette Stage Manager', lagm:'Lagniappe Stage Manager',
+};
+function hubDisplayRole(r){return HUB_ROLE_DISPLAY[(r||'').toLowerCase()]||r||'';}
+
 function HubApp({onBack}){
   const [role,setRole]=useState(()=>{
     if(typeof window!=="undefined"){
@@ -2440,7 +2458,7 @@ Please respond immediately.
           <div key={s.id||i} style={{display:"grid",gridTemplateColumns:"1.5fr 1.2fr 1.2fr 1.5fr",gap:0,padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",background:i%2===0?"transparent":"rgba(255,255,255,0.015)"}}>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",lineHeight:1.3}}>{s.name}</div>
-              {s.role&&<div style={{fontSize:10,color:"#64748b",marginTop:2}}>{s.role}</div>}
+              {s.role&&<div style={{fontSize:10,color:"#64748b",marginTop:2}}>{hubDisplayRole(s.role)}</div>}
             </div>
             <div style={{fontSize:12,color:"#38bdf8"}}>{s.phone||"—"}</div>
             <div style={{fontSize:12,color:"#94a3b8"}}>{s.location||"—"}</div>

@@ -177,6 +177,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
   const [medDMList,setMedDMList]=React.useState([]);
   const [medChatTab,setMedChatTab]=React.useState("channels");
   const myStatus=medSt[role==="Med 1"?"med1":"med2"]||{status:"available"};
+  const [reportDone,setReportDone]=React.useState(false);
   const myKey=role==="Med 1"?"med1":"med2";
   const otherRole=role==="Med 1"?"Med 2":"Med 1";
 
@@ -422,10 +423,8 @@ Madison Fire/EMS INBOUND — McPike Park`;
       {/* STATUS BAR */}
       <div style={{padding:"8px 16px 6px",display:"flex",gap:6}}>
         {[["available","⚪ Available"],["on_call","🟣 On Call"],["cleared","🟢 Cleared"]].map(([s,l])=>{
-          const isAvailLocked=s==="available"&&waitingReport&&!reportDone;
-          return(
-            <button key={s} style={{flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${myStatus.status===s?"rgba(245,158,11,0.6)":isAvailLocked?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.1)"}`,background:myStatus.status===s?"rgba(245,158,11,0.12)":isAvailLocked?"rgba(239,68,68,0.06)":"rgba(255,255,255,0.03)",color:myStatus.status===s?"#fcd34d":isAvailLocked?"#f87171":"#64748b",fontSize:11,fontWeight:700,cursor:isAvailLocked?"not-allowed":"pointer",opacity:isAvailLocked?0.5:1}} onClick={()=>{if(isAvailLocked){alert("Complete the incident report first before setting yourself Available.");return;}setMedStatus(s);if(s==="available")setReportDone(false);}}>{isAvailLocked?"🔒 Report First":l}</button>
-          );
+          const locked=s==="available"&&waitingReport&&!reportDone;
+          return <button key={s} style={{flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${myStatus.status===s?"rgba(245,158,11,0.6)":locked?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.1)"}`,background:myStatus.status===s?"rgba(245,158,11,0.12)":locked?"rgba(239,68,68,0.06)":"rgba(255,255,255,0.03)",color:myStatus.status===s?"#fcd34d":locked?"#fca5a5":"#64748b",fontSize:11,fontWeight:700,cursor:locked?"not-allowed":"pointer"}} onClick={()=>{if(locked){alert("Complete the incident report first.");return;}setMedStatus(s);}}>{locked?"🔒 Report First":l}</button>;
         })}
       </div>
 
@@ -1527,7 +1526,6 @@ function HubApp({onBack}){
                 onClick={()=>{
                   const msg911=`🚨 911 ACTIVATED — FDM 2026\n\nLocation: ${alertCall.location}\nCall: ${alertCall.problem}\nActivated by: ${role}\nTime: ${tShort()}\n\nMadison Fire / EMS INBOUND — McPike Park`;
                   set911({active:true,by:role,at:now(),callId:alertCall.id,info:{location:alertCall.location,nature:alertCall.problem}});
-                  // Show 911 popup on admin screen
                   setPopup911Data({location:alertCall.location,problem:alertCall.problem,by:role,at:tShort()});
                   setShow911Popup(true);
                   // SMS + Voice to Devin + Gary (admin)
@@ -2598,7 +2596,29 @@ Please respond immediately.
           btn.textContent="Send Onboarding Text";btn.disabled=false;
         }}>Send Onboarding Text →</button>
       </div>
+
+      {/* 911 POPUP */}
+      {show911Popup&&popup911Data&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",zIndex:9999}} onClick={()=>setShow911Popup(false)}>
+          <div style={{width:"100%",background:"#0d0d1a",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",display:"flex",flexDirection:"column",gap:14}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{fontSize:36}}>🚨</div>
+              <div><div style={{fontSize:20,fontWeight:900,color:"#fca5a5"}}>911 ACTIVATED</div><div style={{fontSize:13,color:"#64748b"}}>By {popup911Data.by} at {popup911Data.at}</div></div>
+            </div>
+            <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:12,padding:"14px"}}>
+              <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",marginBottom:4}}>📍 {popup911Data.location}</div>
+              <div style={{fontSize:14,color:"#e2e8f0"}}>{popup911Data.problem}</div>
+            </div>
+            <div style={{fontSize:14,color:"#fbbf24",fontWeight:700}}>⚠️ EMS and Fire are inbound. Clear the path.</div>
+            <button style={{padding:"16px",borderRadius:12,border:"none",background:"rgba(239,68,68,0.8)",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShow911Popup(false)}>✅ Acknowledged</button>
+          </div>
+        </div>
+      )}
     </div></div>
+  );
+
+  if(view==="chat") return(
+    <HubChatInbox
       myName={"Admin"}
       myRole={"Admin"}
       staffList={staffList}
@@ -2722,31 +2742,6 @@ Please respond immediately.
           </>
         )}
       </div>
-      {/* 911 POPUP OVERLAY */}
-      {show911Popup&&popup911Data&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",zIndex:9999}} onClick={()=>setShow911Popup(false)}>
-          <div style={{width:"100%",background:"#0d0d1a",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",display:"flex",flexDirection:"column",gap:14}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <div style={{fontSize:36}}>🚨</div>
-              <div>
-                <div style={{fontSize:20,fontWeight:900,color:"#fca5a5"}}>911 ACTIVATED</div>
-                <div style={{fontSize:13,color:"#64748b"}}>By {popup911Data.by} at {popup911Data.at}</div>
-              </div>
-            </div>
-            <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:12,padding:"14px"}}>
-              <div style={{fontSize:12,fontWeight:800,color:"#94a3b8",marginBottom:6,textTransform:"uppercase"}}>Call Details</div>
-              <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",marginBottom:4}}>📍 {popup911Data.location}</div>
-              <div style={{fontSize:14,color:"#e2e8f0"}}>{popup911Data.problem}</div>
-            </div>
-            <div style={{fontSize:14,color:"#fbbf24",fontWeight:700}}>⚠️ EMS and Fire are inbound. Clear the path.</div>
-            <button style={{padding:"16px",borderRadius:12,border:"none",background:"rgba(239,68,68,0.8)",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShow911Popup(false)}>✅ Acknowledged</button>
-          </div>
-        </div>
-      )}
-  );
-
-  if(view==="chat") return(
-    <HubChatInbox
     </div></div>
   );
 
@@ -2894,6 +2889,7 @@ Please respond immediately.
             // Send email to Admin
             const emailBody=`END OF NIGHT REPORT — ${report.date}\n\nTOTAL CALLS: ${report.totalCalls}\nMedical: ${report.callBreakdown.medical}\nFire/Safety: ${report.callBreakdown.fire}\nSecurity: ${report.callBreakdown.security}\nSupplies: ${report.callBreakdown.supplies}\nMaintenance: ${report.callBreakdown.maintenance}\nLost Child: ${report.callBreakdown.lostChild}\n\nLOST & FOUND (${lfItems.length} items):\n${lfItems.map(i=>`#${i.itemNumber}: ${i.description} (${i.status})`).join("\n")||"None"}\n\nBROADCASTS (${broadcastAlerts.length}):\n${broadcastAlerts.map(b=>b.label).join("\n")||"None"}\n\nNOTES:\n${endOfNightNotes||"None"}\n\nGenerated by ${role} at ${new Date().toLocaleString()}`;
             // Save to Airtable + SMS via dedicated function
+            fetch("/.netlify/functions/send-eod-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:report.date,totalCalls:report.totalCalls,callBreakdown:report.callBreakdown,lostFound:report.lostFound,broadcasts:report.broadcasts,notes:report.notes,generatedBy:role})}).catch(()=>{});
             fetch("/.netlify/functions/send-eod-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
               date:report.date,
               totalCalls:report.totalCalls,
@@ -2904,16 +2900,6 @@ Please respond immediately.
               generatedBy:role,
               generatedAt:report.generatedAt,
             })}).catch(e=>console.log(e));
-            // Also create Gmail draft
-            fetch("/.netlify/functions/send-eod-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-              date:report.date,
-              totalCalls:report.totalCalls,
-              callBreakdown:report.callBreakdown,
-              lostFound:report.lostFound,
-              broadcasts:report.broadcasts,
-              notes:report.notes,
-              generatedBy:role,
-            })}).catch(e=>console.log("email:",e));
             setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"report",label:"End of Night Report Generated",msg:`${report.totalCalls} calls · ${lfItems.length} L&F items`},...p]);
             setEndOfNightSent(true);
           }}>

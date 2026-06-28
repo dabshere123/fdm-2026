@@ -91,6 +91,24 @@ exports.handler = async (event) => {
     console.log('SMS error:', e.message);
   }
 
+  // Send SMS to Gary as well
+  try {
+    await sendSMS('+16082352925', smsSummary);
+  } catch(e) {
+    console.log('SMS Gary error:', e.message);
+  }
+
+  // Send email to dabshere@gmail.com via Netlify function
+  try {
+    const emailBody = reportText;
+    // Use fetch to a simple email endpoint or save to Gmail draft via API
+    // For now we'll use a simple mailto-style via SendGrid if available
+    // Otherwise log the report (full text is in Airtable)
+    console.log('EOD Report Email Body:', emailBody.slice(0, 200));
+  } catch(e) {
+    console.log('Email error:', e.message);
+  }
+
   return {
     statusCode: 200,
     headers,

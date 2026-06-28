@@ -597,7 +597,7 @@ function HubConversationView({myName,myRole,convo,onBack}){
             );
             return(
               <div key={msg.id} style={{display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
-                {!isMe&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{msg.fromRole||msg.fromName} · {time}</div>}
+                {!isMe&&<div style={{fontSize:10,color:"#64748b",marginLeft:4}}>{hubDisplayRole(msg.fromRole)||msg.fromName} · {time}</div>}
                 <div style={{maxWidth:"82%",background:isMe?"rgba(14,165,233,0.25)":"rgba(255,255,255,0.07)",border:`1px solid ${isMe?"rgba(14,165,233,0.5)":"rgba(255,255,255,0.1)"}`,borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"9px 13px"}}>
                   <div style={{fontSize:14,color:"#f1f5f9",lineHeight:1.5}}>{msg.message}</div>
                 </div>
@@ -722,7 +722,7 @@ function HubChatInbox({myName,myRole,staffList,onBack}){
                     <div style={{fontSize:11,color:"#475569",flexShrink:0,marginLeft:8}}>{timeAgo(c.lastAt)}</div>
                   </div>
                   <div style={{fontSize:13,color:"#64748b",textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>
-                    {c.lastFrom&&c.lastFrom!==myRole&&c.lastFrom!==myName?`${c.lastFrom}: `:""}{c.lastMessage}
+                    {c.lastFrom&&c.lastFrom!==myRole&&c.lastFrom!==myName?`${hubDisplayRole(c.lastFrom)||c.lastFrom}: `:""}{c.lastMessage}
                   </div>
                 </div>
               </button>

@@ -299,7 +299,7 @@ function ChatInbox({user,onBack}){
                   <div style={{fontSize:11,color:'#475569',flexShrink:0,marginLeft:8}}>{timeAgo(c.lastAt)}</div>
                 </div>
                 <div style={{fontSize:13,color:'#64748b',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}>
-                  {c.lastFrom&&c.lastFrom!==user.role&&c.lastFrom!==user.name?`${c.lastFrom}: `:''}{c.lastMessage}
+                  {c.lastFrom&&c.lastFrom!==user.role&&c.lastFrom!==user.name?`${displayRole(c.lastFrom)||c.lastFrom}: `:''}{c.lastMessage}
                 </div>
               </div>
             </button>

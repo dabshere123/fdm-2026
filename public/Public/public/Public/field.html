@@ -783,7 +783,7 @@ function ChatInbox({
         overflow: 'hidden',
         whiteSpace: 'nowrap'
       }
-    }, c.lastFrom && c.lastFrom !== user.role && c.lastFrom !== user.name ? `${c.lastFrom}: ` : '', c.lastMessage)));
+    }, c.lastFrom && c.lastFrom !== user.role && c.lastFrom !== user.name ? `${displayRole(c.lastFrom) || c.lastFrom}: ` : '', c.lastMessage)));
   })));
 }
 function ConversationView({

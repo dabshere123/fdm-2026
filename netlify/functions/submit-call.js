@@ -87,18 +87,14 @@ exports.handler = async (event) => {
       }
     }
 
-    // Lost child: broadcast structured alert to AllStaff so all worker apps show full-screen alert
+    // Lost child: SMS + Voice ALL staff + broadcast to AllStaff chat
     if (type === 'lost_child') {
       const ts = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
-      // Use JSON in the message so worker apps can parse structured data
       const alertMsg = JSON.stringify({
-        _lostChild: true,
-        location: location || '',
-        problem: problem || '',
-        details: details || '',
-        reportedBy: requestedBy || 'Staff',
-        at: ts,
+        _lostChild: true, location: location || '', problem: problem || '',
+        details: details || '', reportedBy: requestedBy || 'Staff', at: ts,
       });
+      // Save to AllStaff channel so worker apps show full-screen alert
       await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/Messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
@@ -108,6 +104,55 @@ exports.handler = async (event) => {
           IsAlert: 'Yes', IsDM: 'No', IsFirst: 'No',
         }})
       }).catch(() => {});
+
+      // SMS + Voice to ALL approved staff
+      const smsTxt = `🚨 LOST CHILD ALERT — FDM 2026
+
+Location: ${location}
+${problem}
+Reported by: ${requestedBy} at ${ts}
+
+Search your area immediately — notify admin if found.
+McPike Park`;
+      const voiceTxt = `Urgent alert at Fête de Marquette. A child has been reported missing. Last seen at ${location}. ${problem}. All staff please search your area immediately and contact admin if found.`;
+
+      try {
+        // Get all approved staff phones
+        const staffRes = await fetch(
+          `https://api.airtable.com/v0/${AIRTABLE_BASE}/Staff?filterByFormula={Status}="Approved"&maxRecords=200`,
+          { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+        );
+        const staffData = await staffRes.json();
+        const allPhones = [...new Set([
+          ...ADMIN_PHONES,
+          ...(staffData.records || []).map(r => {
+            const ph = String(r.fields['Phone'] || '').replace(/[^0-9]/g, '');
+            return ph.length === 10 ? `+1${ph}` : ph.length === 11 ? `+${ph}` : null;
+          }).filter(Boolean)
+        ])];
+
+        const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
+        // SMS to everyone
+        for (const ph of allPhones) {
+          await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+            method: 'POST',
+            headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ To: ph, MessagingServiceSid: MESSAGING_SID, Body: smsTxt }).toString()
+          }).catch(() => {});
+        }
+        // Voice call to admin + first 10 staff (to avoid too many simultaneous calls)
+        const voicePhones = allPhones.slice(0, 10);
+        for (const ph of voicePhones) {
+          const twiml = `<Response><Say voice="alice">${voiceTxt}</Say><Pause length="1"/><Say voice="alice">${voiceTxt}</Say></Response>`;
+          await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
+            method: 'POST',
+            headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
+          }).catch(() => {});
+        }
+      } catch (e) {
+        console.error('Lost child SMS error:', e.message);
+      }
     }
 
     console.log('Call saved:', data.id, type, location);

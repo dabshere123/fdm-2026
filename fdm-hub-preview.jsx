@@ -383,8 +383,12 @@ Madison Fire/EMS INBOUND — McPike Park`;
               {isOnScene&&<div style={{textAlign:"center",padding:"10px",color:"#4ade80",fontWeight:700,fontSize:14}}>✅ On Scene — You are at the location</div>}
 
               {!nineOneOneActive&&(
+                <div style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,padding:"10px 12px",marginBottom:4}}>
+                  <div style={{fontSize:12,fontWeight:800,color:"#fca5a5",marginBottom:3}}>⚠️ IMPORTANT</div>
+                  <div style={{fontSize:12,color:"#fecaca",lineHeight:1.5}}>This button notifies admin and other med units of a 911 activation. <strong style={{color:"#f87171"}}>YOU MUST CALL 911 YOURSELF</strong> — this does NOT automatically contact emergency services.</div>
+                </div>
                 <button style={{width:"100%",padding:"16px",borderRadius:12,border:"2px solid rgba(239,68,68,0.6)",background:"rgba(239,68,68,0.12)",color:"#fca5a5",fontSize:16,fontWeight:900,cursor:"pointer"}} onClick={()=>setShowMeetupModal(true)}>
-                  🚨 Activate 911
+                  🚨 Activate 911 — Notify Admin & Med
                 </button>
               )}
 
@@ -440,7 +444,22 @@ Madison Fire/EMS INBOUND — McPike Park`;
         </button>
       </div>
 
-            {/* NEW CALL BUTTON */}
+            {/* SAFETY SECTION */}
+      <div style={{padding:"6px 16px 4px"}}>
+        <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"12px",marginBottom:10}}>
+          <div style={{fontSize:10,fontWeight:900,color:"#475569",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Safety</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <button style={{width:"100%",padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:10}} onClick={()=>setMpdRequestView(true)}>
+              <span>🚔</span> Request MPD Officer
+            </button>
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});}}}>
+              {nineOneOne.active?"🚨 911 ACTIVE":"🚨 911 Activation"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* NEW CALL BUTTON */}
       <div style={{padding:"6px 16px 4px"}}>
         <button style={{width:"100%",padding:"16px",borderRadius:14,border:"2px solid rgba(147,51,234,0.7)",background:"linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 0 16px rgba(147,51,234,0.2)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
           <span style={{fontSize:26}}>🏥</span>

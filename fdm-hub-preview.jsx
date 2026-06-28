@@ -3429,6 +3429,11 @@ Please respond immediately.
 
 
 
+            {/* REQUEST MPD BUTTON — admin only */}
+            {isAdmin&&<button style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>setMpdRequestView(true)}>
+              🚔 Request MPD Officer
+            </button>}
+
             {/* 911 COMPACT BUTTON */}
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨
 

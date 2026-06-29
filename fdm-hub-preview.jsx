@@ -2757,7 +2757,7 @@ Reply YES to acknowledge.`
         <div style={{display:"flex",gap:6}}>
           <button style={{background:"rgba(249,115,22,0.15)",border:"1px solid rgba(249,115,22,0.4)",borderRadius:8,padding:"6px 12px",color:"#fb923c",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(true)}>+ Add Item</button>
           <button style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"6px 10px",color:"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async(e)=>{
-            if(!window.confirm("Mark ALL L&F items as Claimed? This clears the list.")) return;
+            if(!window.confirm("Mark ALL Unclaimed L&F items as Claimed? This clears the list.")) return;
             const unclaimed=lfItems.filter(i=>i.status!=="Claimed");
             for(const item of unclaimed){
               await fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status:"Claimed"})}).catch(()=>{});

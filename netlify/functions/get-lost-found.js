@@ -22,7 +22,7 @@ exports.handler = async (event) => {
       currentLocation: r.fields.CurrentLocation || '',
       dayFound: r.fields.DayFound || '',
       foundBy: r.fields.FoundBy || '',
-      status: r.fields.Status || 'Found',
+      status: r.fields.Status || 'Unclaimed',
       photoData: r.fields.PhotoData || '',
       atFestOffice: r.fields.AtFestOffice || 'No',
       claimantName: r.fields.ClaimantName || '',

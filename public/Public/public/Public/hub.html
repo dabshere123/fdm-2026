@@ -7737,7 +7737,7 @@ Reply YES to acknowledge.`
       cursor: "pointer"
     },
     onClick: async e => {
-      if (!window.confirm("Mark ALL L&F items as Claimed? This clears the list.")) return;
+      if (!window.confirm("Mark ALL Unclaimed L&F items as Claimed? This clears the list.")) return;
       const unclaimed = lfItems.filter(i => i.status !== "Claimed");
       for (const item of unclaimed) {
         await fetch("/.netlify/functions/update-lost-found", {

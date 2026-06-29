@@ -56,7 +56,7 @@ exports.handler = async (event) => {
       CurrentLocation: currentLocation || 'With finder',
       DayFound:        dayFound || 'Unknown',
       FoundBy:         foundBy || 'Staff',
-      Status:          'Found',
+      Status:          'Unclaimed',
       ItemNumber:      itemNumber,
       PhotoData:       safePhoto,
       AtFestOffice:    atFestOffice || 'No',
@@ -68,7 +68,7 @@ exports.handler = async (event) => {
       CurrentLocation: currentLocation || 'With finder',
       DayFound:        dayFound || 'Unknown',
       FoundBy:         foundBy || 'Staff',
-      Status:          'Found',
+      Status:          'Unclaimed',
       ItemNumber:      itemNumber,
     };
 

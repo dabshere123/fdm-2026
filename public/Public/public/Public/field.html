@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0a0a14"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
+<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
   useState,
   useEffect,
   useRef
@@ -1467,21 +1467,23 @@ function LFView({
   user,
   onBack
 }) {
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [currentLoc, setCurrentLoc] = useState(user.location || '');
-  const [day, setDay] = useState('');
-  const [sending, setSending] = useState(false);
-  const [step, setStep] = useState('form'); // form | photo | confirm | done
-  const [itemNumber, setItemNumber] = useState('');
-  const [photo, setPhoto] = useState(null); // base64 data URL
-  const photoRef = useRef(null);
-  function compressImage(file, cb) {
-    const reader = new FileReader();
-    reader.onload = e => {
+  const [step, setStep] = React.useState('form');
+  const [photo, setPhoto] = React.useState(null);
+  const [description, setDescription] = React.useState('');
+  const [foundAt, setFoundAt] = React.useState('');
+  const [day, setDay] = React.useState('');
+  const [currentLoc, setCurrentLoc] = React.useState(user.location || '');
+  const [sending, setSending] = React.useState(false);
+  const [itemNumber, setItemNumber] = React.useState('');
+  const [saveError, setSaveError] = React.useState('');
+  const photoRef = React.useRef(null);
+  const DAYS = ['Thursday', 'Friday', 'Saturday', 'Sunday'];
+  function compressPhoto(file, cb) {
+    const r = new FileReader();
+    r.onload = e => {
       const img = new Image();
       img.onload = () => {
-        const MAX = 600; // Keep small for Airtable field limit
+        const MAX = 700;
         let w = img.width,
           h = img.height;
         if (w > MAX || h > MAX) {
@@ -1493,19 +1495,20 @@ function LFView({
             h = MAX;
           }
         }
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        cb(canvas.toDataURL('image/jpeg', 0.6)); // More compressed
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        cb(c.toDataURL('image/jpeg', 0.65));
       };
       img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
   }
   async function submit() {
-    if (!description || !location || !photo) return;
+    if (!photo || !description || !foundAt) return;
     setSending(true);
+    setSaveError('');
     try {
       const res = await fetch(`${API}/submit-lost-found`, {
         method: 'POST',
@@ -1514,8 +1517,8 @@ function LFView({
         },
         body: JSON.stringify({
           description,
-          foundAt: location,
-          currentLocation: currentLoc,
+          foundAt,
+          currentLocation: currentLoc || foundAt,
           dayFound: day,
           foundBy: user.name,
           role: user.role,
@@ -1524,19 +1527,124 @@ function LFView({
       });
       const data = await res.json();
       setItemNumber(data.itemNumber || '???');
-      if (data.airtableError) {
-        console.warn('Airtable save failed:', data.airtableError);
-        setAirtableErr(data.airtableError);
-      }
+      if (data.airtableError) setSaveError(data.airtableError);
       setStep('confirm');
     } catch (e) {
-      setItemNumber('ERR');
-      alert('Submit failed: ' + e.message);
+      setSaveError(e.message);
+      setStep('confirm');
     }
     setSending(false);
   }
 
-  // STEP: DONE confirmation
+  // CONFIRM POPUP
+  if (step === 'confirm') return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.root,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px 20px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(13,13,26,0.97)',
+      border: '2px solid rgba(249,115,22,0.5)',
+      borderRadius: 20,
+      padding: '28px 20px',
+      width: '100%',
+      maxWidth: 380,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 16,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 56
+    }
+  }, '📦'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 900,
+      color: '#f1f5f9'
+    }
+  }, 'Item Logged!'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(249,115,22,0.12)',
+      border: '2px solid rgba(249,115,22,0.5)',
+      borderRadius: 14,
+      padding: '16px 20px',
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 6
+    }
+  }, 'Tag Number'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 32,
+      fontWeight: 900,
+      color: '#fb923c',
+      letterSpacing: '0.04em'
+    }
+  }, itemNumber)), saveError && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(239,68,68,0.1)',
+      border: '1px solid rgba(239,68,68,0.3)',
+      borderRadius: 10,
+      padding: '10px 14px',
+      fontSize: 12,
+      color: '#fca5a5',
+      width: '100%'
+    }
+  }, '⚠️ Item tagged but NOT saved to lookup. Error: ' + saveError.slice(0, 100)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 12,
+      padding: '14px 16px',
+      width: '100%',
+      textAlign: 'left'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 800,
+      color: '#f1f5f9',
+      marginBottom: 8
+    }
+  }, '📝 Next Steps:'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: '#94a3b8',
+      lineHeight: 1.7
+    }
+  }, '1. Write ', /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: '#fb923c'
+    }
+  }, itemNumber), ' on a piece of tape\n2. Attach tag to the item\n3. Place item in the Lost & Found box\n4. Devin will collect it each night')), /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: '100%',
+      padding: '14px',
+      borderRadius: 12,
+      border: 'none',
+      background: 'linear-gradient(135deg,#16a34a,#15803d)',
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: 'pointer'
+    },
+    onClick: () => {
+      setStep('done');
+    }
+  }, '✅ Done — Item Boxed')));
   if (step === 'done') return /*#__PURE__*/React.createElement("div", {
     style: {
       ...S.root,
@@ -1552,18 +1660,18 @@ function LFView({
     style: {
       fontSize: 52
     }
-  }, "✅"), /*#__PURE__*/React.createElement("div", {
+  }, '✅'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 900,
       color: '#4ade80'
     }
-  }, "Item Tagged & Boxed"), /*#__PURE__*/React.createElement("div", {
+  }, 'Item in the Box!'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: '#64748b'
     }
-  }, "Item #", itemNumber, " is in the Lost & Found"), /*#__PURE__*/React.createElement("button", {
+  }, 'Tag #' + itemNumber + ' · Devin collects nightly'), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: '12px 24px',
       borderRadius: 10,
@@ -1575,121 +1683,10 @@ function LFView({
       cursor: 'pointer'
     },
     onClick: onBack
-  }, "← Back to Home"));
+  }, '← Back to Home'));
 
-  // STEP: CONFIRM — show item number, instruct to tag and box
-  if (step === 'confirm') return /*#__PURE__*/React.createElement("div", {
-    style: {
-      ...S.root,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column',
-      gap: 16,
-      padding: 24,
-      textAlign: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 52
-    }
-  }, "📦"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 20,
-      fontWeight: 900,
-      color: '#f1f5f9'
-    }
-  }, "Item Logged!"), airtableErr && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'rgba(239,68,68,0.1)',
-      border: '1px solid rgba(239,68,68,0.3)',
-      borderRadius: 10,
-      padding: '12px 14px',
-      fontSize: 12,
-      color: '#fca5a5',
-      width: '100%'
-    }
-  }, "⚠️ Item tagged but NOT saved to lookup.", /*#__PURE__*/React.createElement("br", null), "Airtable error: ", airtableErr.slice(0, 120)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: '100%',
-      background: 'rgba(249,115,22,0.12)',
-      border: '2px solid rgba(249,115,22,0.5)',
-      borderRadius: 14,
-      padding: '20px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 8,
-      alignItems: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 800,
-      color: '#94a3b8',
-      letterSpacing: '0.1em',
-      textTransform: 'uppercase'
-    }
-  }, "Item Number"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 40,
-      fontWeight: 900,
-      color: '#fb923c'
-    }
-  }, itemNumber)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 12,
-      padding: '16px',
-      width: '100%',
-      textAlign: 'left',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 800,
-      color: '#f1f5f9'
-    }
-  }, "Next Steps:"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      color: '#e2e8f0'
-    }
-  }, "1. Write ", /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: '#fb923c'
-    }
-  }, "#", itemNumber), " on the tag"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      color: '#e2e8f0'
-    }
-  }, "2. Attach tag securely to the item"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      color: '#e2e8f0'
-    }
-  }, "3. Place item in the ", /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: '#fb923c'
-    }
-  }, "Lost & Found box"))), /*#__PURE__*/React.createElement("button", {
-    style: {
-      width: '100%',
-      padding: '18px',
-      borderRadius: 12,
-      border: 'none',
-      background: 'linear-gradient(135deg,rgba(34,197,94,0.8),rgba(16,185,129,0.8))',
-      color: '#fff',
-      fontSize: 17,
-      fontWeight: 900,
-      cursor: 'pointer'
-    },
-    onClick: () => setStep('done')
-  }, "✅ Done — Item Tagged & In Box"));
+  // MAIN FORM
+  const canSubmit = photo && description.trim() && foundAt.trim() && !sending;
   return /*#__PURE__*/React.createElement("div", {
     style: S.root
   }, /*#__PURE__*/React.createElement("div", {
@@ -1698,93 +1695,47 @@ function LFView({
     onBack: onBack
   }), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: 900
     }
-  }, "Log Found Item")), /*#__PURE__*/React.createElement("div", {
-    style: S.body
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, '📋 Log Lost Item')), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      fontWeight: 800,
-      color: '#64748b',
-      textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      marginBottom: 6
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 14,
+      overflowY: 'auto',
+      paddingBottom: 32
     }
-  }, "Day Found"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
-      gap: 6
+      flexDirection: 'column',
+      gap: 8
     }
-  }, ['Thu', 'Fri', 'Sat', 'Sun'].map(d => /*#__PURE__*/React.createElement("button", {
-    key: d,
-    style: {
-      flex: 1,
-      padding: '10px 4px',
-      borderRadius: 8,
-      border: `1px solid ${day === d ? 'rgba(14,165,233,0.5)' : 'rgba(255,255,255,0.1)'}`,
-      background: day === d ? 'rgba(14,165,233,0.1)' : 'rgba(255,255,255,0.03)',
-      color: day === d ? '#38bdf8' : '#64748b',
-      fontSize: 12,
-      fontWeight: 700,
-      cursor: 'pointer'
-    },
-    onClick: () => setDay(d)
-  }, d)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      fontWeight: 800,
-      color: '#64748b',
+      fontWeight: 900,
+      color: photo ? '#4ade80' : '#f97316',
       textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      marginBottom: 6
+      letterSpacing: '0.08em'
     }
-  }, "Where Was It Found?"), /*#__PURE__*/React.createElement("input", {
-    style: S.inp,
-    placeholder: "e.g. Near Moon Stage",
-    value: location,
-    onChange: e => setLocation(e.target.value)
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, photo ? '✅ Photo Captured' : '📷 Photo Required *'), photo ? /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      fontWeight: 800,
-      color: '#64748b',
-      textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      marginBottom: 6
-    }
-  }, "Description"), /*#__PURE__*/React.createElement("textarea", {
-    style: {
-      ...S.inp,
-      minHeight: 80,
-      resize: 'none'
-    },
-    placeholder: "Describe the item in detail...",
-    value: description,
-    onChange: e => setDescription(e.target.value)
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 800,
-      color: photo ? '#4ade80' : '#ef4444',
-      textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      marginBottom: 8
-    }
-  }, "📷 Photo ", photo ? '✅ Captured' : '— Required'), photo ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative'
+      position: 'relative',
+      borderRadius: 12,
+      overflow: 'hidden',
+      border: '2px solid rgba(34,197,94,0.4)'
     }
   }, /*#__PURE__*/React.createElement("img", {
     src: photo,
-    alt: "Found item",
+    alt: "item",
     style: {
       width: '100%',
-      borderRadius: 12,
-      border: '2px solid rgba(34,197,94,0.4)',
       maxHeight: 220,
-      objectFit: 'cover'
+      objectFit: 'cover',
+      display: 'block'
     }
   }), /*#__PURE__*/React.createElement("button", {
     style: {
@@ -1792,43 +1743,43 @@ function LFView({
       top: 8,
       right: 8,
       background: 'rgba(0,0,0,0.7)',
-      border: 'none',
+      border: '1px solid rgba(255,255,255,0.2)',
       borderRadius: 8,
       color: '#f1f5f9',
+      padding: '6px 10px',
       fontSize: 12,
-      fontWeight: 700,
-      cursor: 'pointer',
-      padding: '4px 10px'
+      cursor: 'pointer'
     },
     onClick: () => setPhoto(null)
-  }, "Retake")) : /*#__PURE__*/React.createElement("label", {
+  }, 'Retake')) : /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'block',
-      padding: '24px',
+      background: 'rgba(249,115,22,0.06)',
+      border: '2px dashed rgba(249,115,22,0.4)',
       borderRadius: 12,
-      border: '2px dashed rgba(239,68,68,0.4)',
-      background: 'rgba(239,68,68,0.05)',
-      textAlign: 'center',
+      padding: '32px 20px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 10,
       cursor: 'pointer'
-    }
+    },
+    onClick: () => photoRef.current?.click()
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 32,
-      marginBottom: 8
+      fontSize: 40
     }
-  }, "📸"), /*#__PURE__*/React.createElement("div", {
+  }, '📷'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 700,
-      color: '#fca5a5'
+      color: '#fb923c'
     }
-  }, "Tap to take photo"), /*#__PURE__*/React.createElement("div", {
+  }, 'Tap to Take Photo'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: '#64748b',
-      marginTop: 4
+      color: '#64748b'
     }
-  }, "Photo is required to log item"), /*#__PURE__*/React.createElement("input", {
+  }, 'Required before submitting')), /*#__PURE__*/React.createElement("input", {
     ref: photoRef,
     type: "file",
     accept: "image/*",
@@ -1837,26 +1788,135 @@ function LFView({
       display: 'none'
     },
     onChange: e => {
-      if (e.target.files[0]) compressImage(e.target.files[0], setPhoto);
+      if (e.target.files[0]) compressPhoto(e.target.files[0], setPhoto);
     }
-  }))), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '16px',
+      fontSize: 11,
+      fontWeight: 900,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 6
+    }
+  }, 'Description *'), /*#__PURE__*/React.createElement("textarea", {
+    style: {
+      width: '100%',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      padding: '13px',
+      color: '#f1f5f9',
+      fontSize: 15,
+      fontFamily: 'inherit',
+      outline: 'none',
+      resize: 'none',
+      minHeight: 80
+    },
+    placeholder: "e.g. Black iPhone 14, cracked screen · Blue Hydro Flask, green lid · Car keys, Toyota fob",
+    value: description,
+    onChange: e => setDescription(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 6
+    }
+  }, 'Where Was It Found? *'), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      padding: '13px',
+      color: '#f1f5f9',
+      fontSize: 15,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. Moon Bar near east exit, Sun Stage left side",
+    value: foundAt,
+    onChange: e => setFoundAt(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 8
+    }
+  }, 'Day Found'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 8
+    }
+  }, DAYS.map(d => /*#__PURE__*/React.createElement("button", {
+    key: d,
+    style: {
+      padding: '12px',
+      borderRadius: 10,
+      border: day === d ? '2px solid #fb923c' : '1px solid rgba(255,255,255,0.1)',
+      background: day === d ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.04)',
+      color: day === d ? '#fb923c' : '#94a3b8',
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: 'pointer'
+    },
+    onClick: () => setDay(day === d ? '' : d)
+  }, d)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 6
+    }
+  }, 'Where Is It Now?'), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      padding: '13px',
+      color: '#f1f5f9',
+      fontSize: 15,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. With me at Moon Bar, Admin Tent",
+    value: currentLoc,
+    onChange: e => setCurrentLoc(e.target.value)
+  })), !photo && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(249,115,22,0.07)',
+      border: '1px solid rgba(249,115,22,0.2)',
+      borderRadius: 10,
+      padding: '10px 14px',
+      fontSize: 12,
+      color: '#fb923c',
+      textAlign: 'center'
+    }
+  }, '📷 Take a photo to enable submit'), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: '18px',
       borderRadius: 12,
       border: 'none',
-      background: !description || !location || !photo || sending ? 'rgba(255,255,255,0.06)' : 'rgba(249,115,22,0.85)',
-      color: !description || !location || !photo || sending ? '#475569' : '#fff',
+      background: canSubmit ? 'linear-gradient(135deg,#ea580c,#c2410c)' : 'rgba(255,255,255,0.06)',
+      color: canSubmit ? '#fff' : '#475569',
       fontSize: 16,
       fontWeight: 900,
-      cursor: !description || !location || !photo || sending ? 'not-allowed' : 'pointer',
-      transition: 'all 0.2s'
+      cursor: canSubmit ? 'pointer' : 'not-allowed'
     },
-    disabled: !description || !location || !photo || sending,
+    disabled: !canSubmit,
     onClick: submit
-  }, sending ? 'Logging...' : `Log Item ${!photo ? '(Photo Required)' : !description ? '(Add Description)' : !location ? '(Add Location)' : ''}`)));
+  }, sending ? 'Saving...' : '📦 Submit & Get Tag Number')));
 }
-
-// ── OVERNIGHT VIEW ───────────────────────────────────────────
 function OvernightView({
   user,
   onLogout

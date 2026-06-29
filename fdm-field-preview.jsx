@@ -574,131 +574,145 @@ function ChatView({user,onBack}){
 
 // ── LOST & FOUND FORM ────────────────────────────────────────
 function LFView({user,onBack}){
-  const [description,setDescription]=useState('');
-  const [location,setLocation]=useState('');
-  const [currentLoc,setCurrentLoc]=useState(user.location||'');
-  const [day,setDay]=useState('');
-  const [sending,setSending]=useState(false);
-  const [step,setStep]=useState('form'); // form | photo | confirm | done
-  const [itemNumber,setItemNumber]=useState('');
-  const [photo,setPhoto]=useState(null); // base64 data URL
-  const photoRef=useRef(null);
+  const [step,setStep]=React.useState('form');
+  const [photo,setPhoto]=React.useState(null);
+  const [description,setDescription]=React.useState('');
+  const [foundAt,setFoundAt]=React.useState('');
+  const [day,setDay]=React.useState('');
+  const [currentLoc,setCurrentLoc]=React.useState(user.location||'');
+  const [sending,setSending]=React.useState(false);
+  const [itemNumber,setItemNumber]=React.useState('');
+  const [saveError,setSaveError]=React.useState('');
+  const photoRef=React.useRef(null);
+  const DAYS=['Thursday','Friday','Saturday','Sunday'];
 
-  function compressImage(file,cb){
-    const reader=new FileReader();
-    reader.onload=e=>{
+  function compressPhoto(file,cb){
+    const r=new FileReader();
+    r.onload=e=>{
       const img=new Image();
       img.onload=()=>{
-        const MAX=600; // Keep small for Airtable field limit
+        const MAX=700;
         let w=img.width,h=img.height;
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-        const canvas=document.createElement('canvas');
-        canvas.width=w;canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        cb(canvas.toDataURL('image/jpeg',0.6)); // More compressed
+        const c=document.createElement('canvas');
+        c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        cb(c.toDataURL('image/jpeg',0.65));
       };
       img.src=e.target.result;
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
   }
 
   async function submit(){
-    if(!description||!location||!photo) return;
-    setSending(true);
+    if(!photo||!description||!foundAt) return;
+    setSending(true);setSaveError('');
     try{
-      const res=await fetch(`${API}/submit-lost-found`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description,foundAt:location,currentLocation:currentLoc,dayFound:day,foundBy:user.name,role:user.role,photoData:photo})});
+      const res=await fetch(`${API}/submit-lost-found`,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({description,foundAt,currentLocation:currentLoc||foundAt,dayFound:day,foundBy:user.name,role:user.role,photoData:photo})});
       const data=await res.json();
       setItemNumber(data.itemNumber||'???');
-      if(data.airtableError){
-        console.warn('Airtable save failed:',data.airtableError);
-        setAirtableErr(data.airtableError);
-      }
+      if(data.airtableError) setSaveError(data.airtableError);
       setStep('confirm');
-    }catch(e){
-      setItemNumber('ERR');
-      alert('Submit failed: '+e.message);
-    }
+    }catch(e){setSaveError(e.message);setStep('confirm');}
     setSending(false);
   }
 
-  // STEP: DONE confirmation
+  // CONFIRM POPUP
+  if(step==='confirm') return(
+    <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',padding:'24px 20px'}}>
+      <div style={{background:'rgba(13,13,26,0.97)',border:'2px solid rgba(249,115,22,0.5)',borderRadius:20,padding:'28px 20px',width:'100%',maxWidth:380,display:'flex',flexDirection:'column',alignItems:'center',gap:16,textAlign:'center'}}>
+        <div style={{fontSize:56}}>{'📦'}</div>
+        <div style={{fontSize:22,fontWeight:900,color:'#f1f5f9'}}>{'Item Logged!'}</div>
+        <div style={{background:'rgba(249,115,22,0.12)',border:'2px solid rgba(249,115,22,0.5)',borderRadius:14,padding:'16px 20px',width:'100%'}}>
+          <div style={{fontSize:12,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{'Tag Number'}</div>
+          <div style={{fontSize:32,fontWeight:900,color:'#fb923c',letterSpacing:'0.04em'}}>{itemNumber}</div>
+        </div>
+        {saveError&&<div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,padding:'10px 14px',fontSize:12,color:'#fca5a5',width:'100%'}}>{'⚠️ Item tagged but NOT saved to lookup. Error: '+saveError.slice(0,100)}</div>}
+        <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:12,padding:'14px 16px',width:'100%',textAlign:'left'}}>
+          <div style={{fontSize:13,fontWeight:800,color:'#f1f5f9',marginBottom:8}}>{'📝 Next Steps:'}</div>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            {'1. Write '}<strong style={{color:'#fb923c'}}>{itemNumber}</strong>{' on a piece of tape\n2. Attach tag to the item\n3. Place item in the Lost & Found box\n4. Devin will collect it each night'}
+          </div>
+        </div>
+        <button style={{width:'100%',padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'#fff',fontSize:15,fontWeight:900,cursor:'pointer'}} onClick={()=>{setStep('done');}}>{'✅ Done — Item Boxed'}</button>
+      </div>
+    </div>
+  );
+
   if(step==='done') return(
     <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:32,textAlign:'center'}}>
-      <div style={{fontSize:52}}>✅</div>
-      <div style={{fontSize:18,fontWeight:900,color:'#4ade80'}}>Item Tagged & Boxed</div>
-      <div style={{fontSize:13,color:'#64748b'}}>Item #{itemNumber} is in the Lost & Found</div>
-      <button style={{padding:'12px 24px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={onBack}>← Back to Home</button>
+      <div style={{fontSize:52}}>{'✅'}</div>
+      <div style={{fontSize:18,fontWeight:900,color:'#4ade80'}}>{'Item in the Box!'}</div>
+      <div style={{fontSize:13,color:'#64748b'}}>{'Tag #'+itemNumber+' · Devin collects nightly'}</div>
+      <button style={{padding:'12px 24px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={onBack}>{'← Back to Home'}</button>
     </div>
   );
 
-  // STEP: CONFIRM — show item number, instruct to tag and box
-  if(step==='confirm') return(
-    <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:24,textAlign:'center'}}>
-      <div style={{fontSize:52}}>📦</div>
-      <div style={{fontSize:20,fontWeight:900,color:'#f1f5f9'}}>Item Logged!</div>
-      {airtableErr&&<div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,padding:'12px 14px',fontSize:12,color:'#fca5a5',width:'100%'}}>⚠️ Item tagged but NOT saved to lookup.<br/>Airtable error: {airtableErr.slice(0,120)}</div>}
-      <div style={{width:'100%',background:'rgba(249,115,22,0.12)',border:'2px solid rgba(249,115,22,0.5)',borderRadius:14,padding:'20px',display:'flex',flexDirection:'column',gap:8,alignItems:'center'}}>
-        <div style={{fontSize:11,fontWeight:800,color:'#94a3b8',letterSpacing:'0.1em',textTransform:'uppercase'}}>Item Number</div>
-        <div style={{fontSize:40,fontWeight:900,color:'#fb923c'}}>{itemNumber}</div>
-      </div>
-      <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:'16px',width:'100%',textAlign:'left',display:'flex',flexDirection:'column',gap:8}}>
-        <div style={{fontSize:15,fontWeight:800,color:'#f1f5f9'}}>Next Steps:</div>
-        <div style={{fontSize:14,color:'#e2e8f0'}}>1. Write <strong style={{color:'#fb923c'}}>#{itemNumber}</strong> on the tag</div>
-        <div style={{fontSize:14,color:'#e2e8f0'}}>2. Attach tag securely to the item</div>
-        <div style={{fontSize:14,color:'#e2e8f0'}}>3. Place item in the <strong style={{color:'#fb923c'}}>Lost & Found box</strong></div>
-      </div>
-      <button style={{width:'100%',padding:'18px',borderRadius:12,border:'none',background:'linear-gradient(135deg,rgba(34,197,94,0.8),rgba(16,185,129,0.8))',color:'#fff',fontSize:17,fontWeight:900,cursor:'pointer'}} onClick={()=>setStep('done')}>
-        ✅ Done — Item Tagged & In Box
-      </button>
-    </div>
-  );
-
+  // MAIN FORM
+  const canSubmit=photo&&description.trim()&&foundAt.trim()&&!sending;
   return(
     <div style={S.root}>
       <div style={S.hdr}>
         <BackBtn onBack={onBack}/>
-        <div style={{fontSize:16,fontWeight:900}}>Log Found Item</div>
+        <div style={{fontSize:15,fontWeight:900}}>{'📋 Log Lost Item'}</div>
       </div>
-      <div style={S.body}>
+      <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:14,overflowY:'auto',paddingBottom:32}}>
+
+        {/* PHOTO — REQUIRED FIRST */}
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          <div style={{fontSize:11,fontWeight:900,color:photo?'#4ade80':'#f97316',textTransform:'uppercase',letterSpacing:'0.08em'}}>
+            {photo?'✅ Photo Captured':'📷 Photo Required *'}
+          </div>
+          {photo?(
+            <div style={{position:'relative',borderRadius:12,overflow:'hidden',border:'2px solid rgba(34,197,94,0.4)'}}>
+              <img src={photo} alt="item" style={{width:'100%',maxHeight:220,objectFit:'cover',display:'block'}}/>
+              <button style={{position:'absolute',top:8,right:8,background:'rgba(0,0,0,0.7)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,color:'#f1f5f9',padding:'6px 10px',fontSize:12,cursor:'pointer'}} onClick={()=>setPhoto(null)}>{'Retake'}</button>
+            </div>
+          ):(
+            <div style={{background:'rgba(249,115,22,0.06)',border:'2px dashed rgba(249,115,22,0.4)',borderRadius:12,padding:'32px 20px',display:'flex',flexDirection:'column',alignItems:'center',gap:10,cursor:'pointer'}} onClick={()=>photoRef.current?.click()}>
+              <div style={{fontSize:40}}>{'📷'}</div>
+              <div style={{fontSize:14,fontWeight:700,color:'#fb923c'}}>{'Tap to Take Photo'}</div>
+              <div style={{fontSize:12,color:'#64748b'}}>{'Required before submitting'}</div>
+            </div>
+          )}
+          <input ref={photoRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{if(e.target.files[0]) compressPhoto(e.target.files[0],setPhoto);}}/>
+        </div>
+
+        {/* DESCRIPTION */}
         <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Day Found</div>
-          <div style={{display:'flex',gap:6}}>
-            {['Thu','Fri','Sat','Sun'].map(d=>(
-              <button key={d} style={{flex:1,padding:'10px 4px',borderRadius:8,border:`1px solid ${day===d?'rgba(14,165,233,0.5)':'rgba(255,255,255,0.1)'}`,background:day===d?'rgba(14,165,233,0.1)':'rgba(255,255,255,0.03)',color:day===d?'#38bdf8':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer'}} onClick={()=>setDay(d)}>{d}</button>
+          <div style={{fontSize:11,fontWeight:900,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{'Description *'}</div>
+          <textarea style={{width:'100%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,padding:'13px',color:'#f1f5f9',fontSize:15,fontFamily:'inherit',outline:'none',resize:'none',minHeight:80}} placeholder="e.g. Black iPhone 14, cracked screen · Blue Hydro Flask, green lid · Car keys, Toyota fob" value={description} onChange={e=>setDescription(e.target.value)}/>
+        </div>
+
+        {/* WHERE FOUND */}
+        <div>
+          <div style={{fontSize:11,fontWeight:900,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{'Where Was It Found? *'}</div>
+          <input style={{width:'100%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,padding:'13px',color:'#f1f5f9',fontSize:15,fontFamily:'inherit',outline:'none'}} placeholder="e.g. Moon Bar near east exit, Sun Stage left side" value={foundAt} onChange={e=>setFoundAt(e.target.value)}/>
+        </div>
+
+        {/* DAY */}
+        <div>
+          <div style={{fontSize:11,fontWeight:900,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>{'Day Found'}</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {DAYS.map(d=>(
+              <button key={d} style={{padding:'12px',borderRadius:10,border:day===d?'2px solid #fb923c':'1px solid rgba(255,255,255,0.1)',background:day===d?'rgba(249,115,22,0.15)':'rgba(255,255,255,0.04)',color:day===d?'#fb923c':'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={()=>setDay(day===d?'':d)}>{d}</button>
             ))}
           </div>
         </div>
+
+        {/* CURRENT LOCATION */}
         <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Where Was It Found?</div>
-          <input style={S.inp} placeholder="e.g. Near Moon Stage" value={location} onChange={e=>setLocation(e.target.value)}/>
-        </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Description</div>
-          <textarea style={{...S.inp,minHeight:80,resize:'none'}} placeholder="Describe the item in detail..." value={description} onChange={e=>setDescription(e.target.value)}/>
+          <div style={{fontSize:11,fontWeight:900,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>{'Where Is It Now?'}</div>
+          <input style={{width:'100%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,padding:'13px',color:'#f1f5f9',fontSize:15,fontFamily:'inherit',outline:'none'}} placeholder="e.g. With me at Moon Bar, Admin Tent" value={currentLoc} onChange={e=>setCurrentLoc(e.target.value)}/>
         </div>
 
-        {/* PHOTO — REQUIRED */}
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:photo?'#4ade80':'#ef4444',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>
-            📷 Photo {photo?'✅ Captured':'— Required'}
-          </div>
-          {photo?(
-            <div style={{position:'relative'}}>
-              <img src={photo} alt="Found item" style={{width:'100%',borderRadius:12,border:'2px solid rgba(34,197,94,0.4)',maxHeight:220,objectFit:'cover'}}/>
-              <button style={{position:'absolute',top:8,right:8,background:'rgba(0,0,0,0.7)',border:'none',borderRadius:8,color:'#f1f5f9',fontSize:12,fontWeight:700,cursor:'pointer',padding:'4px 10px'}} onClick={()=>setPhoto(null)}>Retake</button>
-            </div>
-          ):(
-            <label style={{display:'block',padding:'24px',borderRadius:12,border:'2px dashed rgba(239,68,68,0.4)',background:'rgba(239,68,68,0.05)',textAlign:'center',cursor:'pointer'}}>
-              <div style={{fontSize:32,marginBottom:8}}>📸</div>
-              <div style={{fontSize:14,fontWeight:700,color:'#fca5a5'}}>Tap to take photo</div>
-              <div style={{fontSize:12,color:'#64748b',marginTop:4}}>Photo is required to log item</div>
-              <input ref={photoRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{if(e.target.files[0])compressImage(e.target.files[0],setPhoto);}}/>
-            </label>
-          )}
-        </div>
-
-        <button style={{padding:'16px',borderRadius:12,border:'none',background:(!description||!location||!photo||sending)?'rgba(255,255,255,0.06)':'rgba(249,115,22,0.85)',color:(!description||!location||!photo||sending)?'#475569':'#fff',fontSize:16,fontWeight:900,cursor:(!description||!location||!photo||sending)?'not-allowed':'pointer',transition:'all 0.2s'}} disabled={!description||!location||!photo||sending} onClick={submit}>
-          {sending?'Logging...':`Log Item ${!photo?'(Photo Required)':!description?'(Add Description)':!location?'(Add Location)':''}`}
+        {/* SUBMIT */}
+        {!photo&&<div style={{background:'rgba(249,115,22,0.07)',border:'1px solid rgba(249,115,22,0.2)',borderRadius:10,padding:'10px 14px',fontSize:12,color:'#fb923c',textAlign:'center'}}>{'📷 Take a photo to enable submit'}</div>}
+        <button style={{padding:'18px',borderRadius:12,border:'none',background:canSubmit?'linear-gradient(135deg,#ea580c,#c2410c)':'rgba(255,255,255,0.06)',color:canSubmit?'#fff':'#475569',fontSize:16,fontWeight:900,cursor:canSubmit?'pointer':'not-allowed'}}
+          disabled={!canSubmit}
+          onClick={submit}>
+          {sending?'Saving...':'📦 Submit & Get Tag Number'}
         </button>
       </div>
     </div>
@@ -706,7 +720,6 @@ function LFView({user,onBack}){
 }
 
 
-// ── OVERNIGHT VIEW ───────────────────────────────────────────
 function OvernightView({user,onLogout}){
   const [arrived,setArrived]=useState(false);
   const [arrivedTime,setArrivedTime]=useState('');

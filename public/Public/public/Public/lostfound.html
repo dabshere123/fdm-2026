@@ -1,375 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
-  <title>FDM 2026 — Lost & Found</title>
-  <meta name="theme-color" content="#0d0d0d"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    html,body{overflow-x:hidden;font-size:16px;font-family:'DM Sans',sans-serif;}
-    body{background:#0a0a14;color:#f1f5f9;min-height:100vh;padding-bottom:80px;}
-    .hdr{padding:14px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);}
-    .back{padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#f1f5f9;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
-    .title{font-size:17px;font-weight:900;color:#f1f5f9;flex:1;}
-    .body{padding:14px;max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:10;}
-    .search{width:100%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:13px 16px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
-    .search::placeholder{color:#475569;}
-    .filters{display:flex;gap:7px;flex-wrap:wrap;}
-    .fbtn{padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .fbtn.active{border-color:rgba(139,92,246,0.6);background:rgba(139,92,246,0.12);color:#c4b5fd;}
-    .admin-bar{display:flex;gap:8px;flex-wrap:wrap;}
-    .admin-btn{padding:10px 14px;border-radius:10px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);color:#fcd34d;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex:1;}
-    .admin-btn.green{border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.06);color:#4ade80;}
-    .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;margin-bottom:8px;}
-    .card-photo{width:100%;max-height:220px;object-fit:cover;display:block;border-bottom:1px solid rgba(255,255,255,0.08);}
-    .card-body{padding:14px;}
-    .tag-num{font-size:13px;font-weight:900;color:#fb923c;letter-spacing:0.05em;margin-bottom:5px;}
-    .item-desc{font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:8px;}
-    .at-office{font-size:15px;font-weight:900;color:#4ade80;margin:8px 0;letter-spacing:0.03em;}
-    .meta{font-size:12px;color:#64748b;margin-bottom:3px;}
-    .status-row{display:flex;align-items:center;gap:8px;margin:10px 0 6px;}
-    .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;}
-    .badge-found{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fcd34d;}
-    .badge-office{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#4ade80;}
-    .badge-claimed{background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);color:#64748b;}
-    .badge-pickup{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);color:#c4b5fd;}
-    .pickup-btn{width:100%;margin-top:10px;padding:13px;border-radius:10px;border:1.5px solid rgba(139,92,246,0.4);background:rgba(139,92,246,0.08);color:#c4b5fd;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .office-btn{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.05);color:#4ade80;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .claim-btn{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1px solid rgba(100,116,139,0.3);background:rgba(100,116,139,0.05);color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .section-hdr{font-size:11px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin:12px 0 6px;}
-    .empty{text-align:center;padding:48px 0;color:#475569;font-size:14px;}
-    .loading{text-align:center;padding:48px 0;color:#475569;font-size:14px;}
-    .error-msg{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;color:#fca5a5;font-size:13px;text-align:center;}
-    /* Modal */
-    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;z-index:100;-webkit-overflow-scrolling:touch;}
-    .modal{width:100%;background:#0d0d1a;border-radius:20px 20px 0 0;padding:24px 20px 40px;display:flex;flex-direction:column;gap:12;max-height:85vh;overflow-y:auto;}
-    .modal h2{font-size:18px;font-weight:900;color:#f1f5f9;}
-    .modal-sub{font-size:13px;color:#64748b;}
-    .inp{width:100%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:13px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
-    .inp::placeholder{color:#475569;}
-    .btn-row{display:flex;gap:10px;margin-top:4px;}
-    .btn-cancel{flex:1;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .btn-confirm{flex:2;padding:14px;border-radius:10px;border:none;background:linear-gradient(135deg,rgba(139,92,246,0.9),rgba(109,40,217,0.9));color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;}
-    .btn-confirm.orange{background:linear-gradient(135deg,rgba(245,158,11,0.9),rgba(217,119,6,0.9));}
-    .btn-confirm.green{background:linear-gradient(135deg,rgba(34,197,94,0.9),rgba(22,163,74,0.9));}
-    .day-row{display:flex;gap:8px;}
-    .day-btn{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
-    .day-btn.active{border-color:rgba(14,165,233,0.6);background:rgba(14,165,233,0.12);color:#38bdf8;}
-    .lbl{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
-    .check-row{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;border:1px solid rgba(34,197,94,0.2);background:rgba(34,197,94,0.04);cursor:pointer;}
-    .check-row input{width:20px;height:20px;cursor:pointer;accent-color:#4ade80;}
-    .check-row span{font-size:14px;font-weight:700;color:#4ade80;}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FDM 2026 — Lost & Found</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh;}
+.hdr{background:rgba(13,13,26,0.98);border-bottom:1px solid rgba(255,255,255,0.06);padding:14px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:12;}
+.hdr h1{font-size:17px;font-weight:900;color:#f1f5f9;flex:1;}
+.hdr-sub{font-size:11px;color:#475569;}
+.search-bar{padding:12px 16px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.04);}
+.search-bar input{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;color:#f1f5f9;font-size:15px;font-family:inherit;outline:none;}
+.search-bar input::placeholder{color:#475569;}
+.day-tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,0.06);overflow-x:auto;scrollbar-width:none;}
+.day-tabs::-webkit-scrollbar{display:none;}
+.day-tab{flex:1;min-width:80px;padding:12px 8px;text-align:center;font-size:12px;font-weight:800;color:#475569;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;}
+.day-tab.active{color:#f97316;border-bottom-color:#f97316;}
+.day-tab .count{display:block;font-size:10px;font-weight:600;margin-top:2px;opacity:0.7;}
+.items-grid{padding:12px;display:flex;flex-direction:column;gap:10;}
+.item-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;transition:border-color 0.15s;}
+.item-card.office{border-color:rgba(34,197,94,0.3);}
+.item-card.claimed{border-color:rgba(100,116,139,0.2);opacity:0.5;}
+.card-photo{width:100%;height:160px;object-fit:cover;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-size:40px;color:#334155;}
+.card-photo img{width:100%;height:160px;object-fit:cover;display:block;}
+.card-body{padding:12px 14px;}
+.card-tag{font-size:11px;font-weight:900;color:#fb923c;letter-spacing:0.08em;margin-bottom:4px;}
+.card-desc{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:8px;line-height:1.4;}
+.card-meta{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.card-meta-row{font-size:12px;color:#64748b;display:flex;gap:6px;}
+.card-meta-row strong{color:#94a3b8;}
+.card-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;}
+.badge-unclaimed{background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.3);color:#fb923c;}
+.badge-office{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#4ade80;}
+.badge-claimed{background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.2);color:#64748b;}
+.card-actions{display:flex;gap:8px;}
+.btn{padding:9px 14px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;border:none;}
+.btn-claim{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;}
+.btn-office{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#4ade80;}
+.empty{padding:48px 24px;text-align:center;color:#334155;font-size:14px;}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.loading{padding:48px;text-align:center;color:#334155;}
+.debug{padding:6px 16px;font-size:11px;color:#334155;}
+.day-total{padding:8px 16px;font-size:12px;color:#475569;border-top:1px solid rgba(255,255,255,0.04);}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:#0f0f1e;border:1px solid rgba(255,255,255,0.12);border-radius:18px;width:100%;max-width:400px;padding:24px;display:flex;flex-direction:column;gap:14px;}
+.modal h2{font-size:16px;font-weight:900;color:#f1f5f9;}
+.modal input{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px;color:#f1f5f9;font-size:15px;font-family:inherit;outline:none;}
+.modal-btns{display:flex;gap:8px;}
+.btn-confirm{flex:1;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;}
+.btn-cancel{flex:1;padding:13px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#94a3b8;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+</style>
 </head>
 <body>
-  <div class="hdr">
-    <button class="back" onclick="goBack()">← Back</button>
-    <div class="title">📦 Lost &amp; Found</div>
+
+<div class="hdr">
+  <div style="font-size:24px;">📋</div>
+  <div>
+    <div class="hdr" style="padding:0;border:none;font-size:17px;font-weight:900;color:#f1f5f9;">Lost &amp; Found</div>
+    <div class="hdr-sub">Fête de Marquette 2026 · McPike Park</div>
   </div>
+</div>
 
-  <div class="body">
-    <input class="search" id="searchInput" placeholder="Search by description or item #..." oninput="filterItems()"/>
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search by tag #, description, or location…" oninput="render()"/>
+</div>
 
-    <div class="filters">
-      <button class="fbtn active" onclick="setDay('')" id="btn-all">All Days</button>
-      <button class="fbtn" onclick="setDay('Thu')" id="btn-Thu">Thursday</button>
-      <button class="fbtn" onclick="setDay('Fri')" id="btn-Fri">Friday</button>
-      <button class="fbtn" onclick="setDay('Sat')" id="btn-Sat">Saturday</button>
-      <button class="fbtn" onclick="setDay('Sun')" id="btn-Sun">Sunday</button>
+<div class="day-tabs" id="dayTabs">
+  <div class="day-tab active" data-day="All" onclick="selectDay('All')">All<span class="count" id="cnt-All">—</span></div>
+  <div class="day-tab" data-day="Thursday" onclick="selectDay('Thursday')">Thursday<span class="count" id="cnt-Thu">—</span></div>
+  <div class="day-tab" data-day="Friday" onclick="selectDay('Friday')">Friday<span class="count" id="cnt-Fri">—</span></div>
+  <div class="day-tab" data-day="Saturday" onclick="selectDay('Saturday')">Saturday<span class="count" id="cnt-Sat">—</span></div>
+  <div class="day-tab" data-day="Sunday" onclick="selectDay('Sunday')">Sunday<span class="count" id="cnt-Sun">—</span></div>
+</div>
+
+<div id="debugInfo" class="debug"></div>
+<div id="itemList" class="items-grid"><div class="loading">Loading items…</div></div>
+
+<!-- Claim Modal -->
+<div id="claimModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h2>✅ Mark as Claimed</h2>
+    <p style="font-size:13px;color:#64748b;">Enter the name of the person claiming this item.</p>
+    <input type="text" id="claimantInput" placeholder="Claimant name" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="confirmClaim()">Confirm Claim</button>
     </div>
-
-    <!-- Admin buttons — no PIN required -->
-    <div class="admin-bar">
-      <button class="admin-btn" onclick="openAddModal()">➕ Add Found Item</button>
-      <button class="admin-btn green" onclick="location.reload()">🔄 Refresh</button>
-    </div>
-
-    <div id="itemList"><div class="loading">Loading items...</div></div>
   </div>
+</div>
 
-  <!-- Add Item Modal (Admin) -->
-  <div class="modal-bg" id="addModal" style="display:none;">
-    <div class="modal">
-      <h2>📦 Add Found Item</h2>
-      <p class="modal-sub">Log an item directly to Lost &amp; Found</p>
+<script>
+let allItems = [];
+let currentDay = 'All';
+let claimingId = null;
 
-      <div class="lbl">Day Found</div>
-      <div class="day-row">
-        <button class="day-btn" onclick="setAddDay('Thu')" id="add-Thu">Thu</button>
-        <button class="day-btn" onclick="setAddDay('Fri')" id="add-Fri">Fri</button>
-        <button class="day-btn" onclick="setAddDay('Sat')" id="add-Sat">Sat</button>
-        <button class="day-btn" onclick="setAddDay('Sun')" id="add-Sun">Sun</button>
+function selectDay(day){
+  currentDay = day;
+  document.querySelectorAll('.day-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.day === day);
+  });
+  render();
+}
+
+function matchesDay(item, day){
+  if(day === 'All') return true;
+  const d = (item.dayFound || '').toLowerCase();
+  const target = day.toLowerCase();
+  return d.startsWith(target.slice(0,3)) || d.includes(target.toLowerCase());
+}
+
+function render(){
+  const search = (document.getElementById('searchInput').value || '').toLowerCase();
+  const list = document.getElementById('itemList');
+
+  const filtered = allItems.filter(i => {
+    if(i.status === 'Claimed') return false;
+    if(!matchesDay(i, currentDay)) return false;
+    if(search){
+      const hay = [i.itemNumber,i.description,i.foundAt,i.currentLocation,i.dayFound].join(' ').toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // Update tab counts
+  ['Thursday','Friday','Saturday','Sunday'].forEach(d => {
+    const abbr = d.slice(0,3);
+    const cnt = allItems.filter(i => i.status !== 'Claimed' && matchesDay(i, d)).length;
+    const el = document.getElementById('cnt-'+abbr);
+    if(el) el.textContent = cnt || '—';
+  });
+  const allCnt = allItems.filter(i => i.status !== 'Claimed').length;
+  const cntAll = document.getElementById('cnt-All');
+  if(cntAll) cntAll.textContent = allCnt || '—';
+
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>' + (search ? 'No items match "'+search+'"' : (currentDay==='All' ? 'No unclaimed items' : 'No items for '+currentDay)) + '</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(renderCard).join('');
+}
+
+function renderCard(i){
+  const isOffice = i.atFestOffice === 'Yes';
+  const badge = isOffice
+    ? '<span class="badge badge-office">✅ At Fest Office</span>'
+    : '<span class="badge badge-unclaimed">Unclaimed</span>';
+
+  const photo = i.photoData
+    ? '<img src="'+i.photoData+'" alt="item photo" loading="lazy"/>'
+    : '<div class="card-photo" style="height:100px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:36px;color:#334155;">📷</div>';
+
+  return `<div class="item-card ${isOffice?'office':''}" id="card-${i.id}">
+    <div class="card-photo">${photo}</div>
+    <div class="card-body">
+      <div class="card-tag">TAG # ${i.itemNumber||'???'}</div>
+      <div class="card-desc">${escHtml(i.description||'Unknown item')}</div>
+      <div class="card-meta">
+        ${i.foundAt?`<div class="card-meta-row"><strong>Found at:</strong> ${escHtml(i.foundAt)}</div>`:''}
+        ${i.dayFound?`<div class="card-meta-row"><strong>Day:</strong> ${escHtml(i.dayFound)}</div>`:''}
+        ${i.currentLocation&&i.currentLocation!==i.foundAt?`<div class="card-meta-row"><strong>Now at:</strong> ${escHtml(i.currentLocation)}</div>`:''}
+        ${i.foundBy?`<div class="card-meta-row"><strong>Found by:</strong> ${escHtml(i.foundBy)}</div>`:''}
       </div>
-
-      <div class="lbl">Description *</div>
-      <input class="inp" id="addDesc" placeholder="What is the item?"/>
-
-      <div class="lbl">Where Found *</div>
-      <input class="inp" id="addLoc" placeholder="e.g. Near Moon Stage"/>
-
-      <label class="check-row" for="atOfficeCheck">
-        <input type="checkbox" id="atOfficeCheck"/>
-        <span>Mark as AT FEST OFFICE</span>
-      </label>
-
-      <div class="btn-row">
-        <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-        <button class="btn-confirm orange" onclick="submitAddItem()">Add Item</button>
+      <div class="card-badges">${badge}</div>
+      <div class="card-actions">
+        ${!isOffice?`<button class="btn btn-office" onclick="markOffice('${i.id}')">📦 At Fest Office</button>`:''}
+        <button class="btn btn-claim" onclick="openClaim('${i.id}')">✅ Mark Claimed</button>
       </div>
     </div>
-  </div>
+  </div>`;
+}
 
-  <!-- Pickup Request Modal -->
-  <div class="modal-bg" id="pickupModal" style="display:none;">
-    <div class="modal">
-      <h2>Request Item Pickup</h2>
-      <p class="modal-sub" id="pickupItemDesc" style="color:#fb923c;font-weight:700;"></p>
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-      <div class="lbl">Your Name *</div>
-      <input class="inp" id="pickupName" placeholder="Your full name"/>
+async function markOffice(id){
+  try{
+    await fetch('/.netlify/functions/update-lost-found',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,atFestOffice:'Yes'})});
+    const item = allItems.find(i=>i.id===id);
+    if(item){ item.atFestOffice='Yes'; item.currentLocation='Fest Office'; }
+    render();
+  }catch(e){ alert('Error: '+e.message); }
+}
 
-      <div class="lbl">Describe your item to confirm it's yours *</div>
-      <textarea class="inp" id="pickupDesc" placeholder="Describe specific details about the item..." style="min-height:80px;resize:none;"></textarea>
+function openClaim(id){
+  claimingId = id;
+  document.getElementById('claimantInput').value = '';
+  document.getElementById('claimModal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('claimantInput').focus(),100);
+}
 
-      <div class="btn-row">
-        <button class="btn-cancel" onclick="closePickupModal()">Cancel</button>
-        <button class="btn-confirm" onclick="submitPickup()">Send Request</button>
-      </div>
-    </div>
-  </div>
+function closeModal(){
+  document.getElementById('claimModal').style.display = 'none';
+  claimingId = null;
+}
 
-  <!-- Mark Claimed Modal -->
-  <div class="modal-bg" id="claimModal" style="display:none;">
-    <div class="modal">
-      <h2>Mark as Claimed</h2>
-      <p class="modal-sub">Item <span id="claimItemNum" style="color:#fb923c;font-weight:900;"></span> — confirm it's been picked up</p>
-      <div class="btn-row">
-        <button class="btn-cancel" onclick="closeClaimModal()">Cancel</button>
-        <button class="btn-confirm green" onclick="confirmClaim()">✅ Confirm Claimed</button>
-      </div>
-    </div>
-  </div>
+async function confirmClaim(){
+  const name = document.getElementById('claimantInput').value.trim();
+  if(!name){ alert('Please enter a name.'); return; }
+  try{
+    await fetch('/.netlify/functions/update-lost-found',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:claimingId,status:'Claimed',claimantName:name})});
+    const item = allItems.find(i=>i.id===claimingId);
+    if(item){ item.status='Claimed'; item.claimantName=name; }
+    closeModal();
+    render();
+  }catch(e){ alert('Error: '+e.message); }
+}
 
-  <script>
-    let allItems = [];
-    let currentDay = '';
-    let addDay = '';
-    let currentPickupId = '';
-    let currentPickupNum = '';
-    let currentClaimId = '';
-
-    // Back button — go to correct app based on ?from= param
-    function goBack() {
-      const params = new URLSearchParams(window.location.search);
-      const from = params.get('from');
-      if (from === 'hub') {
-        window.location.href = '/hub';
-      } else if (from === 'field') {
-        window.location.href = '/field';
-      } else if (document.referrer && document.referrer !== window.location.href) {
-        window.history.back();
-      } else {
-        window.location.href = '/field';
-      }
+async function loadItems(){
+  try{
+    const r = await fetch('/.netlify/functions/get-lost-found');
+    if(!r.ok) throw new Error('Server error '+r.status);
+    const d = await r.json();
+    allItems = d.items || [];
+    const dbg = document.getElementById('debugInfo');
+    if(dbg){
+      const statuses = [...new Set(allItems.map(i=>i.status||'(empty)'))].join(', ');
+      dbg.textContent = allItems.length+' items · statuses: '+statuses;
     }
+    render();
+  }catch(e){
+    document.getElementById('itemList').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Could not load items: '+e.message+'<br/><br/><button onclick="loadItems()" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#94a3b8;cursor:pointer;font-family:inherit;">Retry</button></div>';
+  }
+}
 
-    // Load items
-    async function loadItems() {
-      try {
-        const r = await fetch('/.netlify/functions/get-lost-found');
-        if (!r.ok) throw new Error('Server error ' + r.status);
-        const d = await r.json();
-        allItems = d.items || [];
-        // Debug: show count
-        const dbg = document.getElementById('debugInfo');
-        if (dbg) {
-          const statuses = [...new Set(allItems.map(i=>i.status||'(empty)'))].join(', ');
-          const sample = allItems.slice(0,2).map(i=>`${i.itemNumber||'?'}:${i.description||'empty'}:${i.status||'?'}`).join(' | ');
-          dbg.textContent = allItems.length + ' items | statuses: ' + statuses + ' | sample: ' + sample;
-        }
-        filterItems();
-      } catch (e) {
-        document.getElementById('itemList').innerHTML =
-          `<div class="error-msg">Could not load items: ${e.message}<br><br><button onclick="loadItems()" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#fca5a5;cursor:pointer;font-family:inherit;">Retry</button></div>`;
-      }
-    }
-
-    function setDay(d) {
-      currentDay = d;
-      document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
-      document.getElementById('btn-' + (d || 'all')).classList.add('active');
-      filterItems();
-    }
-
-    function filterItems() {
-      const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-      let items = allItems.filter(i => i.status !== 'Claimed' && i.status !== 'claimed');
-      const claimed = allItems.filter(i => i.status === 'Claimed');
-      if (currentDay) items = items.filter(i => (i.dayFound || '').toLowerCase().startsWith(currentDay.toLowerCase()));
-      if (q) {
-        const all = [...items, ...claimed].filter(i =>
-          (i.description || '').toLowerCase().includes(q) ||
-          (i.itemNumber || '').toLowerCase().includes(q) ||
-          (i.foundAt || '').toLowerCase().includes(q)
-        );
-        renderItems(all, []);
-        return;
-      }
-      renderItems(items, claimed);
-    }
-
-    function renderItems(active, claimed) {
-      const el = document.getElementById('itemList');
-      if (active.length === 0 && claimed.length === 0) {
-        el.innerHTML = '<div class="empty">No items found</div>';
-        return;
-      }
-      let html = '';
-      if (active.length > 0) {
-        html += `<div class="section-hdr">${active.length} item${active.length !== 1 ? 's' : ''} in Lost &amp; Found</div>`;
-        active.forEach(i => { html += renderCard(i); });
-      }
-      if (claimed.length > 0) {
-        html += `<div class="section-hdr" style="margin-top:16px;">Claimed (${claimed.length})</div>`;
-        claimed.forEach(i => { html += renderCard(i); });
-      }
-      el.innerHTML = html;
-    }
-
-    function renderCard(i) {
-      const atOffice = i.atFestOffice === 'Yes' || i.atFestOffice === true;
-      const isClaimed = i.status === 'Claimed';
-      const isPickup = i.status === 'Pickup Requested';
-
-      let badge = '';
-      if (isClaimed)      badge = '<span class="badge badge-claimed">Claimed</span>';
-      else if (isPickup)  badge = '<span class="badge badge-pickup">Pickup Requested</span>';
-      else if (atOffice)  badge = '<span class="badge badge-office">At Fest Office</span>';
-      else                badge = '<span class="badge badge-found">In L&F</span>';
-
-      const safeDesc = (i.description || 'Unknown item').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-      const safeNum  = (i.itemNumber || '???').replace(/'/g, "\\'");
-      const safeId   = i.id || '';
-
-      return `<div class="card">
-        ${i.photoData ? `<img class="card-photo" src="${i.photoData}" alt="Found item" onerror="this.style.display='none'"/>` : ''}
-        <div class="card-body">
-          <div class="tag-num">TAG #${i.itemNumber || '???'}</div>
-          <div class="item-desc">${i.description || 'Unknown item'}</div>
-          ${atOffice ? `<div class="at-office">📍 AT FEST OFFICE</div>` : ''}
-          <div class="meta">Found at: ${i.foundAt || '—'}</div>
-          <div class="meta">Day: ${i.dayFound || '—'}</div>
-          <div class="status-row">${badge}</div>
-          ${!isClaimed ? `<button class="pickup-btn" onclick="openPickup('${safeId}','${safeNum}','${safeDesc}')">Request Item Pickup</button>` : ''}
-          ${!isClaimed ? `<button class="claim-btn" onclick="openClaim('${safeId}','${safeNum}')">✅ Mark as Claimed (Admin)</button>` : ''}
-          ${!atOffice && !isClaimed ? `<button class="office-btn" onclick="markAtOffice('${safeId}')">📍 Move to Fest Office</button>` : ''}
-        </div>
-      </div>`;
-    }
-
-    // Add item (no PIN)
-    function openAddModal() {
-      addDay = '';
-      document.getElementById('addDesc').value = '';
-      document.getElementById('addLoc').value = '';
-      document.getElementById('atOfficeCheck').checked = false;
-      ['Thu','Fri','Sat','Sun'].forEach(d => {
-        const b = document.getElementById('add-' + d);
-        if (b) { b.classList.remove('active'); }
-      });
-      document.getElementById('addModal').style.display = 'flex';
-      setTimeout(() => document.getElementById('addDesc').focus(), 200);
-    }
-    function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
-    function setAddDay(d) {
-      addDay = d;
-      ['Thu','Fri','Sat','Sun'].forEach(x => {
-        const b = document.getElementById('add-' + x);
-        if (b) b.className = 'day-btn' + (x === d ? ' active' : '');
-      });
-    }
-    async function submitAddItem() {
-      const desc = document.getElementById('addDesc').value.trim();
-      const loc  = document.getElementById('addLoc').value.trim();
-      const atOffice = document.getElementById('atOfficeCheck').checked;
-      if (!desc || !loc) { alert('Please fill in description and location.'); return; }
-      try {
-        const r = await fetch('/.netlify/functions/submit-lost-found', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description: desc, foundAt: loc, dayFound: addDay || 'Unknown',
-            foundBy: 'Admin (Devin)', role: 'Admin', atFestOffice: atOffice ? 'Yes' : 'No' })
-        });
-        const data = await r.json();
-        closeAddModal();
-        alert(`✅ Item added!\nItem Number: ${data.itemNumber || '?'}`);
-        loadItems();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    // Pickup request
-    function openPickup(id, num, desc) {
-      currentPickupId = id;
-      currentPickupNum = num;
-      document.getElementById('pickupItemDesc').textContent = `Item #${num}: ${desc}`;
-      document.getElementById('pickupName').value = '';
-      document.getElementById('pickupDesc').value = '';
-      document.getElementById('pickupModal').style.display = 'flex';
-      setTimeout(() => document.getElementById('pickupName').focus(), 200);
-    }
-    function closePickupModal() { document.getElementById('pickupModal').style.display = 'none'; }
-    async function submitPickup() {
-      const name = document.getElementById('pickupName').value.trim();
-      const desc = document.getElementById('pickupDesc').value.trim();
-      if (!name || !desc) { alert('Please fill in your name and describe the item.'); return; }
-      try {
-        await fetch('/.netlify/functions/lf-pickup-request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemId: currentPickupId, itemNumber: currentPickupNum, claimantName: name, description: desc })
-        });
-        closePickupModal();
-        alert('✅ Pickup request sent! Staff will verify and bring your item to you.');
-        loadItems();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    // Mark claimed
-    function openClaim(id, num) {
-      currentClaimId = id;
-      document.getElementById('claimItemNum').textContent = '#' + num;
-      document.getElementById('claimModal').style.display = 'flex';
-    }
-    function closeClaimModal() { document.getElementById('claimModal').style.display = 'none'; }
-    async function confirmClaim() {
-      try {
-        await fetch('/.netlify/functions/update-lost-found', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentClaimId, status: 'Claimed' })
-        });
-        closeClaimModal();
-        loadItems();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    // Move to fest office
-    async function markAtOffice(id) {
-      try {
-        await fetch('/.netlify/functions/update-lost-found', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, atFestOffice: 'Yes' })
-        });
-        loadItems();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    loadItems();
-  </script>
+loadItems();
+</script>
 </body>
 </html>

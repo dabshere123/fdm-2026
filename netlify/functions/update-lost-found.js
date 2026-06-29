@@ -1,22 +1,33 @@
-// update-lost-found.js — update status or mark AT FEST OFFICE
-const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
-const AIRTABLE_BASE  = 'appUVEp7kO9NeeJh0';
+// update-lost-found.js
+const BASE  = 'appUVEp7kO9NeeJh0';
+const TABLE = 'LostFound';
+const TOKEN = process.env.AIRTABLE_TOKEN;
 
 exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
   try {
-    const { id, status, atFestOffice } = JSON.parse(event.body || '{}');
-    const fields = {};
-    if (status)      fields.Status      = status;
-    if (atFestOffice) fields.AtFestOffice = atFestOffice;
+    const { id, status, atFestOffice, claimantName, currentLocation } = JSON.parse(event.body || '{}');
+    if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
 
-    await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/LostFound/${id}`, {
+    const fields = {};
+    if (status)          fields.Status          = status;
+    if (atFestOffice)    fields.AtFestOffice    = atFestOffice;
+    if (claimantName)    fields.ClaimantName    = claimantName;
+    if (currentLocation) fields.CurrentLocation = currentLocation;
+
+    // If marking at Fest Office, update location too
+    if (atFestOffice === 'Yes' && !currentLocation) fields.CurrentLocation = 'Fest Office';
+
+    const r = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}/${id}`, {
       method: 'PATCH',
-      headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields })
     });
+    const d = await r.json();
+    if (!r.ok) throw new Error(JSON.stringify(d));
+
     return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

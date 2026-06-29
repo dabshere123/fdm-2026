@@ -1058,6 +1058,8 @@ function HubApp({onBack}){
   const [chatAlert,setChatAlert]=useState(null);
   const [lfSubmitting,setLfSubmitting]=useState(false);
   const [lfItems,setLfItems]=useState([]);
+  const [lfDay,setLfDay]=useState("All");
+  const [lfSearch,setLfSearch]=useState("");
   const [lfLoading,setLfLoading]=useState(false);
   const [lfClaimView,setLfClaimView]=useState(null);
   const [lfNewItem,setLfNewItem]=useState(false);
@@ -2832,99 +2834,124 @@ Reply YES to acknowledge.`
   );
 
   if(view==="lostfound") return(
-    <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}>
+    <div style={{...S.root,position:"relative"}}><Bg/><div style={{...S.panel,overflowY:"auto"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 16px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.96)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <BB onClick={()=>setView("home")}/>
-        <span style={S.panelTitle}>📦 Lost &amp; Found</span>
-        <div style={{display:"flex",gap:6}}>
-          <button style={{background:"rgba(249,115,22,0.15)",border:"1px solid rgba(249,115,22,0.4)",borderRadius:8,padding:"6px 12px",color:"#fb923c",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(true)}>+ Add Item</button>
-          <button style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"6px 10px",color:"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async(e)=>{
-            if(!window.confirm("Mark ALL Unclaimed L&F items as Claimed? This clears the list.")) return;
-            const unclaimed=lfItems.filter(i=>i.status!=="Claimed");
-            for(const item of unclaimed){
-              await fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status:"Claimed"})}).catch(()=>{});
-            }
-            fetchLFItems();
-          }}>🗑 Clear All</button>
-        </div>
+        <span style={{fontSize:17,fontWeight:900,color:"#f1f5f9",flex:1}}>{"📋 Manage Lost & Found"}</span>
+        <button style={{fontSize:12,fontWeight:700,color:"#4ade80",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:8,padding:"7px 12px",cursor:"pointer"}} onClick={fetchLFItems}>{"↺ Refresh"}</button>
       </div>
-      <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
-        {/* Search + filter */}
-        <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"12px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Search description or item #..." value={lfSearch||""} onChange={e=>setLfSearch(e.target.value)}/>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-          {["","Thu","Fri","Sat","Sun"].map(d=>(
-            <button key={d} style={{padding:"5px 12px",borderRadius:16,border:`1px solid ${lfDay===d?"rgba(139,92,246,0.6)":"rgba(255,255,255,0.1)"}`,background:lfDay===d?"rgba(139,92,246,0.12)":"rgba(255,255,255,0.04)",color:lfDay===d?"#c4b5fd":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfDay(d)}>{d||"All Days"}</button>
-          ))}
-        </div>
 
-        {/* Items list */}
-        {lfLoading&&<div style={{textAlign:"center",padding:40,display:"flex",flexDirection:"column",gap:8,alignItems:"center"}}>
-          <div style={{fontSize:24}}>📦</div>
-          <div style={{color:"#64748b",fontSize:14}}>Loading items...</div>
-        </div>}
-        {!lfLoading&&lfItems.length===0&&(
-          <div style={{textAlign:"center",padding:40,color:"#64748b",fontSize:14,lineHeight:1.8}}>
-            <div style={{fontSize:32,marginBottom:8}}>📭</div>
-            No items logged yet.<br/>
-            <button style={{marginTop:12,padding:"8px 16px",borderRadius:8,border:"1px solid rgba(249,115,22,0.3)",background:"rgba(249,115,22,0.06)",color:"#fb923c",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={fetchLFItems}>↺ Try Refreshing</button>
+      {/* STATS ROW */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"12px 14px"}}>
+        {[
+          {label:"Unclaimed",val:lfItems.filter(i=>i.status!=="Claimed").length,color:"#fb923c"},
+          {label:"At Office",val:lfItems.filter(i=>i.atFestOffice==="Yes"&&i.status!=="Claimed").length,color:"#4ade80"},
+          {label:"Claimed",val:lfItems.filter(i=>i.status==="Claimed").length,color:"#64748b"},
+        ].map(function(s){return(
+          <div key={s.label} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:10,padding:"10px 8px",textAlign:"center"}}>
+            <div style={{fontSize:22,fontWeight:900,color:s.color}}>{s.val}</div>
+            <div style={{fontSize:10,color:"#475569",fontWeight:700,marginTop:2}}>{s.label}</div>
           </div>
-        )}
-        {!lfLoading&&lfItems.filter(i=>{
-          const q=(lfSearch||"").toLowerCase();
-          const dayMatch=!lfDay||(i.dayFound||"").toLowerCase().startsWith(lfDay.toLowerCase());
-          const qMatch=!q||(i.description||"").toLowerCase().includes(q)||(i.itemNumber||"").toLowerCase().includes(q)||(i.foundAt||"").toLowerCase().includes(q);
-          return dayMatch&&qMatch&&i.status!=="Claimed";
-        }).map(item=>(
-          <div key={item.id} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,overflow:"hidden"}}>
-            {item.photoData&&<img src={item.photoData} alt="Found item" style={{width:"100%",maxHeight:180,objectFit:"cover",display:"block"}} onError={e=>e.target.style.display="none"}/>}
-            <div style={{padding:"12px 14px"}}>
-              <div style={{fontSize:13,fontWeight:900,color:"#fb923c",marginBottom:4}}>TAG #{item.itemNumber||"?"}</div>
-              <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",marginBottom:6}}>{item.description||"Unknown item"}</div>
-              {(item.atFestOffice==="Yes")&&<div style={{fontSize:14,fontWeight:900,color:"#4ade80",marginBottom:4}}>📍 AT FEST OFFICE</div>}
-              <div style={{fontSize:12,color:"#64748b",marginBottom:2}}>Found at: {item.foundAt||"—"}</div>
-              <div style={{fontSize:12,color:"#64748b",marginBottom:8}}>Day: {item.dayFound||"—"}</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {item.atFestOffice!=="Yes"&&<button style={{padding:"7px 12px",borderRadius:8,border:"1px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.06)",color:"#4ade80",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,atFestOffice:"Yes"})}).then(()=>fetchLFItems())}>📍 Move to Fest Office</button>}
-                <button style={{padding:"7px 12px",borderRadius:8,border:"1px solid rgba(139,92,246,0.4)",background:"rgba(139,92,246,0.06)",color:"#c4b5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status:"Claimed"})}).then(()=>fetchLFItems())}>✅ Mark Claimed</button>
+        );})}
+      </div>
+
+      {/* NIGHTLY COLLECT BUTTON */}
+      <div style={{padding:"0 14px 10px"}}>
+        <button style={{width:"100%",padding:"13px",borderRadius:12,border:"2px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.08)",color:"#4ade80",fontSize:14,fontWeight:800,cursor:"pointer"}}
+          onClick={async function(){
+            if(!window.confirm("Mark ALL unclaimed items as 'At Fest Office'? Do this after your nightly pickup.")) return;
+            const unclaimed=lfItems.filter(function(i){return i.status!=="Claimed"&&i.atFestOffice!=="Yes";});
+            await Promise.all(unclaimed.map(function(i){
+              return fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:i.id,atFestOffice:"Yes"})}).catch(function(){});
+            }));
+            await fetchLFItems();
+          }}>
+          {"📦 Nightly Pickup — Mark All Uncollected as At Fest Office"}
+        </button>
+      </div>
+
+      {/* DAY FILTER */}
+      <div style={{display:"flex",gap:0,borderBottom:"1px solid rgba(255,255,255,0.06)",margin:"0 0 4px"}}>
+        {["All","Thu","Fri","Sat","Sun"].map(function(d){
+          const active=lfDay===d;
+          return(
+            <button key={d} style={{flex:1,padding:"10px 4px",background:"none",border:"none",borderBottom:active?"2px solid #fb923c":"2px solid transparent",color:active?"#fb923c":"#475569",fontSize:12,fontWeight:800,cursor:"pointer"}}
+              onClick={function(){setLfDay(d);}}>
+              {d}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* SEARCH */}
+      <div style={{padding:"8px 14px"}}>
+        <input style={{width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:9,padding:"9px 12px",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",outline:"none"}} placeholder="Search items…" value={lfSearch||""} onChange={function(e){setLfSearch(e.target.value);}}/>
+      </div>
+
+      {lfLoading&&<div style={{textAlign:"center",padding:32,color:"#334155"}}>{"Loading items…"}</div>}
+
+      {!lfLoading&&(function(){
+        const days={Thu:["Thu","Thursday"],Fri:["Fri","Friday"],Sat:["Sat","Saturday"],Sun:["Sun","Sunday"]};
+        const filtered=lfItems.filter(function(i){
+          if(lfDay!=="All"){
+            const d=(i.dayFound||"").toLowerCase();
+            const targets=days[lfDay]||[];
+            if(!targets.some(function(t){return d.startsWith(t.toLowerCase().slice(0,3));})) return false;
+          }
+          if(lfSearch){
+            const hay=[i.itemNumber,i.description,i.foundAt,i.currentLocation,i.dayFound].join(" ").toLowerCase();
+            if(!hay.includes(lfSearch.toLowerCase())) return false;
+          }
+          return true;
+        });
+
+        if(filtered.length===0) return(<div style={{textAlign:"center",padding:40,color:"#334155",fontSize:13}}>{"No items found"}</div>);
+
+        return filtered.map(function(i){
+          const isOffice=i.atFestOffice==="Yes";
+          const isClaimed=i.status==="Claimed";
+          return(
+            <div key={i.id} style={{margin:"0 12px 10px",background:"rgba(255,255,255,0.02)",border:"1px solid "+(isClaimed?"rgba(100,116,139,0.15)":isOffice?"rgba(34,197,94,0.25)":"rgba(255,255,255,0.07)"),borderRadius:14,overflow:"hidden",opacity:isClaimed?0.5:1}}>
+              {i.photoData&&<img src={i.photoData} alt="item" style={{width:"100%",maxHeight:160,objectFit:"cover",display:"block"}}/>}
+              <div style={{padding:"10px 12px"}}>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:6}}>
+                  <div>
+                    <div style={{fontSize:10,fontWeight:900,color:"#fb923c",letterSpacing:"0.08em",marginBottom:2}}>{"TAG # "+(i.itemNumber||"???")}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#f1f5f9",lineHeight:1.4}}>{i.description||"Unknown item"}</div>
+                  </div>
+                  <span style={{flexShrink:0,padding:"3px 9px",borderRadius:20,fontSize:10,fontWeight:800,background:isClaimed?"rgba(100,116,139,0.1)":isOffice?"rgba(34,197,94,0.12)":"rgba(249,115,22,0.1)",border:"1px solid "+(isClaimed?"rgba(100,116,139,0.2)":isOffice?"rgba(34,197,94,0.3)":"rgba(249,115,22,0.25)"),color:isClaimed?"#64748b":isOffice?"#4ade80":"#fb923c"}}>
+                    {isClaimed?"Claimed":isOffice?"At Office":"Unclaimed"}
+                  </span>
+                </div>
+                <div style={{fontSize:12,color:"#64748b",marginBottom:8}}>
+                  {i.dayFound&&<span>{"📅 "+i.dayFound+" · "}</span>}
+                  {i.foundAt&&<span>{"📍 "+i.foundAt}</span>}
+                  {i.foundBy&&<span style={{marginLeft:6}}>{"· 👤 "+i.foundBy}</span>}
+                </div>
+                {!isClaimed&&(
+                  <div style={{display:"flex",gap:7}}>
+                    {!isOffice&&(
+                      <button style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid rgba(34,197,94,0.3)",background:"rgba(34,197,94,0.07)",color:"#4ade80",fontSize:11,fontWeight:800,cursor:"pointer"}}
+                        onClick={async function(){
+                          await fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:i.id,atFestOffice:"Yes"})}).catch(function(){});
+                          await fetchLFItems();
+                        }}>{"📦 At Office"}</button>
+                    )}
+                    <button style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid rgba(16,185,129,0.3)",background:"rgba(16,185,129,0.07)",color:"#34d399",fontSize:11,fontWeight:800,cursor:"pointer"}}
+                      onClick={async function(){
+                        const name=window.prompt("Claimant name:");
+                        if(!name) return;
+                        await fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:i.id,status:"Claimed",claimantName:name})}).catch(function(){});
+                        await fetchLFItems();
+                      }}>{"✅ Claimed"}</button>
+                  </div>
+                )}
+                {isClaimed&&i.claimantName&&<div style={{fontSize:11,color:"#4ade80",marginTop:4}}>{"✅ Claimed by "+i.claimantName}</div>}
               </div>
             </div>
-          </div>
-        ))}
-        {!lfLoading&&lfItems.filter(i=>i.status==="Claimed").length>0&&(
-          <div style={{fontSize:11,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:8}}>Claimed ({lfItems.filter(i=>i.status==="Claimed").length})</div>
-        )}
-      </div>
-
-      {/* Add Item Modal */}
-      {lfAddOpen&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",zIndex:200}}>
-          <div style={{width:"100%",background:"#0d0d1a",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",display:"flex",flexDirection:"column",gap:12,maxHeight:"85vh",overflowY:"auto"}}>
-            <div style={{fontSize:18,fontWeight:900,color:"#f1f5f9"}}>📦 Add Found Item</div>
-            <div style={{display:"flex",gap:6}}>
-              {["Thu","Fri","Sat","Sun"].map(d=>(
-                <button key={d} style={{flex:1,padding:"9px",borderRadius:8,border:`1px solid ${lfAddDay===d?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:lfAddDay===d?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.04)",color:lfAddDay===d?"#38bdf8":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddDay(d)}>{d}</button>
-              ))}
-            </div>
-            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:13,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Item description *" value={lfAddDesc||""} onChange={e=>setLfAddDesc(e.target.value)}/>
-            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:13,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Where found *" value={lfAddLoc||""} onChange={e=>setLfAddLoc(e.target.value)}/>
-            <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"10px",borderRadius:8,border:"1px solid rgba(34,197,94,0.25)",background:"rgba(34,197,94,0.04)"}}>
-              <input type="checkbox" style={{width:20,height:20,accentColor:"#4ade80"}} checked={lfAddOffice||false} onChange={e=>setLfAddOffice(e.target.checked)}/>
-              <span style={{fontSize:14,fontWeight:700,color:"#4ade80"}}>Mark as AT FEST OFFICE</span>
-            </label>
-            <div style={{display:"flex",gap:10}}>
-              <button style={{flex:1,padding:14,borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(false)}>Cancel</button>
-              <button style={{flex:2,padding:14,borderRadius:10,border:"none",background:"linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer"}} onClick={async(e)=>{
-                if(!lfAddDesc||!lfAddLoc) return;
-                const r=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:lfAddDesc,foundAt:lfAddLoc,dayFound:lfAddDay||"Unknown",foundBy:"Admin (Hub)",role:"Admin",atFestOffice:lfAddOffice?"Yes":"No"})});
-                const d=await r.json();
-                setLfAddOpen(false);setLfAddDesc("");setLfAddLoc("");setLfAddDay("");setLfAddOffice(false);
-                fetchLFItems();
-                alert("Item added! #"+d.itemNumber);
-              }}>Add Item</button>
-            </div>
-          </div>
-        </div>
-      )}
+          );
+        });
+      })()}
     </div></div>
   );
 

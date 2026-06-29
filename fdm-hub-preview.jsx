@@ -1288,7 +1288,6 @@ function HubApp({onBack}){
       playAlert(newest.type);
     }
   },[calls,liveMode]);
-  const [mpdOfficers,setMpdOfficers]=useState([]);
   // Fetch MPD officers from Airtable
   useEffect(()=>{
     fetch("/.netlify/functions/get-mpd-officers")

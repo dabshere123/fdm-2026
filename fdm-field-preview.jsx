@@ -175,8 +175,8 @@ function NewCallView({user,callType,onBack}){
   ];
 
   const isLostChild=type==='lost_child';
-  const lcReady=lcLocation&&(lcName||lcAge)&&lcClothing;
   const lcLocation=location;
+  const lcReady=lcLocation&&(lcName||lcAge)&&lcClothing;
 
   async function submit(){
     if(isLostChild){

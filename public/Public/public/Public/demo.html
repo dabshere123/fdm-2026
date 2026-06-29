@@ -121,6 +121,37 @@ const STEPS = [
     `
   },
 
+  // ── LOGGING IN ────────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>How to Log In</h2>
+        <p>Open the app and type your first name. Your name will appear in the list — tap it to log in.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div style="text-align:center;padding:12px 0 8px;">
+              <div style="font-size:22px;font-weight:900;color:#f1f5f9;margin-bottom:2px;">🎶 FDM 2026</div>
+              <div style="font-size:10px;color:#64748b;">Festival Worker App</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.07);border:1.5px solid rgba(14,165,233,0.4);border-radius:10px;padding:10px 12px;font-size:12px;color:#f1f5f9;margin-bottom:10px;">Josh</div>
+            <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Select your name</div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(14,165,233,0.3);border-radius:10px;padding:12px;margin-bottom:5px;display:flex;flex-direction:column;gap:2px;">
+              <div style="font-size:14px;font-weight:700;color:#f1f5f9;">Josh</div>
+              <div style="font-size:10px;color:#64748b;">Moon Bar</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;opacity:0.5;margin-bottom:5px;">
+              <div style="font-size:14px;font-weight:700;color:#94a3b8;">Josh M.</div>
+              <div style="font-size:10px;color:#475569;">Lafayette Bar</div>
+            </div>
+          </div>
+        </div>
+        <div class="note">Type just your <strong>first name</strong>. If there are two Joshs, your location will show below your name so you pick the right one. Tap your card to log in.</div>
+        <button class="btn" onclick="next()">Next →</button>
+      </div>
+    `
+  },
+
   // ── YOUR HOME SCREEN ──────────────────────────────────────
   {
     render: () => `

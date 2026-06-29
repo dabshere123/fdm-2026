@@ -15,7 +15,7 @@ exports.handler = async (event) => {
 
     // Get online officers
     const res = await fetch(
-      `https://api.airtable.com/v0/${BASE}/MPDOfficers?filterByFormula={MPDStatus}="Online"`,
+      `https://api.airtable.com/v0/${BASE}/MPDOfficers?filterByFormula={MPDStatus}="ON"`,
       { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
     );
     const data = await res.json();

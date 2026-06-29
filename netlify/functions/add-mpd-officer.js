@@ -26,7 +26,7 @@ exports.handler = async (event) => {
         Name: name,
         Phone: phone,
         Badge: badge || '',
-        MPDStatus: 'Offline',
+        MPDStatus: 'OFF',
         LastAck: '',
       }})
     });

@@ -2458,17 +2458,17 @@ Reply YES to acknowledge.`
             </div>
           )}
           {mpdOfficers.map(o=>(
-            <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="Online"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
+            <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
               <div style={{flex:1}}>
                 <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>{o.name}</div>
                 {o.badge&&<div style={{fontSize:11,color:"#64748b"}}>Badge #{o.badge}</div>}
                 <div style={{fontSize:11,color:"#64748b"}}>{o.phone}</div>
               </div>
-              <button style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${o.status==="Online"?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:o.status==="Online"?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",color:o.status==="Online"?"#4ade80":"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
-                const newStatus=o.status==="Online"?"Offline":"Online";
+              <button style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:o.status==="ON"?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",color:o.status==="ON"?"#4ade80":"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
+                const newStatus=o.status==="ON"?"OFF":"ON";
                 await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:newStatus})});
                 fetchMPD();
-              }}>{o.status==="Online"?"🟢 Online":"⚫ Offline"}</button>
+              }}>{o.status==="ON"?"🟢 Online":"⚫ Offline"}</button>
             </div>
           ))}
           {/* Add Officer Form */}
@@ -2486,7 +2486,7 @@ Reply YES to acknowledge.`
                   setMpdAddStatus("Adding officer...");
                   try{
                     // Add to Airtable
-                    const r=await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/MPDOfficers`,{method:"POST",headers:{"Authorization":`Bearer ${airtableToken}`,"Content-Type":"application/json"},body:JSON.stringify({fields:{Name:mpdNewName,Phone:mpdNewPhone,Badge:mpdNewBadge,MPDStatus:"Offline"}})});
+                    const r=await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/MPDOfficers`,{method:"POST",headers:{"Authorization":`Bearer ${airtableToken}`,"Content-Type":"application/json"},body:JSON.stringify({fields:{Name:mpdNewName,Phone:mpdNewPhone,Badge:mpdNewBadge,MPDStatus:"OFF"}})});
                     const d=await r.json();
                     if(!r.ok) throw new Error(d.error?.message||"Airtable error");
                     // Send confirmation SMS via Netlify function
@@ -2532,11 +2532,12 @@ Reply YES to acknowledge.`
 
           <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
             <strong style={{color:"#93c5fd"}}>Airtable — MPDOfficers table fields:</strong><br/>
-            • Name, Phone, Badge, MPDStatus, LastAck, <strong style={{color:"#fcd34d"}}>Approved</strong><br/>
+            • Name, Phone, Badge, LastAck<br/>
+            • MPDStatus: <strong style={{color:"#4ade80"}}>ON</strong> (working) / <strong style={{color:"#64748b"}}>OFF</strong> (not working — auto-set at shift end)<br/>
             • ThuStart–SunEnd (same time format as staff)<br/><br/>
             <strong style={{color:"#93c5fd"}}>Adding via Airtable:</strong><br/>
-            Set Approved to <strong style={{color:"#f1f5f9"}}>"Approved"</strong> → automation fires confirmation text<br/>
-            Trigger: When record matches condition → Approved = "Approved"<br/>
+            Set MPDStatus to <strong style={{color:"#f1f5f9"}}>"ON"</strong> → automation fires confirmation text<br/>
+            Trigger: When record matches condition → MPDStatus = "ON"<br/>
             Webhook URL:<br/>
             <span style={{color:"#f1f5f9",fontSize:10,wordBreak:"break-all"}}>https://fdm2026.netlify.app/.netlify/functions/send-mpd-confirmation</span><br/>
             Body: {"{"}  "name": {"{{"}Name{"}}"}, "phone": {"{{"}Phone{"}}"} {"}"}<br/><br/>

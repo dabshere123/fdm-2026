@@ -16,7 +16,7 @@ exports.handler = async (event) => {
       name: r.fields.Name || '',
       phone: r.fields.Phone || '',
       badge: r.fields.Badge || '',
-      status: r.fields.MPDStatus || 'Offline',
+      status: r.fields.MPDStatus || 'OFF',
       lastAck: r.fields.LastAck || '',
     }));
     return { statusCode: 200, headers, body: JSON.stringify({ officers }) };

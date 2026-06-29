@@ -1,656 +1,521 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
-  <title>FDM 2026 — App Walkthrough</title>
-  <meta name="theme-color" content="#0a0a14"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    html,body{font-family:'DM Sans',sans-serif;background:#0a0a14;color:#f1f5f9;min-height:100vh;overflow-x:hidden;}
-    .screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;text-align:center;position:relative;}
-    .progress{position:fixed;top:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.08);z-index:100;}
-    .progress-bar{height:100%;background:linear-gradient(90deg,#7c3aed,#38bdf8);transition:width 0.4s ease;}
-    .step-label{position:fixed;top:12px;right:16px;font-size:11px;font-weight:700;color:#475569;z-index:100;}
-    .skip{position:fixed;top:8px;left:16px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;padding:4px 8px;z-index:100;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(255,255,255,0.08);}
-    .emoji{font-size:64px;margin-bottom:16px;display:block;}
-    h1{font-size:26px;font-weight:900;margin-bottom:10px;line-height:1.2;}
-    h2{font-size:20px;font-weight:800;margin-bottom:8px;}
-    p{font-size:15px;color:#94a3b8;line-height:1.7;max-width:340px;margin:0 auto 20px;}
-    .btn{display:block;width:100%;max-width:340px;padding:18px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;margin:0 auto;}
-    .btn.blue{background:linear-gradient(135deg,#0ea5e9,#0284c7);}
-    .btn.red{background:linear-gradient(135deg,#dc2626,#b91c1c);}
-    .btn.green{background:linear-gradient(135deg,#16a34a,#15803d);}
-    .btn.amber{background:linear-gradient(135deg,#d97706,#b45309);}
-    .btn.outline{background:none;border:2px solid rgba(255,255,255,0.2);color:#f1f5f9;}
-    .btn+.btn{margin-top:10px;}
-    /* Phone mockup */
-    .phone{width:260px;border-radius:28px;border:3px solid rgba(255,255,255,0.15);background:#0d0d1a;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);margin:0 auto 24px;}
-    .phone-bar{background:#0d0d1a;padding:8px 16px 4px;display:flex;justify-content:space-between;align-items:center;}
-    .phone-bar span{font-size:10px;color:#475569;}
-    .phone-screen{padding:10px;min-height:360px;display:flex;flex-direction:column;}
-    /* Simulated app elements */
-    .app-hdr{background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.06);padding:10px;margin:-10px -10px 10px;display:flex;align-items:center;gap:8px;}
-    .app-hdr-name{font-size:13px;font-weight:800;color:#f1f5f9;}
-    .app-hdr-role{font-size:10px;color:#64748b;}
-    .call-btn{border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;border:2px solid;}
-    .call-btn.medical{background:rgba(147,51,234,0.15);border-color:rgba(147,51,234,0.5);}
-    .call-btn.fire{background:rgba(220,38,38,0.15);border-color:rgba(220,38,38,0.5);}
-    .call-btn.security{background:rgba(37,99,235,0.15);border-color:rgba(37,99,235,0.5);}
-    .call-btn.lost{background:rgba(234,179,8,0.15);border-color:rgba(234,179,8,0.5);}
-    .call-btn-icon{font-size:20px;}
-    .call-btn-text{font-size:11px;font-weight:800;color:#f1f5f9;}
-    .call-btn-sub{font-size:9px;color:#94a3b8;margin-top:1px;}
-    .form-field{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:#f1f5f9;text-align:left;}
-    .form-label{font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;}
-    .submit-btn{width:100%;background:rgba(220,38,38,0.8);border:none;border-radius:8px;padding:10px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;font-family:inherit;}
-    /* Alert card */
-    .alert-card{border-radius:12px;padding:10px 12px;border:2px solid;margin-bottom:6px;animation:slideIn 0.4s ease;}
-    @keyframes slideIn{from{transform:translateY(-10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-    .alert-card.medical{background:rgba(30,64,175,0.2);border-color:rgba(59,130,246,0.7);}
-    .alert-card.fire{background:rgba(220,38,38,0.2);border-color:rgba(239,68,68,0.7);}
-    .alert-card.security{background:rgba(15,23,42,0.7);border-color:rgba(100,116,139,0.6);}
-    .alert-type{font-size:10px;font-weight:900;color:#93c5fd;text-transform:uppercase;letter-spacing:0.08em;}
-    .alert-loc{font-size:12px;font-weight:800;color:#f1f5f9;margin:2px 0;}
-    .alert-prob{font-size:10px;color:#94a3b8;}
-    .alert-new{background:#ef4444;color:#fff;font-size:8px;font-weight:900;border-radius:4px;padding:1px 5px;display:inline-block;margin-left:6px;}
-    /* Broadcast banner */
-    .broadcast-banner{background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(234,88,12,0.15));border:2px solid rgba(249,115,22,0.6);border-radius:10px;padding:10px;margin-bottom:8px;animation:slideIn 0.5s ease;}
-    .broadcast-header{font-size:10px;font-weight:900;color:#fb923c;margin-bottom:4px;}
-    .broadcast-msg{font-size:11px;color:#f1f5f9;line-height:1.5;}
-    .reply-box{display:flex;gap:4px;margin-top:6px;}
-    .reply-inp{flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 8px;font-size:10px;color:#f1f5f9;font-family:inherit;}
-    .reply-send{background:rgba(249,115,22,0.8);border:none;border-radius:6px;padding:6px 10px;color:#fff;font-size:10px;font-weight:900;cursor:pointer;}
-    /* Hub side panel */
-    .hub-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;margin-bottom:8px;}
-    .hub-label{font-size:9px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
-    .hub-active{background:rgba(30,64,175,0.15);border:2px solid rgba(59,130,246,0.6);border-radius:8px;padding:8px;position:relative;}
-    .hub-active-type{font-size:10px;font-weight:900;color:#93c5fd;}
-    .hub-active-loc{font-size:11px;font-weight:800;color:#f1f5f9;margin:2px 0;}
-    .hub-active-btns{display:flex;gap:4px;margin-top:6px;}
-    .hub-active-btn{flex:1;border-radius:6px;padding:5px;border:none;font-size:9px;font-weight:800;cursor:pointer;}
-    /* Tags */
-    .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:4px 2px;}
-    .tag.purple{background:rgba(139,92,246,0.2);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3);}
-    .tag.blue{background:rgba(14,165,233,0.15);color:#38bdf8;border:1px solid rgba(14,165,233,0.3);}
-    .tag.red{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}
-    .tag.green{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
-    .tag.amber{background:rgba(245,158,11,0.15);color:#fcd34d;border:1px solid rgba(245,158,11,0.3);}
-    /* Annotation */
-    .note{background:rgba(14,165,233,0.08);border-left:3px solid #38bdf8;border-radius:0 8px 8px 0;padding:10px 12px;text-align:left;font-size:13px;color:#e2e8f0;line-height:1.6;max-width:340px;margin:0 auto 16px;}
-    .note strong{color:#38bdf8;}
-    /* Blink */
-    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
-    .blink{animation:blink 1s ease-in-out infinite;}
-    /* Pulse dot */
-    .pulse-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;margin-right:6px;animation:pulse 1s ease-in-out infinite;}
-    @keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.3);opacity:0.7;}}
-    /* Split view label */
-    .split-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;color:#475569;margin-bottom:4px;}
-    .split{display:flex;gap:10px;max-width:340px;margin:0 auto 16px;}
-    .split>div{flex:1;}
-    /* Divider */
-    .divider{width:100%;max-width:340px;border:none;border-top:1px solid rgba(255,255,255,0.07);margin:16px auto;}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FDM 2026 — Staff Guide & Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;padding:0 0 60px;}
+.hero{background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(16,185,129,0.1));padding:32px 20px 24px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);}
+.hero h1{font-size:26px;font-weight:900;color:#f1f5f9;margin-bottom:6px;}
+.hero p{font-size:13px;color:#64748b;}
+.toc{padding:16px 20px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.06);}
+.toc-title{font-size:11px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.toc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.toc-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;font-size:12px;color:#94a3b8;text-decoration:none;display:block;}
+.toc-item:hover{background:rgba(255,255,255,0.08);color:#f1f5f9;}
+.section{padding:20px;}
+.section+.section{border-top:1px solid rgba(255,255,255,0.04);}
+h2{font-size:18px;font-weight:900;color:#f1f5f9;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.section-sub{font-size:12px;color:#475569;margin-bottom:16px;}
+.card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+.card h3{font-size:14px;font-weight:800;color:#f1f5f9;margin-bottom:6px;}
+.card p{font-size:13px;color:#94a3b8;line-height:1.6;}
+.step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+.step-num{background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#a78bfa;flex-shrink:0;margin-top:1px;}
+.step-body{flex:1;}
+.step-title{font-size:14px;font-weight:800;color:#f1f5f9;margin-bottom:3px;}
+.step-desc{font-size:13px;color:#64748b;line-height:1.5;}
+.tip{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:10px 12px;font-size:12px;color:#6ee7b7;line-height:1.5;margin-bottom:10px;}
+.warn{background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:10px 12px;font-size:12px;color:#fca5a5;line-height:1.5;margin-bottom:10px;}
+.info{background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 12px;font-size:12px;color:#93c5fd;line-height:1.5;margin-bottom:10px;}
+.screen{background:#0d0d1a;border:2px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:12px;font-size:12px;color:#94a3b8;}
+.screen-title{font-size:10px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.mock-btn{display:inline-block;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;margin:3px;cursor:default;}
+.btn-med{background:rgba(147,51,234,0.2);border:1px solid rgba(147,51,234,0.5);color:#d8b4fe;}
+.btn-fire{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5;}
+.btn-sec{background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.5);color:#93c5fd;}
+.btn-lc{background:rgba(202,138,4,0.2);border:2px solid #eab308;color:#fcd34d;}
+.btn-911{background:rgba(180,0,0,0.15);border:2px solid rgba(180,0,0,0.5);color:#f87171;}
+.btn-green{background:rgba(22,163,74,0.2);border:1px solid rgba(22,163,74,0.4);color:#4ade80;}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:800;}
+.badge-admin{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#a78bfa;}
+.badge-med{background:rgba(236,72,153,0.12);border:1px solid rgba(236,72,153,0.3);color:#f9a8d4;}
+.badge-staff{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#6ee7b7;}
+.role-row{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+a.app-link{display:block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;text-decoration:none;color:#f1f5f9;font-size:13px;font-weight:700;margin-bottom:8px;}
+a.app-link span{float:right;color:#64748b;font-weight:400;}
+.divider{height:1px;background:rgba(255,255,255,0.05);margin:8px 0;}
+</style>
 </head>
 <body>
 
-<div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-<div class="step-label" id="stepLabel"></div>
-<div class="skip" onclick="finish()">Skip →</div>
+<div class="hero">
+  <h1>🎺 FDM 2026 Staff Guide</h1>
+  <p>La Fête de Marquette · July 9–12 · McPike Park · Madison, WI</p>
+  <p style="margin-top:6px;font-size:12px;color:#4ade80;font-weight:700;">Worker App: fdm2026.netlify.app/field</p>
+</div>
 
-<div id="app"></div>
+<div class="toc">
+  <div class="toc-title">Jump To</div>
+  <div class="toc-grid">
+    <a href="#login" class="toc-item">🔐 How to Log In</a>
+    <a href="#roles" class="toc-item">👤 Your Role</a>
+    <a href="#calls" class="toc-item">🚨 Submitting a Call</a>
+    <a href="#medical" class="toc-item">🩺 Medical Call</a>
+    <a href="#fire" class="toc-item">🔥 Fire / Life Safety</a>
+    <a href="#security" class="toc-item">🛡️ Security</a>
+    <a href="#supplies" class="toc-item">📦 Supplies Request</a>
+    <a href="#lostchild" class="toc-item">🧒 Lost Child</a>
+    <a href="#lf" class="toc-item">📋 Lost &amp; Found</a>
+    <a href="#chat" class="toc-item">💬 Festival Chat</a>
+    <a href="#broadcast" class="toc-item">📣 Broadcast Alerts</a>
+    <a href="#hub" class="toc-item">⚙️ Admin / Med Hub</a>
+  </div>
+</div>
 
-<script>
-const STEPS = [
+<!-- APP LINKS -->
+<div class="section">
+  <h2>🔗 App Links</h2>
+  <a href="/field" class="app-link">📱 Worker App (all staff) <span>fdm2026.netlify.app/field</span></a>
+  <a href="/hub" class="app-link">⚙️ Admin &amp; Med Hub <span>Hub personnel only</span></a>
+  <a href="/lostfound" class="app-link">📋 Lost &amp; Found Lookup <span>Public lookup page</span></a>
+  <a href="/register" class="app-link">✍️ Staff Registration <span>Register for a shift</span></a>
+</div>
 
-  // ── INTRO ──────────────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen" style="background:linear-gradient(180deg,#0a0a14,#0f0a1a)">
-        <span class="emoji">🎶</span>
-        <h1>Welcome to the<br/>FDM 2026 Worker App</h1>
-        <p>This quick walkthrough shows you exactly how the app works — and what happens when you use it. Tap through at your own pace.</p>
-        <p style="font-size:13px;color:#475569;">Takes about 3 minutes.</p>
-        <button class="btn" onclick="next()">Let's Go →</button>
-        <button class="btn outline" style="margin-top:10px;" onclick="finish()">Skip to App</button>
-      </div>
-    `
-  },
+<!-- LOGIN -->
+<div class="section" id="login">
+  <h2>🔐 How to Log In</h2>
+  <p class="section-sub">Open fdm2026.netlify.app/field on your phone. No app download needed.</p>
 
-  // ── LOGGING IN ────────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>How to Log In</h2>
-        <p>Open the app and type your first name. Your name will appear in the list — tap it to log in.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div style="text-align:center;padding:12px 0 8px;">
-              <div style="font-size:22px;font-weight:900;color:#f1f5f9;margin-bottom:2px;">🎶 FDM 2026</div>
-              <div style="font-size:10px;color:#64748b;">Festival Worker App</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.07);border:1.5px solid rgba(14,165,233,0.4);border-radius:10px;padding:10px 12px;font-size:12px;color:#f1f5f9;margin-bottom:10px;">Josh</div>
-            <div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Select your name</div>
-            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(14,165,233,0.3);border-radius:10px;padding:12px;margin-bottom:5px;display:flex;flex-direction:column;gap:2px;">
-              <div style="font-size:14px;font-weight:700;color:#f1f5f9;">Josh</div>
-              <div style="font-size:10px;color:#64748b;">Moon Bar</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;opacity:0.5;margin-bottom:5px;">
-              <div style="font-size:14px;font-weight:700;color:#94a3b8;">Josh M.</div>
-              <div style="font-size:10px;color:#475569;">Lafayette Bar</div>
-            </div>
-          </div>
-        </div>
-        <div class="note">Type just your <strong>first name</strong>. If there are two Joshs, your location will show below your name so you pick the right one. Tap your card to log in.</div>
-        <button class="btn" onclick="next()">Next →</button>
-      </div>
-    `
-  },
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Enter Your Name</div>
+      <div class="step-desc">Type your full name exactly as it appears on your staff registration. Case doesn't matter.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Select Your Role</div>
+      <div class="step-desc">Choose from the dropdown. If you work multiple roles across days, log out and back in with the correct role for your shift.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Enter Your Location</div>
+      <div class="step-desc">Type where you're stationed — e.g. "Moon Bar", "Sun Stage Left", "Medical Tent". This auto-fills your location on all calls you submit.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Tap Sign In</div>
+      <div class="step-desc">You're in. Add the page to your home screen for faster access next time.</div>
+    </div>
+  </div>
 
-  // ── YOUR HOME SCREEN ──────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Your Home Screen</h2>
-        <p>When you log in, this is what you see. Everything you need is right here.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr">
-              <div>
-                <div class="app-hdr-name">Josh</div>
-                <div class="app-hdr-role">Moon Bar Manager</div>
-              </div>
-            </div>
-            <div class="call-btn medical"><span class="call-btn-icon">🩺</span><div><div class="call-btn-text">MEDICAL</div><div class="call-btn-sub">Medical emergency</div></div></div>
-            <div class="call-btn fire"><span class="call-btn-icon">🔥</span><div><div class="call-btn-text">FIRE / LIFE SAFETY</div><div class="call-btn-sub">Fire, smoke, hazard</div></div></div>
-            <div class="call-btn security"><span class="call-btn-icon">🔒</span><div><div class="call-btn-text">SECURITY</div><div class="call-btn-sub">Disturbance, threat</div></div></div>
-            <div class="call-btn lost" style="border-color:rgba(234,179,8,0.5);background:rgba(234,179,8,0.1)"><span class="call-btn-icon">🧒</span><div><div class="call-btn-text">LOST CHILD</div><div class="call-btn-sub">Alerts ALL staff</div></div></div>
-          </div>
-        </div>
-        <div class="note">Your name and location appear at the top. The four main buttons cover the key situations you may encounter.</div>
-        <button class="btn" onclick="next()">Next →</button>
-      </div>
-    `
-  },
+  <div class="tip">💡 Add to home screen: tap the Share button in Safari → "Add to Home Screen" — it opens full-screen with no browser bar.</div>
+</div>
 
-  // ── MEDICAL REQUEST FORM ──────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Submitting a Medical Call</h2>
-        <p>Tap Medical and fill in two things — where it is and what's happening.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr" style="margin-bottom:8px;">
-              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
-              <div style="font-size:12px;font-weight:800;margin-left:8px;">Submit a Call</div>
-            </div>
-            <div style="background:rgba(147,51,234,0.12);border:1px solid rgba(147,51,234,0.4);border-radius:8px;padding:8px;margin-bottom:8px;text-align:left;">
-              <div style="font-size:11px;font-weight:900;color:#d8b4fe;">🩺 Medical Emergency</div>
-            </div>
-            <div class="form-label">Location</div>
-            <div class="form-field">Moon Bar — near the east entrance</div>
-            <div class="form-label">Description</div>
-            <div class="form-field">Person down, not responding. Adult male, mid-40s.</div>
-            <button class="submit-btn blink">🚨 Submit Call</button>
-          </div>
-        </div>
-        <div class="note">Be as <strong>specific as possible</strong> with location and description. This goes directly to admin and med units.</div>
-        <button class="btn red" onclick="next()">Submit — See What Happens →</button>
-      </div>
-    `
-  },
+<!-- ROLES -->
+<div class="section" id="roles">
+  <h2>👤 Roles &amp; What They See</h2>
+  <div class="role-row">
+    <span class="badge badge-admin">Admin 1</span>
+    <span class="badge badge-admin">Admin 2</span>
+    <span class="badge badge-med">Med 1</span>
+    <span class="badge badge-med">Med 2</span>
+    <span class="badge badge-staff">Bar Staff</span>
+    <span class="badge badge-staff">Stage Manager</span>
+    <span class="badge badge-staff">Hospitality</span>
+    <span class="badge badge-staff">Overnight</span>
+  </div>
+  <div class="card">
+    <h3>Admin 1 / Admin 2</h3>
+    <p>Full access to the Hub. See all active calls, manage staff, access MPD officers, send broadcasts, manage Lost &amp; Found, run end-of-night reports.</p>
+  </div>
+  <div class="card">
+    <h3>Med 1 / Med 2</h3>
+    <p>Access to Med Hub. See all medical and fire calls, manage walk-in patients, run incident reports, access the 911 activation.</p>
+  </div>
+  <div class="card">
+    <h3>All Other Roles</h3>
+    <p>Worker App only. Can submit calls, report lost children, log L&amp;F items, chat, and receive broadcast alerts. The app automatically routes your calls to the right team.</p>
+  </div>
+</div>
 
-  // ── WHAT HAPPENS AFTER SUBMIT ─────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>What Happens Next</h2>
-        <p>The moment you hit Submit, three things happen simultaneously.</p>
-        <div style="max-width:340px;margin:0 auto 20px;display:flex;flex-direction:column;gap:10px;text-align:left;">
-          <div style="background:rgba(147,51,234,0.1);border:1px solid rgba(147,51,234,0.3);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
-            <span style="font-size:24px;flex-shrink:0;">📱</span>
-            <div>
-              <div style="font-size:13px;font-weight:800;color:#d8b4fe;margin-bottom:3px;">SMS to Admin</div>
-              <div style="font-size:12px;color:#94a3b8;">Devin and Gary get a text immediately with your location and description.</div>
-            </div>
-          </div>
-          <div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
-            <span style="font-size:24px;flex-shrink:0;">📞</span>
-            <div>
-              <div style="font-size:13px;font-weight:800;color:#fca5a5;margin-bottom:3px;">Voice Call to Admin</div>
-              <div style="font-size:12px;color:#94a3b8;">A voice call goes out so admin can't miss it even if their phone is in their pocket.</div>
-            </div>
-          </div>
-          <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
-            <span style="font-size:24px;flex-shrink:0;">🖥️</span>
-            <div>
-              <div style="font-size:13px;font-weight:800;color:#38bdf8;margin-bottom:3px;">Alert on Admin Hub</div>
-              <div style="font-size:12px;color:#94a3b8;">A flashing alert card appears on the admin screen with all your info.</div>
-            </div>
-          </div>
-        </div>
-        <button class="btn" onclick="next()">See the Admin Hub →</button>
-      </div>
-    `
-  },
+<!-- SUBMITTING A CALL -->
+<div class="section" id="calls">
+  <h2>🚨 Submitting Any Call</h2>
+  <p class="section-sub">All calls follow the same pattern regardless of type.</p>
 
-  // ── ADMIN HUB VIEW ────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>The Admin Hub</h2>
-        <p>This is what admin sees on their screen. Your call shows up instantly.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>Admin Hub</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr"><div class="app-hdr-name">🎶 FDM 2026 Admin</div></div>
-            <div class="hub-panel">
-              <div class="hub-label">Active Calls</div>
-              <div class="hub-active">
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                  <div class="hub-active-type">🩺 MEDICAL</div>
-                  <span class="pulse-dot"></span><span style="font-size:9px;color:#fca5a5;font-weight:800;">NEW</span>
-                </div>
-                <div class="hub-active-loc">Moon Bar — east entrance</div>
-                <div style="font-size:10px;color:#94a3b8;">Person down, not responding. Adult male.</div>
-                <div class="hub-active-btns">
-                  <button class="hub-active-btn" style="background:rgba(147,51,234,0.4);color:#f1f5f9;">🩺 Med 1</button>
-                  <button class="hub-active-btn" style="background:rgba(147,51,234,0.4);color:#f1f5f9;">🩺 Med 2</button>
-                </div>
-              </div>
-            </div>
-            <div style="padding:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;text-align:center;">
-              <div style="font-size:9px;font-weight:800;color:#4ade80;">Med units have been dispatched ✅</div>
-            </div>
-          </div>
-        </div>
-        <div class="note">Admin taps <strong>Med 1</strong> or <strong>Med 2</strong> to assign the call. The med unit gets a full-screen alert on their hub immediately.</div>
-        <button class="btn" onclick="next()">See Fire/Life Safety →</button>
-      </div>
-    `
-  },
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap the call type button</div>
+      <div class="step-desc">From your home screen: Medical, Fire/Life Safety, Security, or Supplies. Lost Child has its own dedicated button.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Confirm or update location</div>
+      <div class="step-desc">Your login location auto-fills. Update it if the incident is elsewhere — be specific: "Moon Stage left side near barricade" is better than "Moon Stage".</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Describe the situation</div>
+      <div class="step-desc">Keep it brief and factual: "Guest down, unresponsive" or "Smell of smoke near stage left" or "Aggressive patron refusing to leave".</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Tap Submit</div>
+      <div class="step-desc">Admin, Med team, and relevant units are notified by SMS and the Hub immediately. Stay at the scene until help arrives.</div>
+    </div>
+  </div>
 
-  // ── FIRE / LIFE SAFETY ────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Fire / Life Safety</h2>
-        <p>Same process as medical — tap, fill in location and description, submit.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr" style="margin-bottom:8px;">
-              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
-              <div style="font-size:12px;font-weight:800;margin-left:8px;">Submit a Call</div>
-            </div>
-            <div style="background:rgba(220,38,38,0.15);border:2px solid rgba(220,38,38,0.5);border-radius:8px;padding:8px;margin-bottom:8px;text-align:left;">
-              <div style="font-size:11px;font-weight:900;color:#fca5a5;">🔥 Fire / Life Safety</div>
-            </div>
-            <div class="form-label">Location</div>
-            <div class="form-field">Behind Lafayette Bar, near the fence</div>
-            <div class="form-label">Description</div>
-            <div class="form-field">Small fire in trash can, no one injured yet</div>
-            <button class="submit-btn" style="background:rgba(220,38,38,0.8);">🚨 Submit Call</button>
-          </div>
-        </div>
-        <div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);border-radius:10px;padding:12px;max-width:340px;margin:0 auto 16px;text-align:left;">
-          <div style="font-size:12px;font-weight:800;color:#fca5a5;margin-bottom:6px;">🔥 Fire calls trigger:</div>
-          <div style="font-size:12px;color:#94a3b8;line-height:1.7;">• SMS + Voice call to Devin and Gary<br/>• Flashing RED alert on admin hub<br/>• Med units are also alerted</div>
-        </div>
-        <button class="btn red" onclick="next()">Next — Security →</button>
-      </div>
-    `
-  },
+  <div class="warn">⚠️ For life-threatening emergencies — always call 911 directly first. The app alerts festival staff, not 911.</div>
+</div>
 
-  // ── SECURITY ──────────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Security Call</h2>
-        <p>Disturbance, aggressive person, theft — use Security.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr" style="margin-bottom:8px;">
-              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
-              <div style="font-size:12px;font-weight:800;margin-left:8px;">Submit a Call</div>
-            </div>
-            <div style="background:rgba(37,99,235,0.12);border:2px solid rgba(37,99,235,0.4);border-radius:8px;padding:8px;margin-bottom:8px;text-align:left;">
-              <div style="font-size:11px;font-weight:900;color:#93c5fd;">🔒 Security</div>
-            </div>
-            <div class="form-label">Location</div>
-            <div class="form-field">Sun Bar Right — near the speaker stack</div>
-            <div class="form-label">Description</div>
-            <div class="form-field">Intoxicated male, refusing to leave, becoming aggressive</div>
-            <button class="submit-btn" style="background:rgba(37,99,235,0.8);">🚨 Submit Call</button>
-          </div>
-        </div>
-        <div class="note"><strong>Stay calm, don't escalate.</strong> Get location and description in, then step back. Security handles the rest.</div>
-        <button class="btn blue" onclick="next()">Next — Broadcasts →</button>
-      </div>
-    `
-  },
+<!-- MEDICAL -->
+<div class="section" id="medical">
+  <h2>🩺 Medical Call</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap the Medical button</div>
+      <div class="step-desc">Purple button on home screen. Opens the call form.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Location + description</div>
+      <div class="step-desc">Examples: "Guest unconscious near Moon Bar entrance" · "Patron having seizure near stage right" · "Heat exhaustion, north lawn"</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Submit — stay with patient</div>
+      <div class="step-desc">Med team is alerted by SMS and voice call. Keep the scene clear, note any changes in the patient's condition to report to medics.</div>
+    </div>
+  </div>
+  <div class="tip">💡 Mention any visible AED location nearby: "AED on north wall of Moon Stage."</div>
+</div>
 
-  // ── BROADCAST INCOMING ────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Receiving a Broadcast</h2>
-        <p>Admin can send a message to everyone instantly. This is how it looks on your screen.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr"><div class="app-hdr-name">Josh · Moon Bar</div></div>
-            <div class="broadcast-banner">
-              <div class="broadcast-header">📢 BROADCAST FROM ADMIN</div>
-              <div class="broadcast-msg">Weather alert — storms moving in around 9pm. Begin winding down Moon Stage at 8:45. All bar managers please confirm receipt.</div>
-              <div class="reply-box">
-                <div class="reply-inp">Got it ✅</div>
-                <button class="reply-send">Send</button>
-              </div>
-            </div>
-            <div style="font-size:10px;color:#475569;text-align:center;margin-top:4px;">You can quick-reply right from this banner</div>
-          </div>
-        </div>
-        <div class="note">The orange banner appears automatically. You can <strong>reply directly without going into chat</strong>. Admin sees all responses.</div>
-        <button class="btn amber" onclick="next()">Next — Lost Child →</button>
-      </div>
-    `
-  },
+<!-- FIRE -->
+<div class="section" id="fire">
+  <h2>🔥 Fire / Life Safety</h2>
+  <div class="warn">⚠️ Call 911 immediately if there is actual fire or smoke. Then submit the call in the app.</div>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Call 911 first</div>
+      <div class="step-desc">Never rely on the app alone for fire. Call 911, then open the app.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Tap Fire / Life Safety</div>
+      <div class="step-desc">Describe what you see: "Smoke from backstage area, Sun Stage" · "Electrical smell, Lagniappe Bar back room" · "Gas smell near vendor row"</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Begin crowd movement</div>
+      <div class="step-desc">If safe to do so, calmly direct guests away from the area. Do not cause panic. Follow directions from Admin Hub.</div>
+    </div>
+  </div>
+</div>
 
-  // ── LOST CHILD FORM ───────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Reporting a Lost Child</h2>
-        <p>Tap Lost Child and fill in as much as you know. Every detail helps find them faster.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr" style="margin-bottom:8px;">
-              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
-              <div style="font-size:12px;font-weight:800;margin-left:8px;">🧒 Lost Child Report</div>
-            </div>
-            <div style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.4);border-radius:7px;padding:7px;margin-bottom:7px;text-align:left;">
-              <div style="font-size:10px;font-weight:900;color:#fcd34d;">Fill in what you know — all fields help</div>
-            </div>
-            <div class="form-label">Last Seen Location *</div>
-            <div class="form-field">Near Moon Stage, left side</div>
-            <div class="form-label">Child's Name</div>
-            <div class="form-field">Emma</div>
-            <div class="form-label">Age</div>
-            <div class="form-field">6 years old</div>
-            <div class="form-label">Hair Description</div>
-            <div class="form-field">Blonde, pigtails with pink ribbons</div>
-            <div class="form-label">Clothing *</div>
-            <div class="form-field">Pink unicorn shirt, denim shorts, white sneakers</div>
-            <div class="form-label">Last Seen With</div>
-            <div class="form-field">Father — tall, grey baseball cap, black shirt</div>
-            <button class="submit-btn blink" style="background:rgba(202,138,4,0.8);border:2px solid rgba(234,179,8,0.6);">🚨 Report Lost Child — Alert All Staff</button>
-          </div>
-        </div>
-        <div class="note"><strong>Required:</strong> Location + Clothing. Everything else fills in the picture — name, age, hair all help staff identify the child quickly.</div>
-        <button class="btn amber" onclick="next()">See What Happens →</button>
-      </div>
-    `
-  },
+<!-- SECURITY -->
+<div class="section" id="security">
+  <h2>🛡️ Security Call</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap Security</div>
+      <div class="step-desc">Blue button. Use for: aggressive patrons, fights, theft, threats, crowd control issues, anything that needs a security response.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Describe specifically</div>
+      <div class="step-desc">"Male patron, red shirt, threatening bartender at Moon Bar" · "Fight in progress, north lawn near vendor row" · "Unauthorized person backstage, Sun Stage"</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Do not intervene physically</div>
+      <div class="step-desc">Unless you are trained security — stay visible and watch. Note descriptions. Security team and MPD are alerted.</div>
+    </div>
+  </div>
+  <div class="info">ℹ️ MPD officers can be requested directly from the Hub if needed. On-duty officers receive an SMS immediately.</div>
+</div>
 
-  // ── LOST CHILD ────────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen" style="background:#0a0a14;">
-        <h2 style="color:#fcd34d;">Lost Child Alert</h2>
-        <p>This is the most urgent situation. When reported, everyone's screen looks like this:</p>
-        <div class="phone" style="border-color:rgba(234,179,8,0.5);">
-          <div class="phone-bar" style="background:rgba(202,138,4,0.9);"><span style="color:#fff;font-weight:700;">9:41 AM</span><span style="color:#fcd34d;font-weight:800;">⚠️ ALERT</span></div>
-          <div class="phone-screen" style="background:rgba(202,138,4,0.95);align-items:center;justify-content:center;padding:20px;min-height:360px;">
-            <div style="font-size:48px;margin-bottom:8px;" class="blink">🧒</div>
-            <div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:12px;">LOST CHILD</div>
-            <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">📍 Near Moon Stage</div>
-            <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:8px;font-size:11px;color:#fef08a;line-height:1.6;margin-bottom:10px;text-align:left;width:100%;">
-              Child: Emma · Age: 6<br/>Hair: Blonde pigtails<br/>Clothing: Pink shirt, denim shorts<br/>Last with: Father, tall, grey hat
-            </div>
-            <div style="font-size:10px;color:#fef08a;margin-bottom:8px;font-weight:700;">Search your area immediately</div>
-            <button style="width:100%;padding:10px;background:rgba(245,158,11,0.5);border:2px solid rgba(255,255,255,0.5);border-radius:8px;color:#fff;font-size:11px;font-weight:900;cursor:pointer;">✅ ACKNOWLEDGED — SEARCHING</button>
-          </div>
-        </div>
-        <div class="note"><strong>Everyone's phone</strong> flips to this screen. Every worker searches their area. Tap Acknowledged and start looking.</div>
-        <button class="btn amber" onclick="next()">Next — The Chat →</button>
-      </div>
-    `
-  },
+<!-- SUPPLIES -->
+<div class="section" id="supplies">
+  <h2>📦 Supplies Request</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap Supplies</div>
+      <div class="step-desc">For requesting bar restocks, ice, napkins, cups, or any operational supply from a bar station or stage.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Be specific about what you need</div>
+      <div class="step-desc">"Moon Bar needs 2 bags ice and more Spotted Cow" · "Lafayette Bar — out of 16oz cups" · "Sun Stage Right — need more barricade pins"</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Submit and wait</div>
+      <div class="step-desc">Your request routes to Admin. Response typically comes via chat or someone shows up. Check chat for updates.</div>
+    </div>
+  </div>
+</div>
 
-  // ── LOST & FOUND — LOG ITEM ──────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Lost & Found — Logging an Item</h2>
-        <p>Found something on the ground? Log it in the app so the owner can find it.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr" style="margin-bottom:8px;">
-              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
-              <div style="font-size:12px;font-weight:800;margin-left:8px;">Log Found Item</div>
-            </div>
-            <div style="display:flex;gap:5px;margin-bottom:8px;">
-              <div style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(14,165,233,0.5);background:rgba(14,165,233,0.1);font-size:10px;font-weight:700;color:#38bdf8;text-align:center;">Thu</div>
-              <div style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);font-size:10px;font-weight:700;color:#64748b;text-align:center;">Fri</div>
-              <div style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);font-size:10px;font-weight:700;color:#64748b;text-align:center;">Sat</div>
-              <div style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);font-size:10px;font-weight:700;color:#64748b;text-align:center;">Sun</div>
-            </div>
-            <div class="form-label">Where Was It Found?</div>
-            <div class="form-field">Near Moon Stage, left side speaker</div>
-            <div class="form-label">Description</div>
-            <div class="form-field">Black leather wallet, no ID visible</div>
-            <div style="border:2px dashed rgba(239,68,68,0.4);border-radius:8px;padding:12px;text-align:center;margin-bottom:6px;">
-              <div style="font-size:20px;margin-bottom:3px;">📸</div>
-              <div style="font-size:10px;font-weight:700;color:#fca5a5;">Photo Required</div>
-              <div style="font-size:9px;color:#64748b;margin-top:2px;">Tap to take photo of item</div>
-            </div>
-            <button class="submit-btn" style="background:rgba(249,115,22,0.8);">Log Item</button>
-          </div>
-        </div>
-        <div class="note"><strong>Photo is required.</strong> Fill in day found, where you found it, a description, then take a photo. Tap Log Item.</div>
-        <button class="btn" style="background:linear-gradient(135deg,rgba(249,115,22,0.8),rgba(234,88,12,0.8));" onclick="next()">See What Happens →</button>
-      </div>
-    `
-  },
+<!-- LOST CHILD -->
+<div class="section" id="lostchild">
+  <h2>🧒 Lost Child</h2>
+  <p class="section-sub">Two different scenarios — tap the right one.</p>
 
-  // ── LOST & FOUND — CONFIRMATION ───────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Item Logged — What to Do</h2>
-        <p>After submitting, you get an item number and clear instructions.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen" style="align-items:center;justify-content:center;display:flex;flex-direction:column;gap:10px;padding:20px;">
-            <div style="font-size:40px;">📦</div>
-            <div style="font-size:16px;font-weight:900;color:#f1f5f9;">Item Logged!</div>
-            <div style="background:rgba(249,115,22,0.12);border:2px solid rgba(249,115,22,0.5);border-radius:10px;padding:14px;text-align:center;width:100%;">
-              <div style="font-size:10px;font-weight:800;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Item Number</div>
-              <div style="font-size:28px;font-weight:900;color:#fb923c;">THU-MOON-042</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;width:100%;text-align:left;">
-              <div style="font-size:12px;font-weight:800;color:#f1f5f9;margin-bottom:6px;">Next Steps:</div>
-              <div style="font-size:11px;color:#e2e8f0;line-height:1.8;">1. Write <strong style="color:#fb923c;">#THU-MOON-042</strong> on a tag<br/>2. Attach tag to the item<br/>3. Place in the Lost &amp; Found box</div>
-            </div>
-            <button style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,rgba(34,197,94,0.8),rgba(22,163,74,0.8));color:#fff;font-size:13px;font-weight:900;">✅ Done — Item Tagged &amp; In Box</button>
-          </div>
-        </div>
-        <div class="note">Write the number on a tag, attach to the item, drop it in the <strong>Lost &amp; Found box</strong>. Tap Done when it's in the box.</div>
-        <button class="btn" style="background:linear-gradient(135deg,rgba(249,115,22,0.8),rgba(234,88,12,0.8));" onclick="next()">See the L&amp;F Lookup →</button>
-      </div>
-    `
-  },
+  <div class="card" style="border-color:rgba(234,179,8,0.4);background:rgba(202,138,4,0.06);">
+    <h3 style="color:#fcd34d;">🚨 MISSING CHILD — A child is lost</h3>
+    <p>A parent/guardian tells you their child is missing, or you notice an unaccompanied child who appears distressed.</p>
+  </div>
 
-  // ── LOST & FOUND — LOOKUP ─────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Lost & Found Lookup</h2>
-        <p>Anyone can search the Lost &amp; Found at any time — no app login needed.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>L&F Lookup</span></div>
-          <div class="phone-screen" style="padding:8px;">
-            <div style="font-size:13px;font-weight:900;color:#f1f5f9;margin-bottom:8px;">📦 Lost &amp; Found</div>
-            <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px;font-size:11px;color:#475569;margin-bottom:8px;">Search by description or item #...</div>
-            <div style="display:flex;gap:5px;margin-bottom:8px;">
-              <div style="padding:4px 8px;border-radius:12px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.4);font-size:9px;font-weight:700;color:#c4b5fd;">All Days</div>
-              <div style="padding:4px 8px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:9px;color:#64748b;">Thu</div>
-              <div style="padding:4px 8px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:9px;color:#64748b;">Fri</div>
-              <div style="padding:4px 8px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:9px;color:#64748b;">Sat</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:10px;overflow:hidden;margin-bottom:6px;">
-              <div style="width:100%;height:80px;background:linear-gradient(135deg,rgba(30,64,175,0.3),rgba(14,165,233,0.2));display:flex;align-items:center;justify-content:center;font-size:24px;">👛</div>
-              <div style="padding:8px;">
-                <div style="font-size:10px;font-weight:900;color:#fb923c;">TAG #THU-MOON-042</div>
-                <div style="font-size:11px;font-weight:700;color:#f1f5f9;margin:2px 0;">Black leather wallet</div>
-                <div style="font-size:9px;color:#64748b;">Found at: Moon Stage · Thursday</div>
-                <div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);border-radius:10px;display:inline-block;padding:2px 8px;font-size:9px;font-weight:800;color:#fcd34d;margin-top:4px;">In L&F</div>
-                <div style="width:100%;margin-top:6px;padding:7px;border-radius:7px;border:1px solid rgba(139,92,246,0.4);background:rgba(139,92,246,0.08);color:#c4b5fd;font-size:10px;font-weight:700;text-align:center;">Request Item Pickup</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="note">The lookup page is open to everyone — no login. Search by description, filter by day. <strong>Request Pickup</strong> sends an alert to admin to bring the item to the person.</div>
-        <button class="btn blue" onclick="next()">Next — Chat →</button>
-      </div>
-    `
-  },
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap Lost Child → Missing Child</div>
+      <div class="step-desc">Opens a form for child details.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Fill out the form</div>
+      <div class="step-desc"><strong>Name:</strong> if known · <strong>Age:</strong> approximate is fine · <strong>Hair:</strong> color and style · <strong>Clothing:</strong> be specific — color, type · <strong>Last seen:</strong> where/with whom · <strong>Guardian:</strong> name of person reporting</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Submit — PA script appears</div>
+      <div class="step-desc">All staff are alerted immediately. You'll see a PA announcement script ready to hand to the Stage Manager for the announcer to read over the loudspeaker.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Hand script to Stage Manager</div>
+      <div class="step-desc">Tap "Copy Script" and send it to the nearest Stage Manager. They'll give it to the announcer. You can also read it to them over radio.</div>
+    </div>
+  </div>
 
-  // ── CHAT ──────────────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <h2>Festival Chat</h2>
-        <p>The chat works like your text messages app. Each conversation is separate.</p>
-        <div class="phone">
-          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
-          <div class="phone-screen">
-            <div class="app-hdr"><div class="app-hdr-name">💬 Messages</div><div style="margin-left:auto;font-size:10px;color:#38bdf8;font-weight:700;">✏️ New</div></div>
-            <div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);">
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(14,165,233,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;">#</div>
-              <div style="flex:1;">
-                <div style="font-size:12px;font-weight:700;color:#f1f5f9;">All Staff</div>
-                <div style="font-size:10px;color:#64748b;">Admin: Please check in when doors open</div>
-              </div>
-              <div style="font-size:10px;color:#475569;">9:30</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);">
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(14,165,233,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;">#</div>
-              <div style="flex:1;">
-                <div style="font-size:12px;font-weight:700;color:#f1f5f9;">Moon Bar</div>
-                <div style="font-size:10px;color:#64748b;">You: Need more ice on the right side</div>
-              </div>
-              <div style="font-size:10px;color:#475569;">9:28</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:8px;">
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#a5b4fc;">DE</div>
-              <div style="flex:1;">
-                <div style="font-size:12px;font-weight:700;color:#f1f5f9;">Devin</div>
-                <div style="font-size:10px;color:#64748b;">Devin: On it — sending someone now</div>
-              </div>
-              <div style="background:#ef4444;color:#fff;font-size:9px;font-weight:900;border-radius:10px;padding:1px 6px;">1</div>
-            </div>
-          </div>
-        </div>
-        <div class="note">Tap any conversation to open it and reply. Each one is <strong>private and separate</strong> — nobody else sees your messages unless you send to their channel.</div>
-        <button class="btn blue" onclick="next()">Almost Done →</button>
-      </div>
-    `
-  },
+  <div class="divider"></div>
 
-  // ── QUICK TIPS ────────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen">
-        <span class="emoji">💡</span>
-        <h2>Quick Tips</h2>
-        <div style="max-width:340px;margin:0 auto 20px;text-align:left;display:flex;flex-direction:column;gap:10px;">
-          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
-            <span style="font-size:18px;flex-shrink:0;">📍</span>
-            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Be specific with location.</strong> "Moon Bar" is good. "Moon Bar, east side near the speaker" is better.</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
-            <span style="font-size:18px;flex-shrink:0;">⚡</span>
-            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Don't hesitate.</strong> If something looks wrong, submit a call. False alarms are far better than missed emergencies.</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
-            <span style="font-size:18px;flex-shrink:0;">📱</span>
-            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Keep the app open.</strong> Broadcasts and messages come in automatically — you'll see the orange banner.</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
-            <span style="font-size:18px;flex-shrink:0;">🔋</span>
-            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Charge your phone.</strong> You'll be using it all day. Start each shift at 100%.</div>
-          </div>
-        </div>
-        <button class="btn" onclick="next()">Finish →</button>
-      </div>
-    `
-  },
+  <div class="card" style="border-color:rgba(34,197,94,0.4);background:rgba(22,163,74,0.05);margin-top:10px;">
+    <h3 style="color:#4ade80;">🧒✅ CHILD FOUND HERE — You have a lost child</h3>
+    <p>A child has been brought to your location, or you found an unaccompanied child.</p>
+  </div>
 
-  // ── DONE ──────────────────────────────────────────────────
-  {
-    render: () => `
-      <div class="screen" style="background:linear-gradient(180deg,#0a0a14,#0f1a0a)">
-        <span class="emoji">✅</span>
-        <h1>You're Ready!</h1>
-        <p>You now know how to submit calls, receive broadcasts, and use the chat. See you at McPike Park July 9–12.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px;">
-          <span class="tag green">Medical ✓</span>
-          <span class="tag red">Fire ✓</span>
-          <span class="tag blue">Security ✓</span>
-          <span class="tag amber">Lost Child ✓</span>
-          <span class="tag purple">Broadcast ✓</span>
-          <span class="tag purple">Chat ✓</span>
-        </div>
-        <button class="btn green" onclick="window.location.href='/field'">Open the App →</button>
-        <button class="btn outline" style="margin-top:10px;" onclick="restart()">Start Over</button>
-        <p style="font-size:12px;color:#374151;margin-top:20px;">Fête de Marquette 2026 · July 9–12 · McPike Park</p>
-      </div>
-    `
-  }
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap Lost Child → Child Found Here</div>
+      <div class="step-desc">Opens a form to describe the child and your location.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Fill out the form</div>
+      <div class="step-desc"><strong>Name:</strong> if the child told you · <strong>Age:</strong> approximate · <strong>Hair &amp; Clothing:</strong> as specific as possible · <strong>Your location:</strong> where you are right now — this goes in the PA announcement · <strong>Guardian:</strong> if they mentioned a name</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Submit — PA script appears</div>
+      <div class="step-desc">All staff are notified. A PA script is generated directing parents to your location. Copy and hand it to the Stage Manager.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Stay with the child</div>
+      <div class="step-desc">Never leave the child alone. Keep them calm. Admin or a med team member will come to you. Do not release the child to anyone without Admin confirmation.</div>
+    </div>
+  </div>
 
-];
+  <div class="warn">🚨 Never leave a child alone under any circumstances. Stay with them until Admin or security arrives.</div>
+</div>
 
-let current = 0;
+<!-- LOST AND FOUND -->
+<div class="section" id="lf">
+  <h2>📋 Lost &amp; Found</h2>
+  <p class="section-sub">Someone turned in an item, or you found something.</p>
 
-function render() {
-  document.getElementById('app').innerHTML = STEPS[current].render();
-  const pct = (current / (STEPS.length - 1)) * 100;
-  document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('stepLabel').textContent = `${current + 1} / ${STEPS.length}`;
-  window.scrollTo(0,0);
-}
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap Lost &amp; Found on home screen</div>
+      <div class="step-desc">Opens the L&amp;F logging form.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Take a photo</div>
+      <div class="step-desc">Tap the camera area to take a photo of the item. This is required — it helps identify items when people come to claim them.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Fill in item details</div>
+      <div class="step-desc"><strong>Description:</strong> "Black iPhone 14 with cracked screen" · "Blue Hydro Flask, green lid" · "Car keys, Toyota fob, blue lanyard"</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Where found &amp; day</div>
+      <div class="step-desc">Be specific: "Moon Bar, near east exit" — this determines the item's tag number format.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-title">Submit — write the tag number on the item</div>
+      <div class="step-desc">You'll see a tag number like <strong>SAT-MOON-042</strong>. Write it on a piece of tape and attach it to the item, then place the item in the L&amp;F box.</div>
+    </div>
+  </div>
 
-function next() {
-  if (current < STEPS.length - 1) {
-    current++;
-    render();
-  }
-}
+  <div class="tip">💡 The L&amp;F lookup page is at fdm2026.netlify.app/lostfound — guests can search by tag number, item description, or where it was found.</div>
+  <div class="info">ℹ️ Tag format: DAY-LOCATION-### (e.g. THU-SUNL-007 = Thursday, Sun Stage Left, item 7)</div>
+</div>
 
-function finish() {
-  current = STEPS.length - 1;
-  render();
-}
+<!-- CHAT -->
+<div class="section" id="chat">
+  <h2>💬 Festival Chat</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Tap Chat on home screen</div>
+      <div class="step-desc">Opens your channel list — you see channels relevant to your role.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Tap a channel to open it</div>
+      <div class="step-desc">All Staff, your specific station channel, or direct message with another staff member.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Type your message and send</div>
+      <div class="step-desc">Chat is not for emergencies — use the call buttons for that. Chat is for coordination: "Lafayette Bar running low on cups" or "Anyone have a walkie charger?"</div>
+    </div>
+  </div>
+  <div class="tip">💡 A notification banner appears at the top of your home screen when a new message arrives. Tap it to reply quickly without leaving the home screen.</div>
+</div>
 
-function restart() {
-  current = 0;
-  render();
-}
+<!-- BROADCAST ALERTS -->
+<div class="section" id="broadcast">
+  <h2>📣 Broadcast Alerts</h2>
+  <p class="section-sub">Sent from Admin Hub to all or specific staff groups.</p>
+  <div class="card">
+    <h3>What you'll see</h3>
+    <p>A colored banner appears at the top of your home screen. Red = emergency. Orange = urgent. Blue = information. Yellow = weather. Tap it to dismiss or reply.</p>
+  </div>
+  <div class="card">
+    <h3>Types of broadcasts</h3>
+    <p>🚨 Emergency All-Call · 🌩️ Weather Alert · ⚡ Power Outage · 🎺 Stage Change · 📦 Restock Request · 💬 General Announcement</p>
+  </div>
+  <div class="tip">💡 Some broadcasts require acknowledgment — you'll see a green ACK button. Tap it so admin knows you received the message.</div>
+</div>
 
-render();
-</script>
+<!-- HUB -->
+<div class="section" id="hub">
+  <h2>⚙️ Admin &amp; Med Hub</h2>
+  <p class="section-sub">For Admin 1, Admin 2, Med 1, Med 2 only. Access at fdm2026.netlify.app/hub</p>
+
+  <div class="card">
+    <h3>Safety Section</h3>
+    <p><strong>911 Activation</strong> — alerts all festival units. YOU must call 911 separately.<br/><br/>
+    <strong>New Call</strong> — submit Medical, Fire, or Security call from the hub. Security shows MPD sub-section: Request MPD Officers (SMS + voice call to on-duty officers) and Manage Officers.<br/><br/>
+    <strong>Report Lost Child</strong> — same lost child form as the worker app.</p>
+  </div>
+  <div class="card">
+    <h3>Manage Lost &amp; Found</h3>
+    <p>View all logged items, filter by day, mark items as Claimed, move to Fest Office, or add items directly from the hub.</p>
+  </div>
+  <div class="card">
+    <h3>Send Onboarding Text</h3>
+    <p>Select a staff member from the dropdown — their phone auto-fills from Airtable. Sends them the app link and role confirmation via SMS.</p>
+  </div>
+  <div class="card">
+    <h3>Broadcast</h3>
+    <p>Send an alert to all staff or specific groups. Select the type (Emergency, Weather, Stage Change, etc.), write the message, and send. Appears instantly on all worker home screens.</p>
+  </div>
+  <div class="card">
+    <h3>MPD Officers (Admin only)</h3>
+    <p>Add officers with name, phone, badge number, and shift schedule. Set status to Online when they arrive. When you request MPD from the Security call form, all Online officers receive an SMS and voice call simultaneously.</p>
+  </div>
+  <div class="card">
+    <h3>Staff List &amp; Onboarding</h3>
+    <p>View all registered staff. Filter by role or status. Send individual onboarding texts or resend to all. Change staff status to Approved to trigger the automatic onboarding text.</p>
+  </div>
+  <div class="card">
+    <h3>End of Night Report</h3>
+    <p>Run from the hub at the end of each night. Summarizes all calls, incidents, and L&amp;F items. Sent to admin by email/SMS.</p>
+  </div>
+
+  <div class="info">ℹ️ Med Hub shows the same safety section as Admin Hub, plus walk-in patient management and incident reporting for medical calls.</div>
+</div>
+
+<!-- QUICK TIPS -->
+<div class="section">
+  <h2>⚡ Quick Tips</h2>
+  <div class="tip">📱 Add the worker app to your phone's home screen for full-screen access without the browser bar. (Safari → Share → Add to Home Screen)</div>
+  <div class="tip">🔋 Keep your phone charged. Bring a portable charger if possible. The app works offline for reading but needs connection to submit calls.</div>
+  <div class="tip">📍 Be specific with locations. "Moon Bar" is good. "Moon Bar, near the east gate, middle of the crowd" is better. The more specific, the faster help arrives.</div>
+  <div class="tip">🧒 If you encounter a lost child, your location in the PA script is exactly what you typed in the "Your Location" field. Make it count.</div>
+  <div class="tip">📋 L&amp;F tag goes on the physical item AND stays in the app. Anyone can look up an item at fdm2026.netlify.app/lostfound.</div>
+  <div class="tip">💬 Use chat for coordination. Use the call buttons for incidents. Don't report an emergency in chat — it won't alert the right people.</div>
+</div>
+
+<div class="section" style="text-align:center;padding:24px 20px;">
+  <div style="font-size:32px;margin-bottom:8px;">🎺</div>
+  <div style="font-size:16px;font-weight:900;color:#f1f5f9;margin-bottom:4px;">You're ready. See you at the festival.</div>
+  <div style="font-size:12px;color:#475569;">Questions? Contact Devin — 608-228-9692</div>
+  <div style="margin-top:16px;">
+    <a href="/field" style="display:inline-block;background:linear-gradient(135deg,rgba(139,92,246,0.3),rgba(16,185,129,0.2));border:1px solid rgba(139,92,246,0.4);border-radius:10px;padding:12px 24px;color:#f1f5f9;text-decoration:none;font-weight:800;font-size:14px;">Open Worker App →</a>
+  </div>
+</div>
+
 </body>
 </html>

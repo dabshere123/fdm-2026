@@ -467,7 +467,7 @@ function NewCallView({
       setSending(false);
     }
   }
-  if (sent) return /*#__PURE__*/React.createElement("div", {
+  if (sent && !isLostChild) return /*#__PURE__*/React.createElement("div", {
     style: {
       ...S.root,
       display: 'flex',
@@ -479,19 +479,137 @@ function NewCallView({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: isLostChild ? 52 : 56
+      fontSize: 56
     }
-  }, isLostChild ? '🧒' : '✅'), /*#__PURE__*/React.createElement("div", {
+  }, "✅"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 20,
       fontWeight: 900
     }
-  }, isLostChild ? 'Lost Child Reported' : 'Call Submitted'), /*#__PURE__*/React.createElement("div", {
+  }, "Call Submitted"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: '#64748b'
     }
-  }, isLostChild ? 'All staff and admin alerted immediately' : 'Admin and relevant units notified'));
+  }, "Admin and relevant units notified"));
+  if (sent && isLostChild) {
+    const nameStr = lcName ? lcName : 'an unidentified child';
+    const ageStr = lcAge ? `approximately ${lcAge} years old` : '';
+    const hairStr = lcHair ? `, ${lcHair} hair` : '';
+    const clothStr = lcClothing ? `, wearing ${lcClothing}` : '';
+    const lastStr = lcLastWith ? `, last seen with ${lcLastWith}` : '';
+    const locStr = lcLocation || location || 'the festival grounds';
+    const script = `Attention Fête de Marquette guests.
+
+We need your help locating a missing child.
+
+We are looking for ${nameStr}${ageStr ? `, ${ageStr}` : ''}${hairStr}${clothStr}${lastStr}.
+
+The child was last seen at or near ${locStr}.
+
+If you have seen this child or have any information, please immediately contact the nearest festival staff member wearing a yellow credentials lanyard, or come to the Medical Tent at the north end of McPike Park.
+
+If you see this child, please stay with them and contact a staff member right away.
+
+Thank you for your help. We appreciate your cooperation.`;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.root,
+        background: '#1a0a00'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.hdr
+    }, /*#__PURE__*/React.createElement(BackBtn, {
+      onBack: onBack
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 900,
+        color: '#fcd34d'
+      }
+    }, "🚨 PA Script Ready")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: 'rgba(239,68,68,0.12)',
+        border: '2px solid rgba(239,68,68,0.4)',
+        borderRadius: 12,
+        padding: '14px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 900,
+        color: '#fca5a5',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        marginBottom: 4
+      }
+    }, "🚨 Alert sent — All staff notified"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: '#fecaca'
+      }
+    }, "Hub · SMS · Broadcast all fired")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: 'rgba(0,0,0,0.5)',
+        border: '2px solid rgba(234,179,8,0.6)',
+        borderRadius: 12,
+        padding: '16px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 900,
+        color: '#fcd34d',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        marginBottom: 10
+      }
+    }, "📢 STAGE MANAGER — READ OVER PA NOW"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: '#f1f5f9',
+        lineHeight: 1.9,
+        whiteSpace: 'pre-line',
+        fontFamily: 'monospace'
+      }
+    }, script)), /*#__PURE__*/React.createElement("button", {
+      style: {
+        padding: '14px',
+        borderRadius: 12,
+        border: 'none',
+        background: 'rgba(234,179,8,0.15)',
+        color: '#fcd34d',
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: 'pointer'
+      },
+      onClick: function () {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(script);
+        }
+        alert('Script copied!');
+      }
+    }, "📋 Copy Script"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        padding: '14px',
+        borderRadius: 12,
+        border: '1px solid rgba(255,255,255,0.1)',
+        background: 'rgba(255,255,255,0.04)',
+        color: '#94a3b8',
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: 'pointer'
+      },
+      onClick: onBack
+    }, "Done")));
+  }
   return /*#__PURE__*/React.createElement("div", {
     style: S.root
   }, /*#__PURE__*/React.createElement("div", {
@@ -2594,6 +2712,362 @@ Fête de Marquette 2026`;
 }
 
 // ── HOME ─────────────────────────────────────────────────────
+function FoundLostChildView({
+  user,
+  onBack
+}) {
+  const [step, setStep] = React.useState('form');
+  const [childName, setChildName] = React.useState('');
+  const [childAge, setChildAge] = React.useState('');
+  const [childHair, setChildHair] = React.useState('');
+  const [childClothing, setChildClothing] = React.useState('');
+  const [childLocation, setChildLocation] = React.useState(user.location || '');
+  const [guardianName, setGuardianName] = React.useState('');
+  const [sending, setSending] = React.useState(false);
+  const canSubmit = childAge.trim() && childClothing.trim() && childLocation.trim();
+  async function submit() {
+    if (!canSubmit) return;
+    setSending(true);
+    const desc = [childName ? `Child: ${childName}` : 'Unknown name', childAge ? `Age: ${childAge}` : '', childHair ? `Hair: ${childHair}` : '', `Clothing: ${childClothing}`, `Location: ${childLocation}`, guardianName ? `Guardian: ${guardianName}` : ''].filter(Boolean).join(' · ');
+    try {
+      await fetch(`${API}/submit-call`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'found_child',
+          location: childLocation,
+          problem: desc,
+          requestedBy: user.name,
+          role: user.role,
+          callType: 'found_child'
+        })
+      });
+      await fetch(`${API}/send-broadcast`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `🧒✅ FOUND CHILD at ${childLocation} — ${desc} — Reported by ${user.name}`,
+          type: 'found_child',
+          sentBy: user.name
+        })
+      }).catch(() => {});
+    } catch (e) {}
+    setSending(false);
+    setStep('script');
+  }
+  if (step === 'script') {
+    const nameStr = childName ? childName : 'an unidentified child';
+    const ageStr = childAge ? `approximately ${childAge} years old` : '';
+    const hairStr = childHair ? `, ${childHair} hair` : '';
+    const clothStr = childClothing ? `, wearing ${childClothing}` : '';
+    const desc2 = [ageStr, hairStr, clothStr].filter(Boolean).join('');
+    const script = `Attention Fête de Marquette guests.
+
+We have a found child at ${childLocation}.
+
+The child is ${nameStr}${desc2 ? `, ${desc2.replace(/^, /, '')}` : ''}.
+
+If this is your child, or you know who this child belongs to, please go to ${childLocation} immediately — or speak with any staff member wearing a yellow credentials lanyard.
+
+Again — we have a found child at ${childLocation}. Please come forward.
+
+Thank you, and enjoy the festival.`;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...S.root,
+        background: '#0a1a0a'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: S.hdr
+    }, /*#__PURE__*/React.createElement(BackBtn, {
+      onBack: onBack
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 900,
+        color: '#4ade80'
+      }
+    }, "🧒✅ PA Script Ready")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: 'rgba(34,197,94,0.1)',
+        border: '2px solid rgba(34,197,94,0.4)',
+        borderRadius: 12,
+        padding: '14px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 900,
+        color: '#4ade80',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        marginBottom: 4
+      }
+    }, "✅ Alert sent to all staff"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: '#86efac'
+      }
+    }, "Hub notified · Broadcast sent")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: 'rgba(0,0,0,0.4)',
+        border: '2px solid rgba(234,179,8,0.5)',
+        borderRadius: 12,
+        padding: '16px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 900,
+        color: '#fcd34d',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        marginBottom: 10
+      }
+    }, "📢 STAGE MANAGER — READ OVER PA NOW"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: '#f1f5f9',
+        lineHeight: 1.8,
+        whiteSpace: 'pre-line',
+        fontFamily: 'monospace'
+      }
+    }, script)), /*#__PURE__*/React.createElement("button", {
+      style: {
+        padding: '14px',
+        borderRadius: 12,
+        border: 'none',
+        background: 'rgba(234,179,8,0.15)',
+        color: '#fcd34d',
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: 'pointer'
+      },
+      onClick: () => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(script);
+        }
+        alert('Script copied to clipboard!');
+      }
+    }, "📋 Copy Script"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        padding: '14px',
+        borderRadius: 12,
+        border: '1px solid rgba(255,255,255,0.1)',
+        background: 'rgba(255,255,255,0.04)',
+        color: '#94a3b8',
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: 'pointer'
+      },
+      onClick: onBack
+    }, "Done")));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement(BackBtn, {
+    onBack: onBack
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 900,
+      color: '#4ade80'
+    }
+  }, "🧒✅ Found Child")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'rgba(34,197,94,0.08)',
+      border: '1px solid rgba(34,197,94,0.2)',
+      borderRadius: 10,
+      padding: '12px 14px',
+      fontSize: 12,
+      color: '#86efac',
+      lineHeight: 1.5
+    }
+  }, "Fill in as much as you know. This alerts all staff and generates a PA announcement script."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      marginBottom: 6
+    }
+  }, "Child's Name (if known)"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      padding: '13px',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      color: '#f1f5f9',
+      fontSize: 16,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. Emma",
+    value: childName,
+    onChange: function (e) {
+      setChildName(e.target.value);
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      marginBottom: 6
+    }
+  }, "Approx. Age *"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      padding: '13px',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      color: '#f1f5f9',
+      fontSize: 16,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. 5 years old",
+    value: childAge,
+    onChange: function (e) {
+      setChildAge(e.target.value);
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      marginBottom: 6
+    }
+  }, "Hair Color / Description"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      padding: '13px',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      color: '#f1f5f9',
+      fontSize: 16,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. Brown, curly",
+    value: childHair,
+    onChange: function (e) {
+      setChildHair(e.target.value);
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      marginBottom: 6
+    }
+  }, "Clothing Description *"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      padding: '13px',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      color: '#f1f5f9',
+      fontSize: 16,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. Red shirt, blue shorts",
+    value: childClothing,
+    onChange: function (e) {
+      setChildClothing(e.target.value);
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      marginBottom: 6
+    }
+  }, "Your Location (where child is now) *"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      padding: '13px',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      color: '#f1f5f9',
+      fontSize: 16,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. Moon Stage, Medical Tent",
+    value: childLocation,
+    onChange: function (e) {
+      setChildLocation(e.target.value);
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+      marginBottom: 6
+    }
+  }, "Guardian Name (if known)"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: '100%',
+      padding: '13px',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: 10,
+      color: '#f1f5f9',
+      fontSize: 16,
+      fontFamily: 'inherit',
+      outline: 'none'
+    },
+    placeholder: "e.g. Jane Smith",
+    value: guardianName,
+    onChange: function (e) {
+      setGuardianName(e.target.value);
+    }
+  })), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: '18px',
+      borderRadius: 12,
+      border: 'none',
+      background: canSubmit && !sending ? 'linear-gradient(135deg,#16a34a,#15803d)' : 'rgba(255,255,255,0.06)',
+      color: canSubmit && !sending ? '#fff' : '#475569',
+      fontSize: 16,
+      fontWeight: 900,
+      cursor: canSubmit && !sending ? 'pointer' : 'not-allowed'
+    },
+    disabled: !canSubmit || sending,
+    onClick: submit
+  }, sending ? 'Sending Alert...' : '🧒✅ Alert Staff + Get PA Script')));
+}
 function HomeView({
   user,
   onLogout

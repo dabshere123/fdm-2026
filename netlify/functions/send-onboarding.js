@@ -5,6 +5,7 @@
 const TWILIO_SID    = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH   = process.env.TWILIO_AUTH_TOKEN;
 const MESSAGING_SID = process.env.TWILIO_MESSAGING_SERVICE_SID;
+const TWILIO_FROM   = process.env.TWILIO_PHONE_NUMBER;
 const ADMIN_PHONE   = '+16082289692';
 
 function fmtPhone(p) {
@@ -83,7 +84,7 @@ exports.handler = async (event) => {
     const smsRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
       method: 'POST',
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ To: fmt, MessagingServiceSid: MESSAGING_SID, Body: message }).toString()
+      body: new URLSearchParams({ To: fmt, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: message }).toString()
     });
     const smsData = await smsRes.json();
     console.log(`Onboarding SMS to ${fmt}: ${smsData.status}`);
@@ -94,7 +95,7 @@ exports.handler = async (event) => {
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         To: ADMIN_PHONE,
-        MessagingServiceSid: MESSAGING_SID,
+        MessagingServiceSid: MESSAGING_SID || TWILIO_FROM,
         Body: `✅ NEW REGISTRATION — FDM 2026\n\nName: ${name}\nRole: ${role}\nPhone: ${phone}\nOnboarding SMS sent.`
       }).toString()
     });

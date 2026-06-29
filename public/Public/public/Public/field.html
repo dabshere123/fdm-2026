@@ -2602,6 +2602,7 @@ function HomeView({
   const [lostChildAlert, setLostChildAlert] = useState(null);
   const [lcBlink, setLcBlink] = useState(false);
   const [showStagePopup, setShowStagePopup] = useState(false);
+  const [lostChildMenuOpen, setLostChildMenuOpen] = useState(false);
   const [foundChildView, setFoundChildView] = useState(false);
   const [quickReply, setQuickReply] = useState('');
   const [replySending, setReplySending] = useState(false);
@@ -2688,9 +2689,96 @@ function HomeView({
     user: user,
     onBack: () => setView('home')
   });
+  if (lostChildMenuOpen && !foundChildView) return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.hdr
+  }, /*#__PURE__*/React.createElement(BackBtn, {
+    onBack: () => setLostChildMenuOpen(false)
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900
+    }
+  }, "🧒 LOST CHILD")), /*#__PURE__*/React.createElement("div", {
+    style: S.body
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: '#94a3b8',
+      textAlign: 'center',
+      marginBottom: 8
+    }
+  }, "What is the situation?"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: '100%',
+      padding: '20px 16px',
+      borderRadius: 14,
+      border: '2px solid rgba(234,179,8,0.6)',
+      background: 'linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))',
+      cursor: 'pointer',
+      textAlign: 'left',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 14
+    },
+    onClick: () => {
+      setLostChildMenuOpen(false);
+      goCall('lost_child');
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 34
+    }
+  }, "🚨"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#fcd34d'
+    }
+  }, "MISSING CHILD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#94a3b8',
+      marginTop: 3
+    }
+  }, "A child is missing — alert all staff immediately"))), /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: '100%',
+      padding: '20px 16px',
+      borderRadius: 14,
+      border: '2px solid rgba(34,197,94,0.5)',
+      background: 'linear-gradient(135deg,rgba(22,163,74,0.15),rgba(16,185,129,0.1))',
+      cursor: 'pointer',
+      textAlign: 'left',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 14
+    },
+    onClick: () => setFoundChildView(true)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 34
+    }
+  }, "🧒✅"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#4ade80'
+    }
+  }, "CHILD FOUND HERE"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: '#94a3b8',
+      marginTop: 3
+    }
+  }, "A lost child has been brought to our location")))));
   if (foundChildView) return /*#__PURE__*/React.createElement(FoundLostChildView, {
     user: user,
-    onBack: () => setFoundChildView(false)
+    onBack: () => {
+      setFoundChildView(false);
+      setLostChildMenuOpen(false);
+    }
   });
   if (view === 'lf') return /*#__PURE__*/React.createElement(LFView, {
     user: user,

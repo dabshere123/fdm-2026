@@ -965,6 +965,7 @@ function HomeView({user,onLogout}){
   const [lostChildAlert,setLostChildAlert]=useState(null);
   const [lcBlink,setLcBlink]=useState(false);
   const [showStagePopup,setShowStagePopup]=useState(false);
+  const [lostChildMenuOpen,setLostChildMenuOpen]=useState(false);
   const [foundChildView,setFoundChildView]=useState(false);
   const [quickReply,setQuickReply]=useState('');
   const [replySending,setReplySending]=useState(false);
@@ -1025,7 +1026,34 @@ function HomeView({user,onLogout}){
 
   if(view==='call') return <NewCallView user={user} callType={callType} onBack={()=>{setView('home');setCallType('');}}/>;
   if(view==='chat') return <ChatView user={user} onBack={()=>setView('home')}/>;
-  if(foundChildView) return <FoundLostChildView user={user} onBack={()=>setFoundChildView(false)}/>;
+  if(lostChildMenuOpen&&!foundChildView) return(
+    <div style={S.root}>
+      <div style={S.hdr}>
+        <BackBtn onBack={()=>setLostChildMenuOpen(false)}/>
+        <div style={{fontSize:16,fontWeight:900}}>🧒 LOST CHILD</div>
+      </div>
+      <div style={S.body}>
+        <div style={{fontSize:13,color:'#94a3b8',textAlign:'center',marginBottom:8}}>What is the situation?</div>
+        {/* REPORT MISSING CHILD */}
+        <button style={{width:'100%',padding:'20px 16px',borderRadius:14,border:'2px solid rgba(234,179,8,0.6)',background:'linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:14}} onClick={()=>{setLostChildMenuOpen(false);goCall('lost_child');}}>
+          <div style={{fontSize:34}}>🚨</div>
+          <div>
+            <div style={{fontSize:16,fontWeight:900,color:'#fcd34d'}}>MISSING CHILD</div>
+            <div style={{fontSize:12,color:'#94a3b8',marginTop:3}}>A child is missing — alert all staff immediately</div>
+          </div>
+        </button>
+        {/* FOUND LOST CHILD */}
+        <button style={{width:'100%',padding:'20px 16px',borderRadius:14,border:'2px solid rgba(34,197,94,0.5)',background:'linear-gradient(135deg,rgba(22,163,74,0.15),rgba(16,185,129,0.1))',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:14}} onClick={()=>setFoundChildView(true)}>
+          <div style={{fontSize:34}}>🧒✅</div>
+          <div>
+            <div style={{fontSize:16,fontWeight:900,color:'#4ade80'}}>CHILD FOUND HERE</div>
+            <div style={{fontSize:12,color:'#94a3b8',marginTop:3}}>A lost child has been brought to our location</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+  if(foundChildView) return <FoundLostChildView user={user} onBack={()=>{setFoundChildView(false);setLostChildMenuOpen(false);}}/>;
   if(view==='lf') return <LFView user={user} onBack={()=>setView('home')}/>;
 
   const isHospitality=(user.role||'').toLowerCase().includes('hosp');

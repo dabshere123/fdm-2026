@@ -47,9 +47,6 @@ exports.handler = async (event) => {
             'Phone': phone,
             'Status': 'Approved',
             'SMSConsent': 'Yes',
-            'Days': 'EVERYDAY',
-            'Shift Start': 0,
-            'Shift End': 0
           }
         })
       });

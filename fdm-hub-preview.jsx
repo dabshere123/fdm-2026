@@ -2551,8 +2551,7 @@ Reply YES to acknowledge.`
   );
 
   if(mpdRequestView) return(
-    <div style={S.root}><Bg/>
-      <div style={S.panel}>
+    <div style={S.root}><Bg/><div style={S.panel}>
         <div style={S.panelHd}>
           <BB onClick={()=>{setMpdRequestView(false);setMpdResult(null);setMpdLocation('');setMpdSituation('');}}/>
           <span style={S.panelTitle}>🚔 Request MPD Officer</span>
@@ -2619,8 +2618,7 @@ Reply YES to acknowledge.`
           <button style={{padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',color:'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={()=>{setMpdRequestView(false);setMpdResult(null);setMpdLocation('');setMpdSituation('');}}>← Back</button>
         </div>
       </div>
-    </div>
-  </div>
+    </div></div>
   );
 
 

@@ -6988,20 +6988,36 @@ Reply YES to acknowledge.`
     style: {
       color: "#93c5fd"
     }
-  }, "Airtable — MPDOfficers table fields:"), /*#__PURE__*/React.createElement("br", null), "• Name, Phone, Badge, MPDStatus (Online/Offline), LastAck", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
+  }, "Airtable — MPDOfficers table fields:"), /*#__PURE__*/React.createElement("br", null), "• Name, Phone, Badge, MPDStatus, LastAck", /*#__PURE__*/React.createElement("br", null), "• ThuStart, ThuEnd, FriStart, FriEnd, SatStart, SatEnd, SunStart, SunEnd", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "#475569"
+    }
+  }, "(Same time format as staff: 8=8am, 22=10pm, 26=2am next day)"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#93c5fd"
     }
-  }, "Twilio webhook (set in Twilio console):"), /*#__PURE__*/React.createElement("br", null), "• A Message Comes In → ", /*#__PURE__*/React.createElement("span", {
+  }, "Adding via Airtable directly:"), /*#__PURE__*/React.createElement("br", null), "Set up Airtable Automation: When record created → Send webhook to:", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#f1f5f9",
-      fontSize: 10
+      fontSize: 10,
+      wordBreak: "break-all"
+    }
+  }, "https://fdm2026.netlify.app/.netlify/functions/send-mpd-confirmation"), /*#__PURE__*/React.createElement("br", null), "Body: ", "{", "  \"name\": ", "{{", "Name", "}}", ", \"phone\": ", "{{", "Phone", "}}", " ", "}", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: "#93c5fd"
+    }
+  }, "Twilio webhook:"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f1f5f9",
+      fontSize: 10,
+      wordBreak: "break-all"
     }
   }, "https://fdm2026.netlify.app/.netlify/functions/sms-webhook"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#4ade80"
     }
-  }, "Officer reply command:"), /*#__PURE__*/React.createElement("br", null), "• ACK — Acknowledge receipt of alert"))));
+  }, "Officer reply: ACK to acknowledge")))));
   if (mpdRequestView) return /*#__PURE__*/React.createElement("div", {
     style: S.root
   }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {

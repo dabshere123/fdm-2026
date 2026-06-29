@@ -2532,11 +2532,16 @@ Reply YES to acknowledge.`
 
           <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
             <strong style={{color:"#93c5fd"}}>Airtable — MPDOfficers table fields:</strong><br/>
-            • Name, Phone, Badge, MPDStatus (Online/Offline), LastAck<br/><br/>
-            <strong style={{color:"#93c5fd"}}>Twilio webhook (set in Twilio console):</strong><br/>
-            • A Message Comes In → <span style={{color:"#f1f5f9",fontSize:10}}>https://fdm2026.netlify.app/.netlify/functions/sms-webhook</span><br/><br/>
-            <strong style={{color:"#4ade80"}}>Officer reply command:</strong><br/>
-            • ACK — Acknowledge receipt of alert
+            • Name, Phone, Badge, MPDStatus, LastAck<br/>
+            • ThuStart, ThuEnd, FriStart, FriEnd, SatStart, SatEnd, SunStart, SunEnd<br/>
+            <span style={{fontSize:11,color:"#475569"}}>(Same time format as staff: 8=8am, 22=10pm, 26=2am next day)</span><br/><br/>
+            <strong style={{color:"#93c5fd"}}>Adding via Airtable directly:</strong><br/>
+            Set up Airtable Automation: When record created → Send webhook to:<br/>
+            <span style={{color:"#f1f5f9",fontSize:10,wordBreak:"break-all"}}>https://fdm2026.netlify.app/.netlify/functions/send-mpd-confirmation</span><br/>
+            Body: {"{"}  "name": {"{{"}Name{"}}"}, "phone": {"{{"}Phone{"}}"} {"}"}<br/><br/>
+            <strong style={{color:"#93c5fd"}}>Twilio webhook:</strong><br/>
+            <span style={{color:"#f1f5f9",fontSize:10,wordBreak:"break-all"}}>https://fdm2026.netlify.app/.netlify/functions/sms-webhook</span><br/><br/>
+            <strong style={{color:"#4ade80"}}>Officer reply: ACK to acknowledge</strong>
           </div>
         </div>
       </div>

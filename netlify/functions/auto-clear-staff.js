@@ -115,3 +115,42 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
   }
 };
+
+// ── MPD OFFICER AUTO-OFFLINE ──
+// Also runs as part of the same scheduled function
+// MPDOfficers table needs: ThuStart, ThuEnd, FriStart, FriEnd, SatStart, SatEnd, SunStart, SunEnd
+async function autoOfflineMPD(token, base) {
+  const dayMap = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
+  const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const dayName = dayMap[today.getDay()];
+  const festDays = ['Thu','Fri','Sat','Sun'];
+  if (!festDays.includes(dayName)) return;
+
+  const hourNow = today.getHours() + today.getMinutes() / 60;
+
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${base}/MPDOfficers?filterByFormula={MPDStatus}="Online"&maxRecords=100`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    for (const r of data.records || []) {
+      const endField = r.fields[`${dayName}End`];
+      if (!endField) continue;
+      const endHour = parseFloat(endField);
+      if (!endHour || endHour === 0) continue;
+      const effectiveEnd = endHour > 24 ? endHour - 24 : endHour;
+      const isNextDay = endHour > 24;
+      const shiftEnded = isNextDay ? (hourNow < 12 && hourNow >= effectiveEnd) : hourNow >= effectiveEnd;
+      if (shiftEnded) {
+        await fetch(`https://api.airtable.com/v0/${base}/MPDOfficers/${r.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { MPDStatus: 'Offline' } })
+        }).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.log('MPD auto-offline error:', e.message);
+  }
+}

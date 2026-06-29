@@ -75,7 +75,7 @@ exports.handler = async (event) => {
     }
 
     const encodedName = encodeURIComponent(name.trim());
-    const message = `Fete de Marquette Operations 2026 — STAFF MESSAGE\n(This is Devin Abshere / Fête de Marquette Operations)\n\nYou\'re getting this because you\'re part of the crew making Fête de Marquette 2026 happen July 9–12 at McPike Park in Madison.\n\nBefore our meeting Tuesday at Giant Jones, please tap the link below to confirm your festival role — takes 10 seconds:\n\n👉 fdm2026.netlify.app/rsvp?name=${encodedName}\n\nThen explore:\n📱 Worker App: fdm2026.netlify.app/field\n📖 Staff Guide: fdm2026.netlify.app/guide\n✅ Quiz: fdm2026.netlify.app/quiz\n\nPlease reply by 6/26/2026.\n\n— Devin / Fete 2026`;
+    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fête de Marquette July 9–12 at McPike Park, Madison.\n\nCheck your email for the staff app link and RSVP. See you at orientation!\n\n— Devin / Fete 2026`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
 

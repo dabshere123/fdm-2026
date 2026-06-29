@@ -25,7 +25,7 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, notified: 0 }) };
     }
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
-    const smsBody = `DISREGARD — FDM 2026 Admin${reason ? '\nReason: ' + reason : ''}\n\nThe previous MPD request has been cancelled. No response needed. Thank you.`;
+    const smsBody = `DISREGARD — FDM 2026 Admin${reason ? '\nReason: ' + reason : ''}\n\nThe previous MPD request has been cancelled. Reply ACK to acknowledge this disregard.`;
 
     for (const o of officers) {
       const ph = o.phone.length === 10 ? `+1${o.phone}` : `+${o.phone}`;

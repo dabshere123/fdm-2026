@@ -2689,19 +2689,7 @@ Reply YES to acknowledge.`
               var timeStr=lcFields?.lastSeenTime?" at approximately "+lcFields.lastSeenTime:"";
               var locStr=lcFields?.lastSeen||"the festival grounds";
               var assemblyStr=lcFields?.assembly||"the Medical Tent";
-              var script="Attention Fête de Marquette guests.
-
-We need your help locating a missing child.
-
-We are looking for "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+".
-
-This child was last seen at "+locStr+timeStr+".
-
-If you have seen this child or have any information, please immediately contact the nearest festival staff member wearing a yellow credentials lanyard, or go to "+assemblyStr+".
-
-If you see this child, please stay with them and contact a staff member right away.
-
-Thank you for your cooperation.";
+              var script="Attention F\u00eate de Marquette guests.\n\nWe need your help locating a missing child.\n\nWe are looking for "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+".\n\nThis child was last seen at "+locStr+timeStr+".\n\nIf you have seen this child or have any information, please immediately contact the nearest festival staff member wearing a yellow credentials lanyard, or go to "+assemblyStr+".\n\nIf you see this child, please stay with them and contact a staff member right away.\n\nThank you for your cooperation.";
               var lcMsg="🧒 MISSING CHILD 🧒
 
 LOCATION: "+lcFields?.lastSeen+"
@@ -2740,17 +2728,7 @@ REPORTED BY GUARDIAN: "+lcFields.parentName+(lcFields?.parentPhone?" ("+lcFields
               var hairStr=lcFields?.hair?", "+lcFields.hair+" hair":"";
               var clothStr=lcFields?.clothing?", wearing "+lcFields.clothing:"";
               var locStr=lcFields?.foundLocation||"our location";
-              var script="Attention Fête de Marquette guests.
-
-We have a found child at "+locStr+".
-
-The child is "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+".
-
-If this is your child, or you know who this child belongs to, please go to "+locStr+" immediately — or speak with any staff member wearing a yellow credentials lanyard.
-
-Again — we have a found child at "+locStr+". Please come forward.
-
-Thank you, and enjoy the festival.";
+              var script="Attention F\u00eate de Marquette guests.\n\nWe have a found child at "+locStr+".\n\nThe child is "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+".\n\nIf this is your child, or you know who this child belongs to, please go to "+locStr+" immediately \u2014 or speak with any staff member wearing a yellow credentials lanyard.\n\nAgain \u2014 we have a found child at "+locStr+". Please come forward.\n\nThank you, and enjoy the festival.";
               var lcMsg="🧒✅ FOUND CHILD at "+locStr+"
 "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+(lcFields?.parentName?"
 Guardian: "+lcFields.parentName:"");

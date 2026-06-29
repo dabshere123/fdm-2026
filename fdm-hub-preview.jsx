@@ -2535,8 +2535,8 @@ Reply YES to acknowledge.`
             • Name, Phone, Badge, MPDStatus, LastAck, <strong style={{color:"#fcd34d"}}>Approved</strong><br/>
             • ThuStart–SunEnd (same time format as staff)<br/><br/>
             <strong style={{color:"#93c5fd"}}>Adding via Airtable:</strong><br/>
-            Type <strong style={{color:"#f1f5f9"}}>"Yes"</strong> in Approved column → automation fires confirmation text<br/>
-            Automation trigger: When record matches condition (Approved = Yes)<br/>
+            Set Approved to <strong style={{color:"#f1f5f9"}}>"Approved"</strong> → automation fires confirmation text<br/>
+            Trigger: When record matches condition → Approved = "Approved"<br/>
             Webhook URL:<br/>
             <span style={{color:"#f1f5f9",fontSize:10,wordBreak:"break-all"}}>https://fdm2026.netlify.app/.netlify/functions/send-mpd-confirmation</span><br/>
             Body: {"{"}  "name": {"{{"}Name{"}}"}, "phone": {"{{"}Phone{"}}"} {"}"}<br/><br/>

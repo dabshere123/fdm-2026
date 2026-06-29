@@ -75,7 +75,7 @@ exports.handler = async (event) => {
     }
 
     const encodedName = encodeURIComponent(name.trim());
-    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fête de Marquette July 9–12 at McPike Park, Madison.\n\nCheck your email for the staff app link and RSVP. See you at orientation!\n\n— Devin / Fete 2026`;
+    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fête de Marquette July 9-12 at McPike Park Madison.\n\nPlease confirm your role here (10 seconds):\nfdm2026.netlify.app/rsvp\n\nYour worker app:\nfdm2026.netlify.app/field\n\nSee you at orientation!\n— Devin`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
 

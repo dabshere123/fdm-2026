@@ -366,6 +366,43 @@ const STEPS = [
     `
   },
 
+  // ── LOST CHILD FORM ───────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>Reporting a Lost Child</h2>
+        <p>Tap Lost Child and fill in as much as you know. Every detail helps find them faster.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr" style="margin-bottom:8px;">
+              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
+              <div style="font-size:12px;font-weight:800;margin-left:8px;">🧒 Lost Child Report</div>
+            </div>
+            <div style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.4);border-radius:7px;padding:7px;margin-bottom:7px;text-align:left;">
+              <div style="font-size:10px;font-weight:900;color:#fcd34d;">Fill in what you know — all fields help</div>
+            </div>
+            <div class="form-label">Last Seen Location *</div>
+            <div class="form-field">Near Moon Stage, left side</div>
+            <div class="form-label">Child's Name</div>
+            <div class="form-field">Emma</div>
+            <div class="form-label">Age</div>
+            <div class="form-field">6 years old</div>
+            <div class="form-label">Hair Description</div>
+            <div class="form-field">Blonde, pigtails with pink ribbons</div>
+            <div class="form-label">Clothing *</div>
+            <div class="form-field">Pink unicorn shirt, denim shorts, white sneakers</div>
+            <div class="form-label">Last Seen With</div>
+            <div class="form-field">Father — tall, grey baseball cap, black shirt</div>
+            <button class="submit-btn blink" style="background:rgba(202,138,4,0.8);border:2px solid rgba(234,179,8,0.6);">🚨 Report Lost Child — Alert All Staff</button>
+          </div>
+        </div>
+        <div class="note"><strong>Required:</strong> Location + Clothing. Everything else fills in the picture — name, age, hair all help staff identify the child quickly.</div>
+        <button class="btn amber" onclick="next()">See What Happens →</button>
+      </div>
+    `
+  },
+
   // ── LOST CHILD ────────────────────────────────────────────
   {
     render: () => `

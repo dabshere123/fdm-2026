@@ -1,6 +1,6 @@
 // send-onboarding.js
 // Called by Airtable Automation when a new Staff reconst firstName = name.trim().split(' ')[0];
-    const message = `Hi ${firstName}! Welcome to FDM 2026.\n\nRSVP: fdm2026.netlify.app/rsvp\nApp: fdm2026.netlify.app/field\nDemo: fdm2026.netlify.app/demo\n\nSee you June 30! -Devin`;ord is created
+    const message = `FDM 2026 — Hi ${firstName}! You are on the crew for Fete de Marquette July 9-12 at McPike Park Madison.\n\nConfirm your role (10 sec):\nfdm2026.netlify.app/rsvp\n\nWorker app:\nfdm2026.netlify.app/field\n\nSee you at orientation!\n— Devin`;ord is created
 // Sends the full onboarding SMS to the new staff member
 
 const TWILIO_SID    = process.env.TWILIO_ACCOUNT_SID;

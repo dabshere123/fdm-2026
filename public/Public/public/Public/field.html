@@ -1,17 +1,4 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
-<title>FDM 2026</title>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#0a0a14"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style>
-</head><body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0a0a14"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 const {
   useState,
   useEffect,
@@ -231,6 +218,14 @@ const S = {
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 12
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    marginBottom: 6
   },
   backBtn: {
     background: 'rgba(14,165,233,0.08)',
@@ -2591,9 +2586,10 @@ function HomeView({
   const [unread, setUnread] = useState(0);
   const [notifQueue, setNotifQueue] = useState([]); // array of {from, message, channel, id}
   const [notifIdx, setNotifIdx] = useState(0); // which one we're viewing
-  const [lostChildAlert, setLostChildAlert] = useState(null); // {location, description, at}
+  const [lostChildAlert, setLostChildAlert] = useState(null);
   const [lcBlink, setLcBlink] = useState(false);
   const [showStagePopup, setShowStagePopup] = useState(false);
+  const [foundChildView, setFoundChildView] = useState(false);
   const [quickReply, setQuickReply] = useState('');
   const [replySending, setReplySending] = useState(false);
   const seenIds = React.useRef(new Set());
@@ -2678,6 +2674,10 @@ function HomeView({
   if (view === 'chat') return /*#__PURE__*/React.createElement(ChatView, {
     user: user,
     onBack: () => setView('home')
+  });
+  if (foundChildView) return /*#__PURE__*/React.createElement(FoundLostChildView, {
+    user: user,
+    onBack: () => setFoundChildView(false)
   });
   if (view === 'lf') return /*#__PURE__*/React.createElement(LFView, {
     user: user,
@@ -3191,5 +3191,4 @@ function FieldApp() {
     onLogout: () => setUser(null)
   });
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));
-</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));</script></body></html>

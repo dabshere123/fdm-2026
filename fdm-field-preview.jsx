@@ -88,6 +88,7 @@ const S={
   body:{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12},
   inp:{width:'100%',padding:'12px 14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,color:'#f1f5f9',fontSize:16,fontFamily:'inherit',outline:'none'},
   card:{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:12},
+  fieldLabel:{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6},
   backBtn:{background:'rgba(14,165,233,0.08)',border:'1px solid rgba(14,165,233,0.25)',borderRadius:8,color:'#38bdf8',fontSize:14,fontWeight:700,cursor:'pointer',padding:'6px 14px'},
 };
 
@@ -961,9 +962,10 @@ function HomeView({user,onLogout}){
   const [unread,setUnread]=useState(0);
   const [notifQueue,setNotifQueue]=useState([]); // array of {from, message, channel, id}
   const [notifIdx,setNotifIdx]=useState(0);       // which one we're viewing
-  const [lostChildAlert,setLostChildAlert]=useState(null); // {location, description, at}
+  const [lostChildAlert,setLostChildAlert]=useState(null);
   const [lcBlink,setLcBlink]=useState(false);
   const [showStagePopup,setShowStagePopup]=useState(false);
+  const [foundChildView,setFoundChildView]=useState(false);
   const [quickReply,setQuickReply]=useState('');
   const [replySending,setReplySending]=useState(false);
   const seenIds=React.useRef(new Set());
@@ -1023,6 +1025,7 @@ function HomeView({user,onLogout}){
 
   if(view==='call') return <NewCallView user={user} callType={callType} onBack={()=>{setView('home');setCallType('');}}/>;
   if(view==='chat') return <ChatView user={user} onBack={()=>setView('home')}/>;
+  if(foundChildView) return <FoundLostChildView user={user} onBack={()=>setFoundChildView(false)}/>;
   if(view==='lf') return <LFView user={user} onBack={()=>setView('home')}/>;
 
   const isHospitality=(user.role||'').toLowerCase().includes('hosp');

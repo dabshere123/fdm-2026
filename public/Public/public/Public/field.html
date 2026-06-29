@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0a0a14"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0a14"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0a0a14;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 const {
   useState,
   useEffect,
@@ -349,33 +362,19 @@ function LoginView({
       }
       onLogin(s);
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 42,
-      height: 42,
-      borderRadius: 10,
-      background: 'rgba(14,165,233,0.15)',
-      border: '1px solid rgba(14,165,233,0.3)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 16,
-      fontWeight: 900,
-      color: '#38bdf8',
-      flexShrink: 0
+      fontSize: 17,
+      fontWeight: 700,
+      color: '#f1f5f9'
     }
-  }, (s.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 16,
-      fontWeight: 700
-    }
-  }, s.name), /*#__PURE__*/React.createElement("div", {
+  }, s.name), s.location && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#64748b',
       marginTop: 2
     }
-  }, displayRole(s.role), s.location ? ` · ${s.location}` : '')))))));
+  }, s.location)))))));
 }
 
 // ── NEW CALL ─────────────────────────────────────────────────
@@ -3192,4 +3191,5 @@ function FieldApp() {
     onLogout: () => setUser(null)
   });
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));
+</script></body></html>

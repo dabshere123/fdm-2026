@@ -137,12 +137,9 @@ function LoginView({onLogin}){
               if(r==='ovn'||r.includes('overnight')) {onLogin({...s,role:'Overnight Team'});return;}
               onLogin(s);
             }}>
-              <div style={{width:42,height:42,borderRadius:10,background:'rgba(14,165,233,0.15)',border:'1px solid rgba(14,165,233,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:'#38bdf8',flexShrink:0}}>
-                {(s.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
-              </div>
               <div>
-                <div style={{fontSize:16,fontWeight:700}}>{s.name}</div>
-                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{displayRole(s.role)}{s.location?` · ${s.location}`:''}</div>
+                <div style={{fontSize:17,fontWeight:700,color:'#f1f5f9'}}>{s.name}</div>
+                {s.location&&<div style={{fontSize:12,color:'#64748b',marginTop:2}}>{s.location}</div>}
               </div>
             </button>
           ))}

@@ -2012,66 +2012,83 @@ DATE/TIME: ${now()}`;
   if(newCallView) return(
     <div style={{display:"flex",flexDirection:"column",gap:0,height:"100vh",background:"#0d0d0d",overflowY:"auto"}}>
       <div style={{...S.panelHdr,position:"sticky",top:0,zIndex:10}}>
-        <BB onClick={()=>setNewCallView(false)}/>
-        <span style={{...S.panelTitle}}>➕ New Call</span>
+        <BB onClick={()=>{setNewCallView(false);setNewCallType("");}}/>
+        <span style={{...S.panelTitle}}>📋 New Call</span>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
-        {/* Show type selector only if no type pre-selected */}
-        {!newCallType&&<>
-          <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Call Type</div>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+
+        {/* CALL TYPE SELECTOR */}
+        {!newCallType&&(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Select Call Type</div>
             {[
-              {type:"medical",label:"🩺 Medical",color:"#a855f7"},
-              {type:"fire",label:"🔥 Fire / Life Safety",color:"#ef4444"},
-              {type:"security",label:"🛡️ Security",color:"#3b82f6"},
-              {type:"supplies",label:"📦 Supplies Request",color:"#f59e0b"},
-              {type:"maintenance",label:"🔧 Maintenance",color:"#10b981"},
-            ].map(({type,label,color})=>(
-              <button key={type} style={{padding:"14px",borderRadius:10,border:`2px solid ${newCallType===type?color:color+"44"}`,background:newCallType===type?color+"22":"rgba(255,255,255,0.03)",color:newCallType===type?"#f1f5f9":"#e2e8f0",fontWeight:800,fontSize:14,cursor:"pointer",textAlign:"left"}} onClick={()=>setNewCallType(type)}>{label}</button>
-            ))}
+              {type:"medical",label:"🩺 Medical",desc:"Medical emergency · Life threatening",color:"#a855f7"},
+              {type:"fire",label:"🔥 Fire / Life Safety",desc:"Fire, smoke, gas, structural",color:"#ef4444"},
+              {type:"security",label:"🛡️ Security",desc:"Disturbance, threat, crowd control",color:"#3b82f6"},
+            ].map(function(t){
+              return(
+                <button key={t.type} style={{padding:"16px",borderRadius:12,border:"2px solid "+t.color+"66",background:t.color+"18",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:12}} onClick={function(){setNewCallType(t.type);}}>
+                  <span style={{fontSize:26}}>{t.label.split(" ")[0]}</span>
+                  <div>
+                    <div style={{fontSize:15,fontWeight:900,color:"#f1f5f9"}}>{t.label.slice(t.label.indexOf(" ")+1)}</div>
+                    <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{t.desc}</div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        </>}
-        {/* If type pre-selected, show as badge */}
-        {newCallType&&(()=>{
-          const typeInfo={medical:{label:"🩺 Medical",color:"#a855f7"},fire:{label:"🔥 Fire / Life Safety",color:"#ef4444"},security:{label:"🛡️ Security",color:"#3b82f6"},supplies:{label:"📦 Supplies Request",color:"#f59e0b"},maintenance:{label:"🔧 Maintenance",color:"#10b981"},walk_in:{label:"🚶 Walk-In Patient",color:"#ec4899"},lost_child:{label:"🧒 Lost Child",color:"#eab308"}};
-          const t=typeInfo[newCallType]||{label:newCallType,color:"#64748b"};
-          return <div style={{background:t.color+"22",border:`2px solid ${t.color}88`,borderRadius:10,padding:"12px 14px",fontSize:15,fontWeight:900,color:"#f1f5f9"}}>{t.label}</div>;
-        })()}
-        <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Location *</div>
-        <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none"}} placeholder="e.g. Sun Stage · Moon Bar · First Aid" value={newCallLocation} onChange={e=>setNewCallLocation(e.target.value)}/>
-        <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Problem / Description *</div>
-        <textarea style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none",minHeight:80,resize:"none",fontFamily:"inherit"}} placeholder="What's happening?" value={newCallProblem} onChange={e=>setNewCallProblem(e.target.value)}/>
-        <button style={{padding:"16px",borderRadius:12,border:"none",background:(!newCallType||!newCallLocation||!newCallProblem)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#ef4444,#dc2626)",color:(!newCallType||!newCallLocation||!newCallProblem)?"#475569":"#fff",fontWeight:800,fontSize:16,cursor:"pointer",opacity:(!newCallType||!newCallLocation||!newCallProblem)?0.5:1}}
-          disabled={!newCallType||!newCallLocation||!newCallProblem}
-          onClick={()=>{
-            const call={id:Date.now(),type:newCallType,location:newCallLocation,problem:newCallProblem,requestedBy:"Admin",status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
-            setCalls(p=>[call,...p]);
-            // Fire alerts same as incoming call
-            const msg=`🚨 FDM ALERT — ${newCallType.toUpperCase()}\nLOCATION: ${newCallLocation}\n${newCallProblem}\nReported by: Admin\nDATE/TIME: ${now()}`;
-            const channelMap={medical:"medical",fire:"medical",security:"admin"};
-            sendGroupMe(msg,[channelMap[newCallType]||"admin","admin"]);
-            setTimeout(()=>{
-              if(newCallType==="medical"||newCallType==="fire"){
-                const phones=getNotifyList("medical");
-                sendSMSList(phones,msg);
-                sendVoice(phones,`${newCallType==="fire"?"Life safety":"Medical"} alert at Fete de Marquette. ${newCallProblem}. Location: ${newCallLocation}. Please respond immediately.`);
-              } else if(newCallType==="security"){
-                const phones=getNotifyList("security");
-                sendSMSList(phones,msg);
-                sendVoice(phones,`Security alert at Fete de Marquette. ${newCallProblem}. Location: ${newCallLocation}. Please respond.`);
-              }
-            },100);
-            playAlert(newCallType);
-            setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:newCallType,label:`${newCallType} call initiated by Admin`,msg:newCallProblem},...p]);
-            setNewCallView(false);setNewCallType("");setNewCallLocation("");setNewCallProblem("");
-          }}>🚨 Submit & Alert Staff</button>
+        )}
+
+        {/* SELECTED TYPE BADGE + FORM */}
+        {newCallType&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <button style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"10px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}} onClick={function(){setNewCallType("");}}>
+              ← Change type
+            </button>
+            <div style={{background:(newCallType==="medical"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"22",border:"2px solid "+(newCallType==="medical"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"88",borderRadius:10,padding:"12px 14px",fontSize:15,fontWeight:900,color:"#f1f5f9"}}>
+              {newCallType==="medical"?"🩺 Medical":newCallType==="fire"?"🔥 Fire / Life Safety":"🛡️ Security"}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Location *</div>
+              <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none",width:"100%"}} placeholder="e.g. Sun Stage · Moon Bar · First Aid" value={newCallLocation} onChange={function(e){setNewCallLocation(e.target.value);}}/>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Description *</div>
+              <textarea style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none",resize:"none",minHeight:80,width:"100%"}} placeholder="What happened?" value={newCallProblem} onChange={function(e){setNewCallProblem(e.target.value);}}/>
+            </div>
+            <button style={{padding:"16px",borderRadius:12,border:"none",background:newCallLocation.trim()&&newCallProblem.trim()?"linear-gradient(135deg,rgba(239,68,68,0.9),rgba(220,38,38,0.8))":"rgba(255,255,255,0.06)",color:newCallLocation.trim()&&newCallProblem.trim()?"#fff":"#475569",fontSize:16,fontWeight:900,cursor:newCallLocation.trim()&&newCallProblem.trim()?"pointer":"not-allowed"}}
+              disabled={!newCallLocation.trim()||!newCallProblem.trim()}
+              onClick={function(){
+                if(!newCallLocation.trim()||!newCallProblem.trim()) return;
+                fetch("/.netlify/functions/submit-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:newCallType,location:newCallLocation,problem:newCallProblem,requestedBy:role,role:role})})
+                  .then(function(r){return r.json();})
+                  .then(function(){setNewCallView(false);setNewCallType("");setNewCallLocation("");setNewCallProblem("");})
+                  .catch(function(e){alert("Error: "+e.message);});
+              }}>
+              🚨 Submit Call
+            </button>
+
+            {/* MPD SUB-SECTION — only for Security */}
+            {newCallType==="security"&&(
+              <div style={{background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:12,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{fontSize:11,fontWeight:900,color:"#93c5fd",textTransform:"uppercase",letterSpacing:"0.06em"}}>🚔 Madison Police Dept</div>
+                <div style={{display:"flex",gap:8}}>
+                  <button style={{flex:2,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.1)",color:"#93c5fd",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={function(){setNewCallView(false);setNewCallType("");setMpdRequestView(true);}}>
+                    🚔 Request MPD
+                  </button>
+                  <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.05)",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={function(){setNewCallView(false);setNewCallType("");fetchMPD();setMpdManageOpen(true);}}>
+                    Manage Officers
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 
-  // CALL QUEUE VIEW
-  
-  // MAINTENANCE NARRATIVE FORM
+
   if(maintNarrativeForm){
     const mc2=maintNarrativeForm.call;
     const clearBy2=maintNarrativeForm.by;
@@ -3460,68 +3477,41 @@ Reply YES to acknowledge.`
         <div style={{fontSize:18,color:"#38bdf8",fontWeight:700}}>→</div>
       </button>
 
-    {/* ===== ROW 1: SAFETY | BROADCAST ===== */}
+    {/* ===== SAFETY + BROADCAST ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
 
-        {/* SAFETY COLUMN */}
+        {/* LEFT: SAFETY */}
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           <div style={{background:"linear-gradient(135deg,rgba(220,38,38,0.15),rgba(180,0,0,0.1))",borderRadius:14,border:"1px solid rgba(220,38,38,0.3)",padding:"10px 10px 8px",display:"flex",flexDirection:"column",gap:8}}>
             <div style={{fontSize:12,fontWeight:900,color:"#fca5a5",textTransform:"uppercase",letterSpacing:"0.06em",paddingBottom:4,borderBottom:"1px solid rgba(220,38,38,0.2)"}}>🚨 Safety</div>
 
-            {/* REPORT LOST CHILD — ALL YELLOW */}
-            <button style={{width:"100%",padding:"14px 10px",borderRadius:12,border:"2px solid #eab308",background:"linear-gradient(135deg,#ca8a04,#a16207)",color:"#fff",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,position:"relative"}} onClick={()=>setLcView(true)}>
-              <span style={{fontSize:18}}>🧒</span>
+            {/* 911 STANDALONE */}
+            <div style={{background:"rgba(239,68,68,0.05)",borderRadius:10,border:"1px solid rgba(239,68,68,0.2)",padding:"8px 10px",fontSize:11,color:"#fecaca",lineHeight:1.4,marginBottom:2}}>
+              ⚠️ <strong style={{color:"#f87171"}}>YOU MUST CALL 911 YOURSELF.</strong> This alerts units only.
+            </div>
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:13,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:now(),info:{location:loc,nature:"Emergency"}});setPopup911Data({location:loc,problem:"Emergency",by:role,at:tShort()});setShow911Popup(true);}}}>
+              {nineOneOne.active?"🚨 911 ACTIVE":"🚨 911 Activation"}
+            </button>
+
+            {/* NEW CALL BUTTON */}
+            <button style={{width:"100%",padding:"12px",borderRadius:10,border:"2px solid rgba(147,51,234,0.6)",background:"linear-gradient(135deg,rgba(147,51,234,0.2),rgba(109,40,217,0.1))",color:"#d8b4fe",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>setNewCallView(true)}>
+              <span style={{fontSize:20}}>📋</span>
+              <div style={{textAlign:"left"}}>
+                <div>NEW CALL</div>
+                <div style={{fontSize:10,color:"#94a3b8",fontWeight:400,marginTop:2}}>Medical · Fire · Security</div>
+              </div>
+            </button>
+
+            {/* LOST CHILD */}
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:"2px solid #eab308",background:"linear-gradient(135deg,rgba(202,138,4,0.25),rgba(161,98,7,0.15))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8,position:"relative"}} onClick={()=>setLcView(true)}>
+              <span style={{fontSize:16}}>🧒</span>
               REPORT LOST CHILD
               {lostChildCalls.length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{lostChildCalls.length}</div>}
             </button>
-
-            {/* QUICK CALL TILES */}
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(147,51,234,0.6)",background:"linear-gradient(135deg,rgba(147,51,234,0.2),rgba(220,38,38,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(147,51,234,0.15)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-                <span style={{fontSize:22}}>🏥</span>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:13,fontWeight:900,color:"#d8b4fe"}}>MEDICAL / LIFE SAFETY</div>
-                  <div style={{fontSize:11,color:"#64748b",marginTop:1}}>Medical emergency · Life threatening</div>
-                </div>
-              </button>
-              <button style={{width:"100%",padding:"14px 12px",borderRadius:12,border:"2px solid rgba(37,99,235,0.6)",background:"linear-gradient(135deg,rgba(37,99,235,0.2),rgba(29,78,216,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 0 10px rgba(37,99,235,0.15)"}} onClick={()=>{setNewCallType("security");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-                <span style={{fontSize:22}}>🛡</span>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:13,fontWeight:900,color:"#93c5fd"}}>SECURITY</div>
-                  
-                </div>
-              </button>
-              
-            </div>
-
-
-
-            {/* REQUEST MPD BUTTON — admin only */}
-            {isAdmin&&<div style={{display:"flex",gap:6}}>
-              <button style={{flex:2,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>setMpdRequestView(true)}>
-                🚔 Request MPD
-              </button>
-              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.04)",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
-                Manage Officers
-              </button>
-            </div>}
-
-            {/* 911 COMPACT BUTTON */}
-            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨
-
-Madison Fire / EMS has been called.
-LOCATION: ${nineOneOne.info?.location||"Festival Grounds"}
-NATURE: ${nineOneOne.info?.nature||""}
-Activated by: ${nineOneOne.by} · ${nineOneOne.at}
-
-Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTimeout(()=>{const phones=[...new Set([ADMIN2_PHONE,...getNotifyList("medical")])];sendSMSList(phones,msg);sendVoice(phones,`911 ACTIVATED at Fete de Marquette. Madison Fire and EMS are inbound. Location: ${nineOneOne.info?.location||"Festival Grounds"}. Clear a path for emergency vehicles.`);},100);fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"911_active",officers:mpdOfficers,location:nineOneOne.info?.location||"Festival Grounds",situation:msg})}).catch(e=>console.log(e));setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"911",label:"911 Alert — Admin/Med/MPD",msg},...p]);}else{set911({active:true,by:"Admin",at:now(),info:{}});setView("911");}}}>
-              {nineOneOne.active?"🚨 911 ACTIVE — TAP TO ALERT ALL":"🚨 911 ACTIVATION"}
-            </button>
           </div>
-
         </div>
 
-        {/* BROADCAST COLUMN */}
+{/* BROADCAST COLUMN */}
         {/* BROADCAST */}
         <div style={{background:"rgba(236,72,153,0.1)",borderRadius:14,border:"1px solid rgba(236,72,153,0.35)",overflow:"hidden",display:"flex",flexDirection:"column"}}>
           <div style={{...S.sectionHdr,background:"rgba(236,72,153,0.25)",fontSize:13,fontWeight:900}}>📢 Broadcast</div>
@@ -3554,6 +3544,7 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
         </div>
         <div style={{color:"#fbbf24",fontSize:20}}>→</div>
       </button>
+
 
     {/* ===== ROW 2: EQUIPMENT TRACKER ===== */}
       <div style={{background:"rgba(234,179,8,0.06)",borderRadius:14,border:"1px solid rgba(234,179,8,0.3)",overflow:"hidden"}}>

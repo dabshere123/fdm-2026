@@ -72,7 +72,7 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, held: true, reason: 'Texts on hold' }) };
     }
 
-    const lastName = name.trim().split(' ').pop();
+    
     const fmt = fmtPhone(phone);
 
     if (!fmt) {
@@ -80,7 +80,8 @@ exports.handler = async (event) => {
     }
 
     const encodedName = encodeURIComponent(name.trim());
-    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fete de Marquette July 9-12 at McPike Park Madison.\n\nWorker app:\nfdm2026.netlify.app/field\n\nStaff guide & demo:\nfdm2026.netlify.app/demo\n\nSee you at orientation!\n— Devin`;
+    const firstName = name.trim().split(' ')[0];
+    const message = `Hi ${firstName}! Welcome to the Fête de Marquette 2026 crew — we're so glad to have you with us.\n\nBefore the festival, please take care of these three things:\n\n✍️ RSVP (confirm your role & schedule):\nfdm2026.netlify.app/rsvp\n\n📱 Download the Worker App:\nfdm2026.netlify.app/field\n\n🎓 Staff Guide & Demo (read before your first shift!):\nfdm2026.netlify.app/demo\n\nSee you at Giant Jones on June 30th and at McPike Park July 9–13!\n\n— Devin & the FDM Team`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
 

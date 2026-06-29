@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+  <title>FDM 2026 — App Walkthrough</title>
+  <meta name="theme-color" content="#0a0a14"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{font-family:'DM Sans',sans-serif;background:#0a0a14;color:#f1f5f9;min-height:100vh;overflow-x:hidden;}
+    .screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;text-align:center;position:relative;}
+    .progress{position:fixed;top:0;left:0;right:0;height:4px;background:rgba(255,255,255,0.08);z-index:100;}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#7c3aed,#38bdf8);transition:width 0.4s ease;}
+    .step-label{position:fixed;top:12px;right:16px;font-size:11px;font-weight:700;color:#475569;z-index:100;}
+    .skip{position:fixed;top:8px;left:16px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;padding:4px 8px;z-index:100;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(255,255,255,0.08);}
+    .emoji{font-size:64px;margin-bottom:16px;display:block;}
+    h1{font-size:26px;font-weight:900;margin-bottom:10px;line-height:1.2;}
+    h2{font-size:20px;font-weight:800;margin-bottom:8px;}
+    p{font-size:15px;color:#94a3b8;line-height:1.7;max-width:340px;margin:0 auto 20px;}
+    .btn{display:block;width:100%;max-width:340px;padding:18px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;margin:0 auto;}
+    .btn.blue{background:linear-gradient(135deg,#0ea5e9,#0284c7);}
+    .btn.red{background:linear-gradient(135deg,#dc2626,#b91c1c);}
+    .btn.green{background:linear-gradient(135deg,#16a34a,#15803d);}
+    .btn.amber{background:linear-gradient(135deg,#d97706,#b45309);}
+    .btn.outline{background:none;border:2px solid rgba(255,255,255,0.2);color:#f1f5f9;}
+    .btn+.btn{margin-top:10px;}
+    /* Phone mockup */
+    .phone{width:260px;border-radius:28px;border:3px solid rgba(255,255,255,0.15);background:#0d0d1a;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);margin:0 auto 24px;}
+    .phone-bar{background:#0d0d1a;padding:8px 16px 4px;display:flex;justify-content:space-between;align-items:center;}
+    .phone-bar span{font-size:10px;color:#475569;}
+    .phone-screen{padding:10px;min-height:360px;display:flex;flex-direction:column;}
+    /* Simulated app elements */
+    .app-hdr{background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.06);padding:10px;margin:-10px -10px 10px;display:flex;align-items:center;gap:8px;}
+    .app-hdr-name{font-size:13px;font-weight:800;color:#f1f5f9;}
+    .app-hdr-role{font-size:10px;color:#64748b;}
+    .call-btn{border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;border:2px solid;}
+    .call-btn.medical{background:rgba(147,51,234,0.15);border-color:rgba(147,51,234,0.5);}
+    .call-btn.fire{background:rgba(220,38,38,0.15);border-color:rgba(220,38,38,0.5);}
+    .call-btn.security{background:rgba(37,99,235,0.15);border-color:rgba(37,99,235,0.5);}
+    .call-btn.lost{background:rgba(234,179,8,0.15);border-color:rgba(234,179,8,0.5);}
+    .call-btn-icon{font-size:20px;}
+    .call-btn-text{font-size:11px;font-weight:800;color:#f1f5f9;}
+    .call-btn-sub{font-size:9px;color:#94a3b8;margin-top:1px;}
+    .form-field{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:#f1f5f9;text-align:left;}
+    .form-label{font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;}
+    .submit-btn{width:100%;background:rgba(220,38,38,0.8);border:none;border-radius:8px;padding:10px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;font-family:inherit;}
+    /* Alert card */
+    .alert-card{border-radius:12px;padding:10px 12px;border:2px solid;margin-bottom:6px;animation:slideIn 0.4s ease;}
+    @keyframes slideIn{from{transform:translateY(-10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+    .alert-card.medical{background:rgba(30,64,175,0.2);border-color:rgba(59,130,246,0.7);}
+    .alert-card.fire{background:rgba(220,38,38,0.2);border-color:rgba(239,68,68,0.7);}
+    .alert-card.security{background:rgba(15,23,42,0.7);border-color:rgba(100,116,139,0.6);}
+    .alert-type{font-size:10px;font-weight:900;color:#93c5fd;text-transform:uppercase;letter-spacing:0.08em;}
+    .alert-loc{font-size:12px;font-weight:800;color:#f1f5f9;margin:2px 0;}
+    .alert-prob{font-size:10px;color:#94a3b8;}
+    .alert-new{background:#ef4444;color:#fff;font-size:8px;font-weight:900;border-radius:4px;padding:1px 5px;display:inline-block;margin-left:6px;}
+    /* Broadcast banner */
+    .broadcast-banner{background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(234,88,12,0.15));border:2px solid rgba(249,115,22,0.6);border-radius:10px;padding:10px;margin-bottom:8px;animation:slideIn 0.5s ease;}
+    .broadcast-header{font-size:10px;font-weight:900;color:#fb923c;margin-bottom:4px;}
+    .broadcast-msg{font-size:11px;color:#f1f5f9;line-height:1.5;}
+    .reply-box{display:flex;gap:4px;margin-top:6px;}
+    .reply-inp{flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 8px;font-size:10px;color:#f1f5f9;font-family:inherit;}
+    .reply-send{background:rgba(249,115,22,0.8);border:none;border-radius:6px;padding:6px 10px;color:#fff;font-size:10px;font-weight:900;cursor:pointer;}
+    /* Hub side panel */
+    .hub-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;margin-bottom:8px;}
+    .hub-label{font-size:9px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+    .hub-active{background:rgba(30,64,175,0.15);border:2px solid rgba(59,130,246,0.6);border-radius:8px;padding:8px;position:relative;}
+    .hub-active-type{font-size:10px;font-weight:900;color:#93c5fd;}
+    .hub-active-loc{font-size:11px;font-weight:800;color:#f1f5f9;margin:2px 0;}
+    .hub-active-btns{display:flex;gap:4px;margin-top:6px;}
+    .hub-active-btn{flex:1;border-radius:6px;padding:5px;border:none;font-size:9px;font-weight:800;cursor:pointer;}
+    /* Tags */
+    .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:4px 2px;}
+    .tag.purple{background:rgba(139,92,246,0.2);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3);}
+    .tag.blue{background:rgba(14,165,233,0.15);color:#38bdf8;border:1px solid rgba(14,165,233,0.3);}
+    .tag.red{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#fcd34d;border:1px solid rgba(245,158,11,0.3);}
+    /* Annotation */
+    .note{background:rgba(14,165,233,0.08);border-left:3px solid #38bdf8;border-radius:0 8px 8px 0;padding:10px 12px;text-align:left;font-size:13px;color:#e2e8f0;line-height:1.6;max-width:340px;margin:0 auto 16px;}
+    .note strong{color:#38bdf8;}
+    /* Blink */
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+    .blink{animation:blink 1s ease-in-out infinite;}
+    /* Pulse dot */
+    .pulse-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;margin-right:6px;animation:pulse 1s ease-in-out infinite;}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.3);opacity:0.7;}}
+    /* Split view label */
+    .split-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;color:#475569;margin-bottom:4px;}
+    .split{display:flex;gap:10px;max-width:340px;margin:0 auto 16px;}
+    .split>div{flex:1;}
+    /* Divider */
+    .divider{width:100%;max-width:340px;border:none;border-top:1px solid rgba(255,255,255,0.07);margin:16px auto;}
+  </style>
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+<div class="step-label" id="stepLabel"></div>
+<div class="skip" onclick="finish()">Skip →</div>
+
+<div id="app"></div>
+
+<script>
+const STEPS = [
+
+  // ── INTRO ──────────────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen" style="background:linear-gradient(180deg,#0a0a14,#0f0a1a)">
+        <span class="emoji">🎶</span>
+        <h1>Welcome to the<br/>FDM 2026 Worker App</h1>
+        <p>This quick walkthrough shows you exactly how the app works — and what happens when you use it. Tap through at your own pace.</p>
+        <p style="font-size:13px;color:#475569;">Takes about 3 minutes.</p>
+        <button class="btn" onclick="next()">Let's Go →</button>
+        <button class="btn outline" style="margin-top:10px;" onclick="finish()">Skip to App</button>
+      </div>
+    `
+  },
+
+  // ── YOUR HOME SCREEN ──────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>Your Home Screen</h2>
+        <p>When you log in, this is what you see. Everything you need is right here.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr">
+              <div>
+                <div class="app-hdr-name">Josh</div>
+                <div class="app-hdr-role">Moon Bar Manager</div>
+              </div>
+            </div>
+            <div class="call-btn medical"><span class="call-btn-icon">🩺</span><div><div class="call-btn-text">MEDICAL</div><div class="call-btn-sub">Medical emergency</div></div></div>
+            <div class="call-btn fire"><span class="call-btn-icon">🔥</span><div><div class="call-btn-text">FIRE / LIFE SAFETY</div><div class="call-btn-sub">Fire, smoke, hazard</div></div></div>
+            <div class="call-btn security"><span class="call-btn-icon">🔒</span><div><div class="call-btn-text">SECURITY</div><div class="call-btn-sub">Disturbance, threat</div></div></div>
+            <div class="call-btn lost" style="border-color:rgba(234,179,8,0.5);background:rgba(234,179,8,0.1)"><span class="call-btn-icon">🧒</span><div><div class="call-btn-text">LOST CHILD</div><div class="call-btn-sub">Alerts ALL staff</div></div></div>
+          </div>
+        </div>
+        <div class="note">Your name and location appear at the top. The four main buttons cover the key situations you may encounter.</div>
+        <button class="btn" onclick="next()">Next →</button>
+      </div>
+    `
+  },
+
+  // ── MEDICAL REQUEST FORM ──────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>Submitting a Medical Call</h2>
+        <p>Tap Medical and fill in two things — where it is and what's happening.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr" style="margin-bottom:8px;">
+              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
+              <div style="font-size:12px;font-weight:800;margin-left:8px;">Submit a Call</div>
+            </div>
+            <div style="background:rgba(147,51,234,0.12);border:1px solid rgba(147,51,234,0.4);border-radius:8px;padding:8px;margin-bottom:8px;text-align:left;">
+              <div style="font-size:11px;font-weight:900;color:#d8b4fe;">🩺 Medical Emergency</div>
+            </div>
+            <div class="form-label">Location</div>
+            <div class="form-field">Moon Bar — near the east entrance</div>
+            <div class="form-label">Description</div>
+            <div class="form-field">Person down, not responding. Adult male, mid-40s.</div>
+            <button class="submit-btn blink">🚨 Submit Call</button>
+          </div>
+        </div>
+        <div class="note">Be as <strong>specific as possible</strong> with location and description. This goes directly to admin and med units.</div>
+        <button class="btn red" onclick="next()">Submit — See What Happens →</button>
+      </div>
+    `
+  },
+
+  // ── WHAT HAPPENS AFTER SUBMIT ─────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>What Happens Next</h2>
+        <p>The moment you hit Submit, three things happen simultaneously.</p>
+        <div style="max-width:340px;margin:0 auto 20px;display:flex;flex-direction:column;gap:10px;text-align:left;">
+          <div style="background:rgba(147,51,234,0.1);border:1px solid rgba(147,51,234,0.3);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+            <span style="font-size:24px;flex-shrink:0;">📱</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:#d8b4fe;margin-bottom:3px;">SMS to Admin</div>
+              <div style="font-size:12px;color:#94a3b8;">Devin and Gary get a text immediately with your location and description.</div>
+            </div>
+          </div>
+          <div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+            <span style="font-size:24px;flex-shrink:0;">📞</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:#fca5a5;margin-bottom:3px;">Voice Call to Admin</div>
+              <div style="font-size:12px;color:#94a3b8;">A voice call goes out so admin can't miss it even if their phone is in their pocket.</div>
+            </div>
+          </div>
+          <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+            <span style="font-size:24px;flex-shrink:0;">🖥️</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:#38bdf8;margin-bottom:3px;">Alert on Admin Hub</div>
+              <div style="font-size:12px;color:#94a3b8;">A flashing alert card appears on the admin screen with all your info.</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn" onclick="next()">See the Admin Hub →</button>
+      </div>
+    `
+  },
+
+  // ── ADMIN HUB VIEW ────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>The Admin Hub</h2>
+        <p>This is what admin sees on their screen. Your call shows up instantly.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>Admin Hub</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr"><div class="app-hdr-name">🎶 FDM 2026 Admin</div></div>
+            <div class="hub-panel">
+              <div class="hub-label">Active Calls</div>
+              <div class="hub-active">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <div class="hub-active-type">🩺 MEDICAL</div>
+                  <span class="pulse-dot"></span><span style="font-size:9px;color:#fca5a5;font-weight:800;">NEW</span>
+                </div>
+                <div class="hub-active-loc">Moon Bar — east entrance</div>
+                <div style="font-size:10px;color:#94a3b8;">Person down, not responding. Adult male.</div>
+                <div class="hub-active-btns">
+                  <button class="hub-active-btn" style="background:rgba(147,51,234,0.4);color:#f1f5f9;">🩺 Med 1</button>
+                  <button class="hub-active-btn" style="background:rgba(147,51,234,0.4);color:#f1f5f9;">🩺 Med 2</button>
+                </div>
+              </div>
+            </div>
+            <div style="padding:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;text-align:center;">
+              <div style="font-size:9px;font-weight:800;color:#4ade80;">Med units have been dispatched ✅</div>
+            </div>
+          </div>
+        </div>
+        <div class="note">Admin taps <strong>Med 1</strong> or <strong>Med 2</strong> to assign the call. The med unit gets a full-screen alert on their hub immediately.</div>
+        <button class="btn" onclick="next()">See Fire/Life Safety →</button>
+      </div>
+    `
+  },
+
+  // ── FIRE / LIFE SAFETY ────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>Fire / Life Safety</h2>
+        <p>Same process as medical — tap, fill in location and description, submit.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr" style="margin-bottom:8px;">
+              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
+              <div style="font-size:12px;font-weight:800;margin-left:8px;">Submit a Call</div>
+            </div>
+            <div style="background:rgba(220,38,38,0.15);border:2px solid rgba(220,38,38,0.5);border-radius:8px;padding:8px;margin-bottom:8px;text-align:left;">
+              <div style="font-size:11px;font-weight:900;color:#fca5a5;">🔥 Fire / Life Safety</div>
+            </div>
+            <div class="form-label">Location</div>
+            <div class="form-field">Behind Lafayette Bar, near the fence</div>
+            <div class="form-label">Description</div>
+            <div class="form-field">Small fire in trash can, no one injured yet</div>
+            <button class="submit-btn" style="background:rgba(220,38,38,0.8);">🚨 Submit Call</button>
+          </div>
+        </div>
+        <div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);border-radius:10px;padding:12px;max-width:340px;margin:0 auto 16px;text-align:left;">
+          <div style="font-size:12px;font-weight:800;color:#fca5a5;margin-bottom:6px;">🔥 Fire calls trigger:</div>
+          <div style="font-size:12px;color:#94a3b8;line-height:1.7;">• SMS + Voice call to Devin and Gary<br/>• Flashing RED alert on admin hub<br/>• Med units are also alerted</div>
+        </div>
+        <button class="btn red" onclick="next()">Next — Security →</button>
+      </div>
+    `
+  },
+
+  // ── SECURITY ──────────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>Security Call</h2>
+        <p>Disturbance, aggressive person, theft — use Security.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr" style="margin-bottom:8px;">
+              <div style="font-size:11px;color:#38bdf8;font-weight:700;">← Back</div>
+              <div style="font-size:12px;font-weight:800;margin-left:8px;">Submit a Call</div>
+            </div>
+            <div style="background:rgba(37,99,235,0.12);border:2px solid rgba(37,99,235,0.4);border-radius:8px;padding:8px;margin-bottom:8px;text-align:left;">
+              <div style="font-size:11px;font-weight:900;color:#93c5fd;">🔒 Security</div>
+            </div>
+            <div class="form-label">Location</div>
+            <div class="form-field">Sun Bar Right — near the speaker stack</div>
+            <div class="form-label">Description</div>
+            <div class="form-field">Intoxicated male, refusing to leave, becoming aggressive</div>
+            <button class="submit-btn" style="background:rgba(37,99,235,0.8);">🚨 Submit Call</button>
+          </div>
+        </div>
+        <div class="note"><strong>Stay calm, don't escalate.</strong> Get location and description in, then step back. Security handles the rest.</div>
+        <button class="btn blue" onclick="next()">Next — Broadcasts →</button>
+      </div>
+    `
+  },
+
+  // ── BROADCAST INCOMING ────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>Receiving a Broadcast</h2>
+        <p>Admin can send a message to everyone instantly. This is how it looks on your screen.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr"><div class="app-hdr-name">Josh · Moon Bar</div></div>
+            <div class="broadcast-banner">
+              <div class="broadcast-header">📢 BROADCAST FROM ADMIN</div>
+              <div class="broadcast-msg">Weather alert — storms moving in around 9pm. Begin winding down Moon Stage at 8:45. All bar managers please confirm receipt.</div>
+              <div class="reply-box">
+                <div class="reply-inp">Got it ✅</div>
+                <button class="reply-send">Send</button>
+              </div>
+            </div>
+            <div style="font-size:10px;color:#475569;text-align:center;margin-top:4px;">You can quick-reply right from this banner</div>
+          </div>
+        </div>
+        <div class="note">The orange banner appears automatically. You can <strong>reply directly without going into chat</strong>. Admin sees all responses.</div>
+        <button class="btn amber" onclick="next()">Next — Lost Child →</button>
+      </div>
+    `
+  },
+
+  // ── LOST CHILD ────────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen" style="background:#0a0a14;">
+        <h2 style="color:#fcd34d;">Lost Child Alert</h2>
+        <p>This is the most urgent situation. When reported, everyone's screen looks like this:</p>
+        <div class="phone" style="border-color:rgba(234,179,8,0.5);">
+          <div class="phone-bar" style="background:rgba(202,138,4,0.9);"><span style="color:#fff;font-weight:700;">9:41 AM</span><span style="color:#fcd34d;font-weight:800;">⚠️ ALERT</span></div>
+          <div class="phone-screen" style="background:rgba(202,138,4,0.95);align-items:center;justify-content:center;padding:20px;min-height:360px;">
+            <div style="font-size:48px;margin-bottom:8px;" class="blink">🧒</div>
+            <div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:12px;">LOST CHILD</div>
+            <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">📍 Near Moon Stage</div>
+            <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:8px;font-size:11px;color:#fef08a;line-height:1.6;margin-bottom:10px;text-align:left;width:100%;">
+              Child: Emma · Age: 6<br/>Hair: Blonde pigtails<br/>Clothing: Pink shirt, denim shorts<br/>Last with: Father, tall, grey hat
+            </div>
+            <div style="font-size:10px;color:#fef08a;margin-bottom:8px;font-weight:700;">Search your area immediately</div>
+            <button style="width:100%;padding:10px;background:rgba(245,158,11,0.5);border:2px solid rgba(255,255,255,0.5);border-radius:8px;color:#fff;font-size:11px;font-weight:900;cursor:pointer;">✅ ACKNOWLEDGED — SEARCHING</button>
+          </div>
+        </div>
+        <div class="note"><strong>Everyone's phone</strong> flips to this screen. Every worker searches their area. Tap Acknowledged and start looking.</div>
+        <button class="btn amber" onclick="next()">Next — The Chat →</button>
+      </div>
+    `
+  },
+
+  // ── CHAT ──────────────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <h2>Festival Chat</h2>
+        <p>The chat works like your text messages app. Each conversation is separate.</p>
+        <div class="phone">
+          <div class="phone-bar"><span>9:41 AM</span><span>FDM 2026</span></div>
+          <div class="phone-screen">
+            <div class="app-hdr"><div class="app-hdr-name">💬 Messages</div><div style="margin-left:auto;font-size:10px;color:#38bdf8;font-weight:700;">✏️ New</div></div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(14,165,233,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;">#</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:700;color:#f1f5f9;">All Staff</div>
+                <div style="font-size:10px;color:#64748b;">Admin: Please check in when doors open</div>
+              </div>
+              <div style="font-size:10px;color:#475569;">9:30</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(14,165,233,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;">#</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:700;color:#f1f5f9;">Moon Bar</div>
+                <div style="font-size:10px;color:#64748b;">You: Need more ice on the right side</div>
+              </div>
+              <div style="font-size:10px;color:#475569;">9:28</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#a5b4fc;">DE</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:700;color:#f1f5f9;">Devin</div>
+                <div style="font-size:10px;color:#64748b;">Devin: On it — sending someone now</div>
+              </div>
+              <div style="background:#ef4444;color:#fff;font-size:9px;font-weight:900;border-radius:10px;padding:1px 6px;">1</div>
+            </div>
+          </div>
+        </div>
+        <div class="note">Tap any conversation to open it and reply. Each one is <strong>private and separate</strong> — nobody else sees your messages unless you send to their channel.</div>
+        <button class="btn blue" onclick="next()">Almost Done →</button>
+      </div>
+    `
+  },
+
+  // ── QUICK TIPS ────────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen">
+        <span class="emoji">💡</span>
+        <h2>Quick Tips</h2>
+        <div style="max-width:340px;margin:0 auto 20px;text-align:left;display:flex;flex-direction:column;gap:10px;">
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
+            <span style="font-size:18px;flex-shrink:0;">📍</span>
+            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Be specific with location.</strong> "Moon Bar" is good. "Moon Bar, east side near the speaker" is better.</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
+            <span style="font-size:18px;flex-shrink:0;">⚡</span>
+            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Don't hesitate.</strong> If something looks wrong, submit a call. False alarms are far better than missed emergencies.</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
+            <span style="font-size:18px;flex-shrink:0;">📱</span>
+            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Keep the app open.</strong> Broadcasts and messages come in automatically — you'll see the orange banner.</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;display:flex;gap:10px;">
+            <span style="font-size:18px;flex-shrink:0;">🔋</span>
+            <div style="font-size:13px;color:#e2e8f0;line-height:1.6;"><strong style="color:#f1f5f9;">Charge your phone.</strong> You'll be using it all day. Start each shift at 100%.</div>
+          </div>
+        </div>
+        <button class="btn" onclick="next()">Finish →</button>
+      </div>
+    `
+  },
+
+  // ── DONE ──────────────────────────────────────────────────
+  {
+    render: () => `
+      <div class="screen" style="background:linear-gradient(180deg,#0a0a14,#0f1a0a)">
+        <span class="emoji">✅</span>
+        <h1>You're Ready!</h1>
+        <p>You now know how to submit calls, receive broadcasts, and use the chat. See you at McPike Park July 9–12.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px;">
+          <span class="tag green">Medical ✓</span>
+          <span class="tag red">Fire ✓</span>
+          <span class="tag blue">Security ✓</span>
+          <span class="tag amber">Lost Child ✓</span>
+          <span class="tag purple">Broadcast ✓</span>
+          <span class="tag purple">Chat ✓</span>
+        </div>
+        <button class="btn green" onclick="window.location.href='/field'">Open the App →</button>
+        <button class="btn outline" style="margin-top:10px;" onclick="restart()">Start Over</button>
+        <p style="font-size:12px;color:#374151;margin-top:20px;">Fête de Marquette 2026 · July 9–12 · McPike Park</p>
+      </div>
+    `
+  }
+
+];
+
+let current = 0;
+
+function render() {
+  document.getElementById('app').innerHTML = STEPS[current].render();
+  const pct = (current / (STEPS.length - 1)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('stepLabel').textContent = `${current + 1} / ${STEPS.length}`;
+  window.scrollTo(0,0);
+}
+
+function next() {
+  if (current < STEPS.length - 1) {
+    current++;
+    render();
+  }
+}
+
+function finish() {
+  current = STEPS.length - 1;
+  render();
+}
+
+function restart() {
+  current = 0;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

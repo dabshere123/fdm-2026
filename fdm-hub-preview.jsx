@@ -2437,7 +2437,13 @@ Reply YES to acknowledge.`
         </div>
         <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
           <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Officers marked Online will receive SMS + Voice when MPD is requested. They can reply <strong style={{color:"#f1f5f9"}}>DISREGARD</strong> to cancel.</div>
-          {mpdOfficers.length===0&&<div style={{textAlign:"center",padding:32,color:"#475569"}}>No officers found.<br/>Add officers to the MPDOfficers table in Airtable.</div>}
+          {mpdOfficers.length===0&&(
+            <div style={{textAlign:"center",padding:32,color:"#64748b",lineHeight:1.8}}>
+              <div style={{fontSize:24,marginBottom:12}}>🚔</div>
+              <div style={{fontWeight:700,color:"#94a3b8",marginBottom:8}}>No MPD Officers Found</div>
+              <div style={{fontSize:13}}>Add officers to the <strong style={{color:"#f1f5f9"}}>MPDOfficers</strong> table in Airtable, then tap ↺ Refresh.</div>
+            </div>
+          )}
           {mpdOfficers.map(o=>(
             <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="Online"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
               <div style={{flex:1}}>
@@ -2712,7 +2718,17 @@ Please respond immediately.
       <div style={S.panelHd}>
         <BB onClick={()=>setView("home")}/>
         <span style={S.panelTitle}>📦 Lost &amp; Found</span>
-        <button style={{background:"rgba(249,115,22,0.15)",border:"1px solid rgba(249,115,22,0.4)",borderRadius:8,padding:"6px 12px",color:"#fb923c",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(true)}>+ Add Item</button>
+        <div style={{display:"flex",gap:6}}>
+          <button style={{background:"rgba(249,115,22,0.15)",border:"1px solid rgba(249,115,22,0.4)",borderRadius:8,padding:"6px 12px",color:"#fb923c",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(true)}>+ Add Item</button>
+          <button style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"6px 10px",color:"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async()=>{
+            if(!window.confirm("Mark ALL L&F items as Claimed? This clears the list.")) return;
+            const unclaimed=lfItems.filter(i=>i.status!=="Claimed");
+            for(const item of unclaimed){
+              await fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status:"Claimed"})}).catch(()=>{});
+            }
+            fetchLFItems();
+          }}>🗑 Clear All</button>
+        </div>
       </div>
       <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
         {/* Search + filter */}
@@ -2724,7 +2740,17 @@ Please respond immediately.
         </div>
 
         {/* Items list */}
-        {lfLoading&&<div style={{textAlign:"center",color:"#475569",padding:32}}>Loading...</div>}
+        {lfLoading&&<div style={{textAlign:"center",padding:40,display:"flex",flexDirection:"column",gap:8,alignItems:"center"}}>
+          <div style={{fontSize:24}}>📦</div>
+          <div style={{color:"#64748b",fontSize:14}}>Loading items...</div>
+        </div>}
+        {!lfLoading&&lfItems.length===0&&(
+          <div style={{textAlign:"center",padding:40,color:"#64748b",fontSize:14,lineHeight:1.8}}>
+            <div style={{fontSize:32,marginBottom:8}}>📭</div>
+            No items logged yet.<br/>
+            <button style={{marginTop:12,padding:"8px 16px",borderRadius:8,border:"1px solid rgba(249,115,22,0.3)",background:"rgba(249,115,22,0.06)",color:"#fb923c",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={fetchLFItems}>↺ Try Refreshing</button>
+          </div>
+        )}
         {!lfLoading&&lfItems.filter(i=>{
           const q=(lfSearch||"").toLowerCase();
           const dayMatch=!lfDay||(i.dayFound||"").toLowerCase().startsWith(lfDay.toLowerCase());
@@ -3461,7 +3487,7 @@ Please respond immediately.
               <button style={{flex:2,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>setMpdRequestView(true)}>
                 🚔 Request MPD
               </button>
-              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.04)",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{setMpdManageOpen(true);fetchMPD();}}>
+              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.04)",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
                 Manage
               </button>
             </div>}
@@ -3563,6 +3589,9 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             </a>
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("sendonboarding")}>
               <span style={{fontSize:14}}>📱</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Send Onboarding Text</div>
+            </button>
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(99,102,241,0.3)",background:"rgba(99,102,241,0.08)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setView("endofnight")}>
+              <span style={{fontSize:14}}>🌙</span><div style={{fontSize:12,fontWeight:700,color:"#a5b4fc"}}>End of Night Report</div>
             </button>
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",cursor:"pointer",textAlign:"left"}} onClick={async()=>{
               if(!window.confirm(`Send registration reminder to all staff who haven\'t submitted their RSVP yet?`)) return;

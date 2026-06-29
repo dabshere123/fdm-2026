@@ -2722,7 +2722,7 @@ Please respond immediately.
           </div>
         ))}
       </div>
-    </div></div>
+    </div></div></div>
   );
 
   if(view==="sendonboarding") return(
@@ -2770,7 +2770,7 @@ Please respond immediately.
             }catch(err){alert("Failed: "+err.message);}
           }}>Send Onboarding Text →</button>
       </div>
-    </div></div></div>
+    </div></div>
   );
 
   if(view==="chat") return(

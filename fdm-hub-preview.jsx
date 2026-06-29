@@ -858,6 +858,11 @@ function HubApp({onBack}){
   const [mpdOfficers,setMpdOfficers]=useState([]);
   const [mpdManageOpen,setMpdManageOpen]=useState(false);
   const [mpdResult,setMpdResult]=useState(null);
+  const [mpdAddOpen,setMpdAddOpen]=useState(false);
+  const [mpdNewName,setMpdNewName]=useState('');
+  const [mpdNewPhone,setMpdNewPhone]=useState('');
+  const [mpdNewBadge,setMpdNewBadge]=useState('');
+  const [mpdAddStatus,setMpdAddStatus]=useState('');
   const [mpdLocation,setMpdLocation]=useState("");
   const [mpdSituation,setMpdSituation]=useState("");
   const [mpdSending,setMpdSending]=useState(false);
@@ -2433,7 +2438,10 @@ Reply YES to acknowledge.`
         <div style={S.panelHd}>
           <BB onClick={()=>{setMpdManageOpen(false);fetchMPD();}}/>
           <span style={S.panelTitle}>🚔 MPD Officers</span>
-          <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={fetchMPD}>↺ Refresh</button>
+          <div style={{display:"flex",gap:6}}>
+            <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={fetchMPD}>↺ Refresh</button>
+            <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.08)",color:"#4ade80",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setMpdAddOpen(true);setMpdAddStatus('');}}>+ Add</button>
+          </div>
         </div>
         <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
           <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Officers marked Online will receive SMS + Voice when MPD is requested. They can reply <strong style={{color:"#f1f5f9"}}>DISREGARD</strong> to cancel.</div>
@@ -2458,6 +2466,36 @@ Reply YES to acknowledge.`
               }}>{o.status==="Online"?"🟢 Online":"⚫ Offline"}</button>
             </div>
           ))}
+          {/* Add Officer Form */}
+          {mpdAddOpen&&(
+            <div style={{background:"rgba(34,197,94,0.06)",border:"2px solid rgba(34,197,94,0.3)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:14,fontWeight:800,color:"#4ade80"}}>+ Add MPD Officer</div>
+              <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"11px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Officer Name *" value={mpdNewName} onChange={e=>setMpdNewName(e.target.value)}/>
+              <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"11px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Phone Number *" value={mpdNewPhone} onChange={e=>setMpdNewPhone(e.target.value)} type="tel"/>
+              <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"11px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Badge # (optional)" value={mpdNewBadge} onChange={e=>setMpdNewBadge(e.target.value)}/>
+              {mpdAddStatus&&<div style={{fontSize:12,color:mpdAddStatus.includes("✅")?"#4ade80":"#fca5a5"}}>{mpdAddStatus}</div>}
+              <div style={{display:"flex",gap:8}}>
+                <button style={{flex:1,padding:"11px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setMpdAddOpen(false)}>Cancel</button>
+                <button style={{flex:2,padding:"11px",borderRadius:8,border:"none",background:"linear-gradient(135deg,rgba(34,197,94,0.8),rgba(22,163,74,0.8))",color:"#fff",fontSize:13,fontWeight:900,cursor:"pointer"}} onClick={async()=>{
+                  if(!mpdNewName||!mpdNewPhone){setMpdAddStatus("Name and phone required.");return;}
+                  setMpdAddStatus("Adding officer...");
+                  try{
+                    // Add to Airtable
+                    const r=await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/MPDOfficers`,{method:"POST",headers:{"Authorization":`Bearer ${airtableToken}`,"Content-Type":"application/json"},body:JSON.stringify({fields:{Name:mpdNewName,Phone:mpdNewPhone,Badge:mpdNewBadge,MPDStatus:"Offline"}})});
+                    const d=await r.json();
+                    if(!r.ok) throw new Error(d.error?.message||"Airtable error");
+                    // Send confirmation SMS via Netlify function
+                    await fetch("/.netlify/functions/confirm-mpd-registration",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:mpdNewName,phone:mpdNewPhone})});
+                    setMpdAddStatus(`✅ ${mpdNewName} added. Confirmation text sent.`);
+                    setMpdNewName("");setMpdNewPhone("");setMpdNewBadge("");
+                    fetchMPD();
+                    setTimeout(()=>setMpdAddOpen(false),2000);
+                  }catch(e){setMpdAddStatus("Error: "+e.message);}
+                }}>Add &amp; Send Confirmation</button>
+              </div>
+            </div>
+          )}
+
           <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
             <strong style={{color:"#93c5fd"}}>Airtable — MPDOfficers table fields:</strong><br/>
             • Name, Phone, Badge, MPDStatus (Online/Offline), LastAck<br/><br/>
@@ -3569,10 +3607,8 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
         </div>
       </div>
 
-    {/* ===== ROW 3: VENDOR | STAFF ===== */}
+    {/* ===== ROW 3: STAFF | EOD + MPD ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-
-
 
         {/* STAFF MANAGEMENT */}
         <div style={{background:"rgba(16,185,129,0.06)",borderRadius:14,border:"1px solid rgba(16,185,129,0.25)",overflow:"hidden"}}>
@@ -3593,9 +3629,7 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(16,185,129,0.2)",background:"rgba(16,185,129,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("sendonboarding")}>
               <span style={{fontSize:14}}>📱</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Send Onboarding Text</div>
             </button>
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(99,102,241,0.3)",background:"rgba(99,102,241,0.08)",cursor:"pointer",textAlign:"left",width:"100%"}} onClick={()=>setView("endofnight")}>
-              <span style={{fontSize:14}}>🌙</span><div style={{fontSize:12,fontWeight:700,color:"#a5b4fc"}}>End of Night Report</div>
-            </button>
+
             <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",cursor:"pointer",textAlign:"left"}} onClick={async()=>{
               if(!window.confirm(`Send registration reminder to all staff who haven\'t submitted their RSVP yet?`)) return;
               const btn=event.target.closest("button");

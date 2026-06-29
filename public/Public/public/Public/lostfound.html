@@ -184,6 +184,9 @@
         if (!r.ok) throw new Error('Server error ' + r.status);
         const d = await r.json();
         allItems = d.items || [];
+        // Debug: show count
+        const dbg = document.getElementById('debugInfo');
+        if (dbg) dbg.textContent = allItems.length + ' items from Airtable | statuses: ' + [...new Set(allItems.map(i=>i.status||'(empty)'))].join(', ');
         filterItems();
       } catch (e) {
         document.getElementById('itemList').innerHTML =

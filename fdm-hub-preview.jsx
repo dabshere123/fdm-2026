@@ -2690,14 +2690,7 @@ Reply YES to acknowledge.`
               var locStr=lcFields?.lastSeen||"the festival grounds";
               var assemblyStr=lcFields?.assembly||"the Medical Tent";
               var script="Attention F\u00eate de Marquette guests.\n\nWe need your help locating a missing child.\n\nWe are looking for "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+".\n\nThis child was last seen at "+locStr+timeStr+".\n\nIf you have seen this child or have any information, please immediately contact the nearest festival staff member wearing a yellow credentials lanyard, or go to "+assemblyStr+".\n\nIf you see this child, please stay with them and contact a staff member right away.\n\nThank you for your cooperation.";
-              var lcMsg="🧒 MISSING CHILD 🧒
-
-LOCATION: "+lcFields?.lastSeen+"
-DESCRIPTION: "+(lcFields?.childName?"Name: "+lcFields.childName+" · ":"")+"Age: "+lcFields?.age+", "+(lcFields?.gender||"Unknown gender")+(lcFields?.hair?", "+lcFields?.hair:"")+(clothing?", "+clothing:"")+"
-LAST SEEN: "+lcFields?.lastSeen+(lcFields?.lastSeenTime?" at "+lcFields.lastSeenTime:"")+"
-ASSEMBLY: "+lcFields?.assembly+(lcFields?.parentName?"
-REPORTED BY GUARDIAN: "+lcFields.parentName+(lcFields?.parentPhone?" ("+lcFields.parentPhone+")":""): "");
-              var alertCall={id:Date.now(),type:"lost_child",location:lcFields?.lastSeen,problem:lcMsg,requestedBy:role,status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
+              var lcMsg="🧒 MISSING CHILD 🧒\n\nLOCATION: "+lcFields?.lastSeen+"\nDESCRIPTION: "+(lcFields?.childName?"Name: "+lcFields.childName+" · ":"")+"Age: "+lcFields?.age+", "+(lcFields?.gender||"Unknown gender")+(lcFields?.hair?", "+lcFields?.hair:"")+(clothing?", "+clothing:"")+"\nLAST SEEN: "+lcFields?.lastSeen+(lcFields?.lastSeenTime?" at "+lcFields.lastSeenTime:"")+"\nASSEMBLY: "+lcFields?.assembly+(lcFields?.parentName?"\nREPORTED BY GUARDIAN: "+lcFields.parentName+(lcFields?.parentPhone?" ("+lcFields.parentPhone+")":""): "");\n              var alertCall={id:Date.now(),type:"lost_child",location:lcFields?.lastSeen,problem:lcMsg,requestedBy:role,status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
               setCalls(function(p){return[alertCall,...p];});
               sendGroupMe(lcMsg,["admin","medical","AllStaff"]);
               playAlert("lost_child");

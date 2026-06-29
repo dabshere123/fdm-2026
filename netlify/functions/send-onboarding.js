@@ -87,20 +87,29 @@ exports.handler = async (event) => {
       body: new URLSearchParams({ To: fmt, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: message }).toString()
     });
     const smsData = await smsRes.json();
-    console.log(`Onboarding SMS to ${fmt}: ${smsData.status}`);
+    console.log(`Onboarding SMS to ${fmt}: status=${smsData.status} error=${smsData.code} msg=${smsData.message}`);
 
-    // Notify admin
+    // If Twilio rejected the message, return the actual error
+    if (smsData.status === 'failed' || smsData.code || (!smsData.sid && !smsData.status)) {
+      return { statusCode: 400, headers, body: JSON.stringify({
+        error: `Twilio error ${smsData.code}: ${smsData.message || 'Message failed'}`,
+        twilioStatus: smsData.status,
+        to: fmt
+      })};
+    }
+
+    // Notify admin only if SMS succeeded
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
       method: 'POST',
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         To: ADMIN_PHONE,
         MessagingServiceSid: MESSAGING_SID || TWILIO_FROM,
-        Body: `✅ NEW REGISTRATION — FDM 2026\n\nName: ${name}\nRole: ${role}\nPhone: ${phone}\nOnboarding SMS sent.`
+        Body: `FDM 2026 — New registration: ${name} / ${role} / ${phone}`
       }).toString()
-    });
+    }).catch(()=>{});
 
-    return { statusCode: 200, headers, body: JSON.stringify({ success: true, sent: fmt }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, sent: fmt, twilioSid: smsData.sid }) };
   } catch(e) {
     console.error('send-onboarding error:', e.message);
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

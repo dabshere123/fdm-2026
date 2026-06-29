@@ -857,7 +857,6 @@ function HubApp({onBack}){
   const [mpdRequestView,setMpdRequestView]=useState(false);
   const [mpdOfficers,setMpdOfficers]=useState([]);
   const [mpdManageOpen,setMpdManageOpen]=useState(false);
-  const [mpdSending,setMpdSending]=useState(false);
   const [mpdResult,setMpdResult]=useState(null);
   const [mpdLocation,setMpdLocation]=useState("");
   const [mpdSituation,setMpdSituation]=useState("");

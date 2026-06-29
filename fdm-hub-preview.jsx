@@ -2226,7 +2226,6 @@ DATE/TIME: ${now()}`;
         <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});setView("home");}}>Skip & Return to Hub</button>
       </div>
     </div></div>
-    </div>
   );
 
 

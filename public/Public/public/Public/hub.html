@@ -11097,29 +11097,6 @@ Reply YES to acknowledge.`
       color: "#f1f5f9"
     }
   }, "Staff List")), /*#__PURE__*/React.createElement("a", {
-    href: "https://fdm2026.netlify.app/register",
-    target: "_blank",
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "9px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(16,185,129,0.2)",
-      background: "rgba(16,185,129,0.06)",
-      textDecoration: "none"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14
-    }
-  }, "📝"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#f1f5f9"
-    }
-  }, "Register Staff")), /*#__PURE__*/React.createElement("a", {
     href: "/.netlify/functions/export-staff",
     download: "FDM-2026-Staff.csv",
     style: {
@@ -11168,57 +11145,7 @@ Reply YES to acknowledge.`
       fontWeight: 700,
       color: "#f1f5f9"
     }
-  }, "Send Onboarding Text")), /*#__PURE__*/React.createElement("button", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "9px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(245,158,11,0.3)",
-      background: "rgba(245,158,11,0.06)",
-      cursor: "pointer",
-      textAlign: "left"
-    },
-    onClick: async e => {
-      if (!window.confirm(`Send registration reminder to all staff who haven\'t submitted their RSVP yet?`)) return;
-      const btn = e.currentTarget;
-      btn.style.opacity = "0.5";
-      btn.disabled = true;
-      try {
-        const res = await fetch("/.netlify/functions/send-reminder", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({})
-        });
-        const data = await res.json();
-        alert(`✅ Reminder sent to ${data.sent} staff\n${data.skipped} already submitted — skipped`);
-        setActivityLog(p => [{
-          id: Date.now(),
-          ts: tShort(),
-          date: now(),
-          type: "broadcast",
-          label: `RSVP reminders sent to ${data.sent} staff`
-        }, ...p]);
-      } catch (e) {
-        alert("Error: " + e.message);
-      }
-      btn.style.opacity = "";
-      btn.disabled = false;
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14
-    }
-  }, "🔔"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#fbbf24"
-    }
-  }, "Send RSVP Reminders"))))), /*#__PURE__*/React.createElement("div", {
+  }, "Send Onboarding Text"))))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",

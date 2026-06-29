@@ -2770,7 +2770,7 @@ Please respond immediately.
             }catch(err){alert("Failed: "+err.message);}
           }}>Send Onboarding Text →</button>
       </div>
-    </div></div>
+    </div></div></div>
   );
 
   if(view==="chat") return(
@@ -2789,7 +2789,7 @@ Please respond immediately.
         <span style={S.panelTitle}>📦 Lost &amp; Found</span>
         <div style={{display:"flex",gap:6}}>
           <button style={{background:"rgba(249,115,22,0.15)",border:"1px solid rgba(249,115,22,0.4)",borderRadius:8,padding:"6px 12px",color:"#fb923c",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(true)}>+ Add Item</button>
-          <button style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"6px 10px",color:"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async()=>{
+          <button style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"6px 10px",color:"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async(e)=>{
             if(!window.confirm("Mark ALL L&F items as Claimed? This clears the list.")) return;
             const unclaimed=lfItems.filter(i=>i.status!=="Claimed");
             for(const item of unclaimed){
@@ -2864,7 +2864,7 @@ Please respond immediately.
             </label>
             <div style={{display:"flex",gap:10}}>
               <button style={{flex:1,padding:14,borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(false)}>Cancel</button>
-              <button style={{flex:2,padding:14,borderRadius:10,border:"none",background:"linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer"}} onClick={async()=>{
+              <button style={{flex:2,padding:14,borderRadius:10,border:"none",background:"linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer"}} onClick={async(e)=>{
                 if(!lfAddDesc||!lfAddLoc) return;
                 const r=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:lfAddDesc,foundAt:lfAddLoc,dayFound:lfAddDay||"Unknown",foundBy:"Admin (Hub)",role:"Admin",atFestOffice:lfAddOffice?"Yes":"No"})});
                 const d=await r.json();

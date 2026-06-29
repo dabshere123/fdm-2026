@@ -2226,6 +2226,7 @@ DATE/TIME: ${now()}`;
         <button style={{...S.sendBtn,background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14}} onClick={()=>{setIncidentView(null);setIncFields({});setView("home");}}>Skip & Return to Hub</button>
       </div>
     </div></div>
+    </div>
   );
 
 
@@ -2442,7 +2443,7 @@ Reply YES to acknowledge.`
       <div style={S.panel}>
         <div style={S.panelHd}>
           <BB onClick={()=>{setMpdManageOpen(false);fetchMPD();}}/>
-          <span style={S.panelTitle}>🚔 MPD Officers</span>
+          <span style={S.panelTitle}>🚔 Manage MPD Officers</span>
           <div style={{display:"flex",gap:6}}>
             <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={fetchMPD}>↺ Refresh</button>
             <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.08)",color:"#4ade80",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setMpdAddOpen(true);setMpdAddStatus('');}}>+ Add</button>
@@ -2685,6 +2686,7 @@ Please respond immediately.
         </button>
       </div>
     </div></div>
+    </div>
   );
 
 
@@ -2722,7 +2724,7 @@ Please respond immediately.
           </div>
         ))}
       </div>
-    </div></div></div>
+    </div></div>
   );
 
   if(view==="sendonboarding") return(
@@ -2905,6 +2907,7 @@ Please respond immediately.
         {broadcastAlerts.filter(a=>a.requiresAck).length===0&&<div style={S.empty}>No active alerts</div>}
       </div>
     </div></div>
+    </div>
   );
 
   // LOG VIEW
@@ -3557,7 +3560,7 @@ Please respond immediately.
                 🚔 Request MPD
               </button>
               <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.04)",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
-                Manage
+                Manage Officers
               </button>
             </div>}
 
@@ -3709,6 +3712,7 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
     </div>
   </div>
   </div>
+    </div></div>
   );
 }
 

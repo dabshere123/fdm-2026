@@ -855,6 +855,10 @@ function HubApp({onBack}){
   const [view,setView]=useState("home");
   const [holdTexts,setHoldTexts]=useState(false);
   const [mpdRequestView,setMpdRequestView]=useState(false);
+  const [mpdOfficers,setMpdOfficers]=useState([]);
+  const [mpdManageOpen,setMpdManageOpen]=useState(false);
+  const [mpdSending,setMpdSending]=useState(false);
+  const [mpdResult,setMpdResult]=useState(null);
   const [mpdLocation,setMpdLocation]=useState("");
   const [mpdSituation,setMpdSituation]=useState("");
   const [mpdSending,setMpdSending]=useState(false);
@@ -2424,6 +2428,44 @@ Reply YES to acknowledge.`
   // 911 VIEW
   
   // MPD REQUEST OVERLAY
+  if(mpdManageOpen) return(
+    <div style={{...S.root}}>
+      <Bg/>
+      <div style={S.panel}>
+        <div style={S.panelHd}>
+          <BB onClick={()=>{setMpdManageOpen(false);fetchMPD();}}/>
+          <span style={S.panelTitle}>🚔 MPD Officers</span>
+          <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={fetchMPD}>↺ Refresh</button>
+        </div>
+        <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
+          <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Officers marked Online will receive SMS + Voice when MPD is requested. They can reply <strong style={{color:"#f1f5f9"}}>DISREGARD</strong> to cancel.</div>
+          {mpdOfficers.length===0&&<div style={{textAlign:"center",padding:32,color:"#475569"}}>No officers found.<br/>Add officers to the MPDOfficers table in Airtable.</div>}
+          {mpdOfficers.map(o=>(
+            <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="Online"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>{o.name}</div>
+                {o.badge&&<div style={{fontSize:11,color:"#64748b"}}>Badge #{o.badge}</div>}
+                <div style={{fontSize:11,color:"#64748b"}}>{o.phone}</div>
+              </div>
+              <button style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${o.status==="Online"?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:o.status==="Online"?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",color:o.status==="Online"?"#4ade80":"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
+                const newStatus=o.status==="Online"?"Offline":"Online";
+                await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:newStatus})});
+                fetchMPD();
+              }}>{o.status==="Online"?"🟢 Online":"⚫ Offline"}</button>
+            </div>
+          ))}
+          <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
+            <strong style={{color:"#93c5fd"}}>Airtable setup:</strong> Create a table called <strong style={{color:"#f1f5f9"}}>MPDOfficers</strong> with fields:<br/>
+            • Name (Single line text)<br/>
+            • Phone (Single line text)<br/>
+            • Badge (Single line text)<br/>
+            • MPDStatus (Single line text) — values: Online / Offline
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   if(mpdRequestView) return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>
@@ -3290,6 +3332,20 @@ Please respond immediately.
               <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.3}}>{currentWeather?.desc||"Loading..."}</div>
               {currentWeather?.wind!=null&&<div style={{fontSize:10,color:"#64748b"}}>💨 {currentWeather.wind} mph</div>}
               {currentWeather?.humidity!=null&&<div style={{fontSize:10,color:"#64748b"}}>💧 {currentWeather.humidity}%</div>}
+              {/* Alerts inside weather box */}
+              {nwsAlerts.length>0?(
+                <div style={{borderTop:"1px solid rgba(239,68,68,0.3)",paddingTop:5,marginTop:2,display:"flex",flexDirection:"column",gap:4}}>
+                  {nwsAlerts.slice(0,2).map((a,i)=>(
+                    <div key={i} style={{background:"rgba(239,68,68,0.1)",borderRadius:6,padding:"5px 7px"}}>
+                      <div style={{fontSize:10,fontWeight:900,color:"#fca5a5"}}>🚨 {(a.properties?.event||"").replace("Watch","Wtch").replace("Warning","Wrng")}</div>
+                    </div>
+                  ))}
+                </div>
+              ):(
+                <div style={{borderTop:"1px solid rgba(34,197,94,0.2)",paddingTop:5,marginTop:2}}>
+                  <div style={{fontSize:9,fontWeight:800,color:"#4ade80"}}>✅ No Weather Alerts</div>
+                </div>
+              )}
               <button style={{marginTop:2,padding:"4px 8px",borderRadius:8,border:"1px solid rgba(14,165,233,0.3)",background:"rgba(14,165,233,0.08)",color:"#38bdf8",fontSize:10,fontWeight:700,cursor:"pointer"}} onClick={()=>setRadarVisible(p=>!p)}>
                 {radarVisible?"Hide Radar":"📡 Radar"}
               </button>
@@ -3312,18 +3368,11 @@ Please respond immediately.
               );
             })}
           </div>
-          {/* RIGHT: Alerts + Active calls */}
+          {/* RIGHT: Active calls only — alerts are inside weather box */}
           <div style={{flex:1,display:"flex",flexDirection:"column",gap:8,minWidth:0}}>
-            {nwsAlerts.slice(0,2).map((a,i)=>(
-              <div key={i} style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"8px 10px"}}>
-                <div style={{fontSize:11,fontWeight:800,color:"#fca5a5"}}>🚨 {a.properties?.event}</div>
-                <div style={{fontSize:10,color:"#94a3b8",marginTop:2,lineHeight:1.3}}>{(a.properties?.headline||"").slice(0,80)}</div>
-              </div>
-            ))}
-            {nwsAlerts.length===0&&(
-              <div style={{background:"rgba(34,197,94,0.05)",border:"1px solid rgba(34,197,94,0.15)",borderRadius:10,padding:"8px 10px"}}>
-                <div style={{fontSize:11,fontWeight:800,color:"#4ade80"}}>✅ No Weather Alerts</div>
-                <div style={{fontSize:10,color:"#e2e8f0",marginTop:2}}>Conditions clear</div>
+            {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").length===0&&(
+              <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:10,padding:"14px 10px",textAlign:"center"}}>
+                <div style={{fontSize:11,color:"#374151"}}>No active calls</div>
               </div>
             )}
             {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").map(ac=>{
@@ -3410,9 +3459,14 @@ Please respond immediately.
 
 
             {/* REQUEST MPD BUTTON — admin only */}
-            {isAdmin&&<button style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>setMpdRequestView(true)}>
-              🚔 Request MPD Officer
-            </button>}
+            {isAdmin&&<div style={{display:"flex",gap:6}}>
+              <button style={{flex:2,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>setMpdRequestView(true)}>
+                🚔 Request MPD
+              </button>
+              <button style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.04)",color:"#60a5fa",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{setMpdManageOpen(true);fetchMPD();}}>
+                Manage
+              </button>
+            </div>}
 
             {/* 911 COMPACT BUTTON */}
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:11,fontWeight:900,cursor:"pointer",animation:nineOneOne.active?"pulse 1s infinite":"none"}} onClick={()=>{if(nineOneOne.active){const msg=`🚨 911 ACTIVE 🚨

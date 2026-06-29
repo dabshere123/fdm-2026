@@ -2905,7 +2905,6 @@ Please respond immediately.
         {broadcastAlerts.filter(a=>a.requiresAck).length===0&&<div style={S.empty}>No active alerts</div>}
       </div>
     </div></div>
-    </div>
   );
 
   // LOG VIEW
@@ -3708,8 +3707,6 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
         </div>
       </div>
     </div>
-  </div>
-  </div>
     </div></div>
   );
 }

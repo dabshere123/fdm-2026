@@ -2551,99 +2551,78 @@ Reply YES to acknowledge.`
   );
 
   if(mpdRequestView) return(
-    <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}>
-        <BB onClick={()=>setMpdRequestView(false)}/>
-        <span style={S.panelTitle}>🚔 Request MPD Officer</span>
-      </div>
-      <div style={{padding:"20px 16px",display:"flex",flexDirection:"column",gap:14}}>
-        <div style={{background:"rgba(37,99,235,0.08)",border:"1px solid rgba(37,99,235,0.25)",borderRadius:12,padding:"14px"}}>
-          <div style={{fontSize:13,color:"#93c5fd",fontWeight:700,marginBottom:4}}>How it works</div>
-          <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Each officer on duty will receive an SMS text AND a voice call with your location and situation details.</div>
+    <div style={S.root}><Bg/>
+      <div style={S.panel}>
+        <div style={S.panelHd}>
+          <BB onClick={()=>{setMpdRequestView(false);setMpdResult(null);setMpdLocation('');setMpdSituation('');}}/>
+          <span style={S.panelTitle}>🚔 Request MPD Officer</span>
         </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>📍 Where do they need to go?</div>
-          <input style={{width:"100%",padding:"14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Moon Stage Left, near the bar" value={mpdLocation} onChange={e=>setMpdLocation(e.target.value)}/>
-        </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Situation (optional)</div>
-          <textarea style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none",minHeight:80,resize:"none"}} placeholder="e.g. Fight in progress, crowd control needed" value={mpdSituation} onChange={e=>setMpdSituation(e.target.value)}/>
-        </div>
-        {/* Officer Status List */}
-        <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,overflow:"hidden"}}>
-          <div style={{padding:"8px 12px",fontSize:11,fontWeight:900,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-            Officer Status — {mpdOfficers.filter(o=>o.status!=="Off Duty").length} on duty
+        <div style={{padding:'20px 16px',display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{background:'rgba(37,99,235,0.08)',border:'1px solid rgba(37,99,235,0.25)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:13,color:'#93c5fd',fontWeight:700,marginBottom:4}}>How it works</div>
+            <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>Each officer marked <strong style={{color:'#4ade80'}}>Online</strong> will receive an SMS alert. Reply ACK to acknowledge.</div>
           </div>
-          {mpdOfficers.length===0&&<div style={{padding:"12px",fontSize:12,color:"#e2e8f0",textAlign:"center"}}>No officers in system</div>}
-          {mpdOfficers.map(o=>{
-            const isOff=(o.status||"").toLowerCase().includes("off");
-            return(
-              <div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:isOff?"#374151":"#22c55e",flexShrink:0}}/>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:isOff?"#475569":"#f1f5f9"}}>{o.name}</div>
-                  {o.phone&&<div style={{fontSize:11,color:"#94a3b8"}}>{o.phone}</div>}
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Location *</div>
+            <input style={{width:'100%',padding:'13px 14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,color:'#f1f5f9',fontSize:16,fontFamily:'inherit',outline:'none'}} placeholder="e.g. Sun Stage, Moon Bar" value={mpdLocation} onChange={e=>setMpdLocation(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Situation *</div>
+            <textarea style={{width:'100%',padding:'13px 14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,color:'#f1f5f9',fontSize:15,fontFamily:'inherit',outline:'none',resize:'none',minHeight:80}} placeholder="Describe the situation..." value={mpdSituation} onChange={e=>setMpdSituation(e.target.value)}/>
+          </div>
+          {/* Online officers */}
+          <div style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:10,padding:'10px 12px'}}>
+            <div style={{fontSize:10,fontWeight:900,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:6}}>Online Officers ({mpdOfficers.filter(o=>o.status==='ON').length})</div>
+            {mpdOfficers.filter(o=>o.status==='ON').length===0
+              ? <div style={{fontSize:12,color:'#374151'}}>No officers online. Go to Manage Officers to set officers ON.</div>
+              : mpdOfficers.filter(o=>o.status==='ON').map(o=>(
+                <div key={o.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:'#22c55e',flexShrink:0}}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:'#f1f5f9'}}>{o.name}</div>
+                    {o.lastAck&&<div style={{fontSize:10,color:'#4ade80'}}>Last ACK: {o.lastAck}</div>}
+                  </div>
                 </div>
-                <button style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${isOff?"rgba(34,197,94,0.4)":"rgba(239,68,68,0.4)"}`,background:isOff?"rgba(34,197,94,0.08)":"rgba(239,68,68,0.08)",color:isOff?"#4ade80":"#fca5a5",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={async()=>{
-                  const newStatus=isOff?"Available":"Off Duty";
-                  await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:newStatus})}).catch(()=>{});
-                  setMpdOfficers(p=>p.map(x=>x.id===o.id?{...x,status:newStatus}:x));
-                }}>{isOff?"Set Online":"Set Offline"}</button>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{fontSize:12,color:"#e2e8f0"}}>
-          Only officers marked <span style={{color:"#4ade80",fontWeight:700}}>online</span> will be contacted when you send the alert.
-        </div>
-        <button style={{padding:"18px",borderRadius:12,border:"none",background:mpdLocation.trim()&&mpdOfficers.length>0?"linear-gradient(135deg,rgba(37,99,235,0.9),rgba(29,78,216,0.9))":"rgba(255,255,255,0.06)",color:mpdLocation.trim()&&mpdOfficers.length>0?"#fff":"#475569",fontSize:16,fontWeight:900,cursor:mpdLocation.trim()&&mpdOfficers.length>0?"pointer":"not-allowed",opacity:mpdSending?0.6:1}} disabled={!mpdLocation.trim()||mpdOfficers.length===0||mpdSending} onClick={async()=>{
-          setMpdSending(true);
-          const loc=mpdLocation.trim();
-          const sit=mpdSituation.trim();
-          const ts=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-          const smsMsg=`🚔 MPD REQUESTED — Fête de Marquette 2026
-
-Your presence is requested at:
-📍 ${loc}
-${sit?`Situation: ${sit}
-`:""}
-McPike Park, Madison WI
-Time: ${ts}
-
-Please respond immediately.
-— FDM 2026 Operations`;
-          const voiceMsg=`This is Fête de Marquette Operations at McPike Park in Madison. Your presence is requested at ${loc}.${sit?` Situation: ${sit}.`:""} Please respond immediately. This is Fête de Marquette Operations at McPike Park.`;
-          const phones=mpdOfficers.filter(o=>o.phone&&!(o.status||"").toLowerCase().includes("off")).map(o=>{const d=String(o.phone).replace(/[^0-9]/g,"");return d.length===10?`+1${d}`:`+${d}`;});
-          for(const phone of phones){
-            await fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message:smsMsg})}).catch(()=>{});
-          }
-          if(phones.length>0){
-            await fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones,message:voiceMsg})}).catch(()=>{});
-          }
-          setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"security",label:`MPD Requested — ${loc}`,msg:smsMsg},...p]);
-          setMpdSending(false);
-          setMpdResult({notified: phones.length, officers: phones});
-          setMpdSending(false);
-        }}>{mpdSending?"Sending...":"🚔 Send SMS + Voice to All Officers"}</button>
-        {mpdResult&&(
-          <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
-            <div style={{background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.4)",borderRadius:12,padding:"14px",fontSize:13,color:"#4ade80",fontWeight:700}}>
-              ✅ {mpdResult.notified||0} officer{(mpdResult.notified||0)!==1?"s":""} notified — awaiting ACK
-            </div>
-            <button style={{width:"100%",padding:"13px",borderRadius:12,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
-              const reason=window.prompt("Reason for disregard (optional):")||"";
-              const r=await fetch("/.netlify/functions/disregard-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reason})});
-              const d=await r.json();
-              alert(`Disregard sent to ${d.notified||0} officer${(d.notified||0)!==1?"s":""}.`);
-              setMpdResult(null);setMpdLocation("");setMpdSituation("");setMpdRequestView(false);
-            }}>🚫 Disregard — Cancel MPD Request</button>
-            <button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>{setMpdRequestView(false);setMpdResult(null);}}>← Back to Home</button>
+              ))
+            }
           </div>
-        )}
-        {!mpdResult&&<button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setMpdRequestView(false)}>← Back</button>}
+          {/* Send button */}
+          <button
+            style={{padding:'18px',borderRadius:12,border:'none',background:mpdLocation.trim()&&mpdSituation.trim()&&!mpdSending?'linear-gradient(135deg,rgba(37,99,235,0.9),rgba(29,78,216,0.9))':'rgba(255,255,255,0.06)',color:mpdLocation.trim()&&mpdSituation.trim()&&!mpdSending?'#fff':'#475569',fontSize:16,fontWeight:900,cursor:mpdLocation.trim()&&mpdSituation.trim()&&!mpdSending?'pointer':'not-allowed'}}
+            disabled={!mpdLocation.trim()||!mpdSituation.trim()||mpdSending}
+            onClick={async()=>{
+              setMpdSending(true);
+              try{
+                const r=await fetch('/.netlify/functions/request-mpd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:mpdLocation,situation:mpdSituation,requestedBy:role,callType:'security'})});
+                const d=await r.json();
+                setMpdResult(d);
+              }catch(e){alert('Error: '+e.message);}
+              setMpdSending(false);
+            }}>
+            {mpdSending?'Sending...':'🚔 Send SMS + Voice to All Officers'}
+          </button>
+          {/* Result + Disregard */}
+          {mpdResult&&(
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <div style={{background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:12,padding:'14px',fontSize:13,color:'#4ade80',fontWeight:700}}>
+                ✅ {mpdResult.notified||0} officer{(mpdResult.notified||0)!==1?'s':''} notified — awaiting ACK
+              </div>
+              <button style={{width:'100%',padding:'13px',borderRadius:12,border:'2px solid rgba(239,68,68,0.5)',background:'rgba(239,68,68,0.08)',color:'#fca5a5',fontSize:14,fontWeight:800,cursor:'pointer'}} onClick={async()=>{
+                const reason=window.prompt('Reason for disregard (optional):')||'';
+                const r=await fetch('/.netlify/functions/disregard-mpd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason})});
+                const d=await r.json();
+                alert('Disregard sent to '+(d.notified||0)+' officer'+(d.notified!==1?'s':'')+'.');
+                setMpdResult(null);setMpdLocation('');setMpdSituation('');setMpdRequestView(false);
+              }}>🚫 Disregard — Cancel MPD Request</button>
+            </div>
+          )}
+          <button style={{padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',color:'#94a3b8',fontSize:14,fontWeight:700,cursor:'pointer'}} onClick={()=>{setMpdRequestView(false);setMpdResult(null);setMpdLocation('');setMpdSituation('');}}>← Back</button>
+        </div>
       </div>
-    </div></div></div>
+    </div>
+  </div>
   );
+
 
   if(lcView) return(
     <div style={{...S.root,position:"relative"}}><Bg/><div style={{...S.panel,position:"relative",zIndex:1}}>

@@ -75,7 +75,9 @@ exports.handler = async (event) => {
     }
 
     const encodedName = encodeURIComponent(name.trim());
-    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fête de Marquette July 9-12 at McPike Park Madison.\n\nPlease confirm your role here (10 seconds):\nfdm2026.netlify.app/rsvp\n\nYour worker app:\nfdm2026.netlify.app/field\n\nSee you at orientation!\n— Devin`;
+    // NOTE: URLs cause AT&T carrier filtering (error 30019)
+    // Links are sent via email instead - this SMS just confirms their spot
+    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fête de Marquette July 9-12 at McPike Park Madison. Check your email for the staff app link. See you at orientation! — Devin`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
 

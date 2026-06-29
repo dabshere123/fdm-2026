@@ -156,6 +156,7 @@ function NewCallView({user,callType,onBack}){
   const [location,setLocation]=useState(user.location||'');
   const [problem,setProblem]=useState('');
   const [sending,setSending]=useState(false);
+  const [airtableErr,setAirtableErr]=useState('');
   const [sent,setSent]=useState(false);
   // Lost child specific fields
   const [lcName,setLcName]=useState('');
@@ -563,8 +564,15 @@ function LFView({user,onBack}){
       const res=await fetch(`${API}/submit-lost-found`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description,foundAt:location,currentLocation:currentLoc,dayFound:day,foundBy:user.name,role:user.role,photoData:photo})});
       const data=await res.json();
       setItemNumber(data.itemNumber||'???');
+      if(data.airtableError){
+        console.warn('Airtable save failed:',data.airtableError);
+        setAirtableErr(data.airtableError);
+      }
       setStep('confirm');
-    }catch(e){}
+    }catch(e){
+      setItemNumber('ERR');
+      alert('Submit failed: '+e.message);
+    }
     setSending(false);
   }
 
@@ -583,6 +591,7 @@ function LFView({user,onBack}){
     <div style={{...S.root,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:24,textAlign:'center'}}>
       <div style={{fontSize:52}}>📦</div>
       <div style={{fontSize:20,fontWeight:900,color:'#f1f5f9'}}>Item Logged!</div>
+      {airtableErr&&<div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,padding:'12px 14px',fontSize:12,color:'#fca5a5',width:'100%'}}>⚠️ Item tagged but NOT saved to lookup.<br/>Airtable error: {airtableErr.slice(0,120)}</div>}
       <div style={{width:'100%',background:'rgba(249,115,22,0.12)',border:'2px solid rgba(249,115,22,0.5)',borderRadius:14,padding:'20px',display:'flex',flexDirection:'column',gap:8,alignItems:'center'}}>
         <div style={{fontSize:11,fontWeight:800,color:'#94a3b8',letterSpacing:'0.1em',textTransform:'uppercase'}}>Item Number</div>
         <div style={{fontSize:40,fontWeight:900,color:'#fb923c'}}>{itemNumber}</div>

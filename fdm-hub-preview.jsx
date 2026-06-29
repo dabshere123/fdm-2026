@@ -81,7 +81,7 @@ function BB({onClick,label="← Back"}){return(
   <button style={{position:"sticky",top:8,zIndex:10,background:"rgba(255,255,255,0.1)",border:"2px solid rgba(255,255,255,0.25)",color:"#f1f5f9",padding:"12px 20px",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:800,backdropFilter:"blur(8px)",boxShadow:"0 2px 12px rgba(0,0,0,0.3)"}} onClick={onClick}>{label}</button>
 );
 }
-function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={S.lbl}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}
+function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={{...S.lbl,color:"#94a3b8"}}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}
 
 
 const MPD_VOICE_SCRIPT=(location,situation)=>
@@ -470,13 +470,13 @@ Madison Fire/EMS INBOUND — McPike Park`;
         </button>
       </div>
 
-      {/* WALK-IN PATIENT BUTTON */}
+      {/* WALK-IN PATIENT BUTTON — matches medical call button style */}
       <div style={{padding:"4px 16px 4px"}}>
-        <button style={{width:"100%",padding:"14px 16px",borderRadius:14,border:"2px solid rgba(99,102,241,0.6)",background:"linear-gradient(135deg,rgba(99,102,241,0.2),rgba(79,70,229,0.1))",cursor:"pointer",display:"flex",alignItems:"center",gap:14}} onClick={()=>{setNewCallType("walk_in");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-          <span style={{fontSize:24}}>🚶</span>
+        <button style={{width:"100%",padding:"16px",borderRadius:14,border:"2px solid rgba(219,39,119,0.7)",background:"linear-gradient(135deg,rgba(190,24,93,0.25),rgba(157,23,77,0.15))",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 0 16px rgba(190,24,93,0.2)"}} onClick={()=>{setNewCallType("walk_in");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+          <span style={{fontSize:26}}>🚶</span>
           <div style={{textAlign:"left"}}>
-            <div style={{fontSize:15,fontWeight:900,color:"#a5b4fc"}}>WALK-IN PATIENT</div>
-            <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Patient walked in for medical attention</div>
+            <div style={{fontSize:16,fontWeight:900,color:"#fbcfe8"}}>WALK-IN PATIENT</div>
+            <div style={{fontSize:11,color:"#e2e8f0",marginTop:2}}>Patient walked in · alerts med units</div>
           </div>
         </button>
       </div>
@@ -504,7 +504,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         {/* MY CALLS TAB */}
         {tab==="mycalls"&&(
           <>
-            {myActive.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No calls assigned to {role}</div>}
+            {myActive.length===0&&<div style={{textAlign:"center",color:"#e2e8f0",fontSize:13,padding:"24px 0"}}>No calls assigned to {role}</div>}
             {myActive.map(call=>{
               const c=CALL_COLORS[call.type]||CALL_COLORS.medical;
               return(
@@ -535,7 +535,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         {/* UNASSIGNED TAB */}
         {tab==="unassigned"&&(
           <>
-            {unassigned.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No unassigned calls</div>}
+            {unassigned.length===0&&<div style={{textAlign:"center",color:"#e2e8f0",fontSize:13,padding:"24px 0"}}>No unassigned calls</div>}
             {unassigned.map(call=>{
               const c=CALL_COLORS[call.type]||CALL_COLORS.medical;
               return(
@@ -587,7 +587,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
             <a href="https://fdm2026.netlify.app/lostfound?from=hub" target="_blank" style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,border:"1px solid rgba(139,92,246,0.3)",background:"rgba(139,92,246,0.06)",textDecoration:"none",marginBottom:4}}>
               <span style={{fontSize:18}}>🔍</span><div style={{fontSize:14,fontWeight:700,color:"#f1f5f9"}}>L&F Lookup Page →</div>
             </a>
-            {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"20px 0"}}>No active L&F items</div>}
+            {(lfItems||[]).filter(i=>i.status!=="Claimed").length===0&&<div style={{textAlign:"center",color:"#e2e8f0",fontSize:13,padding:"20px 0"}}>No active L&F items</div>}
             {(lfItems||[]).filter(i=>i.status!=="Claimed").slice(0,15).map(item=>(
               <div key={item.id} style={{borderRadius:10,border:"1px solid rgba(139,92,246,0.2)",background:"rgba(139,92,246,0.06)",padding:"10px 12px"}}>
                 <div style={{fontSize:12,fontWeight:800,color:"#c4b5fd",marginBottom:2}}>{item.itemNumber||"—"}</div>
@@ -673,7 +673,7 @@ function HubConversationView({myName,myRole,convo,onBack}){
           </div>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:8,minHeight:0}}>
-          {messages.length===0&&<div style={{textAlign:"center",color:"#374151",fontSize:13,padding:"24px 0"}}>No messages yet</div>}
+          {messages.length===0&&<div style={{textAlign:"center",color:"#e2e8f0",fontSize:13,padding:"24px 0"}}>No messages yet</div>}
           {messages.map(msg=>{
             const isMe=msg.fromName===myName||msg.fromRole===myRole;
             const isAlert=msg.isAlert;
@@ -690,7 +690,7 @@ function HubConversationView({myName,myRole,convo,onBack}){
                 <div style={{maxWidth:"82%",background:isMe?"rgba(14,165,233,0.25)":"rgba(255,255,255,0.07)",border:`1px solid ${isMe?"rgba(14,165,233,0.5)":"rgba(255,255,255,0.1)"}`,borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"9px 13px"}}>
                   <div style={{fontSize:14,color:"#f1f5f9",lineHeight:1.5}}>{msg.message}</div>
                 </div>
-                {isMe&&<div style={{fontSize:10,color:"#374151",marginRight:4}}>{time}</div>}
+                {isMe&&<div style={{fontSize:10,color:"#e2e8f0",marginRight:4}}>{time}</div>}
               </div>
             );
           })}
@@ -2004,16 +2004,27 @@ DATE/TIME: ${now()}`;
         <span style={{...S.panelTitle}}>➕ New Call</span>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Call Type</div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {[
-            {type:"medical",label:"🩺 Medical",color:"#a855f7"},
-            {type:"fire",label:"🔥 Fire / Life Safety",color:"#ef4444"},
-            {type:"security",label:"🛡️ Security",color:"#3b82f6"},
-          ].map(({type,label,color})=>(
-            <button key={type} style={{padding:"14px",borderRadius:10,border:`2px solid ${newCallType===type?color:color+"44"}`,background:newCallType===type?color+"22":"rgba(255,255,255,0.03)",color:newCallType===type?"#f1f5f9":"#64748b",fontWeight:800,fontSize:14,cursor:"pointer",textAlign:"left"}} onClick={()=>setNewCallType(type)}>{label}</button>
-          ))}
-        </div>
+        {/* Show type selector only if no type pre-selected */}
+        {!newCallType&&<>
+          <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Call Type</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {[
+              {type:"medical",label:"🩺 Medical",color:"#a855f7"},
+              {type:"fire",label:"🔥 Fire / Life Safety",color:"#ef4444"},
+              {type:"security",label:"🛡️ Security",color:"#3b82f6"},
+              {type:"supplies",label:"📦 Supplies Request",color:"#f59e0b"},
+              {type:"maintenance",label:"🔧 Maintenance",color:"#10b981"},
+            ].map(({type,label,color})=>(
+              <button key={type} style={{padding:"14px",borderRadius:10,border:`2px solid ${newCallType===type?color:color+"44"}`,background:newCallType===type?color+"22":"rgba(255,255,255,0.03)",color:newCallType===type?"#f1f5f9":"#e2e8f0",fontWeight:800,fontSize:14,cursor:"pointer",textAlign:"left"}} onClick={()=>setNewCallType(type)}>{label}</button>
+            ))}
+          </div>
+        </>}
+        {/* If type pre-selected, show as badge */}
+        {newCallType&&(()=>{
+          const typeInfo={medical:{label:"🩺 Medical",color:"#a855f7"},fire:{label:"🔥 Fire / Life Safety",color:"#ef4444"},security:{label:"🛡️ Security",color:"#3b82f6"},supplies:{label:"📦 Supplies Request",color:"#f59e0b"},maintenance:{label:"🔧 Maintenance",color:"#10b981"},walk_in:{label:"🚶 Walk-In Patient",color:"#ec4899"},lost_child:{label:"🧒 Lost Child",color:"#eab308"}};
+          const t=typeInfo[newCallType]||{label:newCallType,color:"#64748b"};
+          return <div style={{background:t.color+"22",border:`2px solid ${t.color}88`,borderRadius:10,padding:"12px 14px",fontSize:15,fontWeight:900,color:"#f1f5f9"}}>{t.label}</div>;
+        })()}
         <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginTop:4}}>Location *</div>
         <input style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"14px",color:"#f1f5f9",fontSize:14,outline:"none"}} placeholder="e.g. Sun Stage · Moon Bar · First Aid" value={newCallLocation} onChange={e=>setNewCallLocation(e.target.value)}/>
         <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Problem / Description *</div>
@@ -2242,7 +2253,7 @@ DATE/TIME: ${now()}`;
                   <div style={{flex:1,height:4,background:"rgba(255,255,255,0.2)",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",background:isEsc?"#ef4444":pct>66?"#f97316":"#10b981",borderRadius:2,width:`${pct}%`,transition:"width 1s"}}/></div>
                   <span style={{fontSize:11,color:isEsc?"#fca5a5":"rgba(255,255,255,0.7)",fontWeight:700,whiteSpace:"nowrap"}}>{isEsc?"⚠ RESENT":remaining>0?`${remaining}s`:"⚠"}</span>
                 </div>
-                <button style={{border:"2px solid rgba(255,255,255,0.6)",borderRadius:10,padding:"14px",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",background:"rgba(0,0,0,0.3)"}} onClick={()=>ackCall(c.id,"Admin")}>✅ ACKNOWLEDGE</button>
+                <button style={{border:"2px solid rgba(255,255,255,0.6)",borderRadius:10,padding:"14px",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",background:"rgba(255,255,255,0.04)"}} onClick={()=>ackCall(c.id,"Admin")}>✅ ACKNOWLEDGE</button>
               </div>);
             })}
           </div>}
@@ -2437,7 +2448,7 @@ Reply YES to acknowledge.`
           <div style={{padding:"8px 12px",fontSize:11,fontWeight:900,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
             Officer Status — {mpdOfficers.filter(o=>o.status!=="Off Duty").length} on duty
           </div>
-          {mpdOfficers.length===0&&<div style={{padding:"12px",fontSize:12,color:"#374151",textAlign:"center"}}>No officers in system</div>}
+          {mpdOfficers.length===0&&<div style={{padding:"12px",fontSize:12,color:"#e2e8f0",textAlign:"center"}}>No officers in system</div>}
           {mpdOfficers.map(o=>{
             const isOff=(o.status||"").toLowerCase().includes("off");
             return(
@@ -2456,7 +2467,7 @@ Reply YES to acknowledge.`
             );
           })}
         </div>
-        <div style={{fontSize:12,color:"#374151"}}>
+        <div style={{fontSize:12,color:"#e2e8f0"}}>
           Only officers marked <span style={{color:"#4ade80",fontWeight:700}}>online</span> will be contacted when you send the alert.
         </div>
         <button style={{padding:"18px",borderRadius:12,border:"none",background:mpdLocation.trim()&&mpdOfficers.length>0?"linear-gradient(135deg,rgba(37,99,235,0.9),rgba(29,78,216,0.9))":"rgba(255,255,255,0.06)",color:mpdLocation.trim()&&mpdOfficers.length>0?"#fff":"#475569",fontSize:16,fontWeight:900,cursor:mpdLocation.trim()&&mpdOfficers.length>0?"pointer":"not-allowed",opacity:mpdSending?0.6:1}} disabled={!mpdLocation.trim()||mpdOfficers.length===0||mpdSending} onClick={async()=>{
@@ -2555,7 +2566,7 @@ Please respond immediately.
             <div key={h} style={{fontSize:10,fontWeight:900,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em"}}>{h}</div>
           ))}
         </div>
-        {staffList.length===0&&<div style={{textAlign:"center",color:"#374151",padding:30}}>No staff loaded</div>}
+        {staffList.length===0&&<div style={{textAlign:"center",color:"#e2e8f0",padding:30}}>No staff loaded</div>}
         {staffList.map((s,i)=>(
           <div key={s.id||i} style={{display:"grid",gridTemplateColumns:"1.5fr 1.2fr 1.2fr 1.5fr",gap:0,padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",background:i%2===0?"transparent":"rgba(255,255,255,0.015)"}}>
             <div>
@@ -2660,118 +2671,76 @@ Please respond immediately.
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>
         <BB onClick={()=>setView("home")}/>
-        <span style={S.panelTitle}>📦 Lost & Found</span>
-        <button style={{background:"rgba(139,92,246,0.15)",border:"1px solid rgba(139,92,246,0.4)",borderRadius:8,padding:"6px 12px",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:"auto"}} onClick={fetchLostFound}>Refresh</button>
+        <span style={S.panelTitle}>📦 Lost &amp; Found</span>
+        <button style={{background:"rgba(249,115,22,0.15)",border:"1px solid rgba(249,115,22,0.4)",borderRadius:8,padding:"6px 12px",color:"#fb923c",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(true)}>+ Add Item</button>
       </div>
-      <div style={S.cWrap}>
-        {lfClaimView?(
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>Mark as Claimed — #{lfClaimView.itemNumber}</div>
-            <div style={{fontSize:13,color:"#e2e8f0"}}>{lfClaimView.description}</div>
-            <Fld label="Claimed By (Name) *" value={lfClaimBy} onChange={e=>setLfClaimBy(e.target.value)} ph="Full name of person claiming"/>
-            <Fld label="ID Verification" value={lfClaimID} onChange={e=>setLfClaimID(e.target.value)} ph="e.g. DL #123456"/>
-            <Fld label="Phone Number" value={lfClaimPhone} onChange={e=>setLfClaimPhone(e.target.value)} ph="(608) 555-1234"/>
-            <button style={{...S.sendBtn,background:"linear-gradient(135deg,#10b981,#059669)",opacity:!lfClaimBy?0.5:1}} disabled={!lfClaimBy}
-              onClick={async()=>{
-                await fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:lfClaimView.id,claimedBy:lfClaimBy,claimedByID:lfClaimID,claimedByPhone:lfClaimPhone})});
-                setLfClaimView(null);setLfClaimBy("");setLfClaimID("");setLfClaimPhone("");
-                fetchLostFound();
-              }}>✅ Mark as Claimed</button>
-            <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#e2e8f0"}} onClick={()=>setLfClaimView(null)}>Cancel</button>
-          </div>
-        ):(
-          <>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-              <div style={{fontSize:13,color:"#94a3b8"}}>{lfItems.length} items · {lfItems.filter(i=>i.status==="Unclaimed").length} unclaimed</div>
-              <a href="https://fdm2026.netlify.app/lostfound?from=hub" target="_blank" style={{fontSize:12,color:"#a78bfa",fontWeight:700,textDecoration:"none",background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.3)",borderRadius:6,padding:"4px 10px"}}>🔗 L&F Lookup</a>
+      <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
+        {/* Search + filter */}
+        <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"12px 14px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Search description or item #..." value={lfSearch||""} onChange={e=>setLfSearch(e.target.value)}/>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {["","Thu","Fri","Sat","Sun"].map(d=>(
+            <button key={d} style={{padding:"5px 12px",borderRadius:16,border:`1px solid ${lfDay===d?"rgba(139,92,246,0.6)":"rgba(255,255,255,0.1)"}`,background:lfDay===d?"rgba(139,92,246,0.12)":"rgba(255,255,255,0.04)",color:lfDay===d?"#c4b5fd":"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfDay(d)}>{d||"All Days"}</button>
+          ))}
+        </div>
+
+        {/* Items list */}
+        {lfLoading&&<div style={{textAlign:"center",color:"#475569",padding:32}}>Loading...</div>}
+        {!lfLoading&&lfItems.filter(i=>{
+          const q=(lfSearch||"").toLowerCase();
+          const dayMatch=!lfDay||(i.dayFound||"").toLowerCase().startsWith(lfDay.toLowerCase());
+          const qMatch=!q||(i.description||"").toLowerCase().includes(q)||(i.itemNumber||"").toLowerCase().includes(q)||(i.foundAt||"").toLowerCase().includes(q);
+          return dayMatch&&qMatch&&i.status!=="Claimed";
+        }).map(item=>(
+          <div key={item.id} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,overflow:"hidden"}}>
+            {item.photoData&&<img src={item.photoData} alt="Found item" style={{width:"100%",maxHeight:180,objectFit:"cover",display:"block"}} onError={e=>e.target.style.display="none"}/>}
+            <div style={{padding:"12px 14px"}}>
+              <div style={{fontSize:13,fontWeight:900,color:"#fb923c",marginBottom:4}}>TAG #{item.itemNumber||"?"}</div>
+              <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",marginBottom:6}}>{item.description||"Unknown item"}</div>
+              {(item.atFestOffice==="Yes")&&<div style={{fontSize:14,fontWeight:900,color:"#4ade80",marginBottom:4}}>📍 AT FEST OFFICE</div>}
+              <div style={{fontSize:12,color:"#64748b",marginBottom:2}}>Found at: {item.foundAt||"—"}</div>
+              <div style={{fontSize:12,color:"#64748b",marginBottom:8}}>Day: {item.dayFound||"—"}</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {item.atFestOffice!=="Yes"&&<button style={{padding:"7px 12px",borderRadius:8,border:"1px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.06)",color:"#4ade80",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,atFestOffice:"Yes"})}).then(()=>fetchLFItems())}>📍 Move to Fest Office</button>}
+                <button style={{padding:"7px 12px",borderRadius:8,border:"1px solid rgba(139,92,246,0.4)",background:"rgba(139,92,246,0.06)",color:"#c4b5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status:"Claimed"})}).then(()=>fetchLFItems())}>✅ Mark Claimed</button>
+              </div>
             </div>
-
-            {/* LOG NEW ITEM FORM */}
-            {lfNewItem?(
-              <div style={{background:"rgba(249,115,22,0.06)",border:"1px solid rgba(249,115,22,0.25)",borderRadius:14,padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
-                <div style={{fontSize:14,fontWeight:900,color:"#fb923c"}}>📦 Log New Item</div>
-                <div style={{display:"flex",gap:6}}>
-                  {[["Thu","🔵"],["Fri","🟠"],["Sat","🟢"],["Sun","🟣"]].map(([d,e])=>(
-                    <button key={d} style={{flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${lfNewFields.day===d?"rgba(249,115,22,0.6)":"rgba(255,255,255,0.1)"}`,background:lfNewFields.day===d?"rgba(249,115,22,0.15)":"rgba(255,255,255,0.03)",color:lfNewFields.day===d?"#fb923c":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfNewFields(p=>({...p,day:d}))}>{e} {d}</button>
-                  ))}
-                </div>
-                <Fld label="Where found" value={lfNewFields.foundAt||""} onChange={e=>setLfNewFields(p=>({...p,foundAt:e.target.value}))} ph="e.g. Near Moon Stage Left"/>
-                <Fld label="Where is it now" value={lfNewFields.nowAt||""} onChange={e=>setLfNewFields(p=>({...p,nowAt:e.target.value}))} ph="e.g. Festival Office"/>
-                <Fld label="Description" value={lfNewFields.description||""} onChange={e=>setLfNewFields(p=>({...p,description:e.target.value}))} ph="Describe the item..." multi/>
-                <div style={{display:"flex",gap:8}}>
-                  <button style={{flex:1,padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,rgba(249,115,22,0.8),rgba(234,88,12,0.9))",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",opacity:(!lfNewFields.description||!lfNewFields.foundAt)?0.5:1}} disabled={!lfNewFields.description||!lfNewFields.foundAt} onClick={async()=>{
-                    const res=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:lfNewFields.description,foundAt:lfNewFields.foundAt,currentLocation:lfNewFields.nowAt||lfNewFields.foundAt,dayFound:lfNewFields.day||"",foundBy:"Admin",role:"Admin"})});
-                    const data=await res.json();
-                    setLfNewItem(false);setLfNewFields({});
-                    if(data.itemNumber) setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lf",label:`L&F Logged — #${data.itemNumber}: ${lfNewFields.description.slice(0,30)}`},...p]);
-                    fetchLostFound();
-                  }}>Log Item</button>
-                  <button style={{padding:"12px 18px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setLfNewItem(false);setLfNewFields({});}}>Cancel</button>
-                </div>
-              </div>
-            ):(
-              <button style={{padding:"12px 16px",borderRadius:12,border:"1px solid rgba(249,115,22,0.4)",background:"rgba(249,115,22,0.08)",color:"#fb923c",fontSize:14,fontWeight:800,cursor:"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>setLfNewItem(true)}>
-                + Log New Found Item
-              </button>
-            )}
-            {lfLoading&&<div style={{textAlign:"center",color:"#94a3b8",padding:"20px"}}>Loading...</div>}
-            {!lfLoading&&lfItems.length===0&&<div style={{textAlign:"center",color:"#94a3b8",padding:"20px"}}>No lost & found items yet.</div>}
-            {lfItems.map(item=>(
-              <div key={item.id} style={{borderRadius:12,border:`1px solid ${item.status==="Claimed"?"rgba(16,185,129,0.3)":item.status==="In Box"?"rgba(139,92,246,0.5)":"rgba(139,92,246,0.3)"}`,background:item.status==="Claimed"?"rgba(16,185,129,0.05)":"rgba(139,92,246,0.06)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:6}}>
-
-                {/* Header row: item number + day badge + status */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-                  <div style={{fontSize:15,fontWeight:900,color:item.status==="Claimed"?"#10b981":"#c4b5fd",fontFamily:"monospace",letterSpacing:"0.05em"}}>{item.itemNumber||"#?"}</div>
-                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                    {item.dayFound&&(()=>{
-                      const d=(item.dayFound||'').toLowerCase();
-                      const dc=d.includes('thu')?{bg:"rgba(59,130,246,0.25)",br:"rgba(59,130,246,0.6)",tx:"#bfdbfe",lb:"THU"}:
-                               d.includes('fri')?{bg:"rgba(251,146,60,0.25)",br:"rgba(251,146,60,0.6)",tx:"#fed7aa",lb:"FRI"}:
-                               d.includes('sat')?{bg:"rgba(22,163,74,0.25)",br:"rgba(22,163,74,0.6)",tx:"#bbf7d0",lb:"SAT"}:
-                               d.includes('sun')?{bg:"rgba(139,92,246,0.25)",br:"rgba(139,92,246,0.6)",tx:"#e9d5ff",lb:"SUN"}:
-                               {bg:"rgba(245,158,11,0.15)",br:"rgba(245,158,11,0.4)",tx:"#fcd34d",lb:(item.dayFound||'').slice(0,3).toUpperCase()};
-                      return <div style={{fontSize:10,fontWeight:800,background:dc.bg,border:`1px solid ${dc.br}`,color:dc.tx,borderRadius:6,padding:"2px 8px"}}>{dc.lb}</div>;
-                    })()}
-                    {item.status==="In Box"&&<div style={{fontSize:10,fontWeight:800,background:"rgba(139,92,246,0.15)",border:"1px solid rgba(139,92,246,0.4)",color:"#c4b5fd",borderRadius:6,padding:"2px 8px"}}>📦 IN BOX</div>}
-                    {item.status==="Claimed"&&<div style={{fontSize:10,fontWeight:800,background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.3)",color:"#6ee7b7",borderRadius:6,padding:"2px 8px"}}>✅ CLAIMED</div>}
-                    {item.status!=="Claimed"&&item.status!=="In Box"&&<div style={{fontSize:10,fontWeight:800,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",color:"#fcd34d",borderRadius:6,padding:"2px 8px"}}>UNCLAIMED</div>}
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9"}}>{item.description}</div>
-
-                {/* Locations */}
-                <div style={{display:"flex",flexDirection:"column",gap:3,fontSize:12,color:"#e2e8f0"}}>
-                  <div>📍 Found at: <strong style={{color:"#e2e8f0"}}>{item.location}</strong></div>
-                  {item.currentLocation&&item.currentLocation!==item.location&&<div>📌 Now at: <strong style={{color:"#e2e8f0"}}>{item.currentLocation}</strong></div>}
-                  <div>👤 {item.foundBy} · 🕐 {item.foundAt||""}</div>
-                </div>
-
-                {/* Claimed info */}
-                {item.status==="Claimed"&&<div style={{fontSize:12,color:"#10b981",background:"rgba(16,185,129,0.06)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:8,padding:"8px 10px"}}>✅ Claimed by {item.claimedBy}{item.claimedByID?` · ID: ${item.claimedByID}`:""}</div>}
-                {item.inBoxAt&&<div style={{fontSize:11,color:"#a78bfa"}}>📦 Boxed: {item.inBoxAt}</div>}
-                {item.officeAt&&<div style={{fontSize:11,color:"#a5b4fc"}}>🏢 Festival Office: {item.officeAt}</div>}
-
-                {/* Action buttons */}
-                {item.status!=="Claimed"&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
-                  <button style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(139,92,246,0.4)",background:"rgba(139,92,246,0.1)",color:"#a78bfa",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfClaimView(item)}>✅ Mark Claimed</button>
-                  {item.status!=="In Box"&&<button style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.4)",background:"rgba(245,158,11,0.08)",color:"#fcd34d",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{
-                    const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
-                    setLfItems(p=>p.map(i=>i.id===item.id?{...i,status:"In Box",inBoxAt:ts}:i));
-                    fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status:"In Box",inBoxAt:ts})}).catch(()=>{});
-                  }}>📦 In L&F Box</button>}
-                  {item.status!=="at_office"&&<button style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(99,102,241,0.4)",background:"rgba(99,102,241,0.08)",color:"#a5b4fc",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{
-                    const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
-                    setLfItems(p=>p.map(i=>i.id===item.id?{...i,status:"at_office",officeAt:ts}:i));
-                    fetch("/.netlify/functions/update-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status:"at_office",officeAt:ts})}).catch(()=>{});
-                  }}>🏢 Festival Office</button>}
-                </div>}
-              </div>
-            ))}
-          </>
+          </div>
+        ))}
+        {!lfLoading&&lfItems.filter(i=>i.status==="Claimed").length>0&&(
+          <div style={{fontSize:11,fontWeight:900,color:"#374151",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:8}}>Claimed ({lfItems.filter(i=>i.status==="Claimed").length})</div>
         )}
       </div>
+
+      {/* Add Item Modal */}
+      {lfAddOpen&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",zIndex:200}}>
+          <div style={{width:"100%",background:"#0d0d1a",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",display:"flex",flexDirection:"column",gap:12,maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{fontSize:18,fontWeight:900,color:"#f1f5f9"}}>📦 Add Found Item</div>
+            <div style={{display:"flex",gap:6}}>
+              {["Thu","Fri","Sat","Sun"].map(d=>(
+                <button key={d} style={{flex:1,padding:"9px",borderRadius:8,border:`1px solid ${lfAddDay===d?"rgba(14,165,233,0.6)":"rgba(255,255,255,0.1)"}`,background:lfAddDay===d?"rgba(14,165,233,0.12)":"rgba(255,255,255,0.04)",color:lfAddDay===d?"#38bdf8":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddDay(d)}>{d}</button>
+              ))}
+            </div>
+            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:13,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Item description *" value={lfAddDesc||""} onChange={e=>setLfAddDesc(e.target.value)}/>
+            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:13,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Where found *" value={lfAddLoc||""} onChange={e=>setLfAddLoc(e.target.value)}/>
+            <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"10px",borderRadius:8,border:"1px solid rgba(34,197,94,0.25)",background:"rgba(34,197,94,0.04)"}}>
+              <input type="checkbox" style={{width:20,height:20,accentColor:"#4ade80"}} checked={lfAddOffice||false} onChange={e=>setLfAddOffice(e.target.checked)}/>
+              <span style={{fontSize:14,fontWeight:700,color:"#4ade80"}}>Mark as AT FEST OFFICE</span>
+            </label>
+            <div style={{display:"flex",gap:10}}>
+              <button style={{flex:1,padding:14,borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddOpen(false)}>Cancel</button>
+              <button style={{flex:2,padding:14,borderRadius:10,border:"none",background:"linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer"}} onClick={async()=>{
+                if(!lfAddDesc||!lfAddLoc) return;
+                const r=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:lfAddDesc,foundAt:lfAddLoc,dayFound:lfAddDay||"Unknown",foundBy:"Admin (Hub)",role:"Admin",atFestOffice:lfAddOffice?"Yes":"No"})});
+                const d=await r.json();
+                setLfAddOpen(false);setLfAddDesc("");setLfAddLoc("");setLfAddDay("");setLfAddOffice(false);
+                fetchLFItems();
+                alert("Item added! #"+d.itemNumber);
+              }}>Add Item</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div></div>
   );
 
@@ -3226,7 +3195,7 @@ Please respond immediately.
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:liveMode?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)",border:`1px solid ${liveMode?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.3)"}`,borderRadius:10,padding:"10px 14px"}}>
         <div style={{flex:1}}>
           <div style={{fontSize:13,fontWeight:700,color:liveMode?"#10b981":"#f59e0b"}}>{liveMode?"⚡ LIVE MODE — Real calls from staff":"🎭 DEMO MODE — Showing sample data"}</div>
-          {!liveMode&&<div style={{fontSize:10,color:"#374151",marginTop:2}}>Switching to Live clears all demo calls</div>}
+          {!liveMode&&<div style={{fontSize:10,color:"#e2e8f0",marginTop:2}}>Switching to Live clears all demo calls</div>}
         </div>
         {liveMode&&<button style={{background:"none",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"4px 10px",color:"#fca5a5",fontSize:11,cursor:"pointer",fontWeight:600,marginRight:4}} onClick={async()=>{
           if(!window.confirm("Clear ALL active calls from Airtable? Use before going live.")) return;
@@ -3338,7 +3307,7 @@ Please respond immediately.
                 <div key={key} style={{background:bg,borderRadius:10,border:`1px solid ${br}`,padding:"9px 11px"}}>
                   <div style={{fontSize:12,fontWeight:900,color:"#f1f5f9",marginBottom:2}}>🩺 {label}</div>
                   <div style={{fontSize:11,fontWeight:700,color:tc}}>{sl}</div>
-                  {st.since&&<div style={{fontSize:9,color:"#374151",marginTop:1}}>{st.since}</div>}
+                  {st.since&&<div style={{fontSize:9,color:"#e2e8f0",marginTop:1}}>{st.since}</div>}
                 </div>
               );
             })}
@@ -3354,7 +3323,7 @@ Please respond immediately.
             {nwsAlerts.length===0&&(
               <div style={{background:"rgba(34,197,94,0.05)",border:"1px solid rgba(34,197,94,0.15)",borderRadius:10,padding:"8px 10px"}}>
                 <div style={{fontSize:11,fontWeight:800,color:"#4ade80"}}>✅ No Weather Alerts</div>
-                <div style={{fontSize:10,color:"#374151",marginTop:2}}>Conditions clear</div>
+                <div style={{fontSize:10,color:"#e2e8f0",marginTop:2}}>Conditions clear</div>
               </div>
             )}
             {activeCalls.filter(c=>c.status!=="cleared"&&c.type!=="lost_child").map(ac=>{
@@ -3510,7 +3479,7 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
           {lfItems.filter(i=>i.status!=="Claimed").length>0&&<div style={{background:"rgba(249,115,22,0.4)",color:"#fed7aa",fontSize:10,fontWeight:800,borderRadius:20,padding:"1px 7px"}}>{lfItems.filter(i=>i.status!=="Claimed").length} active</div>}
         </div>
         <div style={{padding:"8px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-          <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>setView("lostfound")}>
+          <button style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",cursor:"pointer",textAlign:"left"}} onClick={()=>{setView("lostfound");fetchLFItems();}}>
             <span style={{fontSize:16}}>📋</span><div><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Manage Items</div><div style={{fontSize:11,color:"#64748b"}}>Log · box · clear</div></div>
           </button>
           <a href="https://fdm2026.netlify.app/lostfound?from=hub" target="_blank" style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:"1px solid rgba(249,115,22,0.2)",background:"rgba(249,115,22,0.06)",textDecoration:"none"}}>
@@ -3522,14 +3491,7 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
     {/* ===== ROW 3: VENDOR | STAFF ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
 
-        {/* VENDOR CHECK-IN */}
-        <div style={{background:"rgba(139,92,246,0.06)",borderRadius:14,border:"1px solid rgba(139,92,246,0.25)",overflow:"hidden"}}>
-          <div style={{background:"rgba(139,92,246,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("vendors")}>
-            <span>🏪 Vendors</span>
-            <span style={{fontSize:11,color:"#c4b5fd",fontWeight:400}}>Manage →</span>
-          </div>
-          <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Check in vendors, view plot roster.</div>
-        </div>
+
 
         {/* STAFF MANAGEMENT */}
         <div style={{background:"rgba(16,185,129,0.06)",borderRadius:14,border:"1px solid rgba(16,185,129,0.25)",overflow:"hidden"}}>
@@ -3590,11 +3552,11 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
           <div style={{padding:"4px 8px",display:"flex",flexDirection:"column",gap:3}}>
             {activityLog.slice(0,3).map(e=>(
               <div key={e.id} style={{fontSize:10,color:"#475569",display:"flex",gap:5}}>
-                <span style={{color:"#374151",flexShrink:0}}>{e.ts}</span>
+                <span style={{color:"#e2e8f0",flexShrink:0}}>{e.ts}</span>
                 <span style={{textOverflow:"ellipsis",overflow:"hidden",whiteSpace:"nowrap"}}>{e.label}</span>
               </div>
             ))}
-            {activityLog.length===0&&<div style={{fontSize:11,color:"#374151",padding:"4px 0"}}>No activity yet</div>}
+            {activityLog.length===0&&<div style={{fontSize:11,color:"#e2e8f0",padding:"4px 0"}}>No activity yet</div>}
           </div>
         </div>
       </div>
@@ -3617,7 +3579,7 @@ const S={
   sel:{background:"#1e293b",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box"},
   ta:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"10px 12px",color:"#f1f5f9",fontSize:14,width:"100%",boxSizing:"border-box",resize:"vertical",fontFamily:"inherit"},
   sendBtn:{background:"linear-gradient(135deg,#7c3aed,#4f46e5)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer"},
-  bigAckBtn:{background:"rgba(0,0,0,0.3)",border:"2px solid rgba(255,255,255,0.7)",borderRadius:14,padding:"18px",color:"#fff",fontSize:18,fontWeight:900,cursor:"pointer",width:"100%",maxWidth:380},
+  bigAckBtn:{background:"rgba(255,255,255,0.04)",border:"2px solid rgba(255,255,255,0.7)",borderRadius:14,padding:"18px",color:"#fff",fontSize:18,fontWeight:900,cursor:"pointer",width:"100%",maxWidth:380},
   tabRow:{display:"flex",padding:"0 20px",borderBottom:"1px solid rgba(255,255,255,0.06)",marginBottom:4},
   tab:{flex:1,padding:"10px",background:"none",border:"none",cursor:"pointer",fontSize:13,fontWeight:600},
   callQ:{display:"flex",flexDirection:"column",gap:8,padding:"8px 16px 32px",overflowY:"auto"},

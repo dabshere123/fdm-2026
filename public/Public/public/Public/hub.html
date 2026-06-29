@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
+<title>FDM 2026 Hub</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 const {
   useState,
   useEffect,
@@ -283,7 +296,10 @@ function Fld({
       gap: 6
     }
   }, /*#__PURE__*/React.createElement("label", {
-    style: S.lbl
+    style: {
+      ...S.lbl,
+      color: "#94a3b8"
+    }
   }, label, required && /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#ef4444",
@@ -1360,14 +1376,15 @@ Madison Fire/EMS INBOUND — McPike Park`;
   }, /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
-      padding: "14px 16px",
+      padding: "16px",
       borderRadius: 14,
-      border: "2px solid rgba(99,102,241,0.6)",
-      background: "linear-gradient(135deg,rgba(99,102,241,0.2),rgba(79,70,229,0.1))",
+      border: "2px solid rgba(219,39,119,0.7)",
+      background: "linear-gradient(135deg,rgba(190,24,93,0.25),rgba(157,23,77,0.15))",
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
-      gap: 14
+      gap: 14,
+      boxShadow: "0 0 16px rgba(190,24,93,0.2)"
     },
     onClick: () => {
       setNewCallType("walk_in");
@@ -1377,7 +1394,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 24
+      fontSize: 26
     }
   }, "🚶"), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1385,17 +1402,17 @@ Madison Fire/EMS INBOUND — McPike Park`;
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: 900,
-      color: "#a5b4fc"
+      color: "#fbcfe8"
     }
   }, "WALK-IN PATIENT"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#94a3b8",
+      color: "#e2e8f0",
       marginTop: 2
     }
-  }, "Patient walked in for medical attention")))), /*#__PURE__*/React.createElement("div", {
+  }, "Patient walked in · alerts med units")))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "4px 16px 8px"
     }
@@ -1466,7 +1483,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
   }, tab === "mycalls" && /*#__PURE__*/React.createElement(React.Fragment, null, myActive.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      color: "#374151",
+      color: "#e2e8f0",
       fontSize: 13,
       padding: "24px 0"
     }
@@ -1599,7 +1616,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
   })), tab === "unassigned" && /*#__PURE__*/React.createElement(React.Fragment, null, unassigned.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      color: "#374151",
+      color: "#e2e8f0",
       fontSize: 13,
       padding: "24px 0"
     }
@@ -1795,7 +1812,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
   }, "L&F Lookup Page →")), (lfItems || []).filter(i => i.status !== "Claimed").length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      color: "#374151",
+      color: "#e2e8f0",
       fontSize: 13,
       padding: "20px 0"
     }
@@ -2021,7 +2038,7 @@ function HubConversationView({
   }, messages.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      color: "#374151",
+      color: "#e2e8f0",
       fontSize: 13,
       padding: "24px 0"
     }
@@ -2085,7 +2102,7 @@ function HubConversationView({
     }, msg.message)), isMe && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
-        color: "#374151",
+        color: "#e2e8f0",
         marginRight: 4
       }
     }, time));
@@ -5103,7 +5120,7 @@ DATE/TIME: ${now()}`;
       flexDirection: "column",
       gap: 12
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !newCallType && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -5130,6 +5147,14 @@ DATE/TIME: ${now()}`;
     type: "security",
     label: "🛡️ Security",
     color: "#3b82f6"
+  }, {
+    type: "supplies",
+    label: "📦 Supplies Request",
+    color: "#f59e0b"
+  }, {
+    type: "maintenance",
+    label: "🔧 Maintenance",
+    color: "#10b981"
   }].map(({
     type,
     label,
@@ -5141,14 +5166,60 @@ DATE/TIME: ${now()}`;
       borderRadius: 10,
       border: `2px solid ${newCallType === type ? color : color + "44"}`,
       background: newCallType === type ? color + "22" : "rgba(255,255,255,0.03)",
-      color: newCallType === type ? "#f1f5f9" : "#64748b",
+      color: newCallType === type ? "#f1f5f9" : "#e2e8f0",
       fontWeight: 800,
       fontSize: 14,
       cursor: "pointer",
       textAlign: "left"
     },
     onClick: () => setNewCallType(type)
-  }, label))), /*#__PURE__*/React.createElement("div", {
+  }, label)))), newCallType && (() => {
+    const typeInfo = {
+      medical: {
+        label: "🩺 Medical",
+        color: "#a855f7"
+      },
+      fire: {
+        label: "🔥 Fire / Life Safety",
+        color: "#ef4444"
+      },
+      security: {
+        label: "🛡️ Security",
+        color: "#3b82f6"
+      },
+      supplies: {
+        label: "📦 Supplies Request",
+        color: "#f59e0b"
+      },
+      maintenance: {
+        label: "🔧 Maintenance",
+        color: "#10b981"
+      },
+      walk_in: {
+        label: "🚶 Walk-In Patient",
+        color: "#ec4899"
+      },
+      lost_child: {
+        label: "🧒 Lost Child",
+        color: "#eab308"
+      }
+    };
+    const t = typeInfo[newCallType] || {
+      label: newCallType,
+      color: "#64748b"
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: t.color + "22",
+        border: `2px solid ${t.color}88`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        fontSize: 15,
+        fontWeight: 900,
+        color: "#f1f5f9"
+      }
+    }, t.label);
+  })(), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -5953,7 +6024,7 @@ DATE/TIME: ${now()}`;
           fontSize: 16,
           fontWeight: 900,
           cursor: "pointer",
-          background: "rgba(0,0,0,0.3)"
+          background: "rgba(255,255,255,0.04)"
         },
         onClick: () => ackCall(c.id, "Admin")
       }, "✅ ACKNOWLEDGE"));
@@ -6594,7 +6665,7 @@ Reply YES to acknowledge.`
     style: {
       padding: "12px",
       fontSize: 12,
-      color: "#374151",
+      color: "#e2e8f0",
       textAlign: "center"
     }
   }, "No officers in system"), mpdOfficers.map(o => {
@@ -6663,7 +6734,7 @@ Reply YES to acknowledge.`
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#374151"
+      color: "#e2e8f0"
     }
   }, "Only officers marked ", /*#__PURE__*/React.createElement("span", {
     style: {
@@ -6997,7 +7068,7 @@ Please respond immediately.
   }, h))), staffList.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
-      color: "#374151",
+      color: "#e2e8f0",
       padding: 30
     }
   }, "No staff loaded"), staffList.map((s, i) => /*#__PURE__*/React.createElement("div", {
@@ -7329,500 +7400,337 @@ Please respond immediately.
     style: S.panelTitle
   }, "📦 Lost & Found"), /*#__PURE__*/React.createElement("button", {
     style: {
-      background: "rgba(139,92,246,0.15)",
-      border: "1px solid rgba(139,92,246,0.4)",
+      background: "rgba(249,115,22,0.15)",
+      border: "1px solid rgba(249,115,22,0.4)",
       borderRadius: 8,
       padding: "6px 12px",
-      color: "#a78bfa",
-      fontSize: 12,
-      fontWeight: 700,
-      cursor: "pointer",
-      marginLeft: "auto"
-    },
-    onClick: fetchLostFound
-  }, "Refresh")), /*#__PURE__*/React.createElement("div", {
-    style: S.cWrap
-  }, lfClaimView ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 800,
-      color: "#f1f5f9"
-    }
-  }, "Mark as Claimed — #", lfClaimView.itemNumber), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: "#e2e8f0"
-    }
-  }, lfClaimView.description), /*#__PURE__*/React.createElement(Fld, {
-    label: "Claimed By (Name) *",
-    value: lfClaimBy,
-    onChange: e => setLfClaimBy(e.target.value),
-    ph: "Full name of person claiming"
-  }), /*#__PURE__*/React.createElement(Fld, {
-    label: "ID Verification",
-    value: lfClaimID,
-    onChange: e => setLfClaimID(e.target.value),
-    ph: "e.g. DL #123456"
-  }), /*#__PURE__*/React.createElement(Fld, {
-    label: "Phone Number",
-    value: lfClaimPhone,
-    onChange: e => setLfClaimPhone(e.target.value),
-    ph: "(608) 555-1234"
-  }), /*#__PURE__*/React.createElement("button", {
-    style: {
-      ...S.sendBtn,
-      background: "linear-gradient(135deg,#10b981,#059669)",
-      opacity: !lfClaimBy ? 0.5 : 1
-    },
-    disabled: !lfClaimBy,
-    onClick: async () => {
-      await fetch("/.netlify/functions/update-lost-found", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          id: lfClaimView.id,
-          claimedBy: lfClaimBy,
-          claimedByID: lfClaimID,
-          claimedByPhone: lfClaimPhone
-        })
-      });
-      setLfClaimView(null);
-      setLfClaimBy("");
-      setLfClaimID("");
-      setLfClaimPhone("");
-      fetchLostFound();
-    }
-  }, "✅ Mark as Claimed"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      ...S.sendBtn,
-      background: "rgba(255,255,255,0.06)",
-      color: "#e2e8f0"
-    },
-    onClick: () => setLfClaimView(null)
-  }, "Cancel")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      flexWrap: "wrap",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: "#94a3b8"
-    }
-  }, lfItems.length, " items · ", lfItems.filter(i => i.status === "Unclaimed").length, " unclaimed"), /*#__PURE__*/React.createElement("a", {
-    href: "https://fdm2026.netlify.app/lostfound?from=hub",
-    target: "_blank",
-    style: {
-      fontSize: 12,
-      color: "#a78bfa",
-      fontWeight: 700,
-      textDecoration: "none",
-      background: "rgba(139,92,246,0.1)",
-      border: "1px solid rgba(139,92,246,0.3)",
-      borderRadius: 6,
-      padding: "4px 10px"
-    }
-  }, "🔗 L&F Lookup")), lfNewItem ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "rgba(249,115,22,0.06)",
-      border: "1px solid rgba(249,115,22,0.25)",
-      borderRadius: 14,
-      padding: "16px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 900,
-      color: "#fb923c"
-    }
-  }, "📦 Log New Item"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6
-    }
-  }, [["Thu", "🔵"], ["Fri", "🟠"], ["Sat", "🟢"], ["Sun", "🟣"]].map(([d, e]) => /*#__PURE__*/React.createElement("button", {
-    key: d,
-    style: {
-      flex: 1,
-      padding: "8px 4px",
-      borderRadius: 8,
-      border: `1px solid ${lfNewFields.day === d ? "rgba(249,115,22,0.6)" : "rgba(255,255,255,0.1)"}`,
-      background: lfNewFields.day === d ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.03)",
-      color: lfNewFields.day === d ? "#fb923c" : "#64748b",
+      color: "#fb923c",
       fontSize: 12,
       fontWeight: 700,
       cursor: "pointer"
     },
-    onClick: () => setLfNewFields(p => ({
-      ...p,
-      day: d
-    }))
-  }, e, " ", d))), /*#__PURE__*/React.createElement(Fld, {
-    label: "Where found",
-    value: lfNewFields.foundAt || "",
-    onChange: e => setLfNewFields(p => ({
-      ...p,
-      foundAt: e.target.value
-    })),
-    ph: "e.g. Near Moon Stage Left"
-  }), /*#__PURE__*/React.createElement(Fld, {
-    label: "Where is it now",
-    value: lfNewFields.nowAt || "",
-    onChange: e => setLfNewFields(p => ({
-      ...p,
-      nowAt: e.target.value
-    })),
-    ph: "e.g. Festival Office"
-  }), /*#__PURE__*/React.createElement(Fld, {
-    label: "Description",
-    value: lfNewFields.description || "",
-    onChange: e => setLfNewFields(p => ({
-      ...p,
-      description: e.target.value
-    })),
-    ph: "Describe the item...",
-    multi: true
+    onClick: () => setLfAddOpen(true)
+  }, "+ Add Item")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "12px 16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+      overflowY: "auto",
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    style: {
+      background: "rgba(255,255,255,0.07)",
+      border: "1.5px solid rgba(255,255,255,0.12)",
+      borderRadius: 12,
+      padding: "12px 14px",
+      color: "#f1f5f9",
+      fontSize: 15,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    placeholder: "Search description or item #...",
+    value: lfSearch || "",
+    onChange: e => setLfSearch(e.target.value)
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      gap: 8
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, ["", "Thu", "Fri", "Sat", "Sun"].map(d => /*#__PURE__*/React.createElement("button", {
+    key: d,
+    style: {
+      padding: "5px 12px",
+      borderRadius: 16,
+      border: `1px solid ${lfDay === d ? "rgba(139,92,246,0.6)" : "rgba(255,255,255,0.1)"}`,
+      background: lfDay === d ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.04)",
+      color: lfDay === d ? "#c4b5fd" : "#64748b",
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => setLfDay(d)
+  }, d || "All Days"))), lfLoading && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      color: "#475569",
+      padding: 32
+    }
+  }, "Loading..."), !lfLoading && lfItems.filter(i => {
+    const q = (lfSearch || "").toLowerCase();
+    const dayMatch = !lfDay || (i.dayFound || "").toLowerCase().startsWith(lfDay.toLowerCase());
+    const qMatch = !q || (i.description || "").toLowerCase().includes(q) || (i.itemNumber || "").toLowerCase().includes(q) || (i.foundAt || "").toLowerCase().includes(q);
+    return dayMatch && qMatch && i.status !== "Claimed";
+  }).map(item => /*#__PURE__*/React.createElement("div", {
+    key: item.id,
+    style: {
+      background: "rgba(255,255,255,0.04)",
+      border: "1px solid rgba(255,255,255,0.09)",
+      borderRadius: 14,
+      overflow: "hidden"
+    }
+  }, item.photoData && /*#__PURE__*/React.createElement("img", {
+    src: item.photoData,
+    alt: "Found item",
+    style: {
+      width: "100%",
+      maxHeight: 180,
+      objectFit: "cover",
+      display: "block"
+    },
+    onError: e => e.target.style.display = "none"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "12px 14px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 900,
+      color: "#fb923c",
+      marginBottom: 4
+    }
+  }, "TAG #", item.itemNumber || "?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: "#f1f5f9",
+      marginBottom: 6
+    }
+  }, item.description || "Unknown item"), item.atFestOffice === "Yes" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 900,
+      color: "#4ade80",
+      marginBottom: 4
+    }
+  }, "📍 AT FEST OFFICE"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      marginBottom: 2
+    }
+  }, "Found at: ", item.foundAt || "—"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      marginBottom: 8
+    }
+  }, "Day: ", item.dayFound || "—"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, item.atFestOffice !== "Yes" && /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "7px 12px",
+      borderRadius: 8,
+      border: "1px solid rgba(34,197,94,0.4)",
+      background: "rgba(34,197,94,0.06)",
+      color: "#4ade80",
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => fetch("/.netlify/functions/update-lost-found", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        id: item.id,
+        atFestOffice: "Yes"
+      })
+    }).then(() => fetchLFItems())
+  }, "📍 Move to Fest Office"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "7px 12px",
+      borderRadius: 8,
+      border: "1px solid rgba(139,92,246,0.4)",
+      background: "rgba(139,92,246,0.06)",
+      color: "#c4b5fd",
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => fetch("/.netlify/functions/update-lost-found", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        id: item.id,
+        status: "Claimed"
+      })
+    }).then(() => fetchLFItems())
+  }, "✅ Mark Claimed"))))), !lfLoading && lfItems.filter(i => i.status === "Claimed").length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: "#374151",
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      marginTop: 8
+    }
+  }, "Claimed (", lfItems.filter(i => i.status === "Claimed").length, ")")), lfAddOpen && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.85)",
+      display: "flex",
+      alignItems: "flex-end",
+      zIndex: 200
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      background: "#0d0d1a",
+      borderRadius: "20px 20px 0 0",
+      padding: "24px 20px 40px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 12,
+      maxHeight: "85vh",
+      overflowY: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 900,
+      color: "#f1f5f9"
+    }
+  }, "📦 Add Found Item"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, ["Thu", "Fri", "Sat", "Sun"].map(d => /*#__PURE__*/React.createElement("button", {
+    key: d,
+    style: {
+      flex: 1,
+      padding: "9px",
+      borderRadius: 8,
+      border: `1px solid ${lfAddDay === d ? "rgba(14,165,233,0.6)" : "rgba(255,255,255,0.1)"}`,
+      background: lfAddDay === d ? "rgba(14,165,233,0.12)" : "rgba(255,255,255,0.04)",
+      color: lfAddDay === d ? "#38bdf8" : "#64748b",
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => setLfAddDay(d)
+  }, d))), /*#__PURE__*/React.createElement("input", {
+    style: {
+      background: "rgba(255,255,255,0.07)",
+      border: "1.5px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: 13,
+      color: "#f1f5f9",
+      fontSize: 16,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    placeholder: "Item description *",
+    value: lfAddDesc || "",
+    onChange: e => setLfAddDesc(e.target.value)
+  }), /*#__PURE__*/React.createElement("input", {
+    style: {
+      background: "rgba(255,255,255,0.07)",
+      border: "1.5px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      padding: 13,
+      color: "#f1f5f9",
+      fontSize: 16,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    placeholder: "Where found *",
+    value: lfAddLoc || "",
+    onChange: e => setLfAddLoc(e.target.value)
+  }), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      cursor: "pointer",
+      padding: "10px",
+      borderRadius: 8,
+      border: "1px solid rgba(34,197,94,0.25)",
+      background: "rgba(34,197,94,0.04)"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    style: {
+      width: 20,
+      height: 20,
+      accentColor: "#4ade80"
+    },
+    checked: lfAddOffice || false,
+    onChange: e => setLfAddOffice(e.target.checked)
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: "#4ade80"
+    }
+  }, "Mark as AT FEST OFFICE")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
     }
   }, /*#__PURE__*/React.createElement("button", {
     style: {
       flex: 1,
-      padding: "12px",
-      borderRadius: 10,
-      border: "none",
-      background: "linear-gradient(135deg,rgba(249,115,22,0.8),rgba(234,88,12,0.9))",
-      color: "#fff",
-      fontSize: 14,
-      fontWeight: 800,
-      cursor: "pointer",
-      opacity: !lfNewFields.description || !lfNewFields.foundAt ? 0.5 : 1
-    },
-    disabled: !lfNewFields.description || !lfNewFields.foundAt,
-    onClick: async () => {
-      const res = await fetch("/.netlify/functions/submit-lost-found", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          description: lfNewFields.description,
-          foundAt: lfNewFields.foundAt,
-          currentLocation: lfNewFields.nowAt || lfNewFields.foundAt,
-          dayFound: lfNewFields.day || "",
-          foundBy: "Admin",
-          role: "Admin"
-        })
-      });
-      const data = await res.json();
-      setLfNewItem(false);
-      setLfNewFields({});
-      if (data.itemNumber) setActivityLog(p => [{
-        id: Date.now(),
-        ts: tShort(),
-        date: now(),
-        type: "lf",
-        label: `L&F Logged — #${data.itemNumber}: ${lfNewFields.description.slice(0, 30)}`
-      }, ...p]);
-      fetchLostFound();
-    }
-  }, "Log Item"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "12px 18px",
+      padding: 14,
       borderRadius: 10,
       border: "1px solid rgba(255,255,255,0.1)",
-      background: "rgba(255,255,255,0.04)",
+      background: "rgba(255,255,255,0.05)",
       color: "#94a3b8",
-      fontSize: 13,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      setLfNewItem(false);
-      setLfNewFields({});
-    }
-  }, "Cancel"))) : /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "12px 16px",
-      borderRadius: 12,
-      border: "1px solid rgba(249,115,22,0.4)",
-      background: "rgba(249,115,22,0.08)",
-      color: "#fb923c",
       fontSize: 14,
-      fontWeight: 800,
-      cursor: "pointer",
-      width: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8
+      fontWeight: 700,
+      cursor: "pointer"
     },
-    onClick: () => setLfNewItem(true)
-  }, "+ Log New Found Item"), lfLoading && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setLfAddOpen(false)
+  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
     style: {
-      textAlign: "center",
-      color: "#94a3b8",
-      padding: "20px"
-    }
-  }, "Loading..."), !lfLoading && lfItems.length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      color: "#94a3b8",
-      padding: "20px"
-    }
-  }, "No lost & found items yet."), lfItems.map(item => /*#__PURE__*/React.createElement("div", {
-    key: item.id,
-    style: {
-      borderRadius: 12,
-      border: `1px solid ${item.status === "Claimed" ? "rgba(16,185,129,0.3)" : item.status === "In Box" ? "rgba(139,92,246,0.5)" : "rgba(139,92,246,0.3)"}`,
-      background: item.status === "Claimed" ? "rgba(16,185,129,0.05)" : "rgba(139,92,246,0.06)",
-      padding: "14px 16px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
-      flexWrap: "wrap"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
+      flex: 2,
+      padding: 14,
+      borderRadius: 10,
+      border: "none",
+      background: "linear-gradient(135deg,rgba(249,115,22,0.9),rgba(234,88,12,0.9))",
+      color: "#fff",
+      fontSize: 14,
       fontWeight: 900,
-      color: item.status === "Claimed" ? "#10b981" : "#c4b5fd",
-      fontFamily: "monospace",
-      letterSpacing: "0.05em"
-    }
-  }, item.itemNumber || "#?"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      alignItems: "center"
-    }
-  }, item.dayFound && (() => {
-    const d = (item.dayFound || '').toLowerCase();
-    const dc = d.includes('thu') ? {
-      bg: "rgba(59,130,246,0.25)",
-      br: "rgba(59,130,246,0.6)",
-      tx: "#bfdbfe",
-      lb: "THU"
-    } : d.includes('fri') ? {
-      bg: "rgba(251,146,60,0.25)",
-      br: "rgba(251,146,60,0.6)",
-      tx: "#fed7aa",
-      lb: "FRI"
-    } : d.includes('sat') ? {
-      bg: "rgba(22,163,74,0.25)",
-      br: "rgba(22,163,74,0.6)",
-      tx: "#bbf7d0",
-      lb: "SAT"
-    } : d.includes('sun') ? {
-      bg: "rgba(139,92,246,0.25)",
-      br: "rgba(139,92,246,0.6)",
-      tx: "#e9d5ff",
-      lb: "SUN"
-    } : {
-      bg: "rgba(245,158,11,0.15)",
-      br: "rgba(245,158,11,0.4)",
-      tx: "#fcd34d",
-      lb: (item.dayFound || '').slice(0, 3).toUpperCase()
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        fontWeight: 800,
-        background: dc.bg,
-        border: `1px solid ${dc.br}`,
-        color: dc.tx,
-        borderRadius: 6,
-        padding: "2px 8px"
-      }
-    }, dc.lb);
-  })(), item.status === "In Box" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 800,
-      background: "rgba(139,92,246,0.15)",
-      border: "1px solid rgba(139,92,246,0.4)",
-      color: "#c4b5fd",
-      borderRadius: 6,
-      padding: "2px 8px"
-    }
-  }, "📦 IN BOX"), item.status === "Claimed" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 800,
-      background: "rgba(16,185,129,0.12)",
-      border: "1px solid rgba(16,185,129,0.3)",
-      color: "#6ee7b7",
-      borderRadius: 6,
-      padding: "2px 8px"
-    }
-  }, "✅ CLAIMED"), item.status !== "Claimed" && item.status !== "In Box" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 800,
-      background: "rgba(245,158,11,0.1)",
-      border: "1px solid rgba(245,158,11,0.25)",
-      color: "#fcd34d",
-      borderRadius: 6,
-      padding: "2px 8px"
-    }
-  }, "UNCLAIMED"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 700,
-      color: "#f1f5f9"
-    }
-  }, item.description), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 3,
-      fontSize: 12,
-      color: "#e2e8f0"
-    }
-  }, /*#__PURE__*/React.createElement("div", null, "📍 Found at: ", /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: "#e2e8f0"
-    }
-  }, item.location)), item.currentLocation && item.currentLocation !== item.location && /*#__PURE__*/React.createElement("div", null, "📌 Now at: ", /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: "#e2e8f0"
-    }
-  }, item.currentLocation)), /*#__PURE__*/React.createElement("div", null, "👤 ", item.foundBy, " · 🕐 ", item.foundAt || "")), item.status === "Claimed" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "#10b981",
-      background: "rgba(16,185,129,0.06)",
-      border: "1px solid rgba(16,185,129,0.2)",
-      borderRadius: 8,
-      padding: "8px 10px"
-    }
-  }, "✅ Claimed by ", item.claimedBy, item.claimedByID ? ` · ID: ${item.claimedByID}` : ""), item.inBoxAt && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#a78bfa"
-    }
-  }, "📦 Boxed: ", item.inBoxAt), item.officeAt && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#a5b4fc"
-    }
-  }, "🏢 Festival Office: ", item.officeAt), item.status !== "Claimed" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      flexWrap: "wrap",
-      marginTop: 4
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "8px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(139,92,246,0.4)",
-      background: "rgba(139,92,246,0.1)",
-      color: "#a78bfa",
-      fontSize: 12,
-      fontWeight: 700,
       cursor: "pointer"
     },
-    onClick: () => setLfClaimView(item)
-  }, "✅ Mark Claimed"), item.status !== "In Box" && /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "8px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(245,158,11,0.4)",
-      background: "rgba(245,158,11,0.08)",
-      color: "#fcd34d",
-      fontSize: 12,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      const ts = new Date().toLocaleString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/Chicago'
-      });
-      setLfItems(p => p.map(i => i.id === item.id ? {
-        ...i,
-        status: "In Box",
-        inBoxAt: ts
-      } : i));
-      fetch("/.netlify/functions/update-lost-found", {
+    onClick: async () => {
+      if (!lfAddDesc || !lfAddLoc) return;
+      const r = await fetch("/.netlify/functions/submit-lost-found", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          id: item.id,
-          status: "In Box",
-          inBoxAt: ts
+          description: lfAddDesc,
+          foundAt: lfAddLoc,
+          dayFound: lfAddDay || "Unknown",
+          foundBy: "Admin (Hub)",
+          role: "Admin",
+          atFestOffice: lfAddOffice ? "Yes" : "No"
         })
-      }).catch(() => {});
-    }
-  }, "📦 In L&F Box"), item.status !== "at_office" && /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "8px 12px",
-      borderRadius: 8,
-      border: "1px solid rgba(99,102,241,0.4)",
-      background: "rgba(99,102,241,0.08)",
-      color: "#a5b4fc",
-      fontSize: 12,
-      fontWeight: 700,
-      cursor: "pointer"
-    },
-    onClick: () => {
-      const ts = new Date().toLocaleString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/Chicago'
       });
-      setLfItems(p => p.map(i => i.id === item.id ? {
-        ...i,
-        status: "at_office",
-        officeAt: ts
-      } : i));
-      fetch("/.netlify/functions/update-lost-found", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          id: item.id,
-          status: "at_office",
-          officeAt: ts
-        })
-      }).catch(() => {});
+      const d = await r.json();
+      setLfAddOpen(false);
+      setLfAddDesc("");
+      setLfAddLoc("");
+      setLfAddDay("");
+      setLfAddOffice(false);
+      fetchLFItems();
+      alert("Item added! #" + d.itemNumber);
     }
-  }, "🏢 Festival Office"))))))));
+  }, "Add Item"))))));
   if (view === "acks") return /*#__PURE__*/React.createElement("div", {
     style: S.root
   }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
@@ -9539,7 +9447,7 @@ Please respond immediately.
   }, liveMode ? "⚡ LIVE MODE — Real calls from staff" : "🎭 DEMO MODE — Showing sample data"), !liveMode && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
-      color: "#374151",
+      color: "#e2e8f0",
       marginTop: 2
     }
   }, "Switching to Live clears all demo calls")), liveMode && /*#__PURE__*/React.createElement("button", {
@@ -9928,7 +9836,7 @@ Please respond immediately.
     }, sl), st.since && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 9,
-        color: "#374151",
+        color: "#e2e8f0",
         marginTop: 1
       }
     }, st.since));
@@ -9977,7 +9885,7 @@ Please respond immediately.
   }, "✅ No Weather Alerts"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
-      color: "#374151",
+      color: "#e2e8f0",
       marginTop: 2
     }
   }, "Conditions clear")), activeCalls.filter(c => c.status !== "cleared" && c.type !== "lost_child").map(ac => {
@@ -10560,7 +10468,10 @@ Clear a path for emergency vehicles.`;
       cursor: "pointer",
       textAlign: "left"
     },
-    onClick: () => setView("lostfound")
+    onClick: () => {
+      setView("lostfound");
+      fetchLFItems();
+    }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16
@@ -10611,40 +10522,6 @@ Clear a path for emergency vehicles.`;
       gap: 12
     }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "rgba(139,92,246,0.06)",
-      borderRadius: 14,
-      border: "1px solid rgba(139,92,246,0.25)",
-      overflow: "hidden"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "rgba(139,92,246,0.15)",
-      padding: "10px 14px",
-      fontSize: 12,
-      fontWeight: 900,
-      color: "#c4b5fd",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between"
-    },
-    onClick: () => setView("vendors")
-  }, /*#__PURE__*/React.createElement("span", null, "🏪 Vendors"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "#c4b5fd",
-      fontWeight: 400
-    }
-  }, "Manage →")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "10px 14px",
-      fontSize: 12,
-      color: "#64748b"
-    }
-  }, "Check in vendors, view plot roster.")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(16,185,129,0.06)",
       borderRadius: 14,
@@ -10897,7 +10774,7 @@ Clear a path for emergency vehicles.`;
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: "#374151",
+      color: "#e2e8f0",
       flexShrink: 0
     }
   }, e.ts), /*#__PURE__*/React.createElement("span", {
@@ -10909,7 +10786,7 @@ Clear a path for emergency vehicles.`;
   }, e.label))), activityLog.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: "#374151",
+      color: "#e2e8f0",
       padding: "4px 0"
     }
   }, "No activity yet")))))));
@@ -11023,7 +10900,7 @@ const S = {
     cursor: "pointer"
   },
   bigAckBtn: {
-    background: "rgba(0,0,0,0.3)",
+    background: "rgba(255,255,255,0.04)",
     border: "2px solid rgba(255,255,255,0.7)",
     borderRadius: 14,
     padding: "18px",
@@ -11096,4 +10973,5 @@ const S = {
     fontSize: 14
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));
+</script></body></html>

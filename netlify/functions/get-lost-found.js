@@ -25,6 +25,7 @@ exports.handler = async (event) => {
       status: r.fields.Status || 'Unclaimed',
       photoData: r.fields.PhotoData || '',
       atFestOffice: r.fields.AtFestOffice || 'No',
+      claimantName: r.fields.ClaimantName || '',
       createdAt: r.fields.CreatedAt || '',
     }));
     return { statusCode: 200, headers, body: JSON.stringify({ items }) };

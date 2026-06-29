@@ -7771,7 +7771,7 @@ Please respond immediately.
       cursor: "pointer",
       marginTop: 4
     },
-    onClick: async () => {
+    onClick: async e => {
       const name = document.getElementById("ob-name").value.trim();
       const role = document.getElementById("ob-role").value.trim();
       const phone = document.getElementById("ob-phone").value.trim();
@@ -7779,7 +7779,7 @@ Please respond immediately.
         alert("Name and phone are required");
         return;
       }
-      const btn = event.target;
+      const btn = e.currentTarget;
       btn.textContent = holdTexts ? "Saving..." : "Sending...";
       btn.disabled = true;
       try {

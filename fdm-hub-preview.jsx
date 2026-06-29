@@ -2749,12 +2749,12 @@ Please respond immediately.
           <button style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${holdTexts?"rgba(245,158,11,0.5)":"rgba(255,255,255,0.12)"}`,background:holdTexts?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.06)",color:holdTexts?"#fcd34d":"#94a3b8",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>setHoldTexts(p=>!p)}>{holdTexts?"Release":"Hold"}</button>
         </div>
 
-        <button style={{padding:"16px",borderRadius:12,border:"none",background:holdTexts?"rgba(255,255,255,0.08)":"linear-gradient(135deg,#10b981,#059669)",color:holdTexts?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:"pointer",marginTop:4}} onClick={async()=>{
+        <button style={{padding:"16px",borderRadius:12,border:"none",background:holdTexts?"rgba(255,255,255,0.08)":"linear-gradient(135deg,#10b981,#059669)",color:holdTexts?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:"pointer",marginTop:4}} onClick={async(e)=>{
           const name=document.getElementById("ob-name").value.trim();
           const role=document.getElementById("ob-role").value.trim();
           const phone=document.getElementById("ob-phone").value.trim();
           if(!name||!phone){alert("Name and phone are required");return;}
-          const btn=event.target;
+          const btn=e.currentTarget;
           btn.textContent=holdTexts?"Saving...":"Sending...";btn.disabled=true;
           try{
             const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,role,phone,saveToAirtable:true,holdTexts})});

@@ -858,6 +858,11 @@ function HubApp({onBack}){
   const [mpdOfficers,setMpdOfficers]=useState([]);
   const [mpdManageOpen,setMpdManageOpen]=useState(false);
   const [mpdResult,setMpdResult]=useState(null);
+  const [mpdAddName,setMpdAddName]=useState('');
+  const [mpdAddPhone,setMpdAddPhone]=useState('');
+  const [mpdAddBadge,setMpdAddBadge]=useState('');
+  const [mpdAddSending,setMpdAddSending]=useState(false);
+  const [mpdAddDone,setMpdAddDone]=useState('');
   const [mpdAddOpen,setMpdAddOpen]=useState(false);
   const [mpdNewName,setMpdNewName]=useState('');
   const [mpdNewPhone,setMpdNewPhone]=useState('');
@@ -2495,6 +2500,35 @@ Reply YES to acknowledge.`
               </div>
             </div>
           )}
+
+          {/* ADD OFFICER FORM */}
+          <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#f1f5f9"}}>➕ Add MPD Officer</div>
+            <div style={{fontSize:12,color:"#64748b"}}>Adds officer to Airtable and sends them a confirmation text automatically.</div>
+            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Officer Name *" value={mpdAddName} onChange={e=>setMpdAddName(e.target.value)}/>
+            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Cell Phone Number *" type="tel" value={mpdAddPhone} onChange={e=>setMpdAddPhone(e.target.value)}/>
+            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Badge # (optional)" value={mpdAddBadge} onChange={e=>setMpdAddBadge(e.target.value)}/>
+            {mpdAddDone&&<div style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#4ade80",fontWeight:700}}>{mpdAddDone}</div>}
+            <button style={{padding:"13px",borderRadius:10,border:"none",background:(!mpdAddName||!mpdAddPhone||mpdAddSending)?"rgba(255,255,255,0.05)":"linear-gradient(135deg,rgba(37,99,235,0.8),rgba(29,78,216,0.8))",color:(!mpdAddName||!mpdAddPhone||mpdAddSending)?"#475569":"#fff",fontSize:14,fontWeight:900,cursor:(!mpdAddName||!mpdAddPhone||mpdAddSending)?"not-allowed":"pointer"}}
+              disabled={!mpdAddName||!mpdAddPhone||mpdAddSending}
+              onClick={async()=>{
+                setMpdAddSending(true);setMpdAddDone('');
+                try{
+                  const r=await fetch("/.netlify/functions/add-mpd-officer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:mpdAddName,phone:mpdAddPhone,badge:mpdAddBadge})});
+                  const d=await r.json();
+                  if(d.success){
+                    setMpdAddDone(`✅ ${mpdAddName} added — confirmation text sent to ${mpdAddPhone}`);
+                    setMpdAddName('');setMpdAddPhone('');setMpdAddBadge('');
+                    fetchMPD();
+                  } else {
+                    setMpdAddDone('❌ Error: '+d.error);
+                  }
+                }catch(e){setMpdAddDone('❌ Error: '+e.message);}
+                setMpdAddSending(false);
+              }}>
+              {mpdAddSending?'Adding...':'Add Officer + Send Confirmation Text'}
+            </button>
+          </div>
 
           <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
             <strong style={{color:"#93c5fd"}}>Airtable — MPDOfficers table fields:</strong><br/>

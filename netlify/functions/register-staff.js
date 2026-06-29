@@ -2,6 +2,7 @@
 const AIRTABLE_BASE  = 'appUVEp7kO9NeeJh0';
 const AIRTABLE_TABLE = 'Staff';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
+const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
 const TWILIO_SID     = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH    = process.env.TWILIO_AUTH_TOKEN;
 const MESSAGING_SID  = process.env.TWILIO_MESSAGING_SERVICE_SID;
@@ -103,7 +104,7 @@ exports.handler = async (event) => {
           headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
             To: normalizedPhone,
-            MessagingServiceSid: MESSAGING_SID,
+            MessagingServiceSid: MESSAGING_SID || TWILIO_FROM,
             Body: approvalSMS(name, role, lastName)
           }).toString()
         });
@@ -125,7 +126,7 @@ exports.handler = async (event) => {
       await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
         method: 'POST',
         headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ To: '+16082289692', MessagingServiceSid: MESSAGING_SID, Body: adminMsg }).toString()
+        body: new URLSearchParams({ To: '+16082289692', MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: adminMsg }).toString()
       });
       console.log('Admin SMS sent');
     } catch(e) { console.log('Admin SMS error:', e.message); }

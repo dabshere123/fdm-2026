@@ -1,6 +1,7 @@
 // send-reminder.js — sends reminder SMS to staff who haven't submitted RSVP
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const BASE           = 'appUVEp7kO9NeeJh0';
+const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
 const TWILIO_SID     = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH    = process.env.TWILIO_AUTH_TOKEN;
 const MESSAGING_SID  = process.env.TWILIO_MESSAGING_SERVICE_SID;
@@ -61,7 +62,7 @@ exports.handler = async (event) => {
         {
           method: 'POST',
           headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ To: to, MessagingServiceSid: MESSAGING_SID, Body: msg }).toString()
+          body: new URLSearchParams({ To: to, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: msg }).toString()
         }
       );
       const d = await res.json();

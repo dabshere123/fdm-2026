@@ -1,4 +1,5 @@
 // request-lf-pickup.js — staff requests admin pickup of a L&F item
+const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
 const TWILIO_SID    = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH   = process.env.TWILIO_AUTH_TOKEN;
 const MESSAGING_SID = process.env.TWILIO_MESSAGING_SERVICE_SID;
@@ -15,7 +16,7 @@ exports.handler = async (event) => {
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
       method: 'POST',
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ To: ADMIN_PHONE, MessagingServiceSid: MESSAGING_SID, Body: msg }).toString()
+      body: new URLSearchParams({ To: ADMIN_PHONE, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: msg }).toString()
     });
     return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch(e) {

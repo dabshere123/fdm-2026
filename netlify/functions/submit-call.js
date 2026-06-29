@@ -13,7 +13,7 @@ async function sendSMS(to, message) {
   await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
     method: 'POST',
     headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ To: to, MessagingServiceSid: MESSAGING_SID, Body: message }).toString()
+    body: new URLSearchParams({ To: to, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: message }).toString()
   }).catch(() => {});
 }
 
@@ -136,7 +136,7 @@ Search your area immediately — notify admin if found.`;
           await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
             method: 'POST',
             headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ To: ph, MessagingServiceSid: MESSAGING_SID, Body: smsTxt }).toString()
+            body: new URLSearchParams({ To: ph, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: smsTxt }).toString()
           }).catch(() => {});
         }
         // Voice call to admin + first 10 staff (to avoid too many simultaneous calls)

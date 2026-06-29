@@ -1,3 +1,4 @@
+const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
 const TWILIO_SID  = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH = process.env.TWILIO_AUTH_TOKEN;
 const FROM        = process.env.TWILIO_MESSAGING_SERVICE_SID;
@@ -45,7 +46,7 @@ exports.handler = async (event) => {
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
       method: 'POST',
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ To: DEVIN, MessagingServiceSid: FROM, Body: msg }).toString()
+      body: new URLSearchParams({ To: DEVIN, MessagingServiceSid: FROM || TWILIO_FROM, Body: msg }).toString()
     });
 
     // Send email via SendGrid

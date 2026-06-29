@@ -31,7 +31,7 @@ async function sendSMS(to, body, auth) {
     const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
       method: 'POST',
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ To: to, MessagingServiceSid: MESSAGING_SID, Body: body }).toString()
+      body: new URLSearchParams({ To: to, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: body }).toString()
     });
     const d = await r.json();
     console.log(`SMS to ${to}: ${d.status || d.message || 'sent'}`);

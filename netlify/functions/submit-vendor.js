@@ -1,6 +1,7 @@
 // submit-vendor.js — saves vendor sign-up to Airtable Vendors table
 const AIRTABLE_BASE  = 'appUVEp7kO9NeeJh0';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
+const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
 const TWILIO_SID     = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH    = process.env.TWILIO_AUTH_TOKEN;
 const MESSAGING_SID  = process.env.TWILIO_MESSAGING_SERVICE_SID;
@@ -53,7 +54,7 @@ exports.handler = async(event)=>{
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,{
       method:'POST',
       headers:{'Authorization':`Basic ${auth}`,'Content-Type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams({To:fmt,MessagingServiceSid:MESSAGING_SID,Body:`✅ Fête de Marquette 2026 — You're registered, ${contactName||businessName}! We have ${businessName} at ${location||'your location'} on file. You'll receive festival broadcasts and emergency alerts at this number. See you July 9–12!`}).toString()
+      body:new URLSearchParams({To:fmt,MessagingServiceSid: MESSAGING_SID || TWILIO_FROM,Body:`✅ Fête de Marquette 2026 — You're registered, ${contactName||businessName}! We have ${businessName} at ${location||'your location'} on file. You'll receive festival broadcasts and emergency alerts at this number. See you July 9–12!`}).toString()
     }).catch(()=>{});
   }
 

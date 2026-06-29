@@ -841,6 +841,36 @@ const HUB_ROLE_DISPLAY={
 };
 function hubDisplayRole(r){return HUB_ROLE_DISPLAY[(r||'').toLowerCase()]||r||'';}
 
+
+function buildMissingScript(f){
+  const name=f.childName||"an unidentified child";
+  const age=f.age?"approximately "+f.age+" years old":"";
+  const hair=f.hair?", "+f.hair+" hair":"";
+  const clothing=(f.top||f.bottom)?", wearing "+[f.top,f.bottom].filter(Boolean).join(", "):"";
+  const lastSeen=f.lastSeen||"the festival grounds";
+  const timeStr=f.lastSeenTime?" at approximately "+f.lastSeenTime:"";
+  const assembly=f.assembly||"the Medical Tent";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe need your help locating a missing child.\n\nWe are looking for "+name+(age?", "+age:"")+hair+clothing+".\n\nThis child was last seen at "+lastSeen+timeStr+".\n\nIf you have seen this child or have any information, please immediately contact the nearest festival staff member, or go to "+assembly+".\n\nIf you see this child, please stay with them and contact a staff member right away.\n\nThank you for your cooperation.";
+}
+
+function buildMissingAlert(f){
+  const clothing=[f.top,f.bottom].filter(Boolean).join(", ")||"";
+  return "\U0001F9D2 MISSING CHILD \U0001F9D2\nLOCATION: "+(f.lastSeen||"Unknown")+"\nDESCRIPTION: "+(f.childName?"Name: "+f.childName+" - ":"")+"Age: "+(f.age||"?")+", "+(f.gender||"Unknown gender")+(f.hair?", "+f.hair:"")+(clothing?", "+clothing:"")+"\nLAST SEEN: "+(f.lastSeen||"Unknown")+(f.lastSeenTime?" at "+f.lastSeenTime:"")+"\nASSEMBLY: "+(f.assembly||"Medical Tent")+(f.parentName?"\nGUARDIAN: "+f.parentName+(f.parentPhone?" ("+f.parentPhone+")":""):"");
+}
+
+function buildFoundScript(f){
+  const name=f.childName||"an unidentified child";
+  const age=f.age?"approximately "+f.age+" years old":"";
+  const hair=f.hair?", "+f.hair+" hair":"";
+  const clothing=f.clothing?", wearing "+f.clothing:"";
+  const loc=f.foundLocation||"our location";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe have a found child at "+loc+".\n\nThe child is "+name+(age?", "+age:"")+hair+clothing+".\n\nIf this is your child, or you know who this child belongs to, please go to "+loc+" immediately, or speak with any staff member wearing a yellow credentials lanyard.\n\nAgain - we have a found child at "+loc+". Please come forward.\n\nThank you, and enjoy the festival.";
+}
+
+function buildFoundAlert(f){
+  return "\U0001F9D2\u2705 FOUND CHILD at "+(f.foundLocation||"unknown location")+"\n"+(f.childName||"Unidentified child")+", "+(f.age||"?")+", "+(f.hair||"")+(f.clothing?", wearing "+f.clothing:"")+(f.parentName?"\nGuardian: "+f.parentName:"");
+}
+
 function HubApp({onBack}){
   const [role,setRole]=useState(()=>{
     if(typeof window!=="undefined"){
@@ -2617,120 +2647,93 @@ Reply YES to acknowledge.`
   if(lcView) return(
     <div style={{...S.root,position:"relative"}}><Bg/><div style={{...S.panel,position:"relative",zIndex:1}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.95)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <span style={{fontSize:17,fontWeight:800,color:"#f1f5f9"}}>🧒 Lost Child</span>
-        <button style={{background:"rgba(255,255,255,0.12)",border:"2px solid rgba(255,255,255,0.4)",color:"#fff",padding:"10px 18px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:900}} onClick={()=>{setLcView(false);setLcMode("");setLcPAScript("");setLcFields({});}}> ← Back</button>
+        <span style={{fontSize:17,fontWeight:800,color:"#fcd34d"}}>{"🧒 Lost Child"}</span>
+        <button style={{background:"rgba(255,255,255,0.12)",border:"2px solid rgba(255,255,255,0.4)",color:"#fff",padding:"10px 18px",borderRadius:10,cursor:"pointer",fontSize:14,fontWeight:900}} onClick={()=>{setLcView(false);setLcMode("");setLcPAScript("");setLcFields({})}}>{"← Back"}</button>
       </div>
 
-      {/* PA SCRIPT SCREEN */}
-      {lcPAScript&&(
+      {lcPAScript ? (
         <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
           <div style={{background:lcMode==="missing"?"rgba(239,68,68,0.1)":"rgba(34,197,94,0.1)",border:"2px solid "+(lcMode==="missing"?"rgba(239,68,68,0.4)":"rgba(34,197,94,0.4)"),borderRadius:12,padding:"14px"}}>
             <div style={{fontSize:11,fontWeight:900,color:lcMode==="missing"?"#fca5a5":"#4ade80",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>
-              {lcMode==="missing"?"🚨 All staff alerted — MPD notified":"🧒✅ All staff alerted — Broadcast sent"}
+              {lcMode==="missing" ? "🚨 All staff alerted — MPD notified" : "🧒✅ All staff alerted — Broadcast sent"}
             </div>
-            <div style={{fontSize:12,color:"#94a3b8"}}>Hub · SMS · GroupMe all fired</div>
+            <div style={{fontSize:12,color:"#94a3b8"}}>{"Hub · SMS · GroupMe all fired"}</div>
           </div>
           <div style={{background:"rgba(0,0,0,0.5)",border:"2px solid rgba(234,179,8,0.6)",borderRadius:12,padding:"16px"}}>
-            <div style={{fontSize:11,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>📢 STAGE MANAGER — READ OVER PA NOW</div>
+            <div style={{fontSize:11,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{"📢 STAGE MANAGER — READ OVER PA NOW"}</div>
             <div style={{fontSize:13,color:"#f1f5f9",lineHeight:1.9,whiteSpace:"pre-line",fontFamily:"monospace"}}>{lcPAScript}</div>
           </div>
-          <button style={{padding:"13px",borderRadius:12,border:"none",background:"rgba(234,179,8,0.15)",color:"#fcd34d",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>{
-            if(navigator.clipboard){navigator.clipboard.writeText(lcPAScript);}
-            alert("Script copied!");
-          }}>📋 Copy PA Script</button>
-          <button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setLcView(false);setLcMode("");setLcPAScript("");setLcFields({});}}>Done</button>
+          <button style={{padding:"13px",borderRadius:12,border:"none",background:"rgba(234,179,8,0.15)",color:"#fcd34d",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>{if(navigator.clipboard)navigator.clipboard.writeText(lcPAScript);alert("Script copied!");}}>{"📋 Copy PA Script"}</button>
+          <button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setLcView(false);setLcMode("");setLcPAScript("");setLcFields({})}}>{"Done"}</button>
         </div>
-      )}
-
-      {/* SUB-MENU */}
-      {!lcMode&&!lcPAScript&&(
+      ) : !lcMode ? (
         <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{fontSize:12,color:"#64748b",textAlign:"center",marginBottom:4}}>What is the situation?</div>
-          <button style={{width:"100%",padding:"20px 16px",borderRadius:14,border:"2px solid rgba(239,68,68,0.6)",background:"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(180,0,0,0.08))",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}} onClick={()=>setLcMode("missing")}>
-            <span style={{fontSize:34}}>🚨</span>
+          <div style={{fontSize:12,color:"#64748b",textAlign:"center",marginBottom:4}}>{"What is the situation?"}</div>
+          <button style={{width:"100%",padding:"20px 16px",borderRadius:14,border:"2px solid rgba(234,179,8,0.6)",background:"linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}} onClick={()=>{setLcMode("missing");setLcFields({})}}>
+            <span style={{fontSize:34}}>{"🚨"}</span>
             <div>
-              <div style={{fontSize:15,fontWeight:900,color:"#fca5a5"}}>MISSING CHILD</div>
-              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>A child is missing — alert all staff + MPD</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#fcd34d"}}>{"MISSING CHILD"}</div>
+              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{"A child is missing — alert all staff immediately"}</div>
             </div>
           </button>
-          <button style={{width:"100%",padding:"20px 16px",borderRadius:14,border:"2px solid rgba(34,197,94,0.5)",background:"linear-gradient(135deg,rgba(22,163,74,0.15),rgba(16,185,129,0.08))",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}} onClick={()=>setLcMode("found")}>
-            <span style={{fontSize:34}}>🧒✅</span>
+          <button style={{width:"100%",padding:"20px 16px",borderRadius:14,border:"2px solid rgba(34,197,94,0.5)",background:"linear-gradient(135deg,rgba(22,163,74,0.15),rgba(16,185,129,0.08))",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}} onClick={()=>{setLcMode("found");setLcFields({})}}>
+            <span style={{fontSize:34}}>{"🧒✅"}</span>
             <div>
-              <div style={{fontSize:15,fontWeight:900,color:"#4ade80"}}>CHILD FOUND HERE</div>
-              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>A lost child has been brought to our location</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#4ade80"}}>{"LOST CHILD"}</div>
+              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{"A lost child is here — generate PA announcement"}</div>
             </div>
           </button>
         </div>
-      )}
-
-      {/* MISSING CHILD FORM */}
-      {lcMode==="missing"&&!lcPAScript&&(
+      ) : lcMode==="missing" ? (
         <div style={S.cWrap}>
-          <div style={{fontSize:13,color:"#fcd34d",fontWeight:700,background:"rgba(202,138,4,0.1)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:8,padding:"10px 12px"}}>📋 Gather info from parent/guardian first, then fill in below.</div>
-          <Fld label="Child Age *" value={lcFields?.age||""} onChange={function(e){setLcFields(function(p){return{...p,age:e.target.value};});}} ph="e.g. 6"/>
-          <Fld label="Child Name (if known)" value={lcFields?.childName||""} onChange={function(e){setLcFields(function(p){return{...p,childName:e.target.value};});}} ph="e.g. Emma"/>
-          <Fld label="Gender" value={lcFields?.gender||""} onChange={function(e){setLcFields(function(p){return{...p,gender:e.target.value};});}} ph="e.g. Girl, Boy"/>
-          <Fld label="Hair Color / Style" value={lcFields?.hair||""} onChange={function(e){setLcFields(function(p){return{...p,hair:e.target.value};});}} ph="e.g. Brown pigtails"/>
-          <Fld label="Top / Shirt" value={lcFields?.top||""} onChange={function(e){setLcFields(function(p){return{...p,top:e.target.value};});}} ph="e.g. Red shirt"/>
-          <Fld label="Bottom / Pants" value={lcFields?.bottom||""} onChange={function(e){setLcFields(function(p){return{...p,bottom:e.target.value};});}} ph="e.g. Blue shorts"/>
-          <Fld label="Last Seen Location *" value={lcFields?.lastSeen||""} onChange={function(e){setLcFields(function(p){return{...p,lastSeen:e.target.value};});}} ph="e.g. Near Moon Stage bar"/>
-          <Fld label="Last Seen Time" value={lcFields?.lastSeenTime||""} onChange={function(e){setLcFields(function(p){return{...p,lastSeenTime:e.target.value};});}} ph="e.g. 5:30 PM"/>
-          <Fld label="Assembly Point *" value={lcFields?.assembly||""} onChange={function(e){setLcFields(function(p){return{...p,assembly:e.target.value};});}} ph="e.g. First Aid Tent, Moon Stage entrance"/>
-          <Fld label="Parent / Guardian Name" value={lcFields?.parentName||""} onChange={function(e){setLcFields(function(p){return{...p,parentName:e.target.value};});}} ph="e.g. Sarah Johnson"/>
-          <Fld label="Parent / Guardian Phone" value={lcFields?.parentPhone||""} onChange={function(e){setLcFields(function(p){return{...p,parentPhone:e.target.value};});}} ph="(608) 555-1234"/>
-          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly)?0.5:1}}
-            disabled={!lcFields?.age||!lcFields?.lastSeen||!lcFields?.assembly}
-            onClick={function(){
-              var clothing=[lcFields?.top,lcFields?.bottom].filter(Boolean).join(", ")||"";
-              var nameStr=lcFields?.childName?lcFields.childName:"an unidentified child";
-              var ageStr=lcFields?.age?"approximately "+lcFields.age+" years old":"";
-              var hairStr=lcFields?.hair?", "+lcFields.hair+" hair":"";
-              var clothStr=clothing?", wearing "+clothing:"";
-              var timeStr=lcFields?.lastSeenTime?" at approximately "+lcFields.lastSeenTime:"";
-              var locStr=lcFields?.lastSeen||"the festival grounds";
-              var assemblyStr=lcFields?.assembly||"the Medical Tent";
-              var script="Attention F\u00eate de Marquette guests.\n\nWe need your help locating a missing child.\n\nWe are looking for "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+".\n\nThis child was last seen at "+locStr+timeStr+".\n\nIf you have seen this child or have any information, please immediately contact the nearest festival staff member wearing a yellow credentials lanyard, or go to "+assemblyStr+".\n\nIf you see this child, please stay with them and contact a staff member right away.\n\nThank you for your cooperation.";
-              var lcMsg="🧒 MISSING CHILD 🧒\n\nLOCATION: "+lcFields?.lastSeen+"\nDESCRIPTION: "+(lcFields?.childName?"Name: "+lcFields.childName+" · ":"")+"Age: "+lcFields?.age+", "+(lcFields?.gender||"Unknown gender")+(lcFields?.hair?", "+lcFields?.hair:"")+(clothing?", "+clothing:"")+"\nLAST SEEN: "+lcFields?.lastSeen+(lcFields?.lastSeenTime?" at "+lcFields.lastSeenTime:"")+"\nASSEMBLY: "+lcFields?.assembly+(lcFields?.parentName?"\nREPORTED BY GUARDIAN: "+lcFields.parentName+(lcFields?.parentPhone?" ("+lcFields.parentPhone+")":""): "");\n              var alertCall={id:Date.now(),type:"lost_child",location:lcFields?.lastSeen,problem:lcMsg,requestedBy:role,status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
-              setCalls(function(p){return[alertCall,...p];});
-              sendGroupMe(lcMsg,["admin","medical","AllStaff"]);
+          <div style={{fontSize:13,color:"#fcd34d",fontWeight:700,background:"rgba(202,138,4,0.1)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:8,padding:"10px 12px"}}>{"📋 Gather info from parent/guardian first."}</div>
+          <Fld label="Child Name (if known)" value={lcFields.childName||""} onChange={e=>setLcFields(p=>({...p,childName:e.target.value}))} ph="e.g. Emma"/>
+          <Fld label="Child Age *" value={lcFields.age||""} onChange={e=>setLcFields(p=>({...p,age:e.target.value}))} ph="e.g. 6"/>
+          <Fld label="Gender" value={lcFields.gender||""} onChange={e=>setLcFields(p=>({...p,gender:e.target.value}))} ph="e.g. Girl, Boy"/>
+          <Fld label="Hair Color / Style" value={lcFields.hair||""} onChange={e=>setLcFields(p=>({...p,hair:e.target.value}))} ph="e.g. Brown pigtails"/>
+          <Fld label="Top / Shirt" value={lcFields.top||""} onChange={e=>setLcFields(p=>({...p,top:e.target.value}))} ph="e.g. Red shirt"/>
+          <Fld label="Bottom / Pants" value={lcFields.bottom||""} onChange={e=>setLcFields(p=>({...p,bottom:e.target.value}))} ph="e.g. Blue shorts"/>
+          <Fld label="Last Seen Location *" value={lcFields.lastSeen||""} onChange={e=>setLcFields(p=>({...p,lastSeen:e.target.value}))} ph="e.g. Near Moon Stage bar"/>
+          <Fld label="Last Seen Time" value={lcFields.lastSeenTime||""} onChange={e=>setLcFields(p=>({...p,lastSeenTime:e.target.value}))} ph="e.g. 5:30 PM"/>
+          <Fld label="Assembly / Meet Point *" value={lcFields.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. First Aid Tent, north entrance"/>
+          <Fld label="Parent / Guardian Name" value={lcFields.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Sarah Johnson"/>
+          <Fld label="Parent / Guardian Phone" value={lcFields.parentPhone||""} onChange={e=>setLcFields(p=>({...p,parentPhone:e.target.value}))} ph="(608) 555-1234"/>
+          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields.age||!lcFields.lastSeen||!lcFields.assembly)?0.5:1}}
+            disabled={!lcFields.age||!lcFields.lastSeen||!lcFields.assembly}
+            onClick={()=>{
+              const script=buildMissingScript(lcFields);
+              const alertMsg=buildMissingAlert(lcFields);
+              const alertCall={id:Date.now(),type:"lost_child",location:lcFields.lastSeen,problem:alertMsg,requestedBy:role,status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
+              setCalls(p=>[alertCall,...p]);
+              sendGroupMe(alertMsg,["admin","medical","AllStaff"]);
               playAlert("lost_child");
-              setActivityLog(function(p){return[{id:Date.now(),ts:tShort(),date:now(),type:"lost_child",label:"Lost Child Reported",msg:lcMsg},...p];});
-              fetch("/.netlify/functions/request-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:lcFields?.lastSeen,situation:lcMsg,requestedBy:role,callType:"lost_child"})}).catch(function(){});
+              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lost_child",label:"Lost Child Reported",msg:alertMsg},...p]);
+              fetch("/.netlify/functions/request-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:lcFields.lastSeen,situation:alertMsg,requestedBy:role,callType:"lost_child"})}).catch(()=>{});
               setLcPAScript(script);
             }}>
-            🚨 ALERT ALL STAFF + MPD + Get PA Script
+            {"🚨 ALERT ALL STAFF + MPD + Get PA Script"}
           </button>
         </div>
-      )}
-
-      {/* FOUND CHILD FORM */}
-      {lcMode==="found"&&!lcPAScript&&(
+      ) : (
         <div style={S.cWrap}>
-          <div style={{fontSize:13,color:"#4ade80",fontWeight:700,background:"rgba(22,163,74,0.08)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:8,padding:"10px 12px"}}>Fill in as much as you know. This alerts all staff and generates a PA script.</div>
-          <Fld label="Child Name (if known)" value={lcFields?.childName||""} onChange={function(e){setLcFields(function(p){return{...p,childName:e.target.value};});}} ph="e.g. Emma"/>
-          <Fld label="Approx. Age *" value={lcFields?.age||""} onChange={function(e){setLcFields(function(p){return{...p,age:e.target.value};});}} ph="e.g. 5 years old"/>
-          <Fld label="Hair Color / Description" value={lcFields?.hair||""} onChange={function(e){setLcFields(function(p){return{...p,hair:e.target.value};});}} ph="e.g. Brown, curly"/>
-          <Fld label="Clothing Description *" value={lcFields?.clothing||""} onChange={function(e){setLcFields(function(p){return{...p,clothing:e.target.value};});}} ph="e.g. Red shirt, blue shorts"/>
-          <Fld label="Your Location (where child is now) *" value={lcFields?.foundLocation||""} onChange={function(e){setLcFields(function(p){return{...p,foundLocation:e.target.value};});}} ph="e.g. Moon Stage, Medical Tent"/>
-          <Fld label="Guardian Name (if known)" value={lcFields?.parentName||""} onChange={function(e){setLcFields(function(p){return{...p,parentName:e.target.value};});}} ph="e.g. Jane Smith"/>
-          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#16a34a,#15803d)",opacity:(!lcFields?.age||!lcFields?.clothing||!lcFields?.foundLocation)?0.5:1}}
-            disabled={!lcFields?.age||!lcFields?.clothing||!lcFields?.foundLocation}
-            onClick={function(){
-              var nameStr=lcFields?.childName?lcFields.childName:"an unidentified child";
-              var ageStr=lcFields?.age?"approximately "+lcFields.age+" years old":"";
-              var hairStr=lcFields?.hair?", "+lcFields.hair+" hair":"";
-              var clothStr=lcFields?.clothing?", wearing "+lcFields.clothing:"";
-              var locStr=lcFields?.foundLocation||"our location";
-              var script="Attention F\u00eate de Marquette guests.\n\nWe have a found child at "+locStr+".\n\nThe child is "+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+".\n\nIf this is your child, or you know who this child belongs to, please go to "+locStr+" immediately \u2014 or speak with any staff member wearing a yellow credentials lanyard.\n\nAgain \u2014 we have a found child at "+locStr+". Please come forward.\n\nThank you, and enjoy the festival.";
-              var lcMsg="🧒✅ FOUND CHILD at "+locStr+"
-"+nameStr+(ageStr?", "+ageStr:"")+hairStr+clothStr+(lcFields?.parentName?"
-Guardian: "+lcFields.parentName:"");
-              sendGroupMe(lcMsg,["admin","medical","AllStaff"]);
-              fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:lcMsg,type:"found_child",sentBy:role})}).catch(function(){});
-              setActivityLog(function(p){return[{id:Date.now(),ts:tShort(),date:now(),type:"found_child",label:"Found Child Reported",msg:lcMsg},...p];});
+          <div style={{fontSize:13,color:"#4ade80",fontWeight:700,background:"rgba(22,163,74,0.08)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:8,padding:"10px 12px"}}>{"Fill in what you know. Alerts all staff and generates a PA script."}</div>
+          <Fld label="Child Name (if known)" value={lcFields.childName||""} onChange={e=>setLcFields(p=>({...p,childName:e.target.value}))} ph="e.g. Emma"/>
+          <Fld label="Approx. Age *" value={lcFields.age||""} onChange={e=>setLcFields(p=>({...p,age:e.target.value}))} ph="e.g. 5 years old"/>
+          <Fld label="Hair Color / Description" value={lcFields.hair||""} onChange={e=>setLcFields(p=>({...p,hair:e.target.value}))} ph="e.g. Brown, curly"/>
+          <Fld label="Clothing Description *" value={lcFields.clothing||""} onChange={e=>setLcFields(p=>({...p,clothing:e.target.value}))} ph="e.g. Red shirt, blue shorts"/>
+          <Fld label="Your Location (where child is now) *" value={lcFields.foundLocation||""} onChange={e=>setLcFields(p=>({...p,foundLocation:e.target.value}))} ph="e.g. Moon Stage, Medical Tent"/>
+          <Fld label="Guardian Name (if known)" value={lcFields.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Jane Smith"/>
+          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#16a34a,#15803d)",opacity:(!lcFields.age||!lcFields.clothing||!lcFields.foundLocation)?0.5:1}}
+            disabled={!lcFields.age||!lcFields.clothing||!lcFields.foundLocation}
+            onClick={()=>{
+              const script=buildFoundScript(lcFields);
+              const alertMsg=buildFoundAlert(lcFields);
+              sendGroupMe(alertMsg,["admin","medical","AllStaff"]);
+              fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:alertMsg,type:"found_child",sentBy:role})}).catch(()=>{});
+              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"found_child",label:"Found Child Reported",msg:alertMsg},...p]);
               setLcPAScript(script);
             }}>
-            🧒✅ Alert Staff + Get PA Script
+            {"🧒✅ Alert Staff + Get PA Script"}
           </button>
         </div>
       )}

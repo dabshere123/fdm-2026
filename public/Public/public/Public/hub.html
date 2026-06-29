@@ -2560,6 +2560,31 @@ const HUB_ROLE_DISPLAY = {
 function hubDisplayRole(r) {
   return HUB_ROLE_DISPLAY[(r || '').toLowerCase()] || r || '';
 }
+function buildMissingScript(f) {
+  const name = f.childName || "an unidentified child";
+  const age = f.age ? "approximately " + f.age + " years old" : "";
+  const hair = f.hair ? ", " + f.hair + " hair" : "";
+  const clothing = f.top || f.bottom ? ", wearing " + [f.top, f.bottom].filter(Boolean).join(", ") : "";
+  const lastSeen = f.lastSeen || "the festival grounds";
+  const timeStr = f.lastSeenTime ? " at approximately " + f.lastSeenTime : "";
+  const assembly = f.assembly || "the Medical Tent";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe need your help locating a missing child.\n\nWe are looking for " + name + (age ? ", " + age : "") + hair + clothing + ".\n\nThis child was last seen at " + lastSeen + timeStr + ".\n\nIf you have seen this child or have any information, please immediately contact the nearest festival staff member, or go to " + assembly + ".\n\nIf you see this child, please stay with them and contact a staff member right away.\n\nThank you for your cooperation.";
+}
+function buildMissingAlert(f) {
+  const clothing = [f.top, f.bottom].filter(Boolean).join(", ") || "";
+  return "\U0001F9D2 MISSING CHILD \U0001F9D2\nLOCATION: " + (f.lastSeen || "Unknown") + "\nDESCRIPTION: " + (f.childName ? "Name: " + f.childName + " - " : "") + "Age: " + (f.age || "?") + ", " + (f.gender || "Unknown gender") + (f.hair ? ", " + f.hair : "") + (clothing ? ", " + clothing : "") + "\nLAST SEEN: " + (f.lastSeen || "Unknown") + (f.lastSeenTime ? " at " + f.lastSeenTime : "") + "\nASSEMBLY: " + (f.assembly || "Medical Tent") + (f.parentName ? "\nGUARDIAN: " + f.parentName + (f.parentPhone ? " (" + f.parentPhone + ")" : "") : "");
+}
+function buildFoundScript(f) {
+  const name = f.childName || "an unidentified child";
+  const age = f.age ? "approximately " + f.age + " years old" : "";
+  const hair = f.hair ? ", " + f.hair + " hair" : "";
+  const clothing = f.clothing ? ", wearing " + f.clothing : "";
+  const loc = f.foundLocation || "our location";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe have a found child at " + loc + ".\n\nThe child is " + name + (age ? ", " + age : "") + hair + clothing + ".\n\nIf this is your child, or you know who this child belongs to, please go to " + loc + " immediately, or speak with any staff member wearing a yellow credentials lanyard.\n\nAgain - we have a found child at " + loc + ". Please come forward.\n\nThank you, and enjoy the festival.";
+}
+function buildFoundAlert(f) {
+  return "\U0001F9D2\u2705 FOUND CHILD at " + (f.foundLocation || "unknown location") + "\n" + (f.childName || "Unidentified child") + ", " + (f.age || "?") + ", " + (f.hair || "") + (f.clothing ? ", wearing " + f.clothing : "") + (f.parentName ? "\nGuardian: " + f.parentName : "");
+}
 function HubApp({
   onBack
 }) {
@@ -3214,6 +3239,8 @@ function HubApp({
     parentPhone: ""
   });
   const [lcView, setLcView] = useState(false);
+  const [lcMode, setLcMode] = useState("");
+  const [lcPAScript, setLcPAScript] = useState("");
   // Per-call officer notifications: {callId: {officerId: {notified, acked, cancelled}}}
   const [officerNotifs, setOfficerNotifs] = useState({});
   const [resourceType, setResourceType] = useState(null);
@@ -7290,26 +7317,194 @@ Reply YES to acknowledge.`
     style: {
       fontSize: 17,
       fontWeight: 800,
-      color: "#f1f5f9"
+      color: "#fcd34d"
     }
-  }, "🧒 Report Lost Child"), /*#__PURE__*/React.createElement("button", {
+  }, "🧒 Lost Child"), /*#__PURE__*/React.createElement("button", {
     style: {
       background: "rgba(255,255,255,0.12)",
       border: "2px solid rgba(255,255,255,0.4)",
       color: "#fff",
-      padding: "12px 20px",
+      padding: "10px 18px",
       borderRadius: 10,
       cursor: "pointer",
+      fontSize: 14,
+      fontWeight: 900
+    },
+    onClick: () => {
+      setLcView(false);
+      setLcMode("");
+      setLcPAScript("");
+      setLcFields({});
+    }
+  }, "← Back")), lcPAScript ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: lcMode === "missing" ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)",
+      border: "2px solid " + (lcMode === "missing" ? "rgba(239,68,68,0.4)" : "rgba(34,197,94,0.4)"),
+      borderRadius: 12,
+      padding: "14px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: lcMode === "missing" ? "#fca5a5" : "#4ade80",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em",
+      marginBottom: 4
+    }
+  }, lcMode === "missing" ? "🚨 All staff alerted — MPD notified" : "🧒✅ All staff alerted — Broadcast sent"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#94a3b8"
+    }
+  }, "Hub · SMS · GroupMe all fired")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(0,0,0,0.5)",
+      border: "2px solid rgba(234,179,8,0.6)",
+      borderRadius: 12,
+      padding: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: "#fcd34d",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em",
+      marginBottom: 10
+    }
+  }, "📢 STAGE MANAGER — READ OVER PA NOW"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#f1f5f9",
+      lineHeight: 1.9,
+      whiteSpace: "pre-line",
+      fontFamily: "monospace"
+    }
+  }, lcPAScript)), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "13px",
+      borderRadius: 12,
+      border: "none",
+      background: "rgba(234,179,8,0.15)",
+      color: "#fcd34d",
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      if (navigator.clipboard) navigator.clipboard.writeText(lcPAScript);
+      alert("Script copied!");
+    }
+  }, "📋 Copy PA Script"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "12px",
+      borderRadius: 12,
+      border: "1px solid rgba(255,255,255,0.1)",
+      background: "rgba(255,255,255,0.04)",
+      color: "#94a3b8",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      setLcView(false);
+      setLcMode("");
+      setLcPAScript("");
+      setLcFields({});
+    }
+  }, "Done")) : !lcMode ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#64748b",
+      textAlign: "center",
+      marginBottom: 4
+    }
+  }, "What is the situation?"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      padding: "20px 16px",
+      borderRadius: 14,
+      border: "2px solid rgba(234,179,8,0.6)",
+      background: "linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))",
+      cursor: "pointer",
+      textAlign: "left",
+      display: "flex",
+      alignItems: "center",
+      gap: 14
+    },
+    onClick: () => {
+      setLcMode("missing");
+      setLcFields({});
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 34
+    }
+  }, "🚨"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 15,
       fontWeight: 900,
-      boxShadow: "0 2px 8px rgba(0,0,0,0.4)"
+      color: "#fcd34d"
+    }
+  }, "MISSING CHILD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#94a3b8",
+      marginTop: 3
+    }
+  }, "A child is missing — alert all staff immediately"))), /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: "100%",
+      padding: "20px 16px",
+      borderRadius: 14,
+      border: "2px solid rgba(34,197,94,0.5)",
+      background: "linear-gradient(135deg,rgba(22,163,74,0.15),rgba(16,185,129,0.08))",
+      cursor: "pointer",
+      textAlign: "left",
+      display: "flex",
+      alignItems: "center",
+      gap: 14
     },
-    onClick: () => setLcView(false)
-  }, "← Back")), /*#__PURE__*/React.createElement("div", {
+    onClick: () => {
+      setLcMode("found");
+      setLcFields({});
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 34
+    }
+  }, "🧒✅"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 900,
+      color: "#4ade80"
+    }
+  }, "LOST CHILD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#94a3b8",
+      marginTop: 3
+    }
+  }, "A lost child is here — generate PA announcement")))) : lcMode === "missing" ? /*#__PURE__*/React.createElement("div", {
     style: S.cWrap
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 14,
+      fontSize: 13,
       color: "#fcd34d",
       fontWeight: 700,
       background: "rgba(202,138,4,0.1)",
@@ -7317,19 +7512,25 @@ Reply YES to acknowledge.`
       borderRadius: 8,
       padding: "10px 12px"
     }
-  }, "📋 Gather info from parent/guardian first, then fill in below."), /*#__PURE__*/React.createElement(Fld, {
+  }, "📋 Gather info from parent/guardian first."), /*#__PURE__*/React.createElement(Fld, {
+    label: "Child Name (if known)",
+    value: lcFields.childName || "",
+    onChange: e => setLcFields(p => ({
+      ...p,
+      childName: e.target.value
+    })),
+    ph: "e.g. Emma"
+  }), /*#__PURE__*/React.createElement(Fld, {
     label: "Child Age *",
-    value: lcFields?.age || "",
+    value: lcFields.age || "",
     onChange: e => setLcFields(p => ({
       ...p,
       age: e.target.value
     })),
-    ph: "e.g. 6",
-    required: true,
-    large: true
+    ph: "e.g. 6"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Gender",
-    value: lcFields?.gender || "",
+    value: lcFields.gender || "",
     onChange: e => setLcFields(p => ({
       ...p,
       gender: e.target.value
@@ -7337,7 +7538,7 @@ Reply YES to acknowledge.`
     ph: "e.g. Girl, Boy"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Hair Color / Style",
-    value: lcFields?.hair || "",
+    value: lcFields.hair || "",
     onChange: e => setLcFields(p => ({
       ...p,
       hair: e.target.value
@@ -7345,7 +7546,7 @@ Reply YES to acknowledge.`
     ph: "e.g. Brown pigtails"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Top / Shirt",
-    value: lcFields?.top || "",
+    value: lcFields.top || "",
     onChange: e => setLcFields(p => ({
       ...p,
       top: e.target.value
@@ -7353,7 +7554,7 @@ Reply YES to acknowledge.`
     ph: "e.g. Red shirt"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Bottom / Pants",
-    value: lcFields?.bottom || "",
+    value: lcFields.bottom || "",
     onChange: e => setLcFields(p => ({
       ...p,
       bottom: e.target.value
@@ -7361,35 +7562,31 @@ Reply YES to acknowledge.`
     ph: "e.g. Blue shorts"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Last Seen Location *",
-    value: lcFields?.lastSeen || "",
+    value: lcFields.lastSeen || "",
     onChange: e => setLcFields(p => ({
       ...p,
       lastSeen: e.target.value
     })),
-    ph: "e.g. Near Moon Stage 1 bar",
-    required: true,
-    large: true
+    ph: "e.g. Near Moon Stage bar"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Last Seen Time",
-    value: lcFields?.lastSeenTime || "",
+    value: lcFields.lastSeenTime || "",
     onChange: e => setLcFields(p => ({
       ...p,
       lastSeenTime: e.target.value
     })),
     ph: "e.g. 5:30 PM"
   }), /*#__PURE__*/React.createElement(Fld, {
-    label: "Meet Reporting Party / Parent *",
-    value: lcFields?.assembly || "",
+    label: "Assembly / Meet Point *",
+    value: lcFields.assembly || "",
     onChange: e => setLcFields(p => ({
       ...p,
       assembly: e.target.value
     })),
-    ph: "e.g. First Aid, Moon Stage entrance",
-    required: true,
-    large: true
+    ph: "e.g. First Aid Tent, north entrance"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Parent / Guardian Name",
-    value: lcFields?.parentName || "",
+    value: lcFields.parentName || "",
     onChange: e => setLcFields(p => ({
       ...p,
       parentName: e.target.value
@@ -7397,7 +7594,7 @@ Reply YES to acknowledge.`
     ph: "e.g. Sarah Johnson"
   }), /*#__PURE__*/React.createElement(Fld, {
     label: "Parent / Guardian Phone",
-    value: lcFields?.parentPhone || "",
+    value: lcFields.parentPhone || "",
     onChange: e => setLcFields(p => ({
       ...p,
       parentPhone: e.target.value
@@ -7407,17 +7604,18 @@ Reply YES to acknowledge.`
     style: {
       ...S.sendBtn,
       background: "linear-gradient(135deg,#f97316,#ea580c)",
-      opacity: !lcFields?.age || !lcFields?.lastSeen || !lcFields?.assembly ? 0.5 : 1
+      opacity: !lcFields.age || !lcFields.lastSeen || !lcFields.assembly ? 0.5 : 1
     },
-    disabled: !lcFields?.age || !lcFields?.lastSeen || !lcFields?.assembly,
+    disabled: !lcFields.age || !lcFields.lastSeen || !lcFields.assembly,
     onClick: () => {
-      const lcMsg = `🧒 LOST CHILD 🧒\n\nLOCATION: ${lcFields?.lastSeen}\nDESCRIPTION: ${lcFields?.gender || "Child"}, approx ${lcFields?.age}${lcFields?.hair ? " · " + lcFields.hair : ""}${lcFields?.top ? " · " + lcFields.top : ""}\nLast seen: ${lcFields?.lastSeenTime || ""}\nMeet Reporting Party / Parent: ${lcFields?.assembly}\nParent: ${lcFields?.parentName || "Unknown"} · ${lcFields?.parentPhone || ""}\nDATE/TIME: ${new Date().toLocaleString()}`;
-      const newCall = {
+      const script = buildMissingScript(lcFields);
+      const alertMsg = buildMissingAlert(lcFields);
+      const alertCall = {
         id: Date.now(),
         type: "lost_child",
-        location: lcFields?.lastSeen,
-        problem: `${lcFields?.gender || "Child"}, approx ${lcFields?.age}. ${lcFields?.hair || ""} ${lcFields?.top || ""} ${lcFields?.bottom || ""}. Last seen: ${lcFields?.lastSeenTime} near ${lcFields?.lastSeen}. Assembly: ${lcFields?.assembly}. Parent: ${lcFields?.parentName || "Unknown"} ${lcFields?.parentPhone || ""}`,
-        requestedBy: "Admin",
+        location: lcFields.lastSeen,
+        problem: alertMsg,
+        requestedBy: role,
         status: "new_call",
         acknowledged: false,
         history: [{
@@ -7427,32 +7625,8 @@ Reply YES to acknowledge.`
         unit: null,
         firedAt: Date.now()
       };
-      setCalls(p => [newCall, ...p]);
-      // Use dedicated function — sends to ALL staff + all GroupMe channels
-      fetch("/.netlify/functions/send-lost-child", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          location: lcFields?.lastSeen || "Unknown",
-          description: `${lcFields?.gender || "Child"}, approx ${lcFields?.age}. ${lcFields?.hair || ""} ${lcFields?.top || ""} ${lcFields?.bottom || ""}`.trim(),
-          requestedBy: "Admin",
-          assemblyPoint: lcFields?.assembly || "First Aid"
-        })
-      }).catch(e => console.log("LC send error:", e));
-      fetch("/.netlify/functions/send-mpd", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          type: "lost_child",
-          officers: mpdOfficers,
-          location: lcFields?.lastSeen,
-          situation: lcMsg
-        })
-      }).catch(e => console.log(e));
+      setCalls(p => [alertCall, ...p]);
+      sendGroupMe(alertMsg, ["admin", "medical", "AllStaff"]);
       playAlert("lost_child");
       setActivityLog(p => [{
         id: Date.now(),
@@ -7460,15 +7634,115 @@ Reply YES to acknowledge.`
         date: now(),
         type: "lost_child",
         label: "Lost Child Reported",
-        msg: lcMsg
+        msg: alertMsg
       }, ...p]);
-      setLcView(false);
-      setLcFields({});
+      fetch("/.netlify/functions/request-mpd", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          location: lcFields.lastSeen,
+          situation: alertMsg,
+          requestedBy: role,
+          callType: "lost_child"
+        })
+      }).catch(() => {});
+      setLcPAScript(script);
     }
-  }, "🧒 REPORT & ALERT ALL STAFF + MPD"))));
-
-  // ─── LOST & FOUND VIEW ────────────────────────────────────────────────────────
-
+  }, "🚨 ALERT ALL STAFF + MPD + Get PA Script")) : /*#__PURE__*/React.createElement("div", {
+    style: S.cWrap
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#4ade80",
+      fontWeight: 700,
+      background: "rgba(22,163,74,0.08)",
+      border: "1px solid rgba(34,197,94,0.25)",
+      borderRadius: 8,
+      padding: "10px 12px"
+    }
+  }, "Fill in what you know. Alerts all staff and generates a PA script."), /*#__PURE__*/React.createElement(Fld, {
+    label: "Child Name (if known)",
+    value: lcFields.childName || "",
+    onChange: e => setLcFields(p => ({
+      ...p,
+      childName: e.target.value
+    })),
+    ph: "e.g. Emma"
+  }), /*#__PURE__*/React.createElement(Fld, {
+    label: "Approx. Age *",
+    value: lcFields.age || "",
+    onChange: e => setLcFields(p => ({
+      ...p,
+      age: e.target.value
+    })),
+    ph: "e.g. 5 years old"
+  }), /*#__PURE__*/React.createElement(Fld, {
+    label: "Hair Color / Description",
+    value: lcFields.hair || "",
+    onChange: e => setLcFields(p => ({
+      ...p,
+      hair: e.target.value
+    })),
+    ph: "e.g. Brown, curly"
+  }), /*#__PURE__*/React.createElement(Fld, {
+    label: "Clothing Description *",
+    value: lcFields.clothing || "",
+    onChange: e => setLcFields(p => ({
+      ...p,
+      clothing: e.target.value
+    })),
+    ph: "e.g. Red shirt, blue shorts"
+  }), /*#__PURE__*/React.createElement(Fld, {
+    label: "Your Location (where child is now) *",
+    value: lcFields.foundLocation || "",
+    onChange: e => setLcFields(p => ({
+      ...p,
+      foundLocation: e.target.value
+    })),
+    ph: "e.g. Moon Stage, Medical Tent"
+  }), /*#__PURE__*/React.createElement(Fld, {
+    label: "Guardian Name (if known)",
+    value: lcFields.parentName || "",
+    onChange: e => setLcFields(p => ({
+      ...p,
+      parentName: e.target.value
+    })),
+    ph: "e.g. Jane Smith"
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...S.sendBtn,
+      background: "linear-gradient(135deg,#16a34a,#15803d)",
+      opacity: !lcFields.age || !lcFields.clothing || !lcFields.foundLocation ? 0.5 : 1
+    },
+    disabled: !lcFields.age || !lcFields.clothing || !lcFields.foundLocation,
+    onClick: () => {
+      const script = buildFoundScript(lcFields);
+      const alertMsg = buildFoundAlert(lcFields);
+      sendGroupMe(alertMsg, ["admin", "medical", "AllStaff"]);
+      fetch("/.netlify/functions/send-broadcast", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: alertMsg,
+          type: "found_child",
+          sentBy: role
+        })
+      }).catch(() => {});
+      setActivityLog(p => [{
+        id: Date.now(),
+        ts: tShort(),
+        date: now(),
+        type: "found_child",
+        label: "Found Child Reported",
+        msg: alertMsg
+      }, ...p]);
+      setLcPAScript(script);
+    }
+  }, "🧒✅ Alert Staff + Get PA Script"))));
   if (view === "stafflist") return /*#__PURE__*/React.createElement("div", {
     style: S.root
   }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {

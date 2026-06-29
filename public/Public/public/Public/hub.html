@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026 Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
+<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
   useState,
   useEffect,
   useRef,
@@ -2561,26 +2561,24 @@ function hubDisplayRole(r) {
   return HUB_ROLE_DISPLAY[(r || '').toLowerCase()] || r || '';
 }
 function buildMissingScript(f) {
-  const name = f.childName || "an unidentified child";
-  const age = f.age ? "approximately " + f.age + " years old" : "";
+  const age = f.age ? "approximately " + f.age + " years old" : "a child";
   const hair = f.hair ? ", " + f.hair + " hair" : "";
   const clothing = f.top || f.bottom ? ", wearing " + [f.top, f.bottom].filter(Boolean).join(", ") : "";
   const lastSeen = f.lastSeen || "the festival grounds";
   const timeStr = f.lastSeenTime ? " at approximately " + f.lastSeenTime : "";
   const assembly = f.assembly || "the Medical Tent";
-  return "Attention \u0046\xe9te de Marquette guests.\n\nWe need your help locating a missing child.\n\nWe are looking for " + name + (age ? ", " + age : "") + hair + clothing + ".\n\nThis child was last seen at " + lastSeen + timeStr + ".\n\nIf you have seen this child or have any information, please immediately contact the nearest festival staff member, or go to " + assembly + ".\n\nIf you see this child, please stay with them and contact a staff member right away.\n\nThank you for your cooperation.";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe need your help locating a missing child.\n\nThe child is " + age + hair + clothing + ".\n\nThis child was last seen at " + lastSeen + timeStr + ".\n\nIf you have seen this child, please stay with them and immediately contact the nearest Medical staff or Admin. Do not leave the child.\n\nPlease go to " + assembly + " if you need assistance.\n\nThank you for your cooperation.";
 }
 function buildMissingAlert(f) {
   const clothing = [f.top, f.bottom].filter(Boolean).join(", ") || "";
   return "\U0001F9D2 MISSING CHILD \U0001F9D2\nLOCATION: " + (f.lastSeen || "Unknown") + "\nDESCRIPTION: " + (f.childName ? "Name: " + f.childName + " - " : "") + "Age: " + (f.age || "?") + ", " + (f.gender || "Unknown gender") + (f.hair ? ", " + f.hair : "") + (clothing ? ", " + clothing : "") + "\nLAST SEEN: " + (f.lastSeen || "Unknown") + (f.lastSeenTime ? " at " + f.lastSeenTime : "") + "\nASSEMBLY: " + (f.assembly || "Medical Tent") + (f.parentName ? "\nGUARDIAN: " + f.parentName + (f.parentPhone ? " (" + f.parentPhone + ")" : "") : "");
 }
 function buildFoundScript(f) {
-  const name = f.childName || "an unidentified child";
-  const age = f.age ? "approximately " + f.age + " years old" : "";
+  const age = f.age ? "approximately " + f.age + " years old" : "a child";
   const hair = f.hair ? ", " + f.hair + " hair" : "";
   const clothing = f.clothing ? ", wearing " + f.clothing : "";
   const loc = f.foundLocation || "our location";
-  return "Attention \u0046\xe9te de Marquette guests.\n\nWe have a found child at " + loc + ".\n\nThe child is " + name + (age ? ", " + age : "") + hair + clothing + ".\n\nIf this is your child, or you know who this child belongs to, please go to " + loc + " immediately, or speak with any staff member wearing a yellow credentials lanyard.\n\nAgain - we have a found child at " + loc + ". Please come forward.\n\nThank you, and enjoy the festival.";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe have a found child at " + loc + ".\n\nThe child is " + age + hair + clothing + ".\n\nIf this is your child or you know who this child belongs to, please go to " + loc + " immediately and speak with Medical staff or Admin on site.\n\nAgain - we have a found child at " + loc + ". Please come forward.\n\nThank you, and enjoy the festival.";
 }
 function buildFoundAlert(f) {
   return "\U0001F9D2\u2705 FOUND CHILD at " + (f.foundLocation || "unknown location") + "\n" + (f.childName || "Unidentified child") + ", " + (f.age || "?") + ", " + (f.hair || "") + (f.clothing ? ", wearing " + f.clothing : "") + (f.parentName ? "\nGuardian: " + f.parentName : "");

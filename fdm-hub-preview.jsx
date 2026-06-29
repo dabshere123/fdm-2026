@@ -843,14 +843,13 @@ function hubDisplayRole(r){return HUB_ROLE_DISPLAY[(r||'').toLowerCase()]||r||''
 
 
 function buildMissingScript(f){
-  const name=f.childName||"an unidentified child";
-  const age=f.age?"approximately "+f.age+" years old":"";
+  const age=f.age?"approximately "+f.age+" years old":"a child";
   const hair=f.hair?", "+f.hair+" hair":"";
   const clothing=(f.top||f.bottom)?", wearing "+[f.top,f.bottom].filter(Boolean).join(", "):"";
   const lastSeen=f.lastSeen||"the festival grounds";
   const timeStr=f.lastSeenTime?" at approximately "+f.lastSeenTime:"";
   const assembly=f.assembly||"the Medical Tent";
-  return "Attention \u0046\xe9te de Marquette guests.\n\nWe need your help locating a missing child.\n\nWe are looking for "+name+(age?", "+age:"")+hair+clothing+".\n\nThis child was last seen at "+lastSeen+timeStr+".\n\nIf you have seen this child or have any information, please immediately contact the nearest festival staff member, or go to "+assembly+".\n\nIf you see this child, please stay with them and contact a staff member right away.\n\nThank you for your cooperation.";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe need your help locating a missing child.\n\nThe child is "+age+hair+clothing+".\n\nThis child was last seen at "+lastSeen+timeStr+".\n\nIf you have seen this child, please stay with them and immediately contact the nearest Medical staff or Admin. Do not leave the child.\n\nPlease go to "+assembly+" if you need assistance.\n\nThank you for your cooperation.";
 }
 
 function buildMissingAlert(f){
@@ -859,12 +858,11 @@ function buildMissingAlert(f){
 }
 
 function buildFoundScript(f){
-  const name=f.childName||"an unidentified child";
-  const age=f.age?"approximately "+f.age+" years old":"";
+  const age=f.age?"approximately "+f.age+" years old":"a child";
   const hair=f.hair?", "+f.hair+" hair":"";
   const clothing=f.clothing?", wearing "+f.clothing:"";
   const loc=f.foundLocation||"our location";
-  return "Attention \u0046\xe9te de Marquette guests.\n\nWe have a found child at "+loc+".\n\nThe child is "+name+(age?", "+age:"")+hair+clothing+".\n\nIf this is your child, or you know who this child belongs to, please go to "+loc+" immediately, or speak with any staff member wearing a yellow credentials lanyard.\n\nAgain - we have a found child at "+loc+". Please come forward.\n\nThank you, and enjoy the festival.";
+  return "Attention \u0046\xe9te de Marquette guests.\n\nWe have a found child at "+loc+".\n\nThe child is "+age+hair+clothing+".\n\nIf this is your child or you know who this child belongs to, please go to "+loc+" immediately and speak with Medical staff or Admin on site.\n\nAgain - we have a found child at "+loc+". Please come forward.\n\nThank you, and enjoy the festival.";
 }
 
 function buildFoundAlert(f){

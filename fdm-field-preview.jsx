@@ -230,15 +230,15 @@ function NewCallView({user,callType,onBack}){
 
 We need your help locating a missing child.
 
-We are looking for ${nameStr}${ageStr?`, ${ageStr}`:''}${hairStr}${clothStr}${lastStr}.
+The child is ${ageStr}${hairStr}${clothStr}.
 
-The child was last seen at or near ${locStr}.
+This child was last seen at ${locStr}.
 
-If you have seen this child or have any information, please immediately contact the nearest festival staff member wearing a yellow credentials lanyard, or come to the Medical Tent at the north end of McPike Park.
+If you have seen this child, please stay with them and immediately contact the nearest Medical staff or Admin. Do not leave the child.
 
-If you see this child, please stay with them and contact a staff member right away.
+Please go to ${assembly} if you need assistance.
 
-Thank you for your help. We appreciate your cooperation.`;
+Thank you for your cooperation.`;
     return(
       <div style={{...S.root,background:'#1a0a00'}}>
         <div style={S.hdr}>
@@ -1064,9 +1064,9 @@ function FoundLostChildView({user,onBack}){
 
 We have a found child at ${childLocation}.
 
-The child is ${nameStr}${desc2?`, ${desc2.replace(/^, /,'')}`:''}.
+The child is ${desc2}.
 
-If this is your child, or you know who this child belongs to, please go to ${childLocation} immediately — or speak with any staff member wearing a yellow credentials lanyard.
+If this is your child or you know who this child belongs to, please go to ${childLocation} immediately and speak with Medical staff or Admin on site.
 
 Again — we have a found child at ${childLocation}. Please come forward.
 
@@ -1209,7 +1209,7 @@ function HomeView({user,onLogout}){
         <button style={{width:'100%',padding:'20px 16px',borderRadius:14,border:'2px solid rgba(234,179,8,0.6)',background:'linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:14}} onClick={()=>{setLostChildMenuOpen(false);goCall('lost_child');}}>
           <div style={{fontSize:34}}>🚨</div>
           <div>
-            <div style={{fontSize:16,fontWeight:900,color:'#fcd34d'}}>MISSING CHILD</div>
+            <div style={{fontSize:16,fontWeight:900,color:'#fcd34d'}}>LOST CHILD</div>
             <div style={{fontSize:12,color:'#94a3b8',marginTop:3}}>A child is missing — alert all staff immediately</div>
           </div>
         </button>

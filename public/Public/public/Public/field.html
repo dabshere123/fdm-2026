@@ -503,15 +503,15 @@ function NewCallView({
 
 We need your help locating a missing child.
 
-We are looking for ${nameStr}${ageStr ? `, ${ageStr}` : ''}${hairStr}${clothStr}${lastStr}.
+The child is ${ageStr}${hairStr}${clothStr}.
 
-The child was last seen at or near ${locStr}.
+This child was last seen at ${locStr}.
 
-If you have seen this child or have any information, please immediately contact the nearest festival staff member wearing a yellow credentials lanyard, or come to the Medical Tent at the north end of McPike Park.
+If you have seen this child, please stay with them and immediately contact the nearest Medical staff or Admin. Do not leave the child.
 
-If you see this child, please stay with them and contact a staff member right away.
+Please go to ${assembly} if you need assistance.
 
-Thank you for your help. We appreciate your cooperation.`;
+Thank you for your cooperation.`;
     return /*#__PURE__*/React.createElement("div", {
       style: {
         ...S.root,
@@ -2829,9 +2829,9 @@ function FoundLostChildView({
 
 We have a found child at ${childLocation}.
 
-The child is ${nameStr}${desc2 ? `, ${desc2.replace(/^, /, '')}` : ''}.
+The child is ${desc2}.
 
-If this is your child, or you know who this child belongs to, please go to ${childLocation} immediately — or speak with any staff member wearing a yellow credentials lanyard.
+If this is your child or you know who this child belongs to, please go to ${childLocation} immediately and speak with Medical staff or Admin on site.
 
 Again — we have a found child at ${childLocation}. Please come forward.
 
@@ -3274,7 +3274,7 @@ function HomeView({
       fontWeight: 900,
       color: '#fcd34d'
     }
-  }, "MISSING CHILD"), /*#__PURE__*/React.createElement("div", {
+  }, "LOST CHILD"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#94a3b8',

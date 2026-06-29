@@ -35,7 +35,7 @@ exports.handler = async (event) => {
 
     // Send confirmation SMS to officer
     if (TWILIO_SID && TWILIO_AUTH) {
-      const sms = `Hello ${name.split(' ')[0]} — you have been added as an MPD contact for Fête de Marquette 2026 (July 9–12, McPike Park, Madison).\n\nIf you receive an alert from this number during the festival, please reply ACK to acknowledge.\n\nThank you!\n— FDM 2026 Operations`;
+      const sms = `Hello ${name.split(' ')[0]} — you have been added as an MPD contact for Fête de Marquette 2026 (July 9–12, McPike Park, Madison).\n\nIf you receive an alert from this number during the festival, please reply ACK to acknowledge.\n\nThank you!\n— FDM 2026`;
       const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
       await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
         method: 'POST',

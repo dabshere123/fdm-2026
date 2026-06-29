@@ -1,7 +1,7 @@
 // send-mpd-confirmation.js
 // Called by Airtable automation when a new MPDOfficers record is created
 // Airtable setup: Automations → When record created in MPDOfficers → Run script/webhook
-// Webhook URL: https://fdm2026.netlify.app/.netlify/functions/send-mpd-confirmation
+// Webhook URL: https:///.netlify/functions/send-mpd-confirmation
 // Body: { "name": "{{Name}}", "phone": "{{Phone}}" }
 const TWILIO_SID  = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH = process.env.TWILIO_AUTH_TOKEN;
@@ -23,7 +23,7 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Twilio not configured' }) };
     }
 
-    const sms = `Hello ${name.split(' ')[0]} — you have been added as an MPD contact for Fête de Marquette 2026 (July 9–12, McPike Park, Madison).\n\nIf you receive an alert from this number during the festival, please reply ACK to acknowledge.\n\nThank you!\n— FDM 2026 Operations`;
+    const sms = `Hello ${name.split(' ')[0]} — you have been added as an MPD contact for Fête de Marquette 2026 (July 9–12, McPike Park, Madison).\n\nIf you receive an alert from this number during the festival, please reply ACK to acknowledge.\n\nThank you!\n— FDM 2026`;
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
       method: 'POST',

@@ -65,7 +65,7 @@ exports.handler = async (event) => {
                         type === 'fire'     ? '🔥 FIRE / LIFE SAFETY' :
                         type === 'security' ? '🔒 SECURITY' : type.toUpperCase();
 
-      const sms = `🚨 ${typeLabel} CALL — FDM 2026\n\nLocation: ${location}\nProblem: ${problem}${details ? '\nDetails: ' + details : ''}\nFrom: ${requestedBy}\n\nMcPike Park · Respond immediately`;
+      const sms = `🚨 ${typeLabel} CALL — FDM 2026\n\nLocation: ${location}\nProblem: ${problem}${details ? '\nDetails: ' + details : ''}\nFrom: ${requestedBy}\n · Respond immediately`;
       const voice = `Urgent ${typeLabel.replace(/[🩺🔥🔒]/g, '').trim()} call at Fête de Marquette. Location: ${location}. ${problem}. Please respond immediately to McPike Park.`;
 
       // SMS to Devin + Gary
@@ -112,8 +112,7 @@ Location: ${location}
 ${problem}
 Reported by: ${requestedBy} at ${ts}
 
-Search your area immediately — notify admin if found.
-McPike Park`;
+Search your area immediately — notify admin if found.`;
       const voiceTxt = `Urgent alert at Fête de Marquette. A child has been reported missing. Last seen at ${location}. ${problem}. All staff please search your area immediately and contact admin if found.`;
 
       try {

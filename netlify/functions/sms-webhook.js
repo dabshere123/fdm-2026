@@ -87,6 +87,24 @@ exports.handler = async (event) => {
       }})
     }).catch(() => {});
 
+    // Forward ACK to Devin's phone so he gets a personal text
+    const TWILIO_SID  = process.env.TWILIO_ACCOUNT_SID;
+    const TWILIO_AUTH = process.env.TWILIO_AUTH_TOKEN;
+    const MSG_SID     = process.env.TWILIO_MESSAGING_SERVICE_SID;
+    const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
+    const DEVIN_PHONE = '+16082289692';
+    if (TWILIO_SID && TWILIO_AUTH) {
+      const fwdMsg = personRole === 'MPD'
+        ? `🚔 MPD ACK: ${personName} acknowledged the alert at ${now}`
+        : `✅ Staff ACK: ${personName} acknowledged at ${now}`;
+      const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
+      await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ To: DEVIN_PHONE, MessagingServiceSid: MSG_SID || TWILIO_FROM, Body: fwdMsg }).toString()
+      }).catch(() => {});
+    }
+
     const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${replyMsg}</Message></Response>`;
     return { statusCode: 200, headers, body: twiml };
 

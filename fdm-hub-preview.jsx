@@ -571,13 +571,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
                 <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>GroupMe + SMS to Admin</div>
               </div>
             </button>
-            <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(37,99,235,0.5)",background:"rgba(37,99,235,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>setMpdRequestView(true)}>
-              <span style={{fontSize:24}}>🚔</span>
-              <div>
-                <div style={{fontSize:14,fontWeight:900,color:"#93c5fd"}}>Request MPD</div>
-                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>SMS + Voice call to officers on duty</div>
-              </div>
-            </button>
+            
           </div>
         )}
 
@@ -2449,7 +2443,7 @@ Reply YES to acknowledge.`
           </div>
         </div>
         <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
-          <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Officers marked Online will receive SMS + Voice when MPD is requested. They can reply <strong style={{color:"#f1f5f9"}}>DISREGARD</strong> to cancel.</div>
+          <div style={{fontSize:12,color:"#64748b",lineHeight:1.6}}>Officers marked ON will receive SMS + Voice when MPD is requested. They can reply <strong style={{color:"#f1f5f9"}}>DISREGARD</strong> to cancel.</div>
           {mpdOfficers.length===0&&(
             <div style={{textAlign:"center",padding:32,color:"#64748b",lineHeight:1.8}}>
               <div style={{fontSize:24,marginBottom:12}}>🚔</div>
@@ -2622,11 +2616,25 @@ Please respond immediately.
           }
           setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"security",label:`MPD Requested — ${loc}`,msg:smsMsg},...p]);
           setMpdSending(false);
-          setMpdLocation("");
-          setMpdSituation("");
-          setMpdRequestView(false);
-          alert(`✅ MPD alerted — ${phones.length} officer${phones.length!==1?"s":""} contacted via SMS + Voice`);
+          setMpdResult({notified: phones.length, officers: phones});
+          setMpdSending(false);
         }}>{mpdSending?"Sending...":"🚔 Send SMS + Voice to All Officers"}</button>
+        {mpdResult&&(
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+            <div style={{background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.4)",borderRadius:12,padding:"14px",fontSize:13,color:"#4ade80",fontWeight:700}}>
+              ✅ {mpdResult.notified||0} officer{(mpdResult.notified||0)!==1?"s":""} notified — awaiting ACK
+            </div>
+            <button style={{width:"100%",padding:"13px",borderRadius:12,border:"2px solid rgba(239,68,68,0.5)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
+              const reason=window.prompt("Reason for disregard (optional):")||"";
+              const r=await fetch("/.netlify/functions/disregard-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reason})});
+              const d=await r.json();
+              alert(`Disregard sent to ${d.notified||0} officer${(d.notified||0)!==1?"s":""}.`);
+              setMpdResult(null);setMpdLocation("");setMpdSituation("");setMpdRequestView(false);
+            }}>🚫 Disregard — Cancel MPD Request</button>
+            <button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>{setMpdRequestView(false);setMpdResult(null);}}>← Back to Home</button>
+          </div>
+        )}
+        {!mpdResult&&<button style={{padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={()=>setMpdRequestView(false)}>← Back</button>}
       </div>
     </div></div>
   );

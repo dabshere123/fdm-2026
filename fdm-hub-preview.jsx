@@ -2777,36 +2777,31 @@ Reply YES to acknowledge.`
   );
 
   if(view==="sendonboarding") return(
-    <div style={S.root}><Bg/><div style={S.panel}>
+    <div style={{...S.root,position:"relative"}}><Bg/><div style={{...S.panel,overflowY:"auto"}}>
       <div style={S.panelHd}>
         <BB onClick={()=>setView("home")}/>
-        <span style={S.panelTitle}>📱 Send Onboarding Text</span>
+        <span style={S.panelTitle}>{"📱 Send Onboarding Text"}</span>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>Select a staff member — phone auto-fills from Airtable.</div>
-        {obLoading&&<div style={{textAlign:"center",color:"#475569",padding:16}}>Loading staff list...</div>}
-        {!obLoading&&(
-          <div>
-            <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Select Staff Member *</div>
-            <select style={{width:"100%",padding:"12px 14px",background:"rgba(20,20,35,0.95)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none",appearance:"none"}}
-              value={obName}
-              onChange={e=>{
-                const sel=obStaffList.find(s=>s.name===e.target.value);
-                setObName(e.target.value);
-                if(sel){setObPhone(sel.phone||'');setObRole(sel.role||'');}
-              }}>
-              <option value="">— Select name —</option>
-              {obStaffList.map(s=>(
-                <option key={s.id} value={s.name}>{s.name} ({s.role})</option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>{"Send the worker app link and onboarding info to any staff member via SMS."}</div>
+
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Phone Number *</div>
-          <input type="tel" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Auto-fills from Airtable" value={obPhone} onChange={e=>setObPhone(e.target.value)}/>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{"Full Name *"}</div>
+          <input style={{width:"100%",padding:"13px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bryan Thornton" value={obName} onChange={e=>setObName(e.target.value)}/>
         </div>
-        <button style={{padding:"16px",borderRadius:12,border:"none",background:(!obName.trim()||!obPhone.trim())?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#10b981,#059669)",color:(!obName.trim()||!obPhone.trim())?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:(!obName.trim()||!obPhone.trim())?"not-allowed":"pointer",marginTop:4}}
+
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{"Role (optional)"}</div>
+          <input style={{width:"100%",padding:"13px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bar Manager, Stage Crew" value={obRole} onChange={e=>setObRole(e.target.value)}/>
+        </div>
+
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{"Phone Number *"}</div>
+          <input type="tel" style={{width:"100%",padding:"13px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="6085551234" value={obPhone} onChange={e=>setObPhone(e.target.value)}/>
+        </div>
+
+        <button
+          style={{padding:"16px",borderRadius:12,border:"none",background:(!obName.trim()||!obPhone.trim())?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#10b981,#059669)",color:(!obName.trim()||!obPhone.trim())?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:(!obName.trim()||!obPhone.trim())?"not-allowed":"pointer",marginTop:4}}
           disabled={!obName.trim()||!obPhone.trim()}
           onClick={async()=>{
             try{
@@ -2814,15 +2809,18 @@ Reply YES to acknowledge.`
               const data=await res.json();
               if(data.success){
                 alert("✅ Text sent to "+obName.trim()+"!");
-                setObName('');setObRole('');setObPhone('');
+                setObName("");setObRole("");setObPhone("");
               } else {
                 alert("Error: "+(data.error||JSON.stringify(data)));
               }
             }catch(err){alert("Failed: "+err.message);}
-          }}>Send Onboarding Text →</button>
+          }}>
+          {"Send Onboarding Text →"}
+        </button>
       </div>
     </div></div>
   );
+
 
   if(view==="chat") return(
     <HubChatInbox

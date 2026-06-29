@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
+<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026 Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
   useState,
   useEffect,
   useRef,
@@ -7838,9 +7838,15 @@ Reply YES to acknowledge.`
     }
   }, s.shiftStart, "–", s.shiftEnd)))))));
   if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
-    style: S.root
+    style: {
+      ...S.root,
+      position: "relative"
+    }
   }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
-    style: S.panel
+    style: {
+      ...S.panel,
+      overflowY: "auto"
+    }
   }, /*#__PURE__*/React.createElement("div", {
     style: S.panelHd
   }, /*#__PURE__*/React.createElement(BB, {
@@ -7860,52 +7866,58 @@ Reply YES to acknowledge.`
       color: "#94a3b8",
       lineHeight: 1.6
     }
-  }, "Select a staff member — phone auto-fills from Airtable."), obLoading && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      color: "#475569",
-      padding: 16
-    }
-  }, "Loading staff list..."), !obLoading && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "Send the worker app link and onboarding info to any staff member via SMS."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      fontWeight: 700,
+      fontWeight: 800,
       color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
       marginBottom: 6
     }
-  }, "Select Staff Member *"), /*#__PURE__*/React.createElement("select", {
+  }, "Full Name *"), /*#__PURE__*/React.createElement("input", {
     style: {
       width: "100%",
-      padding: "12px 14px",
-      background: "rgba(20,20,35,0.95)",
-      border: "1px solid rgba(255,255,255,0.15)",
+      padding: "13px 14px",
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
       borderRadius: 10,
       color: "#f1f5f9",
       fontSize: 16,
       fontFamily: "inherit",
-      outline: "none",
-      appearance: "none"
+      outline: "none"
     },
+    placeholder: "e.g. Bryan Thornton",
     value: obName,
-    onChange: e => {
-      const sel = obStaffList.find(s => s.name === e.target.value);
-      setObName(e.target.value);
-      if (sel) {
-        setObPhone(sel.phone || '');
-        setObRole(sel.role || '');
-      }
-    }
-  }, /*#__PURE__*/React.createElement("option", {
-    value: ""
-  }, "— Select name —"), obStaffList.map(s => /*#__PURE__*/React.createElement("option", {
-    key: s.id,
-    value: s.name
-  }, s.name, " (", s.role, ")")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    onChange: e => setObName(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      fontWeight: 700,
+      fontWeight: 800,
+      color: "#94a3b8",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 6
+    }
+  }, "Role (optional)"), /*#__PURE__*/React.createElement("input", {
+    style: {
+      width: "100%",
+      padding: "13px 14px",
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 10,
+      color: "#f1f5f9",
+      fontSize: 16,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    placeholder: "e.g. Bar Manager, Stage Crew",
+    value: obRole,
+    onChange: e => setObRole(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
       color: "#94a3b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
@@ -7915,7 +7927,7 @@ Reply YES to acknowledge.`
     type: "tel",
     style: {
       width: "100%",
-      padding: "12px 14px",
+      padding: "13px 14px",
       background: "rgba(255,255,255,0.06)",
       border: "1px solid rgba(255,255,255,0.12)",
       borderRadius: 10,
@@ -7924,7 +7936,7 @@ Reply YES to acknowledge.`
       fontFamily: "inherit",
       outline: "none"
     },
-    placeholder: "Auto-fills from Airtable",
+    placeholder: "6085551234",
     value: obPhone,
     onChange: e => setObPhone(e.target.value)
   })), /*#__PURE__*/React.createElement("button", {
@@ -7957,9 +7969,9 @@ Reply YES to acknowledge.`
         const data = await res.json();
         if (data.success) {
           alert("✅ Text sent to " + obName.trim() + "!");
-          setObName('');
-          setObRole('');
-          setObPhone('');
+          setObName("");
+          setObRole("");
+          setObPhone("");
         } else {
           alert("Error: " + (data.error || JSON.stringify(data)));
         }

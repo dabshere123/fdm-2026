@@ -2541,6 +2541,8 @@ function HubApp({
   const [obName, setObName] = useState('');
   const [obRole, setObRole] = useState('');
   const [obPhone, setObPhone] = useState('');
+  const [obStaffList, setObStaffList] = useState([]);
+  const [obLoading, setObLoading] = useState(false);
   const [mpdRequestView, setMpdRequestView] = useState(false);
   const [mpdOfficers, setMpdOfficers] = useState([]);
   const [mpdManageOpen, setMpdManageOpen] = useState(false);
@@ -7645,7 +7647,13 @@ Please respond immediately.
       color: "#94a3b8",
       lineHeight: 1.6
     }
-  }, "Enter staff member info and send them the onboarding text with the app link."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "Select a staff member — phone auto-fills from Airtable."), obLoading && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      color: "#475569",
+      padding: 16
+    }
+  }, "Loading staff list..."), !obLoading && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -7654,46 +7662,34 @@ Please respond immediately.
       letterSpacing: "0.06em",
       marginBottom: 6
     }
-  }, "Full Name *"), /*#__PURE__*/React.createElement("input", {
+  }, "Select Staff Member *"), /*#__PURE__*/React.createElement("select", {
     style: {
       width: "100%",
       padding: "12px 14px",
-      background: "rgba(255,255,255,0.06)",
-      border: "1px solid rgba(255,255,255,0.12)",
+      background: "rgba(20,20,35,0.95)",
+      border: "1px solid rgba(255,255,255,0.15)",
       borderRadius: 10,
       color: "#f1f5f9",
       fontSize: 16,
       fontFamily: "inherit",
-      outline: "none"
+      outline: "none",
+      appearance: "none"
     },
-    placeholder: "e.g. Bryan Thornton",
     value: obName,
-    onChange: e => setObName(e.target.value)
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: "#94a3b8",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em",
-      marginBottom: 6
+    onChange: e => {
+      const sel = obStaffList.find(s => s.name === e.target.value);
+      setObName(e.target.value);
+      if (sel) {
+        setObPhone(sel.phone || '');
+        setObRole(sel.role || '');
+      }
     }
-  }, "Role (optional)"), /*#__PURE__*/React.createElement("input", {
-    style: {
-      width: "100%",
-      padding: "12px 14px",
-      background: "rgba(255,255,255,0.06)",
-      border: "1px solid rgba(255,255,255,0.12)",
-      borderRadius: 10,
-      color: "#f1f5f9",
-      fontSize: 16,
-      fontFamily: "inherit",
-      outline: "none"
-    },
-    placeholder: "e.g. Bar Manager",
-    value: obRole,
-    onChange: e => setObRole(e.target.value)
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Select name —"), obStaffList.map(s => /*#__PURE__*/React.createElement("option", {
+    key: s.id,
+    value: s.name
+  }, s.name, " (", s.role, ")")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -7715,7 +7711,7 @@ Please respond immediately.
       fontFamily: "inherit",
       outline: "none"
     },
-    placeholder: "6085551234",
+    placeholder: "Auto-fills from Airtable",
     value: obPhone,
     onChange: e => setObPhone(e.target.value)
   })), /*#__PURE__*/React.createElement("button", {
@@ -7742,7 +7738,6 @@ Please respond immediately.
             name: obName.trim(),
             role: obRole.trim(),
             phone: obPhone.trim(),
-            saveToAirtable: true,
             holdTexts: false
           })
         });
@@ -11100,7 +11095,10 @@ Clear a path for emergency vehicles.`;
       cursor: "pointer",
       textAlign: "left"
     },
-    onClick: () => setView("sendonboarding")
+    onClick: () => {
+      setView("sendonboarding");
+      fetchObStaff();
+    }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 14

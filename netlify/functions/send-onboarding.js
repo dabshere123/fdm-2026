@@ -33,23 +33,30 @@ exports.handler = async (event) => {
     const smsConsent = body.smsConsent ?? body.fields?.SMSConsent ?? 'Yes';
 
     // Save to Airtable if saveToAirtable flag is set (called from hub form)
+    // Wrapped in try-catch so Airtable errors NEVER block the SMS send
     if (body.saveToAirtable && process.env.AIRTABLE_TOKEN) {
-      await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/Staff`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.AIRTABLE_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          fields: {
-            'Name1': name,
-            'Role': role || 'N/A',
-            'Phone': phone,
-            'Status': 'Approved',
-            'SMSConsent': 'Yes',
-          }
-        })
-      });
+      try {
+        const atRes = await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/Staff`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.AIRTABLE_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fields: {
+              'Name1': name,
+              'Role': role || 'N/A',
+              'Phone': phone,
+              'Status': 'Approved',
+              'SMSConsent': 'Yes',
+            }
+          })
+        });
+        const atData = await atRes.json();
+        console.log('Airtable save:', JSON.stringify(atData).slice(0, 200));
+      } catch(atErr) {
+        console.log('Airtable save failed (non-fatal):', atErr.message);
+      }
     }
 
     if (!name || !phone) {

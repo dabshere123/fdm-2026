@@ -286,9 +286,19 @@ function updateBtn(){
   const ready=staffName&&selectedRole&&anyDay;
   const btn=document.getElementById('confirm-btn');
   const wrap=document.getElementById('confirm-wrap');
+  const hint=document.getElementById('confirm-hint');
   wrap.style.display='block';
   btn.className='confirm-btn'+(ready?' ready':'');
   btn.disabled=!ready;
+  if(ready){
+    hint.textContent='';
+  } else {
+    const missing=[];
+    if(!staffName) missing.push('enter your name');
+    if(!selectedRole) missing.push('select a role');
+    if(!anyDay) missing.push('select at least one day');
+    hint.textContent='Still needed: '+missing.join(' · ');
+  }
 }
 
 // ── Submit

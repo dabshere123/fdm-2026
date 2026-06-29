@@ -2459,11 +2459,14 @@ Reply YES to acknowledge.`
             </div>
           ))}
           <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
-            <strong style={{color:"#93c5fd"}}>Airtable setup:</strong> Create a table called <strong style={{color:"#f1f5f9"}}>MPDOfficers</strong> with fields:<br/>
-            • Name (Single line text)<br/>
-            • Phone (Single line text)<br/>
-            • Badge (Single line text)<br/>
-            • MPDStatus (Single line text) — values: Online / Offline
+            <strong style={{color:"#93c5fd"}}>Airtable — MPDOfficers table fields:</strong><br/>
+            • Name, Phone, Badge, MPDStatus (Online/Offline), LastAck<br/><br/>
+            <strong style={{color:"#93c5fd"}}>Twilio webhook (set in Twilio console):</strong><br/>
+            • A Message Comes In → <span style={{color:"#f1f5f9",fontSize:10}}>https://fdm2026.netlify.app/.netlify/functions/sms-webhook</span><br/><br/>
+            <strong style={{color:"#4ade80"}}>Officer reply commands:</strong><br/>
+            • ACK — Acknowledge alert<br/>
+            • ETA [min] — e.g. "ETA 5"<br/>
+            • ON SCENE — Arrived on site
           </div>
         </div>
       </div>

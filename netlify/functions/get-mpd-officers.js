@@ -17,6 +17,7 @@ exports.handler = async (event) => {
       phone: r.fields.Phone || '',
       badge: r.fields.Badge || '',
       status: r.fields.MPDStatus || 'Offline',
+      lastAck: r.fields.LastAck || '',
     }));
     return { statusCode: 200, headers, body: JSON.stringify({ officers }) };
   } catch (e) {

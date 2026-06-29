@@ -452,22 +452,27 @@ Madison Fire/EMS INBOUND — McPike Park`;
           <div style={{fontSize:10,fontWeight:900,color:"#475569",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Safety</div>
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
 
-            <button style={{width:"100%",padding:"9px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});}}}>
+            <button style={{width:"100%",padding:"9px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});setPopup911Data({location:loc,problem:"Medical Emergency",by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"})});setShow911Popup(true);}}}>
               {nineOneOne.active?"🚨 911 ACTIVE":"🚨 911 Activation"}
+            </button>
+
+            {/* NEW CALL — same as admin hub */}
+            <button style={{width:"100%",padding:"11px",borderRadius:10,border:"2px solid rgba(147,51,234,0.6)",background:"linear-gradient(135deg,rgba(147,51,234,0.2),rgba(109,40,217,0.1))",color:"#d8b4fe",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>{setNewCallType("");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+              <span style={{fontSize:18}}>📋</span>
+              <div style={{textAlign:"left"}}>
+                <div>NEW CALL</div>
+                <div style={{fontSize:10,color:"#94a3b8",fontWeight:400,marginTop:1}}>Medical · Fire · Security</div>
+              </div>
+            </button>
+
+            {/* LOST CHILD */}
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:"2px solid #eab308",background:"linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8,position:"relative"}} onClick={()=>setLcView(true)}>
+              <span style={{fontSize:16}}>🧒</span>
+              REPORT LOST CHILD
+              {lostChildCalls.length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{lostChildCalls.length}</div>}
             </button>
           </div>
         </div>
-      </div>
-
-      {/* NEW CALL BUTTON */}
-      <div style={{padding:"6px 16px 4px"}}>
-        <button style={{width:"100%",padding:"16px",borderRadius:14,border:"2px solid rgba(147,51,234,0.7)",background:"linear-gradient(135deg,rgba(147,51,234,0.25),rgba(109,40,217,0.15))",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 0 16px rgba(147,51,234,0.2)"}} onClick={()=>{setNewCallType("medical");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
-          <span style={{fontSize:26}}>🏥</span>
-          <div style={{textAlign:"left"}}>
-            <div style={{fontSize:16,fontWeight:900,color:"#d8b4fe"}}>NEW MEDICAL CALL</div>
-            <div style={{fontSize:11,color:"#e2e8f0",marginTop:2}}>Submit call · alerts all units</div>
-          </div>
-        </button>
       </div>
 
       {/* WALK-IN PATIENT BUTTON — matches medical call button style */}

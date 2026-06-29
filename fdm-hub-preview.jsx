@@ -2501,10 +2501,8 @@ Reply YES to acknowledge.`
             • Name, Phone, Badge, MPDStatus (Online/Offline), LastAck<br/><br/>
             <strong style={{color:"#93c5fd"}}>Twilio webhook (set in Twilio console):</strong><br/>
             • A Message Comes In → <span style={{color:"#f1f5f9",fontSize:10}}>https://fdm2026.netlify.app/.netlify/functions/sms-webhook</span><br/><br/>
-            <strong style={{color:"#4ade80"}}>Officer reply commands:</strong><br/>
-            • ACK — Acknowledge alert<br/>
-            • ETA [min] — e.g. "ETA 5"<br/>
-            • ON SCENE — Arrived on site
+            <strong style={{color:"#4ade80"}}>Officer reply command:</strong><br/>
+            • ACK — Acknowledge receipt of alert
           </div>
         </div>
       </div>

@@ -1,17 +1,4 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
-<title>FDM 2026 Hub</title>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#0d0d0d"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-<style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style>
-</head><body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026 Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
 const {
   useState,
   useEffect,
@@ -2551,6 +2538,9 @@ function HubApp({
   });
   const [view, setView] = useState("home");
   const [holdTexts, setHoldTexts] = useState(false);
+  const [obName, setObName] = useState('');
+  const [obRole, setObRole] = useState('');
+  const [obPhone, setObPhone] = useState('');
   const [mpdRequestView, setMpdRequestView] = useState(false);
   const [mpdOfficers, setMpdOfficers] = useState([]);
   const [mpdManageOpen, setMpdManageOpen] = useState(false);
@@ -7655,7 +7645,7 @@ Please respond immediately.
       color: "#94a3b8",
       lineHeight: 1.6
     }
-  }, "Enter staff member info and send them the onboarding text with the RSVP link."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "Enter staff member info and send them the onboarding text with the app link."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -7664,8 +7654,7 @@ Please respond immediately.
       letterSpacing: "0.06em",
       marginBottom: 6
     }
-  }, "Full Name"), /*#__PURE__*/React.createElement("input", {
-    id: "ob-name",
+  }, "Full Name *"), /*#__PURE__*/React.createElement("input", {
     style: {
       width: "100%",
       padding: "12px 14px",
@@ -7677,7 +7666,9 @@ Please respond immediately.
       fontFamily: "inherit",
       outline: "none"
     },
-    placeholder: "e.g. Bryan Thornton"
+    placeholder: "e.g. Bryan Thornton",
+    value: obName,
+    onChange: e => setObName(e.target.value)
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
@@ -7688,7 +7679,6 @@ Please respond immediately.
       marginBottom: 6
     }
   }, "Role (optional)"), /*#__PURE__*/React.createElement("input", {
-    id: "ob-role",
     style: {
       width: "100%",
       padding: "12px 14px",
@@ -7700,7 +7690,9 @@ Please respond immediately.
       fontFamily: "inherit",
       outline: "none"
     },
-    placeholder: "e.g. Bar Manager"
+    placeholder: "e.g. Bar Manager",
+    value: obRole,
+    onChange: e => setObRole(e.target.value)
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
@@ -7710,8 +7702,7 @@ Please respond immediately.
       letterSpacing: "0.06em",
       marginBottom: 6
     }
-  }, "Phone Number"), /*#__PURE__*/React.createElement("input", {
-    id: "ob-phone",
+  }, "Phone Number *"), /*#__PURE__*/React.createElement("input", {
     type: "tel",
     style: {
       width: "100%",
@@ -7724,64 +7715,23 @@ Please respond immediately.
       fontFamily: "inherit",
       outline: "none"
     },
-    placeholder: "6085551234"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      background: holdTexts ? "rgba(245,158,11,0.08)" : "rgba(255,255,255,0.03)",
-      border: `1px solid ${holdTexts ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.08)"}`,
-      borderRadius: 10,
-      padding: "12px 14px"
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700,
-      color: holdTexts ? "#fcd34d" : "#64748b"
-    }
-  }, holdTexts ? "🔕 Texts On Hold" : "🔔 Texts Enabled"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#475569",
-      marginTop: 2
-    }
-  }, holdTexts ? "Records save to Airtable but no texts sent" : "Text fires immediately when you hit send")), /*#__PURE__*/React.createElement("button", {
-    style: {
-      padding: "8px 16px",
-      borderRadius: 8,
-      border: `1px solid ${holdTexts ? "rgba(245,158,11,0.5)" : "rgba(255,255,255,0.12)"}`,
-      background: holdTexts ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.06)",
-      color: holdTexts ? "#fcd34d" : "#94a3b8",
-      fontSize: 12,
-      fontWeight: 800,
-      cursor: "pointer"
-    },
-    onClick: () => setHoldTexts(p => !p)
-  }, holdTexts ? "Release" : "Hold")), /*#__PURE__*/React.createElement("button", {
+    placeholder: "6085551234",
+    value: obPhone,
+    onChange: e => setObPhone(e.target.value)
+  })), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "16px",
       borderRadius: 12,
       border: "none",
-      background: holdTexts ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#10b981,#059669)",
-      color: holdTexts ? "#64748b" : "#fff",
+      background: !obName.trim() || !obPhone.trim() ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#10b981,#059669)",
+      color: !obName.trim() || !obPhone.trim() ? "#64748b" : "#fff",
       fontSize: 16,
       fontWeight: 800,
-      cursor: "pointer",
+      cursor: !obName.trim() || !obPhone.trim() ? "not-allowed" : "pointer",
       marginTop: 4
     },
-    onClick: async e => {
-      const name = document.getElementById("ob-name").value.trim();
-      const role = document.getElementById("ob-role").value.trim();
-      const phone = document.getElementById("ob-phone").value.trim();
-      if (!name || !phone) {
-        alert("Name and phone are required");
-        return;
-      }
-      const btn = e.currentTarget;
-      btn.textContent = holdTexts ? "Saving..." : "Sending...";
-      btn.disabled = true;
+    disabled: !obName.trim() || !obPhone.trim(),
+    onClick: async () => {
       try {
         const res = await fetch("/.netlify/functions/send-onboarding", {
           method: "POST",
@@ -7789,34 +7739,25 @@ Please respond immediately.
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            name,
-            role,
-            phone,
+            name: obName.trim(),
+            role: obRole.trim(),
+            phone: obPhone.trim(),
             saveToAirtable: true,
-            holdTexts
+            holdTexts: false
           })
         });
         const data = await res.json();
         if (data.success) {
-          alert(holdTexts ? "✅ " + name + " saved to Airtable (text on hold)" : "✅ Text sent to " + name + "!");
-          document.getElementById("ob-name").value = "";
-          document.getElementById("ob-role").value = "";
-          document.getElementById("ob-phone").value = "";
-          setActivityLog(p => [{
-            id: Date.now(),
-            ts: tShort(),
-            date: now(),
-            type: "onboarding",
-            label: "Onboarding text sent to " + name
-          }, ...p]);
+          alert("✅ Text sent to " + obName.trim() + "!");
+          setObName('');
+          setObRole('');
+          setObPhone('');
         } else {
-          alert("Error: " + (data.error || "Unknown error"));
+          alert("Error: " + (data.error || JSON.stringify(data)));
         }
-      } catch (e) {
-        alert("Failed: " + e.message);
+      } catch (err) {
+        alert("Failed: " + err.message);
       }
-      btn.textContent = "Send Onboarding Text";
-      btn.disabled = false;
     }
   }, "Send Onboarding Text →")), show911Popup && popup911Data && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11584,5 +11525,4 @@ const S = {
     fontSize: 14
   }
 };
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));
-</script></body></html>
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>

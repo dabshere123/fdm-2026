@@ -848,6 +848,9 @@ function HubApp({onBack}){
   });
   const [view,setView]=useState("home");
   const [holdTexts,setHoldTexts]=useState(false);
+  const [obName,setObName]=useState('');
+  const [obRole,setObRole]=useState('');
+  const [obPhone,setObPhone]=useState('');
   const [mpdRequestView,setMpdRequestView]=useState(false);
   const [mpdOfficers,setMpdOfficers]=useState([]);
   const [mpdManageOpen,setMpdManageOpen]=useState(false);
@@ -2727,50 +2730,33 @@ Please respond immediately.
         <span style={S.panelTitle}>📱 Send Onboarding Text</span>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>Enter staff member info and send them the onboarding text with the RSVP link.</div>
+        <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>Enter staff member info and send them the onboarding text with the app link.</div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Full Name</div>
-          <input id="ob-name" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bryan Thornton"/>
+          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Full Name *</div>
+          <input style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bryan Thornton" value={obName} onChange={e=>setObName(e.target.value)}/>
         </div>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Role (optional)</div>
-          <input id="ob-role" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bar Manager"/>
+          <input style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="e.g. Bar Manager" value={obRole} onChange={e=>setObRole(e.target.value)}/>
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Phone Number</div>
-          <input id="ob-phone" type="tel" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="6085551234"/>
+          <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Phone Number *</div>
+          <input type="tel" style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="6085551234" value={obPhone} onChange={e=>setObPhone(e.target.value)}/>
         </div>
-        {/* Hold Texts toggle */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:holdTexts?"rgba(245,158,11,0.08)":"rgba(255,255,255,0.03)",border:`1px solid ${holdTexts?"rgba(245,158,11,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:10,padding:"12px 14px"}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:holdTexts?"#fcd34d":"#64748b"}}>{holdTexts?"🔕 Texts On Hold":"🔔 Texts Enabled"}</div>
-            <div style={{fontSize:11,color:"#475569",marginTop:2}}>{holdTexts?"Records save to Airtable but no texts sent":"Text fires immediately when you hit send"}</div>
-          </div>
-          <button style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${holdTexts?"rgba(245,158,11,0.5)":"rgba(255,255,255,0.12)"}`,background:holdTexts?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.06)",color:holdTexts?"#fcd34d":"#94a3b8",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>setHoldTexts(p=>!p)}>{holdTexts?"Release":"Hold"}</button>
-        </div>
-
-        <button style={{padding:"16px",borderRadius:12,border:"none",background:holdTexts?"rgba(255,255,255,0.08)":"linear-gradient(135deg,#10b981,#059669)",color:holdTexts?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:"pointer",marginTop:4}} onClick={async(e)=>{
-          const name=document.getElementById("ob-name").value.trim();
-          const role=document.getElementById("ob-role").value.trim();
-          const phone=document.getElementById("ob-phone").value.trim();
-          if(!name||!phone){alert("Name and phone are required");return;}
-          const btn=e.currentTarget;
-          btn.textContent=holdTexts?"Saving...":"Sending...";btn.disabled=true;
-          try{
-            const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,role,phone,saveToAirtable:true,holdTexts})});
-            const data=await res.json();
-            if(data.success){
-              alert(holdTexts?"✅ "+name+" saved to Airtable (text on hold)":"✅ Text sent to "+name+"!");
-              document.getElementById("ob-name").value="";
-              document.getElementById("ob-role").value="";
-              document.getElementById("ob-phone").value="";
-              setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"onboarding",label:"Onboarding text sent to "+name},...p]);
-            } else {
-              alert("Error: "+(data.error||"Unknown error"));
-            }
-          }catch(e){alert("Failed: "+e.message);}
-          btn.textContent="Send Onboarding Text";btn.disabled=false;
-        }}>Send Onboarding Text →</button>
+        <button style={{padding:"16px",borderRadius:12,border:"none",background:(!obName.trim()||!obPhone.trim())?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#10b981,#059669)",color:(!obName.trim()||!obPhone.trim())?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:(!obName.trim()||!obPhone.trim())?"not-allowed":"pointer",marginTop:4}}
+          disabled={!obName.trim()||!obPhone.trim()}
+          onClick={async()=>{
+            try{
+              const res=await fetch("/.netlify/functions/send-onboarding",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:obName.trim(),role:obRole.trim(),phone:obPhone.trim(),saveToAirtable:true,holdTexts:false})});
+              const data=await res.json();
+              if(data.success){
+                alert("✅ Text sent to "+obName.trim()+"!");
+                setObName('');setObRole('');setObPhone('');
+              } else {
+                alert("Error: "+(data.error||JSON.stringify(data)));
+              }
+            }catch(err){alert("Failed: "+err.message);}
+          }}>Send Onboarding Text →</button>
       </div>
 
       {/* 911 POPUP */}

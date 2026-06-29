@@ -2558,6 +2558,7 @@ function HubApp({
   const [mpdAddName, setMpdAddName] = useState('');
   const [mpdAddPhone, setMpdAddPhone] = useState('');
   const [mpdAddBadge, setMpdAddBadge] = useState('');
+  const [mpdAddSched, setMpdAddSched] = useState({});
   const [mpdAddSending, setMpdAddSending] = useState(false);
   const [mpdAddDone, setMpdAddDone] = useState('');
   const [mpdAddOpen, setMpdAddOpen] = useState(false);
@@ -6926,7 +6927,8 @@ Reply YES to acknowledge.`
           body: JSON.stringify({
             name: mpdAddName,
             phone: mpdAddPhone,
-            badge: mpdAddBadge
+            badge: mpdAddBadge,
+            ...mpdAddSched
           })
         });
         const d = await r.json();

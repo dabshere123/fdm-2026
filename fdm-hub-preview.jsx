@@ -855,6 +855,7 @@ function HubApp({onBack}){
   const [mpdAddName,setMpdAddName]=useState('');
   const [mpdAddPhone,setMpdAddPhone]=useState('');
   const [mpdAddBadge,setMpdAddBadge]=useState('');
+  const [mpdAddSched,setMpdAddSched]=useState({});
   const [mpdAddSending,setMpdAddSending]=useState(false);
   const [mpdAddDone,setMpdAddDone]=useState('');
   const [mpdAddOpen,setMpdAddOpen]=useState(false);
@@ -2508,7 +2509,7 @@ Reply YES to acknowledge.`
               onClick={async()=>{
                 setMpdAddSending(true);setMpdAddDone('');
                 try{
-                  const r=await fetch("/.netlify/functions/add-mpd-officer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:mpdAddName,phone:mpdAddPhone,badge:mpdAddBadge})});
+                  const r=await fetch("/.netlify/functions/add-mpd-officer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:mpdAddName,phone:mpdAddPhone,badge:mpdAddBadge,...mpdAddSched})});
                   const d=await r.json();
                   if(d.success){
                     setMpdAddDone(`✅ ${mpdAddName} added — confirmation text sent to ${mpdAddPhone}`);

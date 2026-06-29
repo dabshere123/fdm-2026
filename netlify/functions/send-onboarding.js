@@ -80,7 +80,7 @@ exports.handler = async (event) => {
     }
 
     const encodedName = encodeURIComponent(name.trim());
-    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fete de Marquette July 9-12 at McPike Park Madison.\n\nConfirm your role (10 sec):\nfdm2026.netlify.app/rsvp\n\nWorker app:\nfdm2026.netlify.app/field\n\nSee you at orientation!\n— Devin`;
+    const message = `FDM 2026 — Hi ${name.split(' ')[0]}! You are on the crew for Fete de Marquette July 9-12 at McPike Park Madison.\n\nWorker app:\nfdm2026.netlify.app/field\n\nStaff guide & demo:\nfdm2026.netlify.app/demo\n\nSee you at orientation!\n— Devin`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
 

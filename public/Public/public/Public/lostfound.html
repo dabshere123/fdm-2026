@@ -186,7 +186,11 @@
         allItems = d.items || [];
         // Debug: show count
         const dbg = document.getElementById('debugInfo');
-        if (dbg) dbg.textContent = allItems.length + ' items from Airtable | statuses: ' + [...new Set(allItems.map(i=>i.status||'(empty)'))].join(', ');
+        if (dbg) {
+          const statuses = [...new Set(allItems.map(i=>i.status||'(empty)'))].join(', ');
+          const sample = allItems.slice(0,2).map(i=>`${i.itemNumber||'?'}:${i.description||'empty'}:${i.status||'?'}`).join(' | ');
+          dbg.textContent = allItems.length + ' items | statuses: ' + statuses + ' | sample: ' + sample;
+        }
         filterItems();
       } catch (e) {
         document.getElementById('itemList').innerHTML =
@@ -203,7 +207,7 @@
 
     function filterItems() {
       const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-      let items = allItems.filter(i => i.status !== 'Claimed');
+      let items = allItems.filter(i => i.status !== 'Claimed' && i.status !== 'claimed');
       const claimed = allItems.filter(i => i.status === 'Claimed');
       if (currentDay) items = items.filter(i => (i.dayFound || '').toLowerCase().startsWith(currentDay.toLowerCase()));
       if (q) {

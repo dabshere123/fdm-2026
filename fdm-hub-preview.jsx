@@ -2430,7 +2430,7 @@ Reply YES to acknowledge.`
           ))}
         </>}
       </div>
-    </div></div></div>);
+    </div></div>);
   }
 
   // 911 VIEW

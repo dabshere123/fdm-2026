@@ -11261,9 +11261,9 @@ Clear a path for emergency vehicles.`;
       cursor: "pointer",
       textAlign: "left"
     },
-    onClick: async () => {
+    onClick: async e => {
       if (!window.confirm(`Send registration reminder to all staff who haven\'t submitted their RSVP yet?`)) return;
-      const btn = event.target.closest("button");
+      const btn = e.currentTarget;
       btn.style.opacity = "0.5";
       btn.disabled = true;
       try {

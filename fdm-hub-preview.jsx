@@ -3678,9 +3678,9 @@ Clear a path for emergency vehicles.`;sendGroupMe(msg,["admin","medical"]);setTi
               <span style={{fontSize:14}}>📱</span><div style={{fontSize:12,fontWeight:700,color:"#f1f5f9"}}>Send Onboarding Text</div>
             </button>
 
-            <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",cursor:"pointer",textAlign:"left"}} onClick={async()=>{
+            <button style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.06)",cursor:"pointer",textAlign:"left"}} onClick={async(e)=>{
               if(!window.confirm(`Send registration reminder to all staff who haven\'t submitted their RSVP yet?`)) return;
-              const btn=event.target.closest("button");
+              const btn=e.currentTarget;
               btn.style.opacity="0.5";
               btn.disabled=true;
               try{

@@ -153,7 +153,6 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
         <div class="scene-desc"><strong>Scenario:</strong> You smell smoke near the Lagniappe Bar back room.</div>
       </div>
       <div class="body">
-        <div class="result-alert" style="margin-bottom:8px;">⚠️ Always call 911 FIRST for actual fire or smoke — then submit in the app.</div>
         <button class="sim-btn sim-btn-fire" style="padding:18px;" onclick="showStep('fire','2')">🔥 Fire / Life Safety →</button>
       </div>
     </div>
@@ -371,11 +370,8 @@ Thank you, and enjoy the festival.</div>
         <div class="scene-desc">Admin sends a broadcast from the Hub. All staff see a banner on their home screen instantly.</div>
       </div>
       <div class="body">
-        <div class="step-hint">Tap to simulate receiving different types of broadcasts</div>
-        <button class="sim-btn sim-btn-911" style="padding:14px;margin-bottom:6px;" onclick="showStep('broadcast','emergency')">🚨 Emergency All-Call</button>
-        <button class="sim-btn sim-btn-lc" style="padding:14px;margin-bottom:6px;" onclick="showStep('broadcast','weather')">🌩️ Weather Alert</button>
-        <button class="sim-btn sim-btn-bc" style="padding:14px;margin-bottom:6px;" onclick="showStep('broadcast','stage')">🎺 Stage Change</button>
-        <button class="sim-btn sim-btn-info" style="padding:14px;background:rgba(59,130,246,0.1);border:2px solid rgba(59,130,246,0.3);color:#93c5fd;" onclick="showStep('broadcast','general')">📢 General Announcement</button>
+        <div class="step-hint">Tap to see a sample weather broadcast as staff would receive it</div>
+        <button class="sim-btn sim-btn-lc" style="padding:18px;" onclick="showStep('broadcast','weather')">🌩️ View Weather Alert →</button>
       </div>
     </div>
     <div id="broadcast-emergency" style="display:none;">
@@ -394,12 +390,13 @@ Thank you, and enjoy the festival.</div>
     <div id="broadcast-weather" style="display:none;">
       <div class="phone-hdr"><div class="phone-hdr-title">📱 Worker App</div></div>
       <div class="body">
-        <div class="broadcast-banner" style="background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.4);">
-          <div style="font-size:11px;font-weight:900;color:#fcd34d;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">🌩️ WEATHER ALERT</div>
-          <div style="font-size:14px;font-weight:700;color:#f1f5f9;">Lightning within 8 miles. Hold outdoor operations. Move guests under covered areas.</div>
-          <div style="font-size:11px;color:#64748b;margin-top:6px;">From: Devin (Admin) · 9:15 PM</div>
+        <div class="broadcast-banner" style="background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.5);">
+          <div style="font-size:11px;font-weight:900;color:#fcd34d;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">🌩️ WEATHER ALERT — FROM ADMIN</div>
+          <div style="font-size:13px;font-weight:700;color:#f1f5f9;line-height:1.7;">ATTENTION ALL STAFF AND VENDORS: There is dangerous weather (SEVERE THUNDERSTORM) approaching festival grounds. Expected arrival: 8:15 PM. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.</div>
+          <div style="margin-top:10px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;color:#fcd34d;">REPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.</div>
+          <div style="font-size:11px;color:#64748b;margin-top:6px;">From: Devin (Admin) · 8:00 PM</div>
         </div>
-        <div class="result-yellow">Stay at your station and guide guests toward covered areas. Wait for the all-clear from Admin.</div>
+        <div class="result-yellow">Secure your station immediately. Begin storm procedures. Reply YES to confirm you received this message.</div>
         <button class="btn-outline" onclick="showStep('broadcast','1')">← Back</button>
       </div>
     </div>

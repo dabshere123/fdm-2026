@@ -2,7 +2,7 @@ const {useState,useEffect,useRef,useCallback,useMemo}=React;
 
 
 
-const ALL_LOCS=["Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe","Sun Left","Sun Right","Cabaret","Financial 1","Greeter Head Ingersoll Left","Greeter Head Ingersoll Right","Greeter Head Few","Moon Stage Manager","Lagniappe Manager","Lafayette Manager","Sun Stage Manager","Cabaret Manager","Med 1","Med 2","Hospitality","First Aid","Merch Tent","Sun Stage Vendors","Moon Stage Vendors","Lafayette Vendors"];
+const ALL_LOCS=["Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe","Sun Left","Sun Right","Cabaret","Financial 1","Greeter Head Ingersoll Left","Greeter Head Ingersoll Right","Greeter Head Few","Moon Stage Manager","Lagniappe Manager","Lafayette Manager","Sun Stage Manager","Cabaret Manager","Med 1","Med 2","Hospitality","First Aid","Prize Wheel","Sun Stage Vendors","Moon Stage Vendors","Lafayette Vendors"];
 
 
 const ALERT_COLORS={
@@ -824,7 +824,7 @@ const HUB_ROLE_DISPLAY={
   sst:'Sun Stage Manager', cst:'Cabaret Stage Manager', ffs:'Family Fete Stage Manager',
   a1:'Admin', a2:'Admin', a3:'Admin Marketing',
   m1:'Med Unit 1', m2:'Med Unit 2',
-  hos:'Hospitality', mt:'Merch Tent', ovn:'Overnight Crew',
+  hos:'Hospitality', mt:'Prize Wheel', ovn:'Overnight Crew',
   misc:'Miscellaneous', gil:'Greeter — Ingersoll Left', gir:'Greeter — Ingersoll Right', gf:'Greeter — Few St',
   // old codes
   msb1:'Moon Bar Manager', msb2:'Moon Bar Manager',

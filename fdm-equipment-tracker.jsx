@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 // ── EQUIPMENT DATA ─────────────────────────────────────────────────────────────
 const LOCATIONS = [
   "Moon Stage 1","Moon Stage 2","Lafayette","Lagniappe","Sun Left",
-  "Sun Right","Cabaret","Kids/Family Fete","Merch Tent",
+  "Sun Right","Cabaret","Kids/Family Fete","Prize Wheel",
   "Cabaret Stage","Lafayette Stage","Lagniappe Stage","Moon Stage",
   "First Aid 1","First Aid 2","Medical Tent",
   "Devin","Marketing","MPD 1","MPD 2","MPD 3","MPD 4",
@@ -12,7 +12,7 @@ const LOCATIONS = [
 
 const READER_LOCATIONS = [
   "Sun Left","Sun Right","Cabaret","Lafayette","Lagniappe",
-  "Moon Stage 1","Moon Stage 2","Kids/Family Fete","Merch Tent"
+  "Moon Stage 1","Moon Stage 2","Kids/Family Fete","Prize Wheel"
 ];
 
 // 25 radios — serial numbers filled in by admin

@@ -59,7 +59,7 @@ const ROLE_CHANNEL={
   msm:'MoonST',ssm:'SunST',lafm:'LafST',lagm:'LagST',
   // Misc
   hos:'Hospitality',hosp:'Hospitality',hospitality:'Hospitality',
-  mt:'AllStaff',  // Merch Tent
+  mt:'AllStaff',  // Prize Wheel
   ovn:'AllStaff', // Overnight — handled separately by role name check
   misc:'AllStaff',
   gil:'AllStaff',gir:'AllStaff',gf:'AllStaff', // Greeters
@@ -76,7 +76,7 @@ const ROLE_DISPLAY={
   sst:'Sun Stage Manager', cst:'Cabaret Stage Manager', ffs:'Family Fete Stage Manager',
   a1:'Admin', a2:'Admin', a3:'Admin Marketing',
   m1:'Med Unit 1', m2:'Med Unit 2',
-  hos:'Hospitality', mt:'Merch Tent', ovn:'Overnight Crew',
+  hos:'Hospitality', mt:'Prize Wheel', ovn:'Overnight Crew',
   misc:'Miscellaneous', gil:'Greeter — Ingersoll Left', gir:'Greeter — Ingersoll Right', gf:'Greeter — Few St',
 };
 function displayRole(r){return ROLE_DISPLAY[(r||'').toLowerCase()]||r||'';}

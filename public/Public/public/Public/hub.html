@@ -1380,7 +1380,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       fontSize: 16
     }
-  }, "🧒"), "REPORT LOST CHILD", lostChildCalls.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "🧒"), "REPORT LOST CHILD", calls.filter(c => c.type === "lost_child").length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 4,
@@ -1392,7 +1392,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       borderRadius: 20,
       padding: "1px 6px"
     }
-  }, lostChildCalls.length))))), /*#__PURE__*/React.createElement("div", {
+  }, calls.filter(c => c.type === "lost_child").length))))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "4px 16px 4px"
     }

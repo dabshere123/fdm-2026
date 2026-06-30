@@ -469,7 +469,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:"2px solid #eab308",background:"linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8,position:"relative"}} onClick={()=>setLcView(true)}>
               <span style={{fontSize:16}}>🧒</span>
               REPORT LOST CHILD
-              {lostChildCalls.length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{lostChildCalls.length}</div>}
+              {calls.filter(c=>c.type==="lost_child").length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{calls.filter(c=>c.type==="lost_child").length}</div>}
             </button>
           </div>
         </div>
@@ -3646,7 +3646,7 @@ Reply YES to acknowledge.`
             <button style={{width:"100%",padding:"10px",borderRadius:10,border:"2px solid #eab308",background:"linear-gradient(135deg,rgba(202,138,4,0.25),rgba(161,98,7,0.15))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8,position:"relative"}} onClick={()=>setLcView(true)}>
               <span style={{fontSize:16}}>🧒</span>
               REPORT LOST CHILD
-              {lostChildCalls.length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{lostChildCalls.length}</div>}
+              {activeCalls.filter(c=>c.type==="lost_child").length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{activeCalls.filter(c=>c.type==="lost_child").length}</div>}
             </button>
           </div>
         </div>

@@ -2874,6 +2874,7 @@ function FoundLostChildView({
     if (!canSubmit) return;
     setSending(true);
     const desc = [childName ? `Child: ${childName}` : 'Unknown name', childAge ? `Age: ${childAge}` : '', childHair ? `Hair: ${childHair}` : '', `Clothing: ${childClothing}`, `Location: ${childLocation}`, guardianName ? `Guardian: ${guardianName}` : ''].filter(Boolean).join(' · ');
+    const alertMsg = "🧒✅ FOUND CHILD at " + (childLocation || "unknown location") + "\n" + (childName || "Unidentified child") + ", " + (childAge || "?") + ", " + (childHair || "") + (childClothing ? ", wearing " + childClothing : "") + (guardianName ? "\nGuardian: " + guardianName : "");
     try {
       await fetch(`${API}/submit-call`, {
         method: 'POST',
@@ -2895,7 +2896,7 @@ function FoundLostChildView({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          message: `🧒✅ FOUND CHILD at ${childLocation} — ${desc} — Reported by ${user.name}`,
+          message: alertMsg,
           type: 'found_child',
           sentBy: user.name
         })
@@ -3373,7 +3374,7 @@ function HomeView({
       fontWeight: 900,
       color: '#fcd34d'
     }
-  }, "LOST CHILD"), /*#__PURE__*/React.createElement("div", {
+  }, "MISSING CHILD"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#94a3b8',
@@ -3403,13 +3404,13 @@ function HomeView({
       fontWeight: 900,
       color: '#4ade80'
     }
-  }, "CHILD FOUND HERE"), /*#__PURE__*/React.createElement("div", {
+  }, "LOST CHILD"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#94a3b8',
       marginTop: 3
     }
-  }, "A lost child has been brought to our location")))));
+  }, "A lost child is here — generate PA announcement")))));
   if (foundChildView) return /*#__PURE__*/React.createElement(FoundLostChildView, {
     user: user,
     onBack: () => {
@@ -3708,7 +3709,7 @@ function HomeView({
       cursor: 'pointer',
       textAlign: 'left'
     },
-    onClick: () => goCall('lost_child')
+    onClick: () => setLostChildMenuOpen(true)
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,

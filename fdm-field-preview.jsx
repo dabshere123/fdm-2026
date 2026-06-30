@@ -1151,6 +1151,7 @@ function HomeView({user,onLogout}){
   const [quickReply,setQuickReply]=useState('');
   const [replySending,setReplySending]=useState(false);
   const seenIds=React.useRef(new Set());
+  const seenLcIds=React.useRef(new Set());
 
   // Blink lost child alert
   React.useEffect(()=>{
@@ -1165,10 +1166,23 @@ function HomeView({user,onLogout}){
     const poll=async()=>{
       try{
         const ch=roleChannel(user.role);
-        const res=await fetch(`${API}/get-messages?channel=${ch}&limit=5`);
+        const res=await fetch(`${API}/get-messages?channel=${ch}&limit=50`);
         const data=await res.json();
         const msgs=data.messages||[];
         if(msgs.length===0) return;
+        // LOST CHILD — scan for live alert broadcasts (AllStaff/IsAlert messages)
+        for(const m of msgs){
+          if(!m.id||seenLcIds.current.has(m.id)) continue;
+          seenLcIds.current.add(m.id);
+          if(!m.isAlert) continue;
+          try{
+            const parsed=JSON.parse(m.message);
+            const ageMs=m.sentAt?Date.now()-new Date(m.sentAt).getTime():Infinity;
+            if(parsed&&parsed._lostChild&&ageMs<30*60*1000){
+              setLostChildAlert(parsed);
+            }
+          }catch(e){}
+        }
         const latest=msgs[msgs.length-1];
         if(latest.id&&!seenIds.current.has(latest.id)&&latest.fromName!==user.name){
           if(seenIds.current.size>0){

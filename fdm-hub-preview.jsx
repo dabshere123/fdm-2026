@@ -941,6 +941,9 @@ function HubApp({onBack}){
       const staffVendors = safeList.filter(s=>(s.role||"").toLowerCase().includes("vendor")).map(s=>s.phone).filter(Boolean);
       return [...new Set([...staffVendors,...vendorPhonesList])];
     }
+    if(type==="walk_in"){
+      return [...new Set([ADMIN2_PHONE, ...byRole(["med unit 1","med 1","m1","med unit 2","med 2","m2"])])];
+    }
     if(type==="medical"||type==="fire"){
       return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2","med unit 1","med 1","m1","med unit 2","med 2","m2"])])];
     }
@@ -1431,7 +1434,7 @@ function HubApp({onBack}){
         ].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Med roster (async so UI doesn't freeze)
         setTimeout(()=>{
-          const medPhones=getNotifyList("medical");
+          const medPhones=getNotifyList(call.type==="walk_in"?"walk_in":"medical");
           const medPhonesFinal=[...new Set([ADMIN2_PHONE,...medPhones])];
           sendSMSList(medPhonesFinal,msg);
           sendVoice(medPhonesFinal,`Medical alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond immediately.`);

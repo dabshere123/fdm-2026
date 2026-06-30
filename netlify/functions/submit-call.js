@@ -68,21 +68,56 @@ exports.handler = async (event) => {
       const sms = `🚨 ${typeLabel} CALL — FDM 2026\n\nLocation: ${location}\nProblem: ${problem}${details ? '\nDetails: ' + details : ''}\nFrom: ${requestedBy}\n · Respond immediately`;
       const voice = `Urgent ${typeLabel.replace(/[🩺🔥🔒]/g, '').trim()} call at Fête de Marquette. Location: ${location}. ${problem}. Please respond immediately to McPike Park.`;
 
-      // SMS to Devin + Gary
-      for (const ph of ADMIN_PHONES) {
-        await sendSMS(ph, sms);
-      }
+      // WALK-IN PATIENT — Admin 2 (Devin) + Med 1 + Med 2 only
+      if (type.toLowerCase() === 'walk_in') {
+        let targetPhones = [ADMIN_PHONES[0]]; // Devin / Admin 2
+        try {
+          const staffRes = await fetch(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE}/Staff?filterByFormula={Status}="Approved"&maxRecords=200`,
+            { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+          );
+          const staffData = await staffRes.json();
+          const medRoles = ['med unit 1', 'med 1', 'm1', 'med unit 2', 'med 2', 'm2'];
+          const medPhones = (staffData.records || [])
+            .filter(r => medRoles.some(role => String(r.fields['Role'] || '').toLowerCase().includes(role)))
+            .map(r => {
+              const ph = String(r.fields['Phone'] || '').replace(/[^0-9]/g, '');
+              return ph.length === 10 ? `+1${ph}` : ph.length === 11 ? `+${ph}` : null;
+            }).filter(Boolean);
+          targetPhones = [...new Set([...targetPhones, ...medPhones])];
+        } catch (e) {
+          console.error('Walk-in Med roster lookup error:', e.message);
+        }
 
-      // Voice call to Devin + Gary for Medical and Fire
-      if (['medical', 'walk_in', 'fire'].includes(type.toLowerCase())) {
+        for (const ph of targetPhones) {
+          await sendSMS(ph, sms);
+        }
         const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
         const twiml = `<Response><Say voice="alice">${voice}</Say><Pause length="1"/><Say voice="alice">${voice}</Say></Response>`;
-        for (const ph of ADMIN_PHONES) {
+        for (const ph of targetPhones) {
           await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
             method: 'POST',
             headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
           }).catch(() => {});
+        }
+      } else {
+        // MEDICAL / FIRE / SECURITY — SMS to Devin + Gary
+        for (const ph of ADMIN_PHONES) {
+          await sendSMS(ph, sms);
+        }
+
+        // Voice call to Devin + Gary for Medical and Fire
+        if (['medical', 'fire'].includes(type.toLowerCase())) {
+          const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
+          const twiml = `<Response><Say voice="alice">${voice}</Say><Pause length="1"/><Say voice="alice">${voice}</Say></Response>`;
+          for (const ph of ADMIN_PHONES) {
+            await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
+              method: 'POST',
+              headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
+            }).catch(() => {});
+          }
         }
       }
     }

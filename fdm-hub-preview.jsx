@@ -2105,8 +2105,8 @@ DATE/TIME: ${now()}`;
             <button style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"10px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}} onClick={function(){setNewCallType("");}}>
               ← Change type
             </button>
-            <div style={{background:(newCallType==="medical"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"22",border:"2px solid "+(newCallType==="medical"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"88",borderRadius:10,padding:"12px 14px",fontSize:15,fontWeight:900,color:"#f1f5f9"}}>
-              {newCallType==="medical"?"🩺 Medical":newCallType==="fire"?"🔥 Fire / Life Safety":"🛡️ Security"}
+            <div style={{background:(newCallType==="medical"||newCallType==="walk_in"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"22",border:"2px solid "+(newCallType==="medical"||newCallType==="walk_in"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"88",borderRadius:10,padding:"12px 14px",fontSize:15,fontWeight:900,color:"#f1f5f9"}}>
+              {newCallType==="medical"?"🩺 Medical":newCallType==="walk_in"?"🚶 Walk-In Patient":newCallType==="fire"?"🔥 Fire / Life Safety":"🛡️ Security"}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Location *</div>

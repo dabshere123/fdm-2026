@@ -5244,15 +5244,15 @@ DATE/TIME: ${now()}`;
     }
   }, "← Change type"), /*#__PURE__*/React.createElement("div", {
     style: {
-      background: (newCallType === "medical" ? "#a855f7" : newCallType === "fire" ? "#ef4444" : "#3b82f6") + "22",
-      border: "2px solid " + (newCallType === "medical" ? "#a855f7" : newCallType === "fire" ? "#ef4444" : "#3b82f6") + "88",
+      background: (newCallType === "medical" || newCallType === "walk_in" ? "#a855f7" : newCallType === "fire" ? "#ef4444" : "#3b82f6") + "22",
+      border: "2px solid " + (newCallType === "medical" || newCallType === "walk_in" ? "#a855f7" : newCallType === "fire" ? "#ef4444" : "#3b82f6") + "88",
       borderRadius: 10,
       padding: "12px 14px",
       fontSize: 15,
       fontWeight: 900,
       color: "#f1f5f9"
     }
-  }, newCallType === "medical" ? "🩺 Medical" : newCallType === "fire" ? "🔥 Fire / Life Safety" : "🛡️ Security"), /*#__PURE__*/React.createElement("div", {
+  }, newCallType === "medical" ? "🩺 Medical" : newCallType === "walk_in" ? "🚶 Walk-In Patient" : newCallType === "fire" ? "🔥 Fire / Life Safety" : "🛡️ Security"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",

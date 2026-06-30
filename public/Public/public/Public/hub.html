@@ -6333,7 +6333,15 @@ DATE/TIME: ${now()}`;
             msg: `Security at ${c.location}`
           }, ...p]);
         }
-      }, "👮 Request MPD"), c.type !== "security" && /*#__PURE__*/React.createElement("button", {
+      }, "👮 Request MPD"), c.type === "lost_child" && isAdmin && /*#__PURE__*/React.createElement("button", {
+        style: {
+          ...S.actBtn,
+          background: "linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.6))",
+          border: "2px solid rgba(16,185,129,0.9)",
+          flex: 1
+        },
+        onClick: () => clearCall(c.id, "Admin")
+      }, "🧒 CHILD LOCATED — Close"), c.type !== "security" && c.type !== "lost_child" && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "rgba(100,100,100,0.4)",

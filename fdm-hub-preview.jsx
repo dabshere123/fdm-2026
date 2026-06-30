@@ -2404,8 +2404,10 @@ DATE/TIME: ${now()}`;
                     fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"security",officers:mpdOfficers,location:c.location,situation})}).catch(e=>console.log(e));
                     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"security",label:"MPD Dispatched",msg:`Security at ${c.location}`},...p]);
                   }}>👮 Request MPD</button>}
+                  {/* LOST CHILD — requires explicit Child Located confirmation, no quick clear */}
+                  {c.type==="lost_child"&&isAdmin&&<button style={{...S.actBtn,background:"linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.6))",border:"2px solid rgba(16,185,129,0.9)",flex:1}} onClick={()=>clearCall(c.id,"Admin")}>🧒 CHILD LOCATED — Close</button>}
                   {/* ALL OTHER TYPES — normal clear */}
-                  {c.type!=="security"&&<button style={{...S.actBtn,background:"rgba(100,100,100,0.4)",flex:1}} onClick={()=>clearCall(c.id,"Admin")}>✅ Clear</button>}
+                  {c.type!=="security"&&c.type!=="lost_child"&&<button style={{...S.actBtn,background:"rgba(100,100,100,0.4)",flex:1}} onClick={()=>clearCall(c.id,"Admin")}>✅ Clear</button>}
                 </div>
                 {/* OFFICER ASSIGNMENT PANEL */}
                 {c.type==="security"&&isAdmin&&assignPanel===c.id&&(()=>{

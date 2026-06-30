@@ -59,10 +59,11 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
 
 <div class="hdr">
   <div style="font-size:24px;">📋</div>
-  <div>
+  <div style="flex:1;">
     <div class="hdr" style="padding:0;border:none;font-size:17px;font-weight:900;color:#f1f5f9;">Lost &amp; Found</div>
     <div class="hdr-sub">Fête de Marquette 2026 · McPike Park</div>
   </div>
+  <div onclick="openClearAll()" style="font-size:10px;color:#334155;cursor:pointer;padding:6px;">Admin</div>
 </div>
 
 <div class="search-bar">
@@ -79,6 +80,19 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
 
 <div id="debugInfo" class="debug"></div>
 <div id="itemList" class="items-grid"><div class="loading">Loading items…</div></div>
+
+<!-- Clear All Modal -->
+<div id="clearAllModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h2>⚠️ Clear All Items</h2>
+    <p style="font-size:13px;color:#64748b;">This permanently deletes ALL Lost &amp; Found records (including demo/test items). This cannot be undone. Enter admin PIN to confirm.</p>
+    <input type="password" id="clearPinInput" placeholder="Admin PIN" inputmode="numeric" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeClearAll()">Cancel</button>
+      <button class="btn-confirm" style="background:linear-gradient(135deg,#dc2626,#991b1b);" onclick="confirmClearAll()">Delete All</button>
+    </div>
+  </div>
+</div>
 
 <!-- Claim Modal -->
 <div id="claimModal" class="modal-overlay" style="display:none;">
@@ -225,6 +239,37 @@ async function loadItems(){
     render();
   }catch(e){
     document.getElementById('itemList').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Could not load items: '+e.message+'<br/><br/><button onclick="loadItems()" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#94a3b8;cursor:pointer;font-family:inherit;">Retry</button></div>';
+  }
+}
+
+function openClearAll(){
+  document.getElementById('clearPinInput').value = '';
+  document.getElementById('clearAllModal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('clearPinInput').focus(),100);
+}
+
+function closeClearAll(){
+  document.getElementById('clearAllModal').style.display = 'none';
+}
+
+async function confirmClearAll(){
+  const pin = document.getElementById('clearPinInput').value.trim();
+  if(!pin){ alert('Please enter the admin PIN.'); return; }
+  try{
+    const r = await fetch('/.netlify/functions/clear-lost-found',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});
+    const d = await r.json();
+    if(!r.ok || d.error){
+      alert(d.error === 'Incorrect PIN' ? 'Incorrect PIN.' : 'Error: '+(d.error||'Unknown error'));
+      return;
+    }
+    closeClearAll();
+    allItems = [];
+    render();
+    const dbg = document.getElementById('debugInfo');
+    if(dbg) dbg.textContent = 'Cleared '+d.deleted+' items';
+    alert('✅ Cleared '+d.deleted+' items from Lost & Found.');
+  }catch(e){
+    alert('Error: '+e.message);
   }
 }
 

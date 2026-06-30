@@ -62,7 +62,8 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
 </div>
 
 <div class="scenario-tabs">
-  <div class="stab active" onclick="showScenario('login')">🔐 Login</div>
+  <div class="stab active" onclick="showScenario('install')">📲 Add to Phone</div>
+  <div class="stab" onclick="showScenario('login')">🔐 Login</div>
   <div class="stab" onclick="showScenario('medical')">🩺 Medical</div>
   <div class="stab" onclick="showScenario('fire')">🔥 Fire</div>
   <div class="stab" onclick="showScenario('security')">🛡 Security</div>
@@ -76,7 +77,37 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
 </div>
 
 <!-- LOGIN -->
-<div id="s-login" class="screen active">
+<div id="s-install" class="screen active">
+  <div class="phone">
+    <div class="scene-intro">
+      <div class="scene-title">📲 Add to Your Home Screen</div>
+      <div class="scene-desc">No app store download needed. Add it once and it opens like any other app — full screen, no browser bar.</div>
+    </div>
+    <div class="body">
+      <div style="background:rgba(99,102,241,0.08);border:2px solid rgba(99,102,241,0.3);border-radius:12px;padding:14px;">
+        <div style="font-size:13px;font-weight:900;color:#a5b4fc;margin-bottom:8px;">🤖 ANDROID (Chrome)</div>
+        <div style="font-size:13px;color:#cbd5e1;line-height:1.9;">
+          1. Open <strong style="color:#f1f5f9;">fdm2026.netlify.app/field</strong> in Chrome<br/>
+          2. Tap the <strong style="color:#f1f5f9;">⋮</strong> menu (top right)<br/>
+          3. Tap <strong style="color:#f1f5f9;">"Add to Home screen"</strong><br/>
+          4. Tap <strong style="color:#f1f5f9;">"Add"</strong> to confirm
+        </div>
+      </div>
+      <div style="background:rgba(99,102,241,0.08);border:2px solid rgba(99,102,241,0.3);border-radius:12px;padding:14px;margin-top:10px;">
+        <div style="font-size:13px;font-weight:900;color:#a5b4fc;margin-bottom:8px;">🍎 APPLE (Safari)</div>
+        <div style="font-size:13px;color:#cbd5e1;line-height:1.9;">
+          1. Open <strong style="color:#f1f5f9;">fdm2026.netlify.app/field</strong> in Safari<br/>
+          2. Tap the <strong style="color:#f1f5f9;">Share</strong> icon (square with arrow, bottom bar)<br/>
+          3. Scroll down and tap <strong style="color:#f1f5f9;">"Add to Home Screen"</strong><br/>
+          4. Tap <strong style="color:#f1f5f9;">"Add"</strong> (top right) to confirm
+        </div>
+      </div>
+      <div class="step-hint" style="margin-top:10px;">⚠️ Must use Safari on iPhone and Chrome on Android — other browsers won't show the "Add to Home Screen" option.</div>
+    </div>
+  </div>
+</div>
+
+<div id="s-login" class="screen">
   <div class="phone">
     <div id="login-step1">
       <div class="scene-intro">

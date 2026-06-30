@@ -2726,15 +2726,15 @@ Reply YES to acknowledge.`
           <button style={{width:"100%",padding:"20px 16px",borderRadius:14,border:"2px solid rgba(234,179,8,0.6)",background:"linear-gradient(135deg,rgba(202,138,4,0.2),rgba(161,98,7,0.1))",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}} onClick={()=>{setLcMode("missing");setLcFields({})}}>
             <span style={{fontSize:34}}>{"🚨"}</span>
             <div>
-              <div style={{fontSize:15,fontWeight:900,color:"#fcd34d"}}>{"MISSING CHILD"}</div>
-              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{"A child is missing — alert all staff immediately"}</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#fcd34d"}}>{"REPORTED MISSING"}</div>
+              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{"A parent or guardian has reported their child missing — alert all staff immediately"}</div>
             </div>
           </button>
           <button style={{width:"100%",padding:"20px 16px",borderRadius:14,border:"2px solid rgba(34,197,94,0.5)",background:"linear-gradient(135deg,rgba(22,163,74,0.15),rgba(16,185,129,0.08))",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}} onClick={()=>{setLcMode("found");setLcFields({})}}>
             <span style={{fontSize:34}}>{"🧒✅"}</span>
             <div>
-              <div style={{fontSize:15,fontWeight:900,color:"#4ade80"}}>{"LOST CHILD"}</div>
-              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{"A lost child is here — generate PA announcement"}</div>
+              <div style={{fontSize:15,fontWeight:900,color:"#4ade80"}}>{"LOST — NOT REPORTED"}</div>
+              <div style={{fontSize:12,color:"#94a3b8",marginTop:3}}>{"A child is with you, separated from their guardian, and hasn't been reported missing yet — generate a PA announcement"}</div>
             </div>
           </button>
         </div>

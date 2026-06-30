@@ -86,7 +86,7 @@ const ALERT_COLORS = {
     border: "rgba(234,179,8,0.6)",
     full: "rgba(202,138,4,0.90)",
     full2: "rgba(234,179,8,0.95)",
-    label: "LOST CHILD",
+    label: "REPORTED MISSING",
     icon: "🧒"
   }
 };
@@ -7571,13 +7571,13 @@ Reply YES to acknowledge.`
       fontWeight: 900,
       color: "#fcd34d"
     }
-  }, "MISSING CHILD"), /*#__PURE__*/React.createElement("div", {
+  }, "REPORTED MISSING"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#94a3b8",
       marginTop: 3
     }
-  }, "A child is missing — alert all staff immediately"))), /*#__PURE__*/React.createElement("button", {
+  }, "A parent or guardian has reported their child missing — alert all staff immediately"))), /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "20px 16px",
@@ -7604,13 +7604,13 @@ Reply YES to acknowledge.`
       fontWeight: 900,
       color: "#4ade80"
     }
-  }, "LOST CHILD"), /*#__PURE__*/React.createElement("div", {
+  }, "LOST — NOT REPORTED"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#94a3b8",
       marginTop: 3
     }
-  }, "A lost child is here — generate PA announcement")))) : lcMode === "missing" ? /*#__PURE__*/React.createElement("div", {
+  }, "A child is with you, separated from their guardian, and hasn't been reported missing yet — generate a PA announcement")))) : lcMode === "missing" ? /*#__PURE__*/React.createElement("div", {
     style: S.cWrap
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9391,7 +9391,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       walk_in: "WALK-IN PATIENT",
       maintenance: "MAINTENANCE",
       supplies: "SUPPLY REQUEST",
-      lost_child: "LOST CHILD"
+      lost_child: "REPORTED MISSING"
     };
     const bc = typeColors[ac.type] || "#1e40af";
     const bl = typeLabels[ac.type] || ac.type.toUpperCase();

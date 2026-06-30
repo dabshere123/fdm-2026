@@ -1926,6 +1926,16 @@ function OvernightView({
   const [tab, setTab] = useState('police');
   const [logs, setLogs] = useState([]);
   const [view, setView] = useState('home');
+  const [lostChildAlert, setLostChildAlert] = useState(null);
+  const [lcBlink, setLcBlink] = useState(false);
+  const [showStagePopup, setShowStagePopup] = useState(false);
+
+  // Blink lost child alert
+  React.useEffect(() => {
+    if (!lostChildAlert) return;
+    const iv = setInterval(() => setLcBlink(p => !p), 600);
+    return () => clearInterval(iv);
+  }, [lostChildAlert]);
 
   // Per-tab form state
   const [time, setTime] = useState('');

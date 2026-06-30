@@ -52,7 +52,7 @@ exports.handler = async (event) => {
     const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields })
+      body: JSON.stringify({ fields, typecast: true })
     });
     const data = await res.json();
     if (!res.ok) return { statusCode: 500, headers, body: JSON.stringify({ error: 'Airtable save failed' }) };

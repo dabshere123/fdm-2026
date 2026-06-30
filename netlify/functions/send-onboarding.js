@@ -1,6 +1,5 @@
 // send-onboarding.js
-// Called by Airtable Automation when a new Staff reconst firstName = name.trim().split(' ')[0];
-    const message = `FDM 2026 — Hi ${firstName}! You are on the crew for Fete de Marquette July 9-12 at McPike Park Madison.\n\nConfirm your role (10 sec):\nfdm2026.netlify.app/rsvp\n\nWorker app:\nfdm2026.netlify.app/field\n\nSee you at orientation!\n— Devin`;ord is created
+// Called manually from the Hub's "Send Onboarding Text" form, or by an Airtable Automation when a new Staff record is created
 // Sends the full onboarding SMS to the new staff member
 
 const TWILIO_SID    = process.env.TWILIO_ACCOUNT_SID;
@@ -82,7 +81,7 @@ exports.handler = async (event) => {
 
     const encodedName = encodeURIComponent(name.trim());
     const firstName = name.trim().split(' ')[0];
-    const message = `Hi ${firstName}! Welcome to the Fête de Marquette 2026 crew — we're so glad to have you with us.\n\nBefore the festival, please take care of these three things:\n\n✍️ RSVP (confirm your role & schedule):\nfdm2026.netlify.app/rsvp\n\n📱 Download the Worker App:\nfdm2026.netlify.app/field\n\n🎓 Staff Guide & Demo (read before your first shift!):\nfdm2026.netlify.app/demo\n\nSee you at Giant Jones on June 30th and at McPike Park July 9–13!\n\n— Devin & the FDM Team`;
+    const message = `Hi ${firstName}! Welcome to the Fête de Marquette 2026 crew — we're so glad to have you with us.\n\nBefore the festival, please take care of these:\n\n📱 Download the Worker App:\nfdm2026.netlify.app/field\n\n🎓 Staff Guide & Demo (read before your first shift!):\nfdm2026.netlify.app/demo\n\nSee you at Giant Jones on June 30th and at McPike Park July 9–13!\n\n— Devin & the FDM Team`;
 
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
 

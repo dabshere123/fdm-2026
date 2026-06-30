@@ -158,13 +158,18 @@ function NewCallView({user,callType,onBack}){
   const [sending,setSending]=useState(false);
   const [airtableErr,setAirtableErr]=useState('');
   const [sent,setSent]=useState(false);
-  // Lost child specific fields
-  const [lcName,setLcName]=useState('');
+  // Lost child specific fields — matches Admin Hub's Missing Child form exactly
+  const [lcChildName,setLcChildName]=useState('');
   const [lcAge,setLcAge]=useState('');
+  const [lcGender,setLcGender]=useState('');
   const [lcHair,setLcHair]=useState('');
-  const [lcClothing,setLcClothing]=useState('');
-  const [lcLastWith,setLcLastWith]=useState('');
-  const [lcGuardian,setLcGuardian]=useState('');
+  const [lcTop,setLcTop]=useState('');
+  const [lcBottom,setLcBottom]=useState('');
+  const [lcLastSeenTime,setLcLastSeenTime]=useState('');
+  const [lcAssembly,setLcAssembly]=useState('');
+  const [lcParentName,setLcParentName]=useState('');
+  const [lcParentPhone,setLcParentPhone]=useState('');
+  const [lcScript,setLcScript]=useState('');
 
   const TYPES=[
     {id:'medical',label:'Medical',color:'rgba(147,51,234,0.8)'},
@@ -176,29 +181,39 @@ function NewCallView({user,callType,onBack}){
   ];
 
   const isLostChild=type==='lost_child';
-  const lcLocation=location;
-  const lcReady=lcLocation&&(lcName||lcAge)&&lcClothing;
+  const lcReady=location&&lcAge&&lcAssembly;
+
+  function buildMissingScript(){
+    const age=lcAge?"approximately "+lcAge+" years old":"a child";
+    const hair=lcHair?", "+lcHair+" hair":"";
+    const clothing=(lcTop||lcBottom)?", wearing "+[lcTop,lcBottom].filter(Boolean).join(", "):"";
+    const lastSeen=location||"the festival grounds";
+    const timeStr=lcLastSeenTime?" at approximately "+lcLastSeenTime:"";
+    const assembly=lcAssembly||"the Medical Tent";
+    return "Attention Fête de Marquette guests.\n\nWe need your help locating a missing child.\n\nThe child is "+age+hair+clothing+".\n\nThis child was last seen at "+lastSeen+timeStr+".\n\nIf you have seen this child, please stay with them and immediately contact the nearest Medical staff or Admin. Do not leave the child.\n\nPlease go to "+assembly+" if you need assistance.\n\nThank you for your cooperation.";
+  }
+
+  function buildMissingAlert(){
+    const clothing=[lcTop,lcBottom].filter(Boolean).join(", ")||"";
+    return "🧒 MISSING CHILD 🧒\nLOCATION: "+(location||"Unknown")+"\nDESCRIPTION: "+(lcChildName?"Name: "+lcChildName+" - ":"")+"Age: "+(lcAge||"?")+", "+(lcGender||"Unknown gender")+(lcHair?", "+lcHair:"")+(clothing?", "+clothing:"")+"\nLAST SEEN: "+(location||"Unknown")+(lcLastSeenTime?" at "+lcLastSeenTime:"")+"\nASSEMBLY: "+(lcAssembly||"Medical Tent")+(lcParentName?"\nGUARDIAN: "+lcParentName+(lcParentPhone?" ("+lcParentPhone+")":""):"");
+  }
 
   async function submit(){
     if(isLostChild){
-      if(!lcLocation||(!lcName&&!lcAge)||!lcClothing) return;
-      const prob=[
-        lcName?`Child: ${lcName}`:'Unknown name',
-        lcAge?`Age: ${lcAge}`:'',
-        lcHair?`Hair: ${lcHair}`:'',
-        `Clothing: ${lcClothing}`,
-        lcLastWith?`Last seen with: ${lcLastWith}`:'',
-        lcGuardian?`Guardian: ${lcGuardian}`:'',
-      ].filter(Boolean).join(' · ');
+      if(!location||!lcAge||!lcAssembly) return;
+      const alertMsg=buildMissingAlert();
+      const script=buildMissingScript();
       setSending(true);
       try{
         await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-          type:'lost_child',location:lcLocation,problem:prob,
-          details:`Name: ${lcName||'Unknown'} | Age: ${lcAge||'?'} | Hair: ${lcHair||'?'} | Clothing: ${lcClothing} | Last with: ${lcLastWith||'?'} | Guardian: ${lcGuardian||'?'}`,
+          type:'lost_child',location,problem:alertMsg,
+          details:`Name: ${lcChildName||'Unknown'} | Age: ${lcAge} | Gender: ${lcGender||'?'} | Hair: ${lcHair||'?'} | Top: ${lcTop||'?'} | Bottom: ${lcBottom||'?'} | Last seen time: ${lcLastSeenTime||'?'} | Assembly: ${lcAssembly} | Guardian: ${lcParentName||'?'} | Guardian Phone: ${lcParentPhone||'?'}`,
           requestedBy:user.name,role:user.role
         })});
+        fetch(`${API}/request-mpd`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location,situation:alertMsg,requestedBy:user.name,callType:'lost_child'})}).catch(()=>{});
+        setLcScript(script);
         setSent(true);
-        setTimeout(onBack,2500);
+        setSending(false);
       }catch(e){setSending(false);}
       return;
     }
@@ -220,25 +235,7 @@ function NewCallView({user,callType,onBack}){
   );
 
   if(sent&&isLostChild){
-    const nameStr=lcName?lcName:'an unidentified child';
-    const ageStr=lcAge?`approximately ${lcAge} years old`:'';
-    const hairStr=lcHair?`, ${lcHair} hair`:'';
-    const clothStr=lcClothing?`, wearing ${lcClothing}`:'';
-    const lastStr=lcLastWith?`, last seen with ${lcLastWith}`:'';
-    const locStr=lcLocation||location||'the festival grounds';
-    const script=`Attention Fête de Marquette guests.
-
-We need your help locating a missing child.
-
-The child is ${ageStr}${hairStr}${clothStr}.
-
-This child was last seen at ${locStr}.
-
-If you have seen this child, please stay with them and immediately contact the nearest Medical staff or Admin. Do not leave the child.
-
-Please go to ${assembly} if you need assistance.
-
-Thank you for your cooperation.`;
+    const script=lcScript;
     return(
       <div style={{...S.root,background:'#1a0a00'}}>
         <div style={S.hdr}>
@@ -248,7 +245,7 @@ Thank you for your cooperation.`;
         <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:12}}>
           <div style={{background:'rgba(239,68,68,0.12)',border:'2px solid rgba(239,68,68,0.4)',borderRadius:12,padding:'14px'}}>
             <div style={{fontSize:11,fontWeight:900,color:'#fca5a5',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:4}}>🚨 Alert sent — All staff notified</div>
-            <div style={{fontSize:12,color:'#fecaca'}}>Hub · SMS · Broadcast all fired</div>
+            <div style={{fontSize:12,color:'#fecaca'}}>Hub · SMS · Voice · MPD all fired</div>
           </div>
           <div style={{background:'rgba(0,0,0,0.5)',border:'2px solid rgba(234,179,8,0.6)',borderRadius:12,padding:'16px'}}>
             <div style={{fontSize:11,fontWeight:900,color:'#fcd34d',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:10}}>📢 STAGE MANAGER — READ OVER PA NOW</div>
@@ -292,31 +289,47 @@ Thank you for your cooperation.`;
             <input style={S.inp} placeholder="e.g. Near Moon Stage, Main Gate..." value={location} onChange={e=>setLocation(e.target.value)}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Child's Name</div>
-            <input style={S.inp} placeholder="First name if known" value={lcName} onChange={e=>setLcName(e.target.value)}/>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Child Name (if known)</div>
+            <input style={S.inp} placeholder="e.g. Emma" value={lcChildName} onChange={e=>setLcChildName(e.target.value)}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Age / Estimated Age</div>
-            <input style={S.inp} placeholder="e.g. 6 years old, or looks about 8" value={lcAge} onChange={e=>setLcAge(e.target.value)}/>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Child Age <span style={{color:'#ef4444'}}>*</span></div>
+            <input style={S.inp} placeholder="e.g. 6" value={lcAge} onChange={e=>setLcAge(e.target.value)}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Hair Color / Description</div>
-            <input style={S.inp} placeholder="e.g. Short brown hair, pigtails..." value={lcHair} onChange={e=>setLcHair(e.target.value)}/>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Gender</div>
+            <input style={S.inp} placeholder="e.g. Girl, Boy" value={lcGender} onChange={e=>setLcGender(e.target.value)}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Clothing Description <span style={{color:'#ef4444'}}>*</span></div>
-            <input style={S.inp} placeholder="e.g. Red shirt, blue shorts, white shoes" value={lcClothing} onChange={e=>setLcClothing(e.target.value)}/>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Hair Color / Style</div>
+            <input style={S.inp} placeholder="e.g. Brown pigtails" value={lcHair} onChange={e=>setLcHair(e.target.value)}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Last Seen With</div>
-            <input style={S.inp} placeholder="e.g. Mom with brown hair, group of adults" value={lcLastWith} onChange={e=>setLcLastWith(e.target.value)}/>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Top / Shirt</div>
+            <input style={S.inp} placeholder="e.g. Red shirt" value={lcTop} onChange={e=>setLcTop(e.target.value)}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Parent / Guardian Name & Description</div>
-            <input style={S.inp} placeholder="e.g. Sarah, blonde, blue shirt" value={lcGuardian} onChange={e=>setLcGuardian(e.target.value)}/>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Bottom / Pants</div>
+            <input style={S.inp} placeholder="e.g. Blue shorts" value={lcBottom} onChange={e=>setLcBottom(e.target.value)}/>
           </div>
-          <button style={{padding:'18px',borderRadius:12,border:'2px solid rgba(234,179,8,0.6)',background:(!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending)?'rgba(255,255,255,0.04)':'linear-gradient(135deg,rgba(202,138,4,0.8),rgba(161,98,7,0.8))',color:(!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending)?'#475569':'#fff',fontSize:16,fontWeight:900,cursor:(!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending)?'not-allowed':'pointer'}} disabled={!lcLocation||(!lcName&&!lcAge)||!lcClothing||sending} onClick={submit}>
-            {sending?'Reporting...':'🚨 Report Lost Child — Alert All Staff'}
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Last Seen Time</div>
+            <input style={S.inp} placeholder="e.g. 5:30 PM" value={lcLastSeenTime} onChange={e=>setLcLastSeenTime(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Assembly / Meet Point <span style={{color:'#ef4444'}}>*</span></div>
+            <input style={S.inp} placeholder="e.g. First Aid Tent, north entrance" value={lcAssembly} onChange={e=>setLcAssembly(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Parent / Guardian Name</div>
+            <input style={S.inp} placeholder="e.g. Sarah Johnson" value={lcParentName} onChange={e=>setLcParentName(e.target.value)}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Parent / Guardian Phone</div>
+            <input style={S.inp} placeholder="(608) 555-1234" value={lcParentPhone} onChange={e=>setLcParentPhone(e.target.value)}/>
+          </div>
+          <button style={{padding:'18px',borderRadius:12,border:'2px solid rgba(234,179,8,0.6)',background:(!location||!lcAge||!lcAssembly||sending)?'rgba(255,255,255,0.04)':'linear-gradient(135deg,rgba(202,138,4,0.8),rgba(161,98,7,0.8))',color:(!location||!lcAge||!lcAssembly||sending)?'#475569':'#fff',fontSize:16,fontWeight:900,cursor:(!location||!lcAge||!lcAssembly||sending)?'not-allowed':'pointer'}} disabled={!location||!lcAge||!lcAssembly||sending} onClick={submit}>
+            {sending?'Reporting...':'🚨 ALERT ALL STAFF + MPD + Get PA Script'}
           </button>
         </>}
 

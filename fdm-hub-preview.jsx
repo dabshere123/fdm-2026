@@ -1059,6 +1059,36 @@ function HubApp({onBack}){
   const [lfDay,setLfDay]=useState("All");
   const [lfSearch,setLfSearch]=useState("");
   const [lfLoading,setLfLoading]=useState(false);
+
+  async function fetchLFItems(){
+    setLfLoading(true);
+    try{
+      const r=await fetch("/.netlify/functions/get-lost-found");
+      const d=await r.json();
+      setLfItems(d.items||[]);
+    }catch(e){console.log("L&F fetch error:",e);}
+    setLfLoading(false);
+  }
+
+  async function fetchMPD(){
+    try{
+      const r=await fetch("/.netlify/functions/get-mpd-officers");
+      const d=await r.json();
+      setMpdOfficers(d.officers||[]);
+    }catch(e){console.log("MPD fetch error:",e);}
+  }
+
+  async function fetchObStaff(){
+    if(obStaffList.length>0) return;
+    setObLoading(true);
+    try{
+      const r=await fetch("/.netlify/functions/get-staff-list");
+      const d=await r.json();
+      setObStaffList((d.staff||[]).sort((a,b)=>a.name.localeCompare(b.name)));
+    }catch(e){}
+    setObLoading(false);
+  }
+
   const [lfClaimView,setLfClaimView]=useState(null);
   const [lfNewItem,setLfNewItem]=useState(false);
   const [lfNewFields,setLfNewFields]=useState({});

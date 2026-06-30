@@ -3634,6 +3634,13 @@ Reply YES to acknowledge.`
                 <div style={{fontSize:10,color:"#94a3b8",fontWeight:400,marginTop:2}}>Medical · Fire · Security</div>
               </div>
             </button>
+
+            {/* LOST CHILD */}
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:"2px solid #eab308",background:"linear-gradient(135deg,rgba(202,138,4,0.25),rgba(161,98,7,0.15))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8,position:"relative"}} onClick={()=>setLcView(true)}>
+              <span style={{fontSize:16}}>🧒</span>
+              REPORT LOST CHILD
+              {activeCalls.filter(c=>c.type==="lost_child").length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{activeCalls.filter(c=>c.type==="lost_child").length}</div>}
+            </button>
           </div>
         </div>
 

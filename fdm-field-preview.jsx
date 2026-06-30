@@ -103,7 +103,8 @@ function LoginView({onLogin}){
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
   const [canInstall,setCanInstall]=useState(!!window.fdmDeferredInstallPrompt);
-  const [installed,setInstalled]=useState(false);
+  const [installed,setInstalled]=useState(!!window.fdmAlreadyInstalled);
+  const [installMsg,setInstallMsg]=useState('');
 
   useEffect(()=>{
     fetch(`${API}/get-staff-list`)
@@ -115,8 +116,13 @@ function LoginView({onLogin}){
 
   useEffect(()=>{
     const onAvail=()=>setCanInstall(true);
+    const onDone=()=>{setInstalled(true);setCanInstall(false);};
     window.addEventListener('fdm-install-available',onAvail);
-    return ()=>window.removeEventListener('fdm-install-available',onAvail);
+    window.addEventListener('fdm-install-done',onDone);
+    return ()=>{
+      window.removeEventListener('fdm-install-available',onAvail);
+      window.removeEventListener('fdm-install-done',onDone);
+    };
   },[]);
 
   const matches=query.length>=2?staff.filter(s=>(s.name||'').toLowerCase().includes(query.toLowerCase())):[];
@@ -126,10 +132,14 @@ function LoginView({onLogin}){
       <div style={{...S.hdr,justifyContent:'center'}}>
         <div style={{fontSize:18,fontWeight:900}}>🎶 Fête de Marquette 2026</div>
       </div>
-      {canInstall&&<button style={{margin:'10px 16px 0',padding:'12px 16px',borderRadius:12,border:'2px solid rgba(99,102,241,0.5)',background:'linear-gradient(135deg,rgba(99,102,241,0.18),rgba(99,102,241,0.06))',color:'#a5b4fc',fontSize:14,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}} onClick={async()=>{
-        const accepted=await window.fdmTriggerInstall();
-        if(accepted){setInstalled(true);setCanInstall(false);}
+      {canInstall&&!installed&&<button style={{margin:'10px 16px 0',padding:'12px 16px',borderRadius:12,border:'2px solid rgba(99,102,241,0.5)',background:'linear-gradient(135deg,rgba(99,102,241,0.18),rgba(99,102,241,0.06))',color:'#a5b4fc',fontSize:14,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}} onClick={async()=>{
+        const result=await window.fdmTriggerInstall();
+        if(result.ok){setInstalled(true);setCanInstall(false);}
+        else if(result.reason==='unavailable'){setInstallMsg('Install isn\'t available right now on this browser — try the Share/menu "Add to Home Screen" option instead, or reload the page and try again.');}
+        else if(result.reason==='dismissed'){setInstallMsg('No problem — tap the button again anytime to install.');}
+        else {setInstallMsg('Something went wrong installing. Try the Share/menu "Add to Home Screen" option instead.');}
       }}>📲 Add to Home Screen — one tap</button>}
+      {installMsg&&<div style={{margin:'10px 16px 0',padding:'10px 14px',borderRadius:10,background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',color:'#fbbf24',fontSize:12,fontWeight:600,textAlign:'center',lineHeight:1.5}}>{installMsg}</div>}
       {installed&&<div style={{margin:'10px 16px 0',padding:'10px 14px',borderRadius:10,background:'rgba(34,197,94,0.1)',border:'1px solid rgba(34,197,94,0.3)',color:'#4ade80',fontSize:13,fontWeight:700,textAlign:'center'}}>✅ Added! Find it on your home screen.</div>}
       <div style={S.body}>
         <div style={{textAlign:'center',padding:'20px 0 8px'}}>

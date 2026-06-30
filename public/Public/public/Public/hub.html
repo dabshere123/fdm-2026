@@ -1,16 +1,28 @@
 <!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026 Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link rel="manifest" href="/hub-manifest.json"/><link rel="apple-touch-icon" href="/icon-192.png"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script>
 window.fdmDeferredInstallPrompt = null;
+window.fdmAlreadyInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(e){ console.log('SW register failed:', e); });
+}
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   window.fdmDeferredInstallPrompt = e;
   window.dispatchEvent(new Event('fdm-install-available'));
 });
-window.fdmTriggerInstall = async function() {
-  if (!window.fdmDeferredInstallPrompt) return false;
-  window.fdmDeferredInstallPrompt.prompt();
-  const choice = await window.fdmDeferredInstallPrompt.userChoice;
+window.addEventListener('appinstalled', function() {
   window.fdmDeferredInstallPrompt = null;
-  return choice.outcome === 'accepted';
+  window.dispatchEvent(new Event('fdm-install-done'));
+});
+window.fdmTriggerInstall = async function() {
+  if (!window.fdmDeferredInstallPrompt) return { ok: false, reason: 'unavailable' };
+  try {
+    window.fdmDeferredInstallPrompt.prompt();
+    const choice = await window.fdmDeferredInstallPrompt.userChoice;
+    window.fdmDeferredInstallPrompt = null;
+    return { ok: choice.outcome === 'accepted', reason: choice.outcome };
+  } catch (e) {
+    return { ok: false, reason: 'error', error: e.message };
+  }
 };
 </script><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
   useState,
@@ -2583,7 +2595,8 @@ function HubApp({
   });
   const [view, setView] = useState("home");
   const [canInstall, setCanInstall] = useState(!!window.fdmDeferredInstallPrompt);
-  const [installed, setInstalled] = useState(false);
+  const [installed, setInstalled] = useState(!!window.fdmAlreadyInstalled);
+  const [installMsg, setInstallMsg] = useState('');
   const [holdTexts, setHoldTexts] = useState(false);
   const [obName, setObName] = useState('');
   const [obRole, setObRole] = useState('');
@@ -3021,8 +3034,13 @@ function HubApp({
 
   useEffect(() => {
     const onAvail = () => setCanInstall(true);
+    const onDone = () => { setInstalled(true); setCanInstall(false); };
     window.addEventListener('fdm-install-available', onAvail);
-    return () => window.removeEventListener('fdm-install-available', onAvail);
+    window.addEventListener('fdm-install-done', onDone);
+    return () => {
+      window.removeEventListener('fdm-install-available', onAvail);
+      window.removeEventListener('fdm-install-done', onDone);
+    };
   }, []);
 
   // Poll Airtable every 5 seconds in Live Mode
@@ -3959,7 +3977,7 @@ function HubApp({
       letterSpacing: "0.08em",
       marginTop: 2
     }
-  }, "Fête de Marquette 2026")), canInstall && /*#__PURE__*/React.createElement("button", {
+  }, "Fête de Marquette 2026")), canInstall && !installed && /*#__PURE__*/React.createElement("button", {
     style: {
       margin: "0 16px 12px",
       padding: "12px 16px",
@@ -3977,10 +3995,32 @@ function HubApp({
       gap: 8
     },
     onClick: async () => {
-      const accepted = await window.fdmTriggerInstall();
-      if (accepted) { setInstalled(true); setCanInstall(false); }
+      const result = await window.fdmTriggerInstall();
+      if (result.ok) {
+        setInstalled(true);
+        setCanInstall(false);
+      } else if (result.reason === "unavailable") {
+        setInstallMsg("Install isn't available right now on this browser — try the Share/menu \"Add to Home Screen\" option instead, or reload the page and try again.");
+      } else if (result.reason === "dismissed") {
+        setInstallMsg("No problem — tap the button again anytime to install.");
+      } else {
+        setInstallMsg("Something went wrong installing. Try the Share/menu \"Add to Home Screen\" option instead.");
+      }
     }
-  }, "📲 Add to Home Screen — one tap"), installed && /*#__PURE__*/React.createElement("div", {
+  }, "📲 Add to Home Screen — one tap"), installMsg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: "0 16px 12px",
+      padding: "10px 14px",
+      borderRadius: 10,
+      background: "rgba(245,158,11,0.1)",
+      border: "1px solid rgba(245,158,11,0.3)",
+      color: "#fbbf24",
+      fontSize: 12,
+      fontWeight: 600,
+      textAlign: "center",
+      lineHeight: 1.5
+    }
+  }, installMsg), installed && /*#__PURE__*/React.createElement("div", {
     style: {
       margin: "0 16px 12px",
       padding: "10px 14px",

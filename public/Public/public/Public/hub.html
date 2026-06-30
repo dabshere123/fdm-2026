@@ -2572,6 +2572,8 @@ function HubApp({
   const [obName, setObName] = useState('');
   const [obRole, setObRole] = useState('');
   const [obPhone, setObPhone] = useState('');
+  const [bulkObSending, setBulkObSending] = useState(false);
+  const [bulkObResult, setBulkObResult] = useState(null);
   const [obStaffList, setObStaffList] = useState([]);
   const [obLoading, setObLoading] = useState(false);
   const [mpdRequestView, setMpdRequestView] = useState(false);

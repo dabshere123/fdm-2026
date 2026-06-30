@@ -620,10 +620,146 @@ Thank you, and enjoy the festival.</div>
       </div>
       <div class="body">
         <div class="step-hint">Tap to simulate a Hub action</div>
+        <button class="sim-btn sim-btn-med" style="padding:14px;margin-bottom:6px;" onclick="showStep('hub','medcall')">🩺 Incoming Medical Call</button>
+        <button class="sim-btn sim-btn-fire" style="padding:14px;margin-bottom:6px;" onclick="showStep('hub','firecall')">🔥 Incoming Fire / Life Safety Call</button>
         <button class="sim-btn sim-btn-911" style="padding:14px;margin-bottom:6px;" onclick="showStep('hub','911')">🚨 911 Activation</button>
         <button class="sim-btn sim-btn-sec" style="padding:14px;margin-bottom:6px;" onclick="showStep('hub','mpd')">🚔 Request MPD Officer</button>
         <button class="sim-btn sim-btn-bc" style="padding:14px;margin-bottom:6px;" onclick="showStep('hub','onboarding')">📱 Send Onboarding Text</button>
         <button class="sim-btn sim-btn-lf" style="padding:14px;" onclick="showStep('hub','lf')">📋 Manage Lost &amp; Found</button>
+      </div>
+    </div>
+    <div id="hub-medcall" style="display:none;">
+      <div style="position:relative;min-height:520px;border-radius:18px;overflow:hidden;background:rgba(157,23,77,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 18px;text-align:center;">
+        <div style="font-size:60px;">🩺</div>
+        <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:0.06em;">MEDICAL ALERT</div>
+        <div style="font-size:18px;font-weight:900;color:#fff;">📍 Moon Stage — front of crowd</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.88);background:rgba(0,0,0,0.25);border-radius:10px;padding:12px 14px;width:100%;box-sizing:border-box;line-height:1.6;">Guest down, unresponsive. No visible injuries.</div>
+        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.8);">From: Sarah Johnson · 7:52 PM</div>
+        <div style="width:100%;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px;"><span>Auto-escalate in</span><span style="font-weight:700;">22s</span></div>
+          <div style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden;"><div style="height:100%;width:35%;background:#10b981;"></div></div>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0.06em;">Acknowledge</div>
+        <div style="display:flex;gap:6px;width:100%;">
+          <button style="flex:1;border:2px solid rgba(255,255,255,0.5);border-radius:10px;padding:12px 6px;color:#fff;font-size:13px;font-weight:800;background:rgba(190,24,93,0.5);" onclick="showStep('hub','medcall-acked')">🩺 Med 1</button>
+          <button style="flex:1;border:2px solid rgba(255,255,255,0.5);border-radius:10px;padding:12px 6px;color:#fff;font-size:13px;font-weight:800;background:rgba(190,24,93,0.5);" onclick="showStep('hub','medcall-acked')">🩺 Med 2</button>
+          <button style="flex:1;border:2px solid rgba(255,255,255,0.5);border-radius:10px;padding:12px 6px;color:#fff;font-size:13px;font-weight:800;background:rgba(245,158,11,0.4);" onclick="showStep('hub','medcall-acked')">✅ Both</button>
+        </div>
+      </div>
+      <div class="body" style="padding-top:10px;"><div class="step-hint">Tap any unit to acknowledge — assigns the call and dismisses the full-screen alert for everyone</div></div>
+    </div>
+    <div id="hub-medcall-acked" style="display:none;">
+      <div class="phone-hdr"><div class="phone-hdr-title">🩺 Med 1 — My Calls</div></div>
+      <div class="body">
+        <div style="border-radius:14px;border:2px solid rgba(147,51,234,0.5);background:rgba(147,51,234,0.15);padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:13px;font-weight:900;color:#d8b4fe;text-transform:uppercase;">🩺 MEDICAL</div>
+            <div style="font-size:11px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.12);border-radius:20px;padding:2px 8px;">Active</div>
+          </div>
+          <div style="font-size:17px;font-weight:900;color:#f1f5f9;">📍 Moon Stage — front of crowd</div>
+          <div style="font-size:13px;color:#e2e8f0;">Guest down, unresponsive. No visible injuries.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-green" style="flex:1;margin:0;padding:10px;font-size:12px;" onclick="showStep('hub','medcall-onscene')">✅ On Scene</button>
+            <button style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.08);color:#fca5a5;font-size:12px;font-weight:800;">🚨 911</button>
+          </div>
+        </div>
+        <div class="step-hint">Stay with the patient. Mark On Scene once you arrive.</div>
+      </div>
+    </div>
+    <div id="hub-medcall-onscene" style="display:none;">
+      <div class="phone-hdr"><div class="phone-hdr-title">🩺 Med 1 — On Scene</div></div>
+      <div class="body">
+        <div class="result-success">✅ On Scene — You are at the location</div>
+        <div style="border-radius:14px;border:2px solid rgba(147,51,234,0.5);background:rgba(147,51,234,0.15);padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:17px;font-weight:900;color:#f1f5f9;">📍 Moon Stage — front of crowd</div>
+          <div style="font-size:13px;color:#e2e8f0;">Guest down, unresponsive. No visible injuries.</div>
+        </div>
+        <button class="btn-green" onclick="showStep('hub','medcall-report')">📋 Clear Call → Complete Report</button>
+      </div>
+    </div>
+    <div id="hub-medcall-report" style="display:none;">
+      <div class="phone-hdr"><div class="phone-hdr-title">📋 Close Call — Incident Report</div></div>
+      <div class="body">
+        <div class="field-label">Responding Unit</div><div class="field" style="color:#f1f5f9;">Med 1</div>
+        <div class="field-label">Individual Description</div><div class="field" style="color:#f1f5f9;">Adult male, conscious now, ambulatory</div>
+        <div class="field-label">Disposition</div><div class="field" style="color:#f1f5f9;">Patient Released — No Transport</div>
+        <div class="field-label">Narrative</div><div class="field" style="color:#f1f5f9;height:50px;">Heat exhaustion. Cooled, hydrated, vitals stable. Released to friends, advised to rest.</div>
+        <button class="btn-green" onclick="showStep('hub','medcall-done')">📋 Submit Report &amp; Clear Call</button>
+      </div>
+    </div>
+    <div id="hub-medcall-done" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:400px;padding:24px;">
+        <div style="background:rgba(13,13,26,0.97);border:2px solid rgba(16,185,129,0.5);border-radius:20px;padding:28px 20px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;">
+          <div style="font-size:56px;">✅</div>
+          <div style="font-size:20px;font-weight:900;">Call Cleared</div>
+          <div style="font-size:13px;color:#94a3b8;line-height:1.6;">Incident report saved. Med 1 status returns to Available. Call moves to Completed in the Call Queue.</div>
+          <button class="btn-outline" onclick="showStep('hub','1')">← Back</button>
+        </div>
+      </div>
+    </div>
+    <div id="hub-firecall" style="display:none;">
+      <div style="position:relative;min-height:520px;border-radius:18px;overflow:hidden;background:rgba(153,27,27,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 18px;text-align:center;">
+        <div style="font-size:60px;">🔥</div>
+        <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:0.06em;">FIRE / LIFE SAFETY</div>
+        <div style="font-size:18px;font-weight:900;color:#fff;">📍 Lagniappe Bar — back room</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.88);background:rgba(0,0,0,0.25);border-radius:10px;padding:12px 14px;width:100%;box-sizing:border-box;line-height:1.6;">Strong smell of smoke, no visible flames. Possible electrical.</div>
+        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.8);">From: Bryan Thornton · 8:10 PM</div>
+        <div style="width:100%;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px;"><span>Auto-escalate in</span><span style="font-weight:700;">18s</span></div>
+          <div style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden;"><div style="height:100%;width:25%;background:#f97316;"></div></div>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0.06em;">Acknowledge</div>
+        <div style="display:flex;gap:6px;width:100%;">
+          <button style="flex:1;border:2px solid rgba(255,255,255,0.5);border-radius:10px;padding:12px 6px;color:#fff;font-size:13px;font-weight:800;background:rgba(185,28,28,0.5);" onclick="showStep('hub','firecall-acked')">🩺 Med 1</button>
+          <button style="flex:1;border:2px solid rgba(255,255,255,0.5);border-radius:10px;padding:12px 6px;color:#fff;font-size:13px;font-weight:800;background:rgba(185,28,28,0.5);" onclick="showStep('hub','firecall-acked')">🩺 Med 2</button>
+          <button style="flex:1;border:2px solid rgba(255,255,255,0.5);border-radius:10px;padding:12px 6px;color:#fff;font-size:13px;font-weight:800;background:rgba(99,102,241,0.4);" onclick="showStep('hub','firecall-acked')">⚡ Admin</button>
+        </div>
+      </div>
+      <div class="body" style="padding-top:10px;"><div class="step-hint">Fire/Life Safety can also be acknowledged by Admin, not just Med units</div></div>
+    </div>
+    <div id="hub-firecall-acked" style="display:none;">
+      <div class="phone-hdr"><div class="phone-hdr-title">🔥 Med 1 — My Calls</div></div>
+      <div class="body">
+        <div style="border-radius:14px;border:2px solid rgba(220,38,38,0.5);background:rgba(220,38,38,0.15);padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:13px;font-weight:900;color:#fca5a5;text-transform:uppercase;">🔥 FIRE/SAFETY</div>
+            <div style="font-size:11px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.12);border-radius:20px;padding:2px 8px;">Active</div>
+          </div>
+          <div style="font-size:17px;font-weight:900;color:#f1f5f9;">📍 Lagniappe Bar — back room</div>
+          <div style="font-size:13px;color:#e2e8f0;">Strong smell of smoke, no visible flames. Possible electrical.</div>
+          <button class="btn-green" style="margin:0;padding:10px;font-size:12px;" onclick="showStep('hub','firecall-onscene')">✅ On Scene</button>
+        </div>
+        <div class="step-hint">Begin calm crowd movement away from the area. Do not cause panic.</div>
+      </div>
+    </div>
+    <div id="hub-firecall-onscene" style="display:none;">
+      <div class="phone-hdr"><div class="phone-hdr-title">🔥 Med 1 — On Scene</div></div>
+      <div class="body">
+        <div class="result-success" style="background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.3);color:#fca5a5;">✅ On Scene — Investigating source</div>
+        <div style="border-radius:14px;border:2px solid rgba(220,38,38,0.5);background:rgba(220,38,38,0.15);padding:14px;">
+          <div style="font-size:17px;font-weight:900;color:#f1f5f9;">📍 Lagniappe Bar — back room</div>
+          <div style="font-size:13px;color:#e2e8f0;margin-top:4px;">No active fire found — burnt-out electrical outlet, now de-energized.</div>
+        </div>
+        <button class="btn-green" onclick="showStep('hub','firecall-report')">📋 Clear Call → Complete Report</button>
+      </div>
+    </div>
+    <div id="hub-firecall-report" style="display:none;">
+      <div class="phone-hdr"><div class="phone-hdr-title">📋 Close Call — Incident Report</div></div>
+      <div class="body">
+        <div class="field-label">Responding Unit</div><div class="field" style="color:#f1f5f9;">Med 1</div>
+        <div class="field-label">Disposition</div><div class="field" style="color:#f1f5f9;">No Patient Found / False Alarm</div>
+        <div class="field-label">Narrative</div><div class="field" style="color:#f1f5f9;height:50px;">Burnt-out electrical outlet behind bar. De-energized at breaker. No fire risk remaining. Maintenance notified for repair.</div>
+        <button class="btn-green" onclick="showStep('hub','firecall-done')">📋 Submit Report &amp; Clear Call</button>
+      </div>
+    </div>
+    <div id="hub-firecall-done" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:400px;padding:24px;">
+        <div style="background:rgba(13,13,26,0.97);border:2px solid rgba(16,185,129,0.5);border-radius:20px;padding:28px 20px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;">
+          <div style="font-size:56px;">✅</div>
+          <div style="font-size:20px;font-weight:900;">Call Cleared</div>
+          <div style="font-size:13px;color:#94a3b8;line-height:1.6;">Incident report saved and routed to Maintenance for follow-up. Call moves to Completed in the Call Queue.</div>
+          <button class="btn-outline" onclick="showStep('hub','1')">← Back</button>
+        </div>
       </div>
     </div>
     <div id="hub-911" style="display:none;">

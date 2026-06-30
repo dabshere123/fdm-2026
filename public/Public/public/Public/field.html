@@ -1,4 +1,18 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
+<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link rel="manifest" href="/field-manifest.json"/><link rel="apple-touch-icon" href="/icon-192.png"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script>
+window.fdmDeferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  window.fdmDeferredInstallPrompt = e;
+  window.dispatchEvent(new Event('fdm-install-available'));
+});
+window.fdmTriggerInstall = async function() {
+  if (!window.fdmDeferredInstallPrompt) return false;
+  window.fdmDeferredInstallPrompt.prompt();
+  const choice = await window.fdmDeferredInstallPrompt.userChoice;
+  window.fdmDeferredInstallPrompt = null;
+  return choice.outcome === 'accepted';
+};
+</script><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
   useState,
   useEffect,
   useRef
@@ -254,8 +268,15 @@ function LoginView({
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [canInstall, setCanInstall] = useState(!!window.fdmDeferredInstallPrompt);
+  const [installed, setInstalled] = useState(false);
   useEffect(() => {
     fetch(`${API}/get-staff-list`).then(r => r.json()).then(d => setStaff(d.staff || [])).catch(() => setError('Could not load staff list.')).finally(() => setLoading(false));
+  }, []);
+  useEffect(() => {
+    const onAvail = () => setCanInstall(true);
+    window.addEventListener('fdm-install-available', onAvail);
+    return () => window.removeEventListener('fdm-install-available', onAvail);
   }, []);
   const matches = query.length >= 2 ? staff.filter(s => (s.name || '').toLowerCase().includes(query.toLowerCase())) : [];
   return /*#__PURE__*/React.createElement("div", {
@@ -270,7 +291,39 @@ function LoginView({
       fontSize: 18,
       fontWeight: 900
     }
-  }, "🎶 Fête de Marquette 2026")), /*#__PURE__*/React.createElement("div", {
+  }, "🎶 Fête de Marquette 2026")), canInstall && /*#__PURE__*/React.createElement("button", {
+    style: {
+      margin: '10px 16px 0',
+      padding: '12px 16px',
+      borderRadius: 12,
+      border: '2px solid rgba(99,102,241,0.5)',
+      background: 'linear-gradient(135deg,rgba(99,102,241,0.18),rgba(99,102,241,0.06))',
+      color: '#a5b4fc',
+      fontSize: 14,
+      fontWeight: 800,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    },
+    onClick: async () => {
+      const accepted = await window.fdmTriggerInstall();
+      if (accepted) { setInstalled(true); setCanInstall(false); }
+    }
+  }, "📲 Add to Home Screen — one tap"), installed && /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: '10px 16px 0',
+      padding: '10px 14px',
+      borderRadius: 10,
+      background: 'rgba(34,197,94,0.1)',
+      border: '1px solid rgba(34,197,94,0.3)',
+      color: '#4ade80',
+      fontSize: 13,
+      fontWeight: 700,
+      textAlign: 'center'
+    }
+  }, "✅ Added! Find it on your home screen."), /*#__PURE__*/React.createElement("div", {
     style: S.body
   }, /*#__PURE__*/React.createElement("div", {
     style: {

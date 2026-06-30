@@ -102,6 +102,8 @@ function LoginView({onLogin}){
   const [staff,setStaff]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
+  const [canInstall,setCanInstall]=useState(!!window.fdmDeferredInstallPrompt);
+  const [installed,setInstalled]=useState(false);
 
   useEffect(()=>{
     fetch(`${API}/get-staff-list`)
@@ -111,6 +113,12 @@ function LoginView({onLogin}){
       .finally(()=>setLoading(false));
   },[]);
 
+  useEffect(()=>{
+    const onAvail=()=>setCanInstall(true);
+    window.addEventListener('fdm-install-available',onAvail);
+    return ()=>window.removeEventListener('fdm-install-available',onAvail);
+  },[]);
+
   const matches=query.length>=2?staff.filter(s=>(s.name||'').toLowerCase().includes(query.toLowerCase())):[];
 
   return(
@@ -118,6 +126,11 @@ function LoginView({onLogin}){
       <div style={{...S.hdr,justifyContent:'center'}}>
         <div style={{fontSize:18,fontWeight:900}}>🎶 Fête de Marquette 2026</div>
       </div>
+      {canInstall&&<button style={{margin:'10px 16px 0',padding:'12px 16px',borderRadius:12,border:'2px solid rgba(99,102,241,0.5)',background:'linear-gradient(135deg,rgba(99,102,241,0.18),rgba(99,102,241,0.06))',color:'#a5b4fc',fontSize:14,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}} onClick={async()=>{
+        const accepted=await window.fdmTriggerInstall();
+        if(accepted){setInstalled(true);setCanInstall(false);}
+      }}>📲 Add to Home Screen — one tap</button>}
+      {installed&&<div style={{margin:'10px 16px 0',padding:'10px 14px',borderRadius:10,background:'rgba(34,197,94,0.1)',border:'1px solid rgba(34,197,94,0.3)',color:'#4ade80',fontSize:13,fontWeight:700,textAlign:'center'}}>✅ Added! Find it on your home screen.</div>}
       <div style={S.body}>
         <div style={{textAlign:'center',padding:'20px 0 8px'}}>
           <div style={{fontSize:22,fontWeight:900,marginBottom:4}}>Staff Sign In</div>

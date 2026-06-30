@@ -875,6 +875,13 @@ function HubApp({onBack}){
     return null;
   });
   const [view,setView]=useState("home");
+  const [canInstall,setCanInstall]=useState(!!window.fdmDeferredInstallPrompt);
+  const [installed,setInstalled]=useState(false);
+  useEffect(()=>{
+    const onAvail=()=>setCanInstall(true);
+    window.addEventListener('fdm-install-available',onAvail);
+    return ()=>window.removeEventListener('fdm-install-available',onAvail);
+  },[]);
   const [holdTexts,setHoldTexts]=useState(false);
   const [obName,setObName]=useState('');
   const [obRole,setObRole]=useState('');
@@ -1679,6 +1686,11 @@ function HubApp({onBack}){
         <div style={{fontSize:18,fontWeight:900,color:"#fff",marginTop:4}}>Operations Hub</div>
         <div style={{fontSize:11,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>Fête de Marquette 2026</div>
       </div>
+      {canInstall&&<button style={{margin:"0 16px 12px",padding:"12px 16px",borderRadius:12,border:"2px solid rgba(99,102,241,0.5)",background:"linear-gradient(135deg,rgba(99,102,241,0.18),rgba(99,102,241,0.06))",color:"#a5b4fc",fontSize:14,fontWeight:800,cursor:"pointer",width:"calc(100% - 32px)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={async()=>{
+        const accepted=await window.fdmTriggerInstall();
+        if(accepted){setInstalled(true);setCanInstall(false);}
+      }}>📲 Add to Home Screen — one tap</button>}
+      {installed&&<div style={{margin:"0 16px 12px",padding:"10px 14px",borderRadius:10,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",color:"#4ade80",fontSize:13,fontWeight:700,textAlign:"center"}}>✅ Added! Find it on your home screen.</div>}
       <div style={{padding:"0 16px 6px",fontSize:12,color:"#94a3b8",fontWeight:600}}>Select your role:</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,padding:"0 16px 20px"}}>
         {[["ADMIN","⚡","Command / Admin · Full access","rgba(245,158,11,0.1)","#f59e0b"],["Med 1","🩺","Medical Unit 1","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"],["Med 2","🩺","Medical Unit 2","rgba(126,34,206,0.1)","rgba(147,51,234,0.5)"]].map(([r,em,tp,bg,bc])=>(

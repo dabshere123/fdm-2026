@@ -879,6 +879,8 @@ function HubApp({onBack}){
   const [obName,setObName]=useState('');
   const [obRole,setObRole]=useState('');
   const [obPhone,setObPhone]=useState('');
+  const [bulkObSending,setBulkObSending]=useState(false);
+  const [bulkObResult,setBulkObResult]=useState(null);
   const [obStaffList,setObStaffList]=useState([]);
   const [obLoading,setObLoading]=useState(false);
   const [mpdRequestView,setMpdRequestView]=useState(false);
@@ -2811,6 +2813,39 @@ Reply YES to acknowledge.`
         <span style={S.panelTitle}>{"📱 Send Onboarding Text"}</span>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:12}}>
+
+        {/* SEND TO ALL STAFF */}
+        <div style={{background:"rgba(16,185,129,0.08)",border:"2px solid rgba(16,185,129,0.35)",borderRadius:14,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{fontSize:13,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.06em"}}>{"📤 Send to All Staff"}</div>
+          <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{"Sends the pre-meeting app info text to everyone currently in your Staff list ("+staffList.length+" people)."}</div>
+          <div style={{background:"rgba(0,0,0,0.3)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#e2e8f0",lineHeight:1.7,whiteSpace:"pre-line",fontFamily:"monospace",maxHeight:220,overflowY:"auto"}}>
+            {"IMPORTANT FETE DE MARQUETTE FESTIVAL APP INFORMATION\n\nHey team! 🎺 Fête de Marquette 2026 is almost here — here's everything you need before our meeting.\n\nSTART HERE — see exactly how the app works, step by step:\nfdm2026.netlify.app/demo\n\nOnce you've checked it out:\n📱 Worker App: fdm2026.netlify.app/field\n\nThe demo also shows you how to add the Worker App to your phone's home screen — takes 10 seconds and means no digging for links on festival day.\n\nSee you soon!\n— Devin"}
+          </div>
+          {bulkObResult&&<div style={{fontSize:13,fontWeight:700,color:bulkObResult.failed>0?"#fbbf24":"#4ade80",background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px 12px"}}>
+            {"✅ Sent to "+bulkObResult.sent+" of "+bulkObResult.total+" staff"+(bulkObResult.failed>0?" · ⚠ "+bulkObResult.failed+" had no valid phone on file":"")}
+          </div>}
+          <button
+            style={{padding:"16px",borderRadius:12,border:"none",background:bulkObSending?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#10b981,#059669)",color:bulkObSending?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:bulkObSending?"not-allowed":"pointer"}}
+            disabled={bulkObSending||staffList.length===0}
+            onClick={()=>{
+              const message="IMPORTANT FETE DE MARQUETTE FESTIVAL APP INFORMATION\n\nHey team! 🎺 Fête de Marquette 2026 is almost here — here's everything you need before our meeting.\n\nSTART HERE — see exactly how the app works, step by step:\nfdm2026.netlify.app/demo\n\nOnce you've checked it out:\n📱 Worker App: fdm2026.netlify.app/field\n\nThe demo also shows you how to add the Worker App to your phone's home screen — takes 10 seconds and means no digging for links on festival day.\n\nSee you soon!\n— Devin";
+              const validPhones=staffList.map(s=>fmtPhone(s.phone)).filter(Boolean);
+              const failedCount=staffList.length-validPhones.length;
+              setBulkObSending(true);
+              setBulkObResult(null);
+              sendSMSList(validPhones,message);
+              setTimeout(()=>{
+                setBulkObSending(false);
+                setBulkObResult({sent:validPhones.length,total:staffList.length,failed:failedCount});
+              },1200);
+            }}>
+            {bulkObSending?"Sending...":"📤 Send to All Staff ("+staffList.length+")"}
+          </button>
+        </div>
+
+        <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",margin:"4px 0"}}/>
+
+        <div style={{fontSize:11,fontWeight:900,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Or Send to One Person"}</div>
         <div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>{"Send the worker app link and onboarding info to any staff member via SMS."}</div>
 
         <div>

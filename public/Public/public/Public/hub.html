@@ -409,29 +409,34 @@ const playAlert = type => {
   const fn = SOUNDS[type];
   if (fn) fn();
 };
-const GROUPME_CHANNELS = {
-  all_staff: "all_staff",
-  admin: "admin",
-  medical: "medical",
-  bar_stage: "bar_stage",
-  financial: "financial",
-  restock: "restock",
-  maintenance: "maintenance"
+const FESTIVAL_CHAT_CHANNEL_MAP = {
+  all_staff: "AllStaff",
+  admin: "Admin",
+  medical: "AdminMed",
+  bar_stage: "Bars",
+  financial: "Admin",
+  restock: "Admin",
+  maintenance: "Admin",
+  AllStaff: "AllStaff"
 };
 const sendGroupMe = async (message, channels) => {
   try {
-    await fetch('/.netlify/functions/send-groupme', {
+    const mapped = [...new Set((channels || []).map(c => FESTIVAL_CHAT_CHANNEL_MAP[c] || c))];
+    await fetch('/.netlify/functions/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        fromName: "Admin",
+        fromRole: "Admin",
         message,
-        channels
+        channels: mapped,
+        isAlert: true
       })
     });
   } catch (e) {
-    console.log('GroupMe error:', e.message);
+    console.log('Festival Chat post error:', e.message);
   }
 };
 
@@ -1717,7 +1722,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       color: "#94a3b8",
       marginTop: 2
     }
-  }, "GroupMe + SMS to Admin · Medical channel"))), /*#__PURE__*/React.createElement("button", {
+  }, "Festival Chat + SMS to Admin · Medical channel"))), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "18px 16px",
       borderRadius: 14,
@@ -1746,7 +1751,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       color: "#94a3b8",
       marginTop: 2
     }
-  }, "GroupMe + SMS to Admin")))), tab === "lf" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("a", {
+  }, "Festival Chat + SMS to Admin")))), tab === "lf" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("a", {
     href: "https://fdm2026.netlify.app/lostfound?from=hub",
     target: "_blank",
     style: {
@@ -4611,7 +4616,7 @@ DATE/TIME: ${now()}`;
         textTransform: "uppercase",
         letterSpacing: "0.06em"
       }
-    }, "Send to GroupMe Channels"), /*#__PURE__*/React.createElement("div", {
+    }, "Send to Festival Chat Channels"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexWrap: "wrap",
@@ -5110,7 +5115,7 @@ DATE/TIME: ${now()}`;
         color: "#6ee7b7",
         marginBottom: 4
       }
-    }, "✓ GroupMe — ", broadcastSuccess.channels.length, " channels"), /*#__PURE__*/React.createElement("div", {
+    }, "✓ Festival Chat — ", broadcastSuccess.channels.length, " channels"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "#6ee7b7",
@@ -7372,7 +7377,7 @@ Reply YES to acknowledge.`
       fontSize: 12,
       color: "#94a3b8"
     }
-  }, "Hub · SMS · GroupMe all fired")), /*#__PURE__*/React.createElement("div", {
+  }, "Hub · SMS · Festival Chat all fired")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(0,0,0,0.5)",
       border: "2px solid rgba(234,179,8,0.6)",

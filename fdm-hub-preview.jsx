@@ -145,19 +145,21 @@ const SOUNDS = {
 const playAlert = (type) => { const fn = SOUNDS[type]; if(fn) fn(); };
 
 
-const GROUPME_CHANNELS = {
-  all_staff:"all_staff", admin:"admin", medical:"medical",
-  bar_stage:"bar_stage", financial:"financial", restock:"restock", maintenance:"maintenance"
+// FESTIVAL_CHAT_CHANNEL_MAP — maps internal alert categories to real Festival Chat channels
+const FESTIVAL_CHAT_CHANNEL_MAP = {
+  all_staff:"AllStaff", admin:"Admin", medical:"AdminMed",
+  bar_stage:"Bars", financial:"Admin", restock:"Admin", maintenance:"Admin", AllStaff:"AllStaff"
 };
 
 const sendGroupMe = async (message, channels) => {
   try {
-    await fetch('/.netlify/functions/send-groupme', {
+    const mapped=[...new Set((channels||[]).map(c=>FESTIVAL_CHAT_CHANNEL_MAP[c]||c))];
+    await fetch('/.netlify/functions/send-message', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ message, channels })
+      body: JSON.stringify({ fromName:"Admin", fromRole:"Admin", message, channels:mapped, isAlert:true })
     });
-  } catch(e) { console.log('GroupMe error:', e.message); }
+  } catch(e) { console.log('Festival Chat post error:', e.message); }
 };
 
 
@@ -559,14 +561,14 @@ Madison Fire/EMS INBOUND — McPike Park`;
               <span style={{fontSize:24}}>🩺</span>
               <div>
                 <div style={{fontSize:14,fontWeight:900,color:"#d8b4fe"}}>Request {otherRole}</div>
-                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>GroupMe + SMS to Admin · Medical channel</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Festival Chat + SMS to Admin · Medical channel</div>
               </div>
             </button>
             <button style={{padding:"18px 16px",borderRadius:14,border:"2px solid rgba(245,158,11,0.5)",background:"rgba(245,158,11,0.08)",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}} onClick={()=>requestResource("admin")}>
               <span style={{fontSize:24}}>📢</span>
               <div>
                 <div style={{fontSize:14,fontWeight:900,color:"#fcd34d"}}>Request Admin</div>
-                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>GroupMe + SMS to Admin</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Festival Chat + SMS to Admin</div>
               </div>
             </button>
             
@@ -1846,7 +1848,7 @@ DATE/TIME: ${now()}`;
 
           {/* GROUPME CHANNEL SELECTOR */}
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Send to GroupMe Channels</label>
+            <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Send to Festival Chat Channels</label>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {[
                 {id:"all_staff",label:"All Staff"},
@@ -2060,7 +2062,7 @@ DATE/TIME: ${now()}`;
           <div style={{fontSize:24,fontWeight:900,color:"#10b981",textAlign:"center"}}>Broadcast Sent!</div>
           <div style={{background:"rgba(16,185,129,0.12)",border:"2px solid rgba(16,185,129,0.4)",borderRadius:14,padding:"20px 24px",textAlign:"center",maxWidth:340,width:"100%"}}>
             <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",marginBottom:8}}>{broadcastSuccess.label}</div>
-            <div style={{fontSize:13,color:"#6ee7b7",marginBottom:4}}>✓ GroupMe — {broadcastSuccess.channels.length} channels</div>
+            <div style={{fontSize:13,color:"#6ee7b7",marginBottom:4}}>✓ Festival Chat — {broadcastSuccess.channels.length} channels</div>
             <div style={{fontSize:13,color:"#6ee7b7",marginBottom:4}}>✓ SMS — {broadcastSuccess.count} recipients</div>
             <div style={{fontSize:13,color:"#6ee7b7"}}>✓ Voice calls firing</div>
           </div>
@@ -2685,7 +2687,7 @@ Reply YES to acknowledge.`
             <div style={{fontSize:11,fontWeight:900,color:lcMode==="missing"?"#fca5a5":"#4ade80",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>
               {lcMode==="missing" ? "🚨 All staff alerted — MPD notified" : "🧒✅ All staff alerted — Broadcast sent"}
             </div>
-            <div style={{fontSize:12,color:"#94a3b8"}}>{"Hub · SMS · GroupMe all fired"}</div>
+            <div style={{fontSize:12,color:"#94a3b8"}}>{"Hub · SMS · Festival Chat all fired"}</div>
           </div>
           <div style={{background:"rgba(0,0,0,0.5)",border:"2px solid rgba(234,179,8,0.6)",borderRadius:12,padding:"16px"}}>
             <div style={{fontSize:11,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{"📢 STAGE MANAGER — READ OVER PA NOW"}</div>

@@ -205,7 +205,7 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
     <div class="icon">🎶</div>
     <div class="msg" id="success-name"></div>
     <div id="success-tags"></div>
-    <div style="font-size:14px;color:#64748b;margin:12px 0 0;">Confirmed! Devin has been notified.</div>
+    <div style="font-size:14px;color:#64748b;margin:12px 0 0;">Confirmed! Devin has been notified, and a text with these links is on its way to your phone.</div>
     <div class="links">
       <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;">Before Tuesday's meeting</div>
       <div class="link-row"><div class="link-icon">📱</div><div><a class="link-text" href="https://fdm2026.netlify.app/field">Open the Worker App</a><div class="link-sub">Sign in with your last name</div></div></div>
@@ -320,7 +320,7 @@ async function submitForm(){
   try{
     await fetch('/.netlify/functions/send-rsvp',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:staffName,role:selectedRole,schedule:schedule.join(' | ')})
+      body:JSON.stringify({name:staffName,role:selectedRole,schedule:schedule.join(' | '),phone:document.getElementById('phone-input').value})
     });
     document.getElementById('form-view').style.display='none';
     document.getElementById('confirm-wrap').style.display='none';

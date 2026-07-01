@@ -1430,6 +1430,7 @@ function HubApp({onBack}){
   const [alertView,setAlertView]=useState(null);
   const [alertFields,setAlertFields]=useState({});
   const [editedMsg,setEditedMsg]=useState("");
+  const [editedMsgTouched,setEditedMsgTouched]=useState(false);
   const [callFilter,setCallFilter]=useState(null);
   const [callFilterTitle,setCallFilterTitle]=useState("");
   const [callTab,setCallTab]=useState("active");
@@ -1906,7 +1907,7 @@ DATE/TIME: ${now()}`;
   // BROADCAST VIEW
   if(view==="alert") return(
     <div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><span style={S.panelTitle}>Broadcast Alert</span><BB onClick={()=>{setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");}}/></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>Broadcast Alert</span><BB onClick={()=>{setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");setEditedMsgTouched(false);}}/></div>
       {!alertView?(
         <div style={S.cWrap}>
           {BROADCAST_ALERTS.map(t=>(
@@ -1920,7 +1921,7 @@ DATE/TIME: ${now()}`;
         const t=BROADCAST_ALERTS.find(x=>x.id===alertView);
         const selectedReason=alertFields._reason||"";
         const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom"?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD");
-        const preview=editedMsg||msgBase;
+        const preview=editedMsgTouched?editedMsg:msgBase;
         return(<><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 8px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.95)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
             <div style={{display:"inline-flex",padding:"4px 12px",borderRadius:20,fontSize:13,fontWeight:600,color:"#fff",background:t?.color}}>{t?.label}</div>
             <BB onClick={()=>setAlertView(null)}/>
@@ -1994,7 +1995,7 @@ DATE/TIME: ${now()}`;
                         const cur=alertFields._weatherTypes||[];
                         const next=sel?cur.filter(x=>x!==w):[...cur,w];
                         setAlertFields(p=>({...p,_weatherTypes:next}));
-                        setEditedMsg("");
+                        setEditedMsg("");setEditedMsgTouched(false);
                       }}>
                       {sel?"✓ ":""}{w}
                     </button>
@@ -2002,7 +2003,7 @@ DATE/TIME: ${now()}`;
                 })}
               </div>
               {(alertFields._weatherTypes||[]).includes("Custom")&&(
-                <input style={{...S.inp,fontSize:13}} placeholder="Describe the weather..." value={alertFields._customWeather||""} onChange={e=>{setAlertFields(p=>({...p,_customWeather:e.target.value}));setEditedMsg("");}}/>
+                <input style={{...S.inp,fontSize:13}} placeholder="Describe the weather..." value={alertFields._customWeather||""} onChange={e=>{setAlertFields(p=>({...p,_customWeather:e.target.value}));setEditedMsg("");setEditedMsgTouched(false);}}/>
               )}
             </div>
           )}
@@ -2011,7 +2012,7 @@ DATE/TIME: ${now()}`;
           {(t.id==="weather_imminent"||t.id==="event_delayed")&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Estimated Storm Arrival / Duration</label>
-              <input style={{...S.inp,fontSize:14}} placeholder="e.g. 8:15 PM arrival · 45 min duration" value={alertFields._eta||""} onChange={e=>{setAlertFields(p=>({...p,_eta:e.target.value}));setEditedMsg("");}}/>
+              <input style={{...S.inp,fontSize:14}} placeholder="e.g. 8:15 PM arrival · 45 min duration" value={alertFields._eta||""} onChange={e=>{setAlertFields(p=>({...p,_eta:e.target.value}));setEditedMsg("");setEditedMsgTouched(false);}}/>
             </div>
           )}
 
@@ -2021,21 +2022,21 @@ DATE/TIME: ${now()}`;
               <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Reason *</label>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
                 {(t.reasonType==="postpone"?POSTPONE_REASONS:CANCEL_REASONS).map(r=>(
-                  <button key={r} style={{padding:"14px 16px",borderRadius:10,border:`2px solid ${alertFields._reason===r?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.12)"}`,background:alertFields._reason===r?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.04)",color:alertFields._reason===r?"#fbbf24":"#e2e8f0",fontSize:19,fontWeight:800,cursor:"pointer",textAlign:"left",letterSpacing:"0.01em"}} onClick={()=>{setAlertFields(p=>({...p,_reason:r}));setEditedMsg("");}}>
+                  <button key={r} style={{padding:"14px 16px",borderRadius:10,border:`2px solid ${alertFields._reason===r?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.12)"}`,background:alertFields._reason===r?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.04)",color:alertFields._reason===r?"#fbbf24":"#e2e8f0",fontSize:19,fontWeight:800,cursor:"pointer",textAlign:"left",letterSpacing:"0.01em"}} onClick={()=>{setAlertFields(p=>({...p,_reason:r}));setEditedMsg("");setEditedMsgTouched(false);}}>
                     {alertFields._reason===r?"✅  ":""}{r}
                   </button>
                 ))}
                 {alertFields._reason==="Other"&&(
-                  <input style={{...S.inp,fontSize:13}} placeholder="Type reason..." value={alertFields._customReason||""} onChange={e=>{setAlertFields(p=>({...p,_customReason:e.target.value}));setEditedMsg("");}}/>
+                  <input style={{...S.inp,fontSize:13}} placeholder="Type reason..." value={alertFields._customReason||""} onChange={e=>{setAlertFields(p=>({...p,_customReason:e.target.value}));setEditedMsg("");setEditedMsgTouched(false);}}/>
                 )}
               </div>
             </div>
           )}
-          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom"?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom"?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD"));}}/>
-          {editedMsg&&<button style={{background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
+          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} placeholder="Type your custom message..." value={editedMsgTouched?editedMsg:(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom"?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD")} onChange={e=>{setEditedMsg(e.target.value);setEditedMsgTouched(true);}} onFocus={()=>{if(!editedMsgTouched){setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom"?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD"));setEditedMsgTouched(true);}}}/>
+          {editedMsgTouched&&<button style={{background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>{setEditedMsg("");setEditedMsgTouched(false);}}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{
-  const msg=editedMsg||preview;
+  const msg=preview;
   const finalMsg=msg;
   setBroadcastSending(true);
   setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:finalMsg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
@@ -2108,7 +2109,7 @@ DATE/TIME: ${now()}`;
           </div>
           <button style={{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}} onClick={()=>{
             setBroadcastSuccess(null);
-            setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
+            setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");setEditedMsgTouched(false);
           }}>Done</button>
         </div>}
         </div></>);

@@ -3345,6 +3345,7 @@ function HubApp({
   const [alertView, setAlertView] = useState(null);
   const [alertFields, setAlertFields] = useState({});
   const [editedMsg, setEditedMsg] = useState("");
+  const [editedMsgTouched, setEditedMsgTouched] = useState(false);
   const [callFilter, setCallFilter] = useState(null);
   const [callFilterTitle, setCallFilterTitle] = useState("");
   const [callTab, setCallTab] = useState("active");
@@ -4668,6 +4669,7 @@ DATE/TIME: ${now()}`;
       setAlertView(null);
       setAlertFields({});
       setEditedMsg("");
+      setEditedMsgTouched(false);
     }
   })), !alertView ? /*#__PURE__*/React.createElement("div", {
     style: S.cWrap
@@ -4704,7 +4706,7 @@ DATE/TIME: ${now()}`;
     const t = BROADCAST_ALERTS.find(x => x.id === alertView);
     const selectedReason = alertFields._reason || "";
     const msgBase = ((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", selectedReason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD");
-    const preview = editedMsg || msgBase;
+    const preview = editedMsgTouched ? editedMsg : msgBase;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -4946,6 +4948,7 @@ DATE/TIME: ${now()}`;
             _weatherTypes: next
           }));
           setEditedMsg("");
+          setEditedMsgTouched(false);
         }
       }, sel ? "✓ " : "", w);
     })), (alertFields._weatherTypes || []).includes("Custom") && /*#__PURE__*/React.createElement("input", {
@@ -4961,6 +4964,7 @@ DATE/TIME: ${now()}`;
           _customWeather: e.target.value
         }));
         setEditedMsg("");
+        setEditedMsgTouched(false);
       }
     })), (t.id === "weather_imminent" || t.id === "event_delayed") && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4989,6 +4993,7 @@ DATE/TIME: ${now()}`;
           _eta: e.target.value
         }));
         setEditedMsg("");
+        setEditedMsgTouched(false);
       }
     })), (t === null || t === void 0 ? void 0 : t.requiresReason) && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5031,6 +5036,7 @@ DATE/TIME: ${now()}`;
           _reason: r
         }));
         setEditedMsg("");
+        setEditedMsgTouched(false);
       }
     }, alertFields._reason === r ? "✅  " : "", r)), alertFields._reason === "Other" && /*#__PURE__*/React.createElement("input", {
       style: {
@@ -5045,6 +5051,7 @@ DATE/TIME: ${now()}`;
           _customReason: e.target.value
         }));
         setEditedMsg("");
+        setEditedMsgTouched(false);
       }
     }))), /*#__PURE__*/React.createElement("textarea", {
       style: {
@@ -5054,12 +5061,19 @@ DATE/TIME: ${now()}`;
         lineHeight: 1.6,
         borderColor: "rgba(124,58,237,0.4)"
       },
-      value: editedMsg || ((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"),
-      onChange: e => setEditedMsg(e.target.value),
-      onFocus: e => {
-        if (!editedMsg) setEditedMsg(((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"));
+      placeholder: "Type your custom message...",
+      value: editedMsgTouched ? editedMsg : ((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"),
+      onChange: e => {
+        setEditedMsg(e.target.value);
+        setEditedMsgTouched(true);
+      },
+      onFocus: () => {
+        if (!editedMsgTouched) {
+          setEditedMsg(((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"));
+          setEditedMsgTouched(true);
+        }
       }
-    }), editedMsg && /*#__PURE__*/React.createElement("button", {
+    }), editedMsgTouched && /*#__PURE__*/React.createElement("button", {
       style: {
         background: "none",
         border: "none",
@@ -5068,7 +5082,10 @@ DATE/TIME: ${now()}`;
         cursor: "pointer",
         padding: 0
       },
-      onClick: () => setEditedMsg("")
+      onClick: () => {
+        setEditedMsg("");
+        setEditedMsgTouched(false);
+      }
     }, "\u21A9 Reset to original"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
@@ -5081,7 +5098,7 @@ DATE/TIME: ${now()}`;
     }, "\u23F1 90-sec ACK \u2014 ", ALL_LOCS.length, " locations"), /*#__PURE__*/React.createElement("button", {
       style: S.sendBtn,
       onClick: () => {
-        const msg = editedMsg || preview;
+        const msg = preview;
         const finalMsg = msg;
         setBroadcastSending(true);
         setBroadcastAlerts(p => [{
@@ -5290,6 +5307,7 @@ DATE/TIME: ${now()}`;
         setAlertView(null);
         setAlertFields({});
         setEditedMsg("");
+        setEditedMsgTouched(false);
       }
     }, "Done"))));
   })()));

@@ -48,13 +48,12 @@ const BROADCAST_ALERTS=[
 // ── BROADCAST RECIPIENT MAPPINGS ─────────────────────────────────────────
 // Groups → role codes used by byRole() for SMS/Voice lookup
 const BCAST_GROUP_ROLES={
-  all_staff:["admin","a1","a2","a3","m1","med 1","med unit 1","m2","med 2","med unit 2","mb1","lagb","lafb","slb","srb","cb","ffb","etb","msb1","msb2","ssbl","ssbr","etecm","mtm","ms","lags","lafs","sst","cst","ffs","msm","ssm","lafm","lagm","sbl","sbr","ff","mb2","lb","lgb","eteb","sb","csb","fsf","laf","lag","mt","mkt","f1","f2","f3","f4","fip","youth organizer","sun bar left help","vend","oc1","oc2","oc3","oc4","hos","hosp","hospitality","gil","gir","gf","misc"],
+  all_staff:["admin","a1","a2","a3","m1","med 1","med unit 1","m2","med 2","med unit 2","mb1","lagb","lafb","slb","srb","cb","ffb","etb","msb1","msb2","ssbl","ssbr","etecm","mtm","ms","lags","lafs","sst","cst","ffs","msm","ssm","lafm","lagm","sbl","sbr","ff","mb2","lb","lgb","eteb","sb","csb","fsf","laf","lag","mt","mkt","f1","f2","f3","f4","fip","youth organizer","sun bar left help","vend","oc1","oc2","oc3","oc4","hos","hosp","hospitality","misc"],
   admin:["admin","a1","a2","a3"],
   medical:["m1","med 1","med unit 1","m2","med 2","med unit 2"],
   bars:["mb1","lagb","lafb","slb","srb","cb","ffb","etb","msb1","msb2","ssbl","ssbr","etecm","mb2","sbl","sbr","lb","lgb","eteb","sb","csb","sun bar left help"],
   stages:["ms","lags","lafs","sst","cst","ffs","msm","ssm","lafm","lagm","ff","fsf","laf","lag","mt"],
   hospitality:["hos","hosp","hospitality"],
-  greeters:["gil","gir","gf"],
   misc:["fip","youth organizer","mkt","20th","misc","a3"],
   eec:["etb","etecm","eteb"],
   prize_wheel:["mt","mkt","mtm","prize wheel"],
@@ -67,7 +66,6 @@ const BCAST_GROUP_CHANNELS={
   bars:["Bars","AllStaff"],
   stages:["AllStaff"],
   hospitality:["Hospitality"],
-  greeters:["AllStaff"],
   misc:["AllStaff"],
   eec:["EverythingBar"],
   prize_wheel:["AllStaff"],
@@ -93,9 +91,6 @@ const BCAST_LOC_ROLES={
   "Everything Else Cafe":["etb","etecm","eteb"],
   "Prize Wheel":["mt","mkt","mtm"],
   "Hospitality":["hos","hosp","hospitality"],
-  "Greeter — Ingersoll Left":["gil"],
-  "Greeter — Ingersoll Right":["gir"],
-  "Greeter — Few St":["gf"],
 };
 // Individual locations → Festival Chat channels
 const BCAST_LOC_CHANNELS={
@@ -116,12 +111,12 @@ const BCAST_GROUPS=[
   {id:"bars",label:"Bars"},
   {id:"stages",label:"Stages"},
   {id:"hospitality",label:"Hospitality"},
-  {id:"greeters",label:"Greeters"},
+  
   {id:"misc",label:"Misc"},
   {id:"eec",label:"Everything Else Cafe"},
   {id:"prize_wheel",label:"Prize Wheel"},
 ];
-const BCAST_LOCATIONS=["Admin","Med 1","Med 2","Moon Stage","Sun Stage","Lagniappe Stage","Lafayette Stage","Family Fete Stage","Cabaret Stage","Moon Bar","Sun Left Bar","Sun Right Bar","Cabaret Bar","Lafayette Bar","Lagniappe Bar","Family Fete Bar","Everything Else Cafe","Prize Wheel","Hospitality","Greeter — Ingersoll Left","Greeter — Ingersoll Right","Greeter — Few St"];
+const BCAST_LOCATIONS=["Admin","Med 1","Med 2","Moon Stage","Sun Stage","Lagniappe Stage","Lafayette Stage","Family Fete Stage","Cabaret Stage","Moon Bar","Sun Left Bar","Sun Right Bar","Cabaret Bar","Lafayette Bar","Lagniappe Bar","Family Fete Bar","Everything Else Cafe","Prize Wheel","Hospitality"];
 
 
 const EMS_STAGING=[

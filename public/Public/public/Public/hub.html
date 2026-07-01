@@ -2787,10 +2787,10 @@ function HubApp({
   const [adminReqView, setAdminReqView] = useState(false);
   // NOTIFICATION ROSTER — Admin 2 hardcoded, others from Airtable
   const ADMIN2_PHONE = "+16082289692";
+  const byRole = roles => (staffList || []).filter(s => roles.some(r => (s.role || "").toLowerCase().includes(r.toLowerCase()))).map(s => s.phone).filter(Boolean);
   const getNotifyList = type => {
     // Get phones from staffList by role
     const safeList = staffList || [];
-    const byRole = roles => safeList.filter(s => roles.some(r => (s.role || "").toLowerCase().includes(r.toLowerCase()))).map(s => s.phone).filter(Boolean);
     if (type === "lost_child" || type === "broadcast") {
       return [...new Set([ADMIN2_PHONE, ...safeList.map(s => s.phone).filter(Boolean)])];
     }
@@ -4812,7 +4812,7 @@ DATE/TIME: ${now()}`;
       style: {
         display: "flex",
         flexDirection: "column",
-        gap: 8
+        gap: 10
       }
     }, /*#__PURE__*/React.createElement("label", {
       style: {
@@ -4825,41 +4825,25 @@ DATE/TIME: ${now()}`;
     }, "Send to \u2014 Festival Chat + SMS/Voice"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        gap: 4,
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 8,
-        padding: 3
+        flexDirection: "column",
+        gap: 5
       }
-    }, [["groups", "Groups"], ["locations", "Select Locations"]].map(([mode, label]) => {
-      const active = (alertFields._recipMode || "groups") === mode;
-      return /*#__PURE__*/React.createElement("button", {
-        key: mode,
-        style: {
-          flex: 1,
-          padding: "8px",
-          borderRadius: 6,
-          border: "none",
-          background: active ? "rgba(99,102,241,0.25)" : "transparent",
-          color: active ? "#a78bfa" : "#64748b",
-          fontSize: 12,
-          fontWeight: active ? 800 : 400,
-          cursor: "pointer"
-        },
-        onClick: () => setAlertFields(p => ({
-          ...p,
-          _recipMode: mode,
-          _recipGroups: [],
-          _recipLocs: []
-        }))
-      }, label);
-    })), (alertFields._recipMode || "groups") === "groups" && /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "Groups"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexWrap: "wrap",
         gap: 6
       }
     }, BCAST_GROUPS.map(g => {
-      const sel = (alertFields._recipGroups || ["all_staff"]).includes(g.id);
+      const sel = (alertFields._recipGroups || []).includes(g.id);
       return /*#__PURE__*/React.createElement("button", {
         key: g.id,
         style: {
@@ -4873,7 +4857,7 @@ DATE/TIME: ${now()}`;
           cursor: "pointer"
         },
         onClick: () => {
-          const cur = alertFields._recipGroups || ["all_staff"];
+          const cur = alertFields._recipGroups || [];
           const next = sel ? cur.filter(x => x !== g.id) : [...cur, g.id];
           setAlertFields(p => ({
             ...p,
@@ -4881,7 +4865,21 @@ DATE/TIME: ${now()}`;
           }));
         }
       }, sel ? "✓ " : "", g.label);
-    })), alertFields._recipMode === "locations" && /*#__PURE__*/React.createElement("div", {
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#64748b",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "Specific Locations"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexWrap: "wrap",
@@ -4910,7 +4908,12 @@ DATE/TIME: ${now()}`;
           }));
         }
       }, sel ? "✓ " : "", loc);
-    }))), t.requiresWeatherType && /*#__PURE__*/React.createElement("div", {
+    }))), (alertFields._recipGroups || []).length === 0 && (alertFields._recipLocs || []).length === 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#f59e0b"
+      }
+    }, "Select at least one group or location above.")), t.requiresWeatherType && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -5117,13 +5120,10 @@ DATE/TIME: ${now()}`;
           setBroadcastError("Please type a reason before sending.");
           return;
         }
-        const recipMode0 = alertFields._recipMode || "groups";
-        if (recipMode0 === "groups" && (alertFields._recipGroups || ["all_staff"]).length === 0) {
-          setBroadcastError("Please select at least one recipient group before sending.");
-          return;
-        }
-        if (recipMode0 === "locations" && (alertFields._recipLocs || []).length === 0) {
-          setBroadcastError("Please select at least one location before sending.");
+        const recipGroups0 = alertFields._recipGroups || [];
+        const recipLocs0 = alertFields._recipLocs || [];
+        if (recipGroups0.length === 0 && recipLocs0.length === 0) {
+          setBroadcastError("Please select at least one group or location before sending.");
           return;
         }
         setBroadcastError(null);
@@ -5149,26 +5149,22 @@ DATE/TIME: ${now()}`;
             label: `Broadcast: ${t.label}`,
             msg: finalMsg
           }, ...p]);
-          // Build recipient phone list and chat channels from new unified selector
-          const recipMode = alertFields._recipMode || "groups";
-          const recipGroups = alertFields._recipGroups || ["all_staff"];
+          // Build recipient phone list and chat channels from groups + locations combined
+          const recipGroups = alertFields._recipGroups || [];
           const recipLocs = alertFields._recipLocs || [];
 
-          // Collect role codes and chat channels
+          // Collect role codes and chat channels from BOTH groups and specific locations
           let allRoleCodes = [];
           let allChatChannels = [];
-          if (recipMode === "groups") {
-            recipGroups.forEach(g => {
-              allRoleCodes = [...allRoleCodes, ...(BCAST_GROUP_ROLES[g] || [])];
-              allChatChannels = [...allChatChannels, ...(BCAST_GROUP_CHANNELS[g] || ["AllStaff"])];
-            });
-          } else {
-            recipLocs.forEach(loc => {
-              allRoleCodes = [...allRoleCodes, ...(BCAST_LOC_ROLES[loc] || [])];
-              const ch = BCAST_LOC_CHANNELS[loc];
-              if (ch) allChatChannels = [...allChatChannels, ch];
-            });
-          }
+          recipGroups.forEach(g => {
+            allRoleCodes = [...allRoleCodes, ...(BCAST_GROUP_ROLES[g] || [])];
+            allChatChannels = [...allChatChannels, ...(BCAST_GROUP_CHANNELS[g] || ["AllStaff"])];
+          });
+          recipLocs.forEach(loc => {
+            allRoleCodes = [...allRoleCodes, ...(BCAST_LOC_ROLES[loc] || [])];
+            const ch = BCAST_LOC_CHANNELS[loc];
+            if (ch) allChatChannels = [...allChatChannels, ch];
+          });
           allRoleCodes = [...new Set(allRoleCodes.map(r => r.toLowerCase()))];
           allChatChannels = [...new Set(allChatChannels)];
 

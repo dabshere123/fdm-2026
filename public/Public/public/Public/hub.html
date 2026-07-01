@@ -6373,7 +6373,15 @@ DATE/TIME: ${now()}`;
           flex: 1
         },
         onClick: () => clearCall(c.id, "Admin")
-      }, "🧒 CHILD LOCATED — Close"), c.type !== "security" && c.type !== "lost_child" && /*#__PURE__*/React.createElement("button", {
+      }, "🧒 CHILD LOCATED — Close"), c.type === "maintenance" && /*#__PURE__*/React.createElement("button", {
+        style: {
+          ...S.actBtn,
+          background: "linear-gradient(135deg,rgba(22,163,74,0.5),rgba(15,118,55,0.5))",
+          border: "1px solid rgba(34,197,94,0.4)",
+          flex: 1
+        },
+        onClick: () => clearCall(c.id, role || "Admin")
+      }, "🔧 Acknowledge"), c.type !== "security" && c.type !== "lost_child" && c.type !== "maintenance" && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "rgba(100,100,100,0.4)",

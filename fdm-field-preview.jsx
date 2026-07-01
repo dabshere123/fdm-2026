@@ -196,6 +196,8 @@ function NewCallView({user,callType,onBack}){
 
   const [supplyQty,setSupplyQty]=useState(1);
   const [supplyItem,setSupplyItem]=useState('');
+  const [maintProblemType,setMaintProblemType]=useState('');
+  const [maintDescription,setMaintDescription]=useState('');
 
   const TYPES=[
     {id:'medical',label:'Medical',color:'rgba(147,51,234,0.8)'},
@@ -416,8 +418,60 @@ function NewCallView({user,callType,onBack}){
           </button>
         </>}
 
-        {/* ── STANDARD CALL FORM (Medical, Fire, Security, Maintenance, Walk-In) ── */}
-        {!isLostChild&&type!=='supplies'&&<>
+        {/* ── MAINTENANCE FORM ── */}
+        {!isLostChild&&type==='maintenance'&&<>
+          {/* Auto-filled location + timestamp */}
+          <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>Your Location</div>
+            <div style={{fontSize:16,fontWeight:700,color:'#f1f5f9'}}>{user.location||location||'—'}</div>
+            <div style={{fontSize:11,color:'#475569',marginTop:2}}>{new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+          </div>
+
+          {/* Type of problem */}
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Type of Problem</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+              {['Electrical','Plumbing','Equipment Not Working','Structural / Safety','Cleaning / Spill','Generator / Power','Audio / Sound','Other'].map(pt=>{
+                const sel=maintProblemType===pt;
+                return(
+                  <button key={pt} style={{padding:'10px 14px',borderRadius:10,border:`2px solid ${sel?'rgba(34,197,94,0.6)':'rgba(255,255,255,0.1)'}`,background:sel?'rgba(22,163,74,0.15)':'rgba(255,255,255,0.03)',color:sel?'#86efac':'#94a3b8',fontSize:13,fontWeight:sel?700:400,cursor:'pointer'}}
+                    onClick={()=>setMaintProblemType(pt)}>
+                    {sel?'✓ ':''}{pt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Describe the problem */}
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Describe the Problem <span style={{color:'#ef4444'}}>*</span></div>
+            <textarea style={{...S.inp,minHeight:100,resize:'none'}} placeholder="What exactly is happening? Where specifically? Any safety concern?" value={maintDescription} onChange={e=>setMaintDescription(e.target.value)}/>
+          </div>
+
+          <button style={{padding:'16px',borderRadius:12,border:'none',background:(maintDescription&&!sending)?'linear-gradient(135deg,#16a34a,#15803d)':'rgba(255,255,255,0.04)',color:(maintDescription&&!sending)?'#fff':'#475569',fontSize:16,fontWeight:900,cursor:(maintDescription&&!sending)?'pointer':'not-allowed'}}
+            disabled={!maintDescription||sending}
+            onClick={()=>{
+              const loc=user.location||location||'unknown location';
+              const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+              const fullProblem=maintProblemType?`[${maintProblemType}] ${maintDescription}`:maintDescription;
+              setSending(true);
+              fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+                type:'maintenance',
+                location:loc,
+                problem:fullProblem,
+                details:`Type: ${maintProblemType||'Not specified'} · Reported: ${ts}`,
+                requestedBy:user.name,
+                role:user.role,
+                phone:user.phone||'',
+              })}).then(()=>{setSent(true);setSending(false);setTimeout(onBack,2000);}).catch(()=>setSending(false));
+            }}>
+            {sending?'Sending...':'🔧 Submit Maintenance Request'}
+          </button>
+        </>}
+
+        {/* ── STANDARD CALL FORM (Medical, Fire, Security, Walk-In) ── */}
+        {!isLostChild&&type!=='supplies'&&type!=='maintenance'&&<>
           <div>
             <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Location</div>
             <input style={S.inp} placeholder="Where is this happening?" value={location} onChange={e=>setLocation(e.target.value)}/>

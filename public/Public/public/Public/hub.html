@@ -5370,6 +5370,28 @@ DATE/TIME: ${now()}`;
       minute: '2-digit',
       timeZone: 'America/Chicago'
     });
+    const URGENCY_OPTIONS = [{
+      id: 'urgent',
+      label: '🚨 Urgent',
+      sub: 'Responding right now',
+      color: '#ef4444',
+      bg: 'rgba(220,38,38,0.12)',
+      border: 'rgba(220,38,38,0.5)'
+    }, {
+      id: 'soon',
+      label: '🕐 Not Urgent',
+      sub: 'Will stop by when able',
+      color: '#f59e0b',
+      bg: 'rgba(245,158,11,0.12)',
+      border: 'rgba(245,158,11,0.5)'
+    }, {
+      id: 'log',
+      label: '📋 Log for Later',
+      sub: 'Add to call log — fix after event',
+      color: '#94a3b8',
+      bg: 'rgba(255,255,255,0.04)',
+      border: 'rgba(255,255,255,0.15)'
+    }];
     return /*#__PURE__*/React.createElement("div", {
       style: S.root
     }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
@@ -5378,12 +5400,12 @@ DATE/TIME: ${now()}`;
       style: S.panelHd
     }, /*#__PURE__*/React.createElement("span", {
       style: S.panelTitle
-    }, "🔧 Maintenance — What Was Done?")), /*#__PURE__*/React.createElement("div", {
+    }, "🔧 Maintenance — Set Priority")), /*#__PURE__*/React.createElement("div", {
       style: S.cWrap
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        background: "rgba(5,150,105,0.08)",
-        border: "1px solid rgba(5,150,105,0.3)",
+        background: "rgba(22,163,74,0.08)",
+        border: "1px solid rgba(22,163,74,0.3)",
         borderRadius: 10,
         padding: "12px",
         fontSize: 13
@@ -5394,27 +5416,73 @@ DATE/TIME: ${now()}`;
         color: "#6ee7b7",
         marginBottom: 2
       }
-    }, "🔧 ", mc2.location), /*#__PURE__*/React.createElement("div", {
+    }, "📍 ", mc2.location), /*#__PURE__*/React.createElement("div", {
       style: {
         color: "#e2e8f0"
       }
-    }, mc2.problem)), /*#__PURE__*/React.createElement(Fld, {
-      label: "What was done? *",
+    }, mc2.problem), mc2.requestedBy && /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "#64748b",
+        fontSize: 11,
+        marginTop: 4
+      }
+    }, "Reported by ", mc2.requestedBy)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#94a3b8",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }
+    }, "Select Priority — Reporter will be notified by SMS"), URGENCY_OPTIONS.map(opt => /*#__PURE__*/React.createElement("button", {
+      key: opt.id,
+      style: {
+        width: "100%",
+        padding: "18px 16px",
+        borderRadius: 14,
+        border: `2px solid ${incFields._maintUrgency === opt.id ? opt.border : "rgba(255,255,255,0.08)"}`,
+        background: incFields._maintUrgency === opt.id ? opt.bg : "rgba(255,255,255,0.02)",
+        cursor: "pointer",
+        textAlign: "left",
+        display: "flex",
+        alignItems: "center",
+        gap: 14
+      },
+      onClick: () => setIncFields(p => ({
+        ...p,
+        _maintUrgency: opt.id
+      }))
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 26
+      }
+    }, opt.label.split(' ')[0]), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 900,
+        color: incFields._maintUrgency === opt.id ? opt.color : "#f1f5f9"
+      }
+    }, opt.label.split(' ').slice(1).join(' ')), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#64748b",
+        marginTop: 2
+      }
+    }, opt.sub)), incFields._maintUrgency === opt.id && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginLeft: "auto",
+        color: opt.color,
+        fontSize: 18
+      }
+    }, "✓"))), /*#__PURE__*/React.createElement(Fld, {
+      label: "What was done / notes (optional)",
       value: incFields.maintNarrative || "",
       onChange: e => setIncFields(p => ({
         ...p,
         maintNarrative: e.target.value
       })),
-      ph: "e.g. Replaced fuse, cleared drain, fixed sound cable...",
+      ph: "e.g. Logged for repair crew, responded to scene...",
       multi: true
-    }), /*#__PURE__*/React.createElement(Fld, {
-      label: "Resolved by",
-      value: incFields.maintBy || clearBy2 || "",
-      onChange: e => setIncFields(p => ({
-        ...p,
-        maintBy: e.target.value
-      })),
-      ph: "Name or role"
     }), /*#__PURE__*/React.createElement("div", {
       style: {
         background: "rgba(255,255,255,0.04)",
@@ -5427,10 +5495,10 @@ DATE/TIME: ${now()}`;
     }, "📅 ", ts), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
-        background: "linear-gradient(135deg,#059669,#047857)",
-        opacity: !incFields.maintNarrative ? 0.5 : 1
+        background: incFields._maintUrgency ? "linear-gradient(135deg,#059669,#047857)" : "rgba(255,255,255,0.04)",
+        opacity: !incFields._maintUrgency ? 0.5 : 1
       },
-      disabled: !incFields.maintNarrative,
+      disabled: !incFields._maintUrgency,
       onClick: () => {
         const ts2 = new Date().toLocaleString('en-US', {
           weekday: 'short',
@@ -5440,8 +5508,24 @@ DATE/TIME: ${now()}`;
           minute: '2-digit',
           timeZone: 'America/Chicago'
         });
-        const maintMsg = `🔧 MAINTENANCE CLEARED\nLOCATION: ${mc2.location}\nISSUE: ${mc2.problem}\nWHAT WAS DONE: ${incFields.maintNarrative}\nCLEARED BY: ${incFields.maintBy || clearBy2}\nDATE/TIME: ${ts2}`;
-        sendGroupMe(maintMsg, ["admin", "maintenance"]);
+        const urgencyLabel = URGENCY_OPTIONS.find(o => o.id === incFields._maintUrgency)?.label || '';
+        const maintMsg = `🔧 MAINTENANCE — ${urgencyLabel.toUpperCase()}\nLOCATION: ${mc2.location}\nISSUE: ${mc2.problem}\nPRIORITY: ${urgencyLabel}\n${incFields.maintNarrative ? `NOTES: ${incFields.maintNarrative}\n` : ""}ACKNOWLEDGED BY: ${clearBy2}\nDATE/TIME: ${ts2}`;
+        sendGroupMe(maintMsg, ["Admin", "AllStaff"]);
+        // SMS back to reporter
+        fetch("/.netlify/functions/maintenance-ack", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            reporterPhone: mc2.phone || mc2.Phone || mc2.reporterPhone || "",
+            reporterName: mc2.requestedBy || "",
+            urgency: incFields._maintUrgency,
+            location: mc2.location,
+            problem: mc2.problem,
+            acknowledgedBy: clearBy2
+          })
+        }).catch(() => {});
         // Email report
         fetch("/.netlify/functions/send-incident-report", {
           method: "POST",
@@ -5454,13 +5538,12 @@ DATE/TIME: ${now()}`;
             location: mc2.location,
             problem: mc2.problem,
             requestedBy: mc2.requestedBy,
-            respondingUnit: incFields.maintBy || clearBy2,
-            disposition: "Resolved",
-            narrative: incFields.maintNarrative,
+            respondingUnit: clearBy2,
+            disposition: urgencyLabel,
+            narrative: incFields.maintNarrative || "Priority set by admin",
             openedAt: new Date().toISOString()
           })
         }).catch(() => {});
-        // Clear the call
         playAlert("clear");
         removeAckedBanner(mc2.id);
         if (liveMode) fetch("/.netlify/functions/update-call", {
@@ -5470,13 +5553,14 @@ DATE/TIME: ${now()}`;
           },
           body: JSON.stringify({
             id: mc2.id,
-            status: "Cleared",
+            status: `Acknowledged — ${urgencyLabel}`,
             unit: clearBy2
           })
         }).catch(() => {});
         setCompleted(p => [{
           ...mc2,
-          status: "cleared",
+          status: "acknowledged",
+          priority: incFields._maintUrgency,
           clearedBy: clearBy2,
           clearedAt: tShort()
         }, ...p]);
@@ -5486,7 +5570,7 @@ DATE/TIME: ${now()}`;
         setIncFields({});
         setView("home");
       }
-    }, "✅ Submit & Clear Maintenance Call"), /*#__PURE__*/React.createElement("button", {
+    }, "✅ Acknowledge & Notify Reporter"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "none",
@@ -5497,7 +5581,6 @@ DATE/TIME: ${now()}`;
     }, "← Back to Call"))));
   }
 
-  // LOST CHILD FOUND FORM
   if (lcFoundForm) {
     const ts = new Date().toLocaleString('en-US', {
       weekday: 'short',
@@ -11287,186 +11370,4 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     }
   }, "No activity yet")))))));
 }
-const S = {
-  root: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    background: "#0d0d1a",
-    fontFamily: "'DM Sans',sans-serif",
-    overflowX: "hidden"
-  },
-  panel: {
-    position: "relative",
-    zIndex: 1,
-    width: "100%",
-    maxWidth: 768,
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column"
-  },
-  sectionHdr: {
-    fontSize: 17,
-    fontWeight: 900,
-    color: "#f59e0b",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    padding: "12px 14px 8px",
-    background: "rgba(245,158,11,0.06)",
-    borderBottom: "1px solid rgba(245,158,11,0.15)"
-  },
-  panelHd: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "16px 16px 8px"
-  },
-  backBtn: {
-    background: "rgba(255,255,255,0.1)",
-    border: "1px solid rgba(255,255,255,0.2)",
-    color: "#f1f5f9",
-    padding: "10px 18px",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 14,
-    fontWeight: 600
-  },
-  panelTitle: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: 700,
-    color: "#f1f5f9"
-  },
-  cWrap: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 14,
-    padding: "8px 16px 32px"
-  },
-  lbl: {
-    fontSize: 11,
-    color: "#64748b",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    fontWeight: 700
-  },
-  inp: {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 8,
-    padding: "10px 12px",
-    color: "#f1f5f9",
-    fontSize: 14,
-    width: "100%",
-    boxSizing: "border-box",
-    outline: "none",
-    fontFamily: "inherit"
-  },
-  sel: {
-    background: "#1e293b",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 8,
-    padding: "10px 12px",
-    color: "#f1f5f9",
-    fontSize: 14,
-    width: "100%",
-    boxSizing: "border-box"
-  },
-  ta: {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 8,
-    padding: "10px 12px",
-    color: "#f1f5f9",
-    fontSize: 14,
-    width: "100%",
-    boxSizing: "border-box",
-    resize: "vertical",
-    fontFamily: "inherit"
-  },
-  sendBtn: {
-    background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-    border: "none",
-    borderRadius: 14,
-    padding: "16px",
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: 800,
-    cursor: "pointer"
-  },
-  bigAckBtn: {
-    background: "rgba(255,255,255,0.04)",
-    border: "2px solid rgba(255,255,255,0.7)",
-    borderRadius: 14,
-    padding: "18px",
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: 900,
-    cursor: "pointer",
-    width: "100%",
-    maxWidth: 380
-  },
-  tabRow: {
-    display: "flex",
-    padding: "0 20px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-    marginBottom: 4
-  },
-  tab: {
-    flex: 1,
-    padding: "10px",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 600
-  },
-  callQ: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    padding: "8px 16px 32px",
-    overflowY: "auto"
-  },
-  callCard: {
-    borderRadius: 12,
-    border: "2px solid",
-    padding: "12px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    background: "rgba(255,255,255,0.02)"
-  },
-  actBtn: {
-    border: "none",
-    borderRadius: 10,
-    padding: "10px 14px",
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer"
-  },
-  persistAlert: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-    gap: 16,
-    padding: "32px 24px",
-    textAlign: "center",
-    position: "relative",
-    zIndex: 1,
-    width: "100%",
-    maxWidth: 768,
-    boxSizing: "border-box"
-  },
-  empty: {
-    textAlign: "center",
-    color: "#475569",
-    padding: "48px 0",
-    fontSize: 14
-  }
-};
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>

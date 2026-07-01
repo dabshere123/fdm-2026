@@ -2188,34 +2188,64 @@ DATE/TIME: ${now()}`;
     const mc2=maintNarrativeForm.call;
     const clearBy2=maintNarrativeForm.by;
     const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+    const URGENCY_OPTIONS=[
+      {id:'urgent',label:'🚨 Urgent',sub:'Responding right now',color:'#ef4444',bg:'rgba(220,38,38,0.12)',border:'rgba(220,38,38,0.5)'},
+      {id:'soon',label:'🕐 Not Urgent',sub:'Will stop by when able',color:'#f59e0b',bg:'rgba(245,158,11,0.12)',border:'rgba(245,158,11,0.5)'},
+      {id:'log',label:'📋 Log for Later',sub:'Add to call log — fix after event',color:'#94a3b8',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.15)'},
+    ];
     return(<div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><span style={S.panelTitle}>🔧 Maintenance — What Was Done?</span></div>
+      <div style={S.panelHd}><span style={S.panelTitle}>🔧 Maintenance — Set Priority</span></div>
       <div style={S.cWrap}>
-        <div style={{background:"rgba(5,150,105,0.08)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:10,padding:"12px",fontSize:13}}>
-          <div style={{fontWeight:800,color:"#6ee7b7",marginBottom:2}}>🔧 {mc2.location}</div>
+        <div style={{background:"rgba(22,163,74,0.08)",border:"1px solid rgba(22,163,74,0.3)",borderRadius:10,padding:"12px",fontSize:13}}>
+          <div style={{fontWeight:800,color:"#6ee7b7",marginBottom:2}}>📍 {mc2.location}</div>
           <div style={{color:"#e2e8f0"}}>{mc2.problem}</div>
+          {mc2.requestedBy&&<div style={{color:"#64748b",fontSize:11,marginTop:4}}>Reported by {mc2.requestedBy}</div>}
         </div>
-        <Fld label="What was done? *" value={incFields.maintNarrative||""} onChange={e=>setIncFields(p=>({...p,maintNarrative:e.target.value}))} ph="e.g. Replaced fuse, cleared drain, fixed sound cable..." multi/>
-        <Fld label="Resolved by" value={incFields.maintBy||clearBy2||""} onChange={e=>setIncFields(p=>({...p,maintBy:e.target.value}))} ph="Name or role"/>
+
+        <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Select Priority — Reporter will be notified by SMS</div>
+
+        {URGENCY_OPTIONS.map(opt=>(
+          <button key={opt.id} style={{width:"100%",padding:"18px 16px",borderRadius:14,border:`2px solid ${incFields._maintUrgency===opt.id?opt.border:"rgba(255,255,255,0.08)"}`,background:incFields._maintUrgency===opt.id?opt.bg:"rgba(255,255,255,0.02)",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14}}
+            onClick={()=>setIncFields(p=>({...p,_maintUrgency:opt.id}))}>
+            <div style={{fontSize:26}}>{opt.label.split(' ')[0]}</div>
+            <div>
+              <div style={{fontSize:15,fontWeight:900,color:incFields._maintUrgency===opt.id?opt.color:"#f1f5f9"}}>{opt.label.split(' ').slice(1).join(' ')}</div>
+              <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{opt.sub}</div>
+            </div>
+            {incFields._maintUrgency===opt.id&&<div style={{marginLeft:"auto",color:opt.color,fontSize:18}}>✓</div>}
+          </button>
+        ))}
+
+        <Fld label="What was done / notes (optional)" value={incFields.maintNarrative||""} onChange={e=>setIncFields(p=>({...p,maintNarrative:e.target.value}))} ph="e.g. Logged for repair crew, responded to scene..." multi/>
         <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px",fontSize:12,color:"#94a3b8"}}>📅 {ts}</div>
-        <button style={{...S.sendBtn,background:"linear-gradient(135deg,#059669,#047857)",opacity:!incFields.maintNarrative?0.5:1}} disabled={!incFields.maintNarrative} onClick={()=>{
+
+        <button style={{...S.sendBtn,background:incFields._maintUrgency?"linear-gradient(135deg,#059669,#047857)":"rgba(255,255,255,0.04)",opacity:!incFields._maintUrgency?0.5:1}} disabled={!incFields._maintUrgency} onClick={()=>{
           const ts2=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
-          const maintMsg=`🔧 MAINTENANCE CLEARED\nLOCATION: ${mc2.location}\nISSUE: ${mc2.problem}\nWHAT WAS DONE: ${incFields.maintNarrative}\nCLEARED BY: ${incFields.maintBy||clearBy2}\nDATE/TIME: ${ts2}`;
-          sendGroupMe(maintMsg,["admin","maintenance"]);
+          const urgencyLabel=URGENCY_OPTIONS.find(o=>o.id===incFields._maintUrgency)?.label||'';
+          const maintMsg=`🔧 MAINTENANCE — ${urgencyLabel.toUpperCase()}\nLOCATION: ${mc2.location}\nISSUE: ${mc2.problem}\nPRIORITY: ${urgencyLabel}\n${incFields.maintNarrative?`NOTES: ${incFields.maintNarrative}\n`:""}ACKNOWLEDGED BY: ${clearBy2}\nDATE/TIME: ${ts2}`;
+          sendGroupMe(maintMsg,["Admin","AllStaff"]);
+          // SMS back to reporter
+          fetch("/.netlify/functions/maintenance-ack",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+            reporterPhone:mc2.phone||mc2.Phone||mc2.reporterPhone||"",
+            reporterName:mc2.requestedBy||"",
+            urgency:incFields._maintUrgency,
+            location:mc2.location,
+            problem:mc2.problem,
+            acknowledgedBy:clearBy2,
+          })}).catch(()=>{});
           // Email report
           fetch("/.netlify/functions/send-incident-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
             incidentNumber:`MAINT-${Date.now().toString().slice(-6)}`,type:"maintenance",location:mc2.location,problem:mc2.problem,
-            requestedBy:mc2.requestedBy,respondingUnit:incFields.maintBy||clearBy2,
-            disposition:"Resolved",narrative:incFields.maintNarrative,openedAt:new Date().toISOString(),
+            requestedBy:mc2.requestedBy,respondingUnit:clearBy2,
+            disposition:urgencyLabel,narrative:incFields.maintNarrative||"Priority set by admin",openedAt:new Date().toISOString(),
           })}).catch(()=>{});
-          // Clear the call
           playAlert("clear");removeAckedBanner(mc2.id);
-          if(liveMode)fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:mc2.id,status:"Cleared",unit:clearBy2})}).catch(()=>{});
-          setCompleted(p=>[{...mc2,status:"cleared",clearedBy:clearBy2,clearedAt:tShort()},...p]);
+          if(liveMode)fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:mc2.id,status:`Acknowledged — ${urgencyLabel}`,unit:clearBy2})}).catch(()=>{});
+          setCompleted(p=>[{...mc2,status:"acknowledged",priority:incFields._maintUrgency,clearedBy:clearBy2,clearedAt:tShort()},...p]);
           setLiveCalls(p=>p.filter(c=>c.id!==mc2.id));
           setCalls(p=>p.filter(c=>c.id!==mc2.id));
           setMaintNarrativeForm(null);setIncFields({});setView("home");
-        }}>✅ Submit & Clear Maintenance Call</button>
+        }}>✅ Acknowledge &amp; Notify Reporter</button>
         <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}} onClick={()=>setMaintNarrativeForm(null)}>← Back to Call</button>
       </div>
     </div></div>);

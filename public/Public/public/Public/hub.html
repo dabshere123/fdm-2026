@@ -4812,7 +4812,7 @@ DATE/TIME: ${now()}`;
       style: {
         display: "flex",
         flexDirection: "column",
-        gap: 10
+        gap: 8
       }
     }, /*#__PURE__*/React.createElement("label", {
       style: {
@@ -4825,18 +4825,37 @@ DATE/TIME: ${now()}`;
     }, "Send to \u2014 Festival Chat + SMS/Voice"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        flexDirection: "column",
-        gap: 5
+        gap: 4,
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: 8,
+        padding: 3
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, [["groups", "Groups"], ["locations", "Select Locations"]].map(([mode, label]) => {
+      const active = (alertFields._recipMode || "groups") === mode;
+      return /*#__PURE__*/React.createElement("button", {
+        key: mode,
+        style: {
+          flex: 1,
+          padding: "8px",
+          borderRadius: 6,
+          border: "none",
+          background: active ? "rgba(99,102,241,0.25)" : "transparent",
+          color: active ? "#a78bfa" : "#64748b",
+          fontSize: 12,
+          fontWeight: active ? 800 : 400,
+          cursor: "pointer"
+        },
+        onClick: () => setAlertFields(p => ({
+          ...p,
+          _recipMode: mode
+        }))
+      }, label);
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 10,
-        color: "#64748b",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em"
+        fontSize: 11,
+        color: "#64748b"
       }
-    }, "Groups"), /*#__PURE__*/React.createElement("div", {
+    }, "Only the " + ((alertFields._recipMode || "groups") === "groups" ? "Groups" : "Locations") + " tab's selections below will receive this alert."), (alertFields._recipMode || "groups") === "groups" && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexWrap: "wrap",
@@ -4865,21 +4884,7 @@ DATE/TIME: ${now()}`;
           }));
         }
       }, sel ? "✓ " : "", g.label);
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 5
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: "#64748b",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em"
-      }
-    }, "Specific Locations"), /*#__PURE__*/React.createElement("div", {
+    })), alertFields._recipMode === "locations" && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexWrap: "wrap",
@@ -4908,12 +4913,12 @@ DATE/TIME: ${now()}`;
           }));
         }
       }, sel ? "✓ " : "", loc);
-    }))), (alertFields._recipGroups || []).length === 0 && (alertFields._recipLocs || []).length === 0 && /*#__PURE__*/React.createElement("div", {
+    })), ((alertFields._recipMode || "groups") === "groups" ? (alertFields._recipGroups || []).length === 0 : (alertFields._recipLocs || []).length === 0) && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: "#f59e0b"
       }
-    }, "Select at least one group or location above.")), t.requiresWeatherType && /*#__PURE__*/React.createElement("div", {
+    }, "Select at least one " + ((alertFields._recipMode || "groups") === "groups" ? "group" : "location") + " above.")), t.requiresWeatherType && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -5120,10 +5125,13 @@ DATE/TIME: ${now()}`;
           setBroadcastError("Please type a reason before sending.");
           return;
         }
-        const recipGroups0 = alertFields._recipGroups || [];
-        const recipLocs0 = alertFields._recipLocs || [];
-        if (recipGroups0.length === 0 && recipLocs0.length === 0) {
-          setBroadcastError("Please select at least one group or location before sending.");
+        const recipMode0 = alertFields._recipMode || "groups";
+        if (recipMode0 === "groups" && (alertFields._recipGroups || []).length === 0) {
+          setBroadcastError("Please select at least one group before sending.");
+          return;
+        }
+        if (recipMode0 === "locations" && (alertFields._recipLocs || []).length === 0) {
+          setBroadcastError("Please select at least one location before sending.");
           return;
         }
         setBroadcastError(null);
@@ -5149,22 +5157,24 @@ DATE/TIME: ${now()}`;
             label: `Broadcast: ${t.label}`,
             msg: finalMsg
           }, ...p]);
-          // Build recipient phone list and chat channels from groups + locations combined
+          // Build recipient phone list and chat channels — ONLY from the active tab (groups OR locations, never both)
+          const recipMode = alertFields._recipMode || "groups";
           const recipGroups = alertFields._recipGroups || [];
           const recipLocs = alertFields._recipLocs || [];
-
-          // Collect role codes and chat channels from BOTH groups and specific locations
           let allRoleCodes = [];
           let allChatChannels = [];
-          recipGroups.forEach(g => {
-            allRoleCodes = [...allRoleCodes, ...(BCAST_GROUP_ROLES[g] || [])];
-            allChatChannels = [...allChatChannels, ...(BCAST_GROUP_CHANNELS[g] || ["AllStaff"])];
-          });
-          recipLocs.forEach(loc => {
-            allRoleCodes = [...allRoleCodes, ...(BCAST_LOC_ROLES[loc] || [])];
-            const ch = BCAST_LOC_CHANNELS[loc];
-            if (ch) allChatChannels = [...allChatChannels, ch];
-          });
+          if (recipMode === "groups") {
+            recipGroups.forEach(g => {
+              allRoleCodes = [...allRoleCodes, ...(BCAST_GROUP_ROLES[g] || [])];
+              allChatChannels = [...allChatChannels, ...(BCAST_GROUP_CHANNELS[g] || ["AllStaff"])];
+            });
+          } else {
+            recipLocs.forEach(loc => {
+              allRoleCodes = [...allRoleCodes, ...(BCAST_LOC_ROLES[loc] || [])];
+              const ch = BCAST_LOC_CHANNELS[loc];
+              if (ch) allChatChannels = [...allChatChannels, ch];
+            });
+          }
           allRoleCodes = [...new Set(allRoleCodes.map(r => r.toLowerCase()))];
           allChatChannels = [...new Set(allChatChannels)];
 

@@ -1945,12 +1945,19 @@ DATE/TIME: ${now()}`;
             <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9"}}>{new Date().toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</div>
           </div>
 
-          {/* UNIFIED RECIPIENT SELECTOR — pick any mix of groups and/or specific locations */}
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {/* RECIPIENT SELECTOR — toggle between Groups and Locations. Switching tabs does NOT clear your picks, and only the active tab's picks are sent to. */}
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
             <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Send to — Festival Chat + SMS/Voice</label>
-            {/* Groups */}
-            <div style={{display:"flex",flexDirection:"column",gap:5}}>
-              <div style={{fontSize:10,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Groups</div>
+            {/* Mode tabs */}
+            <div style={{display:"flex",gap:4,background:"rgba(255,255,255,0.04)",borderRadius:8,padding:3}}>
+              {[["groups","Groups"],["locations","Select Locations"]].map(([mode,label])=>{
+                const active=(alertFields._recipMode||"groups")===mode;
+                return(<button key={mode} style={{flex:1,padding:"8px",borderRadius:6,border:"none",background:active?"rgba(99,102,241,0.25)":"transparent",color:active?"#a78bfa":"#64748b",fontSize:12,fontWeight:active?800:400,cursor:"pointer"}} onClick={()=>setAlertFields(p=>({...p,_recipMode:mode}))}>{label}</button>);
+              })}
+            </div>
+            <div style={{fontSize:11,color:"#64748b"}}>{"Only the "+((alertFields._recipMode||"groups")==="groups"?"Groups":"Locations")+" tab's selections below will receive this alert."}</div>
+            {/* Groups mode */}
+            {(alertFields._recipMode||"groups")==="groups"&&(
               <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                 {BCAST_GROUPS.map(g=>{
                   const sel=(alertFields._recipGroups||[]).includes(g.id);
@@ -1961,10 +1968,9 @@ DATE/TIME: ${now()}`;
                   }}>{sel?"✓ ":""}{g.label}</button>);
                 })}
               </div>
-            </div>
-            {/* Locations */}
-            <div style={{display:"flex",flexDirection:"column",gap:5}}>
-              <div style={{fontSize:10,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Specific Locations</div>
+            )}
+            {/* Locations mode */}
+            {alertFields._recipMode==="locations"&&(
               <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                 {BCAST_LOCATIONS.map(loc=>{
                   const sel=(alertFields._recipLocs||[]).includes(loc);
@@ -1975,9 +1981,9 @@ DATE/TIME: ${now()}`;
                   }}>{sel?"✓ ":""}{loc}</button>);
                 })}
               </div>
-            </div>
-            {(alertFields._recipGroups||[]).length===0&&(alertFields._recipLocs||[]).length===0&&(
-              <div style={{fontSize:11,color:"#f59e0b"}}>Select at least one group or location above.</div>
+            )}
+            {((alertFields._recipMode||"groups")==="groups"?(alertFields._recipGroups||[]).length===0:(alertFields._recipLocs||[]).length===0)&&(
+              <div style={{fontSize:11,color:"#f59e0b"}}>{"Select at least one "+((alertFields._recipMode||"groups")==="groups"?"group":"location")+" above."}</div>
             )}
           </div>
 
@@ -2049,10 +2055,13 @@ DATE/TIME: ${now()}`;
     setBroadcastError("Please type a reason before sending.");
     return;
   }
-  const recipGroups0=alertFields._recipGroups||[];
-  const recipLocs0=alertFields._recipLocs||[];
-  if(recipGroups0.length===0&&recipLocs0.length===0){
-    setBroadcastError("Please select at least one group or location before sending.");
+  const recipMode0=alertFields._recipMode||"groups";
+  if(recipMode0==="groups"&&(alertFields._recipGroups||[]).length===0){
+    setBroadcastError("Please select at least one group before sending.");
+    return;
+  }
+  if(recipMode0==="locations"&&(alertFields._recipLocs||[]).length===0){
+    setBroadcastError("Please select at least one location before sending.");
     return;
   }
 
@@ -2063,22 +2072,25 @@ DATE/TIME: ${now()}`;
     const finalMsg=msg;
     setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:finalMsg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:finalMsg},...p]);
-    // Build recipient phone list and chat channels from groups + locations combined
+    // Build recipient phone list and chat channels — ONLY from the active tab (groups OR locations, never both)
+    const recipMode=alertFields._recipMode||"groups";
     const recipGroups=alertFields._recipGroups||[];
     const recipLocs=alertFields._recipLocs||[];
 
-    // Collect role codes and chat channels from BOTH groups and specific locations
     let allRoleCodes=[];
     let allChatChannels=[];
-    recipGroups.forEach(g=>{
-      allRoleCodes=[...allRoleCodes,...(BCAST_GROUP_ROLES[g]||[])];
-      allChatChannels=[...allChatChannels,...(BCAST_GROUP_CHANNELS[g]||["AllStaff"])];
-    });
-    recipLocs.forEach(loc=>{
-      allRoleCodes=[...allRoleCodes,...(BCAST_LOC_ROLES[loc]||[])];
-      const ch=BCAST_LOC_CHANNELS[loc];
-      if(ch) allChatChannels=[...allChatChannels,ch];
-    });
+    if(recipMode==="groups"){
+      recipGroups.forEach(g=>{
+        allRoleCodes=[...allRoleCodes,...(BCAST_GROUP_ROLES[g]||[])];
+        allChatChannels=[...allChatChannels,...(BCAST_GROUP_CHANNELS[g]||["AllStaff"])];
+      });
+    } else {
+      recipLocs.forEach(loc=>{
+        allRoleCodes=[...allRoleCodes,...(BCAST_LOC_ROLES[loc]||[])];
+        const ch=BCAST_LOC_CHANNELS[loc];
+        if(ch) allChatChannels=[...allChatChannels,ch];
+      });
+    }
     allRoleCodes=[...new Set(allRoleCodes.map(r=>r.toLowerCase()))];
     allChatChannels=[...new Set(allChatChannels)];
 

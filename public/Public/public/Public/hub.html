@@ -94,7 +94,7 @@ const POSTPONE_REASONS = ["Weather", "Safety Concern", "Unforeseen Circumstances
 const CANCEL_REASONS = ["Weather", "Safety Concern", "Unforeseen Circumstances", "Other"];
 const BROADCAST_ALERTS = [{
   id: "weather_imminent",
-  label: "⛈ Inclement Weather Imminent",
+  label: "⛈ Inclement Weather",
   color: "#dc2626",
   requiresWeatherType: true,
   defaultMsg: "ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
@@ -142,28 +142,18 @@ const BROADCAST_ALERTS = [{
   label: "✏ Custom Message",
   color: "#475569",
   fields: [{
-    key: "channel",
-    label: "Send To",
-    type: "select",
-    options: [{
-      value: "all_staff",
-      label: "All Staff"
-    }, {
-      value: "vendors",
-      label: "All Vendors"
-    }, {
-      value: "stage_mgrs",
-      label: "Managers Only"
-    }, {
-      value: "all",
-      label: "All Staff + Vendors"
-    }]
-  }, {
     key: "message",
     label: "Message",
     ph: "Type your message..."
   }]
 }];
+const BCAST_GROUP_ROLES={all_staff:["admin","a1","a2","m1","med 1","med unit 1","m2","med 2","med unit 2","sbl","sbr","cb","ff","mb1","mb2","lb","lgb","eteb","sb","csb","fsf","ms","laf","lag","mt","mkt","f1","f2","f3","f4","fip","youth organizer","sun bar left help","vend","oc1","oc2","oc3","oc4"],admin:["admin","a1","a2"],medical:["m1","med 1","med unit 1","m2","med 2","med unit 2"],bars:["mb1","mb2","sbl","sbr","lb","lgb","eteb","sb","csb","sun bar left help"],stages:["ff","fsf","ms","laf","lag","mt","cb"],misc:["fip","youth organizer","mkt","20th"],eec:["eteb"],prize_wheel:["mt","mkt","prize wheel"]};
+const BCAST_GROUP_CHANNELS={all_staff:["AllStaff"],admin:["Admin"],medical:["AdminMed"],bars:["Bars","AllStaff"],stages:["AllStaff"],misc:["AllStaff"],eec:["AllStaff"],prize_wheel:["AllStaff"]};
+const BCAST_LOC_ROLES={"Admin":["admin","a1","a2"],"Med 1":["m1","med 1","med unit 1"],"Med 2":["m2","med 2","med unit 2"],"Moon Stage":["ms"],"Sun Stage":["fsf","ss"],"Lagniappe Stage":["lag","lagniappe stage"],"Lafayette Stage":["laf","lafayette stage"],"Family Fete Stage":["ff","family fete"],"Cabaret Stage":["cb","cabaret"],"Moon Bar":["mb1","mb2"],"Sun Left Bar":["sbl","sun bar left help"],"Sun Right Bar":["sbr"],"Cabaret Bar":["csb"],"Lafayette Bar":["lb"],"Lagniappe Bar":["lgb"],"Family Fete Bar":["sb"],"Everything Else Cafe":["eteb"],"Prize Wheel":["mt","mkt"]};
+const BCAST_LOC_CHANNELS={"Admin":"Admin","Med 1":"AdminMed","Med 2":"AdminMed","Moon Stage":"MoonST","Sun Stage":"SunST","Lagniappe Stage":"LagST","Lafayette Stage":"LafST","Family Fete Stage":"FamST","Cabaret Stage":"CabST","Moon Bar":"MoonBar","Sun Left Bar":"SunBarL","Sun Right Bar":"SunBarR","Cabaret Bar":"CabBar","Lafayette Bar":"LafBar","Lagniappe Bar":"LagBar","Family Fete Bar":"FamilyBar","Everything Else Cafe":"EverythingBar","Prize Wheel":"AllStaff"};
+const BCAST_WEATHER_TYPES=["Thunderstorm","Severe Thunderstorm","Rain Storm","Tornado Watch","Severe Thunderstorm Watch","Tornado Warning","Custom"];
+const BCAST_GROUPS=[{id:"all_staff",label:"All Staff"},{id:"admin",label:"Admin"},{id:"medical",label:"Medical"},{id:"bars",label:"Bars"},{id:"stages",label:"Stages"},{id:"misc",label:"Misc"},{id:"eec",label:"Everything Else Cafe"},{id:"prize_wheel",label:"Prize Wheel"}];
+const BCAST_LOCATIONS=["Admin","Med 1","Med 2","Moon Stage","Sun Stage","Lagniappe Stage","Lafayette Stage","Family Fete Stage","Cabaret Stage","Moon Bar","Sun Left Bar","Sun Right Bar","Cabaret Bar","Lafayette Bar","Lagniappe Bar","Family Fete Bar","Everything Else Cafe","Prize Wheel"];
 const EMS_STAGING = [{
   id: "1",
   label: "#1 — First Aid Tent · Ingersoll & Wilson"
@@ -4703,7 +4693,7 @@ DATE/TIME: ${now()}`;
       style: {
         display: "flex",
         flexDirection: "column",
-        gap: 6
+        gap: 8
       }
     }, /*#__PURE__*/React.createElement("label", {
       style: {
@@ -4713,104 +4703,75 @@ DATE/TIME: ${now()}`;
         textTransform: "uppercase",
         letterSpacing: "0.06em"
       }
-    }, "Send to Festival Chat Channels"), /*#__PURE__*/React.createElement("div", {
+    }, "Send to — Festival Chat + SMS/Voice"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        flexWrap: "wrap",
-        gap: 6
+        gap: 4,
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: 8,
+        padding: 3
       }
-    }, [{
-      id: "all_staff",
-      label: "All Staff"
-    }, {
-      id: "admin",
-      label: "Admin"
-    }, {
-      id: "medical",
-      label: "Medical"
-    }, {
-      id: "bar_stage",
-      label: "Bar/Stage"
-    }, {
-      id: "financial",
-      label: "Financial"
-    }, {
-      id: "restock",
-      label: "Restock"
-    }, {
-      id: "maintenance",
-      label: "Maintenance"
-    }].map(ch => {
-      const sel = (alertFields._gmChannels || ["all_staff", "admin"]).includes(ch.id);
+    }, [["groups", "Groups"], ["locations", "Select Locations"]].map(([mode, lbl]) => {
+      const active = (alertFields._recipMode || "groups") === mode;
       return /*#__PURE__*/React.createElement("button", {
-        key: ch.id,
+        key: mode,
+        style: {
+          flex: 1,
+          padding: "8px",
+          borderRadius: 6,
+          border: "none",
+          background: active ? "rgba(99,102,241,0.25)" : "transparent",
+          color: active ? "#a78bfa" : "#64748b",
+          fontSize: 12,
+          fontWeight: active ? 800 : 400,
+          cursor: "pointer"
+        },
+        onClick: () => setAlertFields(p => ({...p, _recipMode: mode, _recipGroups: [], _recipLocs: []}))
+      }, lbl);
+    })), (alertFields._recipMode || "groups") === "groups" && /*#__PURE__*/React.createElement("div", {
+      style: {display: "flex", flexWrap: "wrap", gap: 6}
+    }, BCAST_GROUPS.map(g => {
+      const sel = (alertFields._recipGroups || ["all_staff"]).includes(g.id);
+      return /*#__PURE__*/React.createElement("button", {
+        key: g.id,
         style: {
           padding: "8px 14px",
           borderRadius: 8,
           border: `1px solid ${sel ? "rgba(99,102,241,0.6)" : "rgba(255,255,255,0.1)"}`,
-          background: sel ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.03)",
+          background: sel ? "rgba(99,102,241,0.18)" : "rgba(255,255,255,0.03)",
           color: sel ? "#a78bfa" : "#64748b",
           fontSize: 13,
           fontWeight: sel ? 700 : 400,
           cursor: "pointer"
         },
         onClick: () => {
-          const cur = alertFields._gmChannels || ["all_staff", "admin"];
-          const next = sel ? cur.filter(x => x !== ch.id) : [...cur, ch.id];
-          setAlertFields(p => ({
-            ...p,
-            _gmChannels: next
-          }));
+          const cur = alertFields._recipGroups || ["all_staff"];
+          const next = sel ? cur.filter(x => x !== g.id) : [...cur, g.id];
+          setAlertFields(p => ({...p, _recipGroups: next}));
         }
-      }, sel ? "✓ " : "", ch.label);
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 6
-      }
-    }, /*#__PURE__*/React.createElement("label", {
-      style: {
-        fontSize: 12,
-        color: "#94a3b8",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em"
-      }
-    }, "SMS + Voice Recipients"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: "#475569"
-      }
-    }, "Select who receives SMS and voice call"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 6
-      }
-    }, [["admin", "Admin"], ["med1", "Med Unit 1"], ["med2", "Med Unit 2"], ["all_staff", "All Staff"], ["moon_stage", "Moon Stage"], ["sun_stage", "Sun Stage"], ["lagniappe", "Lagniappe"], ["lafayette", "Lafayette"], ["cabaret", "Cabaret"], ["family_fete", "Family Fête"]].map(([id, label]) => {
-      const sel = (alertFields._smsRecipients || ["admin"]).includes(id);
+      }, sel ? "\u2713 " : "", g.label);
+    })), alertFields._recipMode === "locations" && /*#__PURE__*/React.createElement("div", {
+      style: {display: "flex", flexWrap: "wrap", gap: 6}
+    }, BCAST_LOCATIONS.map(loc => {
+      const sel = (alertFields._recipLocs || []).includes(loc);
       return /*#__PURE__*/React.createElement("button", {
-        key: id,
+        key: loc,
         style: {
           padding: "8px 14px",
           borderRadius: 8,
-          border: `1px solid ${sel ? "rgba(168,85,247,0.6)" : "rgba(255,255,255,0.1)"}`,
-          background: sel ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.03)",
-          color: sel ? "#d8b4fe" : "#64748b",
-          fontSize: 13,
+          border: `1px solid ${sel ? "rgba(16,185,129,0.6)" : "rgba(255,255,255,0.1)"}`,
+          background: sel ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.03)",
+          color: sel ? "#6ee7b7" : "#64748b",
+          fontSize: 12,
           fontWeight: sel ? 700 : 400,
           cursor: "pointer"
         },
         onClick: () => {
-          const cur = alertFields._smsRecipients || ["admin"];
-          const next = sel ? cur.filter(x => x !== id) : [...cur, id];
-          setAlertFields(p => ({
-            ...p,
-            _smsRecipients: next
-          }));
+          const cur = alertFields._recipLocs || [];
+          const next = sel ? cur.filter(x => x !== loc) : [...cur, loc];
+          setAlertFields(p => ({...p, _recipLocs: next}));
         }
-      }, sel ? "✓ " : "", label);
+      }, sel ? "\u2713 " : "", loc);
     }))), t.requiresWeatherType && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -4831,7 +4792,7 @@ DATE/TIME: ${now()}`;
         flexWrap: "wrap",
         gap: 6
       }
-    }, ["Thunderstorm", "Rain Storm", "High Winds", "Severe Thunderstorm", "Tornado Watch", "Tornado Warning", "Torrential Rain / Downpour", "Custom..."].map(w => {
+    }, BCAST_WEATHER_TYPES.map(w => {
       const selected = alertFields._weatherTypes || [];
       const sel = selected.includes(w);
       return /*#__PURE__*/React.createElement("button", {
@@ -4858,8 +4819,8 @@ DATE/TIME: ${now()}`;
       }, sel ? "✓ " : "", w);
     }))), t.id === "weather_imminent" && (() => {
       const wTypes = alertFields._weatherTypes || [];
-      const isHeavy = wTypes.some(w => ["Thunderstorm", "Severe Thunderstorm", "High Winds", "Tornado Watch", "Tornado Warning"].includes(w));
-      const isRain = wTypes.some(w => ["Rain Storm", "Torrential Rain / Downpour", "Thunderstorm"].includes(w));
+      const isHeavy = wTypes.some(w => ["Thunderstorm", "Severe Thunderstorm", "Tornado Watch", "Severe Thunderstorm Watch", "Tornado Warning"].includes(w));
+      const isRain = wTypes.some(w => ["Rain Storm", "Thunderstorm"].includes(w));
       const AREAS = ["Moon Stage", "Sun Stage", "Lagniappe", "Lafayette", "Cabaret", "Family Fête"];
       const RAIN_AREAS = ["Sun Stage", "Lagniappe", "Lafayette", "Cabaret", "Family Fête"];
       // Auto-set areas when weather type changes
@@ -5086,8 +5047,8 @@ DATE/TIME: ${now()}`;
         const msg = editedMsg || preview;
         // Build targeted areas string for weather
         const wTypes = alertFields._weatherTypes || [];
-        const isHeavy = wTypes.some(w => ["Thunderstorm", "Severe Thunderstorm", "High Winds", "Tornado Watch", "Tornado Warning"].includes(w));
-        const isRain = wTypes.some(w => ["Rain Storm", "Torrential Rain / Downpour"].includes(w));
+        const isHeavy = wTypes.some(w => ["Thunderstorm", "Severe Thunderstorm", "Tornado Watch", "Severe Thunderstorm Watch", "Tornado Warning"].includes(w));
+        const isRain = wTypes.some(w => ["Rain Storm"].includes(w));
         const RAIN_AREAS = ["Sun Stage", "Lagniappe", "Lafayette", "Cabaret", "Family Fête"];
         const ALL_AREAS = ["Moon Stage", "Sun Stage", "Lagniappe", "Lafayette", "Cabaret", "Family Fête"];
         let effectiveAreas = alertFields._areasOverridden ? (alertFields._targetAreas || []).filter(a => a !== "All Areas") : isHeavy ? ALL_AREAS : isRain ? RAIN_AREAS : [];
@@ -5115,40 +5076,40 @@ DATE/TIME: ${now()}`;
           label: `Broadcast: ${t.label}`,
           msg: finalMsg
         }, ...p]);
-        // GroupMe
-        const broadcastChannels = alertFields._gmChannels || t.defaultChannels || ["all_staff", "admin"];
-        const _ts = new Date().toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit"
-        });
-        const _date = new Date().toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric"
-        });
-        sendGroupMe(`FDM 2026 — ${t.label}\n${_date} · ${_ts}\n\n${finalMsg}`, broadcastChannels);
-        // SMS + Voice to all staff, SMS only to vendors
-        const isWeather = t.id && t.id.startsWith("weather");
-        const isEvent = ["event_delayed", "event_postponed", "event_cancelled", "all_clear"].includes(t.id);
-        const announcementHeader = isWeather ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nDANGEROUS WEATHER — ${t.label}` : isEvent ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nEVENT IS — ${t.label}` : `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\n${t.label}`;
-        const bcastMsg = `${announcementHeader}\n\n${finalMsg}`;
-        const bcastPhones = getNotifyList("broadcast");
-        const vendorPhones = getNotifyList("vendors_sms");
+        // Build recipient phone list and chat channels from new unified selector
+        const recipMode = alertFields._recipMode || "groups";
+        const recipGroups = alertFields._recipGroups || ["all_staff"];
+        const recipLocs = alertFields._recipLocs || [];
+        let allRoleCodes = [];
+        let allChatChannels = [];
+        if (recipMode === "groups") {
+          recipGroups.forEach(g => {
+            allRoleCodes = [...allRoleCodes, ...(BCAST_GROUP_ROLES[g] || [])];
+            allChatChannels = [...allChatChannels, ...(BCAST_GROUP_CHANNELS[g] || ["AllStaff"])];
+          });
+        } else {
+          recipLocs.forEach(loc => {
+            allRoleCodes = [...allRoleCodes, ...(BCAST_LOC_ROLES[loc] || [])];
+            const ch = BCAST_LOC_CHANNELS[loc];
+            if (ch) allChatChannels = [...allChatChannels, ch];
+          });
+        }
+        allRoleCodes = [...new Set(allRoleCodes.map(r => r.toLowerCase()))];
+        allChatChannels = [...new Set(allChatChannels)];
+        const bcastPhones = [...new Set([ADMIN2_PHONE, ...byRole(allRoleCodes)])];
         // Async SMS + Voice to prevent UI freeze
         setTimeout(() => {
-          const bcastMsg2 = bcastMsg;
-          const bcastPhones2 = [...new Set([ADMIN2_PHONE, ...getNotifyList("broadcast")])];
-          const vendorPhones2 = getNotifyList("vendors_sms");
-          const vendorOnly2 = vendorPhones2.filter(p => !bcastPhones2.includes(p));
-          sendSMSList(bcastPhones2, bcastMsg2);
-          sendVoice(bcastPhones2, `Fete de Marquette announcement. ${finalMsg.replace(/\n/g, " ")}`);
-          sendSMSList(vendorOnly2, bcastMsg2);
+          const announcementHeader = t.id && t.id.startsWith("weather") ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nDANGEROUS WEATHER — ${t.label}` : ["event_delayed", "event_postponed", "event_cancelled_staff", "all_clear"].includes(t.id) ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nEVENT — ${t.label}` : `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\n${t.label}`;
+          const bcastMsg2 = `${announcementHeader}\n\n${finalMsg}`;
+          sendSMSList(bcastPhones, bcastMsg2);
+          sendVoice(bcastPhones, `Fete de Marquette announcement. ${finalMsg.replace(/\n/g, " ")}`);
+          sendGroupMe(`FDM 2026 — ${t.label}\n${new Date().toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})} · ${new Date().toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}\n\n${finalMsg}`, allChatChannels);
         }, 100);
         playAlert("broadcast");
         setBroadcastSending(false);
         const _successData = {
           label: t.label,
-          channels: broadcastChannels,
+          channels: allChatChannels,
           count: bcastPhones.length
         };
         setTimeout(() => {

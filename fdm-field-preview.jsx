@@ -194,6 +194,9 @@ function NewCallView({user,callType,onBack}){
   const [lcParentPhone,setLcParentPhone]=useState('');
   const [lcScript,setLcScript]=useState('');
 
+  const [supplyQty,setSupplyQty]=useState(1);
+  const [supplyItem,setSupplyItem]=useState('');
+
   const TYPES=[
     {id:'medical',label:'Medical',color:'rgba(147,51,234,0.8)'},
     {id:'fire',label:'Fire / Life Safety',color:'rgba(220,38,38,0.8)'},
@@ -356,8 +359,65 @@ function NewCallView({user,callType,onBack}){
           </button>
         </>}
 
-        {/* ── STANDARD CALL FORM ── */}
-        {!isLostChild&&<>
+        {/* ── SUPPLIES FORM ── */}
+        {!isLostChild&&type==='supplies'&&<>
+          {/* Auto-filled location + timestamp */}
+          <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{fontSize:10,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>Your Location</div>
+            <div style={{fontSize:16,fontWeight:700,color:'#f1f5f9'}}>{user.location||location||'—'}</div>
+            <div style={{fontSize:11,color:'#475569',marginTop:2}}>{new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+          </div>
+
+          {/* Item selector */}
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>What do you need?</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {['Sleeves of Cups','Paper Towels','Bar Rags','Custom'].map(item=>{
+                const isPreset=item!=='Custom';
+                const sel=isPreset?supplyItem===item:supplyItem==='custom';
+                return(
+                  <button key={item} style={{padding:'14px 16px',borderRadius:10,border:`2px solid ${sel?'rgba(217,119,6,0.7)':'rgba(255,255,255,0.1)'}`,background:sel?'rgba(217,119,6,0.12)':'rgba(255,255,255,0.03)',color:sel?'#fbbf24':'#94a3b8',fontSize:15,fontWeight:sel?800:400,cursor:'pointer',textAlign:'left'}}
+                    onClick={()=>setSupplyItem(isPreset?item:'custom')}>
+                    {sel?'✓ ':''}{item}
+                  </button>
+                );
+              })}
+              {supplyItem==='custom'&&(
+                <input style={{...S.inp,fontSize:15}} placeholder="Describe what you need..." value={problem} onChange={e=>setProblem(e.target.value)}/>
+              )}
+            </div>
+          </div>
+
+          {/* Quantity tabs 1–10 */}
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Quantity</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+              {[1,2,3,4,5,6,7,8,9,10].map(n=>(
+                <button key={n} style={{width:46,height:46,borderRadius:10,border:`2px solid ${supplyQty===n?'rgba(217,119,6,0.7)':'rgba(255,255,255,0.1)'}`,background:supplyQty===n?'rgba(217,119,6,0.2)':'rgba(255,255,255,0.03)',color:supplyQty===n?'#fbbf24':'#94a3b8',fontSize:17,fontWeight:supplyQty===n?900:400,cursor:'pointer'}}
+                  onClick={()=>setSupplyQty(n)}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button style={{padding:'16px',borderRadius:12,border:'none',background:supplyItem&&!sending?'linear-gradient(135deg,#d97706,#92400e)':'rgba(255,255,255,0.04)',color:supplyItem&&!sending?'#fff':'#475569',fontSize:16,fontWeight:900,cursor:supplyItem&&!sending?'pointer':'not-allowed'}}
+            disabled={!supplyItem||sending}
+            onClick={()=>{
+              const itemLabel=supplyItem==='custom'?problem:supplyItem;
+              const loc=user.location||location||'unknown location';
+              const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+              const fullProblem=`${supplyQty}x ${itemLabel}`;
+              fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'supplies',location:loc,problem:fullProblem,details:`Qty: ${supplyQty} · Item: ${itemLabel} · Sent: ${ts}`,requestedBy:user.name,role:user.role})});
+              setSent(true);
+              setTimeout(onBack,2000);
+            }}>
+            {sending?'Sending...':'📦 Submit Supply Request'}
+          </button>
+        </>}
+
+        {/* ── STANDARD CALL FORM (Medical, Fire, Security, Maintenance, Walk-In) ── */}
+        {!isLostChild&&type!=='supplies'&&<>
           <div>
             <div style={{fontSize:11,fontWeight:800,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Location</div>
             <input style={S.inp} placeholder="Where is this happening?" value={location} onChange={e=>setLocation(e.target.value)}/>

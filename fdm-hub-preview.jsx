@@ -1998,51 +1998,6 @@ DATE/TIME: ${now()}`;
           )}
 
           {/* STAGE/AREA TARGETING */}
-          {t.id==="weather_imminent"&&(()=>{
-            const wTypes=alertFields._weatherTypes||[];
-            const isHeavy=wTypes.some(w=>["Thunderstorm","Severe Thunderstorm","Tornado Watch","Severe Thunderstorm Watch","Tornado Warning"].includes(w));
-            const isRain=wTypes.some(w=>["Rain Storm","Torrential Rain / Downpour","Thunderstorm"].includes(w));
-            const AREAS=["Moon Stage","Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
-            const RAIN_AREAS=["Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
-            // Auto-set areas when weather type changes
-            const autoAreas=isHeavy?["All Areas",...AREAS]:isRain?RAIN_AREAS:[];
-            const selected=alertFields._areasOverridden?(alertFields._targetAreas||[]):autoAreas;
-            return(
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Areas Affected</label>
-                  {alertFields._areasOverridden&&<button style={{background:"none",border:"none",color:"#94a3b8",fontSize:11,cursor:"pointer"}} onClick={()=>setAlertFields(p=>({...p,_areasOverridden:false,_targetAreas:[]}))}>↩ Reset to auto</button>}
-                </div>
-                {isHeavy&&!alertFields._areasOverridden&&<div style={{fontSize:12,color:"#ef4444",background:"rgba(220,38,38,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(220,38,38,0.2)",fontWeight:700}}>⚡ ALL AREAS — Full shutdown protocol</div>}
-                {isRain&&!isHeavy&&!alertFields._areasOverridden&&<div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(245,158,11,0.2)",fontWeight:700}}>🌧 Moon Stage stays open (tent). All other areas notified.</div>}
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {["All Areas",...AREAS].map(area=>{
-                    const sel=selected.includes(area);
-                    return(
-                      <button key={area} style={{padding:"10px 14px",borderRadius:8,border:`2px solid ${sel?"rgba(245,158,11,0.7)":"rgba(255,255,255,0.1)"}`,background:sel?"rgba(245,158,11,0.15)":"rgba(255,255,255,0.03)",color:sel?"#fbbf24":"#64748b",fontSize:13,fontWeight:sel?800:400,cursor:"pointer"}}
-                        onClick={()=>{
-                          const cur=selected;
-                          let next;
-                          if(area==="All Areas"){
-                            next=sel?[]:["All Areas",...AREAS];
-                          } else {
-                            next=sel?cur.filter(x=>x!==area):[...cur,area];
-                          }
-                          setAlertFields(p=>({...p,_targetAreas:next,_areasOverridden:true}));
-                          setEditedMsg("");
-                        }}>
-                        {sel?"✓ ":""}{area}
-                      </button>
-                    );
-                  })}
-                </div>
-                {selected.length>0&&<div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 10px",border:"1px solid rgba(245,158,11,0.2)"}}>
-                  📍 Notifying: {selected.filter(a=>a!=="All Areas").join(", ")||"All Areas"}
-                </div>}
-              </div>
-            );
-          })()}
-
           {/* ESTIMATED ARRIVAL (for weather/delays) */}
           {(t.id==="weather_imminent"||t.id==="event_delayed")&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -2072,20 +2027,7 @@ DATE/TIME: ${now()}`;
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{
   const msg=editedMsg||preview;
-  // Build targeted areas string for weather
-  const wTypes=alertFields._weatherTypes||[];
-  const isHeavy=wTypes.some(w=>["Thunderstorm","Severe Thunderstorm","Tornado Watch","Severe Thunderstorm Watch","Tornado Warning"].includes(w));
-  const isRain=wTypes.some(w=>["Rain Storm"].includes(w));
-  const RAIN_AREAS=["Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
-  const ALL_AREAS=["Moon Stage","Sun Stage","Lagniappe","Lafayette","Cabaret","Family Fête"];
-  let effectiveAreas=alertFields._areasOverridden?(alertFields._targetAreas||[]).filter(a=>a!=="All Areas"):isHeavy?ALL_AREAS:isRain?RAIN_AREAS:[];
-  let areasStr="";
-  if(t.id==="weather_imminent"&&effectiveAreas.length>0){
-    if(isHeavy&&!alertFields._areasOverridden) areasStr="\nAFFECTED: ALL AREAS — Full Shutdown Protocol";
-    else if(isRain&&!alertFields._areasOverridden) areasStr="\nAFFECTED: "+RAIN_AREAS.join(", ")+"\nMoon Stage remains open (tent)";
-    else areasStr="\nAFFECTED: "+effectiveAreas.join(", ");
-  }
-  const finalMsg=msg+(areasStr?areasStr:"");
+  const finalMsg=msg;
   setBroadcastSending(true);
   setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:finalMsg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
   setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:finalMsg},...p]);

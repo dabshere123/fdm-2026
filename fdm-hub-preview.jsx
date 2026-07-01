@@ -2065,6 +2065,10 @@ DATE/TIME: ${now()}`;
 
   // Get unique phone numbers for those roles
   const bcastPhones=[...new Set([ADMIN2_PHONE,...byRole(allRoleCodes)])];
+  // Match staff records by the same role codes so we can show WHO got the message
+  const matchedStaff=(staffList||[]).filter(s=>s.phone&&allRoleCodes.some(r=>(s.role||"").toLowerCase().includes(r)));
+  const namedRecipients=[...new Map(matchedStaff.map(s=>[s.phone,{name:s.name,role:hubDisplayRole(s.role)}])).values()];
+  const unmatchedCount=bcastPhones.length-namedRecipients.length; // e.g. Admin 2 hardcoded number w/ no staff record
 
   // Async SMS + Voice to prevent UI freeze
   setTimeout(()=>{
@@ -2076,27 +2080,36 @@ DATE/TIME: ${now()}`;
   },100);
   playAlert("broadcast");
   setBroadcastSending(false);
-  const _successData={label:t.label, channels:allChatChannels, count:bcastPhones.length};
+  const _successData={label:t.label, channels:allChatChannels, count:bcastPhones.length, recipients:namedRecipients, unmatchedCount};
   setTimeout(()=>{
     setBroadcastSuccess(_successData);
-    setTimeout(()=>{
-      setBroadcastSuccess(null);
-      setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
-    },4000);
   },50);
 }}>
   {broadcastSending?"⏳ Sending...":"🚀 SEND NOW"}
 </button>
-        {broadcastSuccess&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:"32px"}}>
-          <div style={{fontSize:72}}>✅</div>
-          <div style={{fontSize:24,fontWeight:900,color:"#10b981",textAlign:"center"}}>Broadcast Sent!</div>
-          <div style={{background:"rgba(16,185,129,0.12)",border:"2px solid rgba(16,185,129,0.4)",borderRadius:14,padding:"20px 24px",textAlign:"center",maxWidth:340,width:"100%"}}>
-            <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",marginBottom:8}}>{broadcastSuccess.label}</div>
-            <div style={{fontSize:13,color:"#6ee7b7",marginBottom:4}}>✓ Festival Chat — {broadcastSuccess.channels.length} channels</div>
-            <div style={{fontSize:13,color:"#6ee7b7",marginBottom:4}}>✓ SMS — {broadcastSuccess.count} recipients</div>
+        {broadcastSuccess&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:"32px"}}>
+          <div style={{fontSize:56}}>✅</div>
+          <div style={{fontSize:22,fontWeight:900,color:"#10b981",textAlign:"center"}}>Broadcast Sent!</div>
+          <div style={{background:"rgba(16,185,129,0.12)",border:"2px solid rgba(16,185,129,0.4)",borderRadius:14,padding:"18px 20px",textAlign:"left",maxWidth:380,width:"100%",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",textAlign:"center",marginBottom:2}}>{broadcastSuccess.label}</div>
+            <div style={{fontSize:13,color:"#6ee7b7"}}>✓ Festival Chat — {broadcastSuccess.channels.length} channels</div>
             <div style={{fontSize:13,color:"#6ee7b7"}}>✓ Voice calls firing</div>
+            <div style={{fontSize:13,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>{"✓ SMS — "+broadcastSuccess.count+" recipients"}</div>
+            <div style={{maxHeight:220,overflowY:"auto",display:"flex",flexDirection:"column",gap:5,background:"rgba(0,0,0,0.25)",borderRadius:10,padding:"8px 10px"}}>
+              {broadcastSuccess.recipients.length===0&&<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:6}}>No matching staff on file</div>}
+              {broadcastSuccess.recipients.map((r,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#e2e8f0",padding:"3px 2px",borderBottom:i<broadcastSuccess.recipients.length-1?"1px solid rgba(255,255,255,0.06)":"none"}}>
+                  <span style={{fontWeight:700}}>{r.name}</span>
+                  <span style={{color:"#94a3b8"}}>{r.role}</span>
+                </div>
+              ))}
+              {broadcastSuccess.unmatchedCount>0&&<div style={{fontSize:11,color:"#64748b",textAlign:"center",paddingTop:4}}>{"+ "+broadcastSuccess.unmatchedCount+" admin number(s) not tied to a staff record"}</div>}
+            </div>
           </div>
-          <div style={{fontSize:12,color:"#475569"}}>Returning to home in 4 seconds...</div>
+          <button style={{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}} onClick={()=>{
+            setBroadcastSuccess(null);
+            setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");
+          }}>Done</button>
         </div>}
         </div></>);
       })()}
@@ -2887,8 +2900,18 @@ Reply YES to acknowledge.`
           <div style={{background:"rgba(0,0,0,0.3)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#e2e8f0",lineHeight:1.7,whiteSpace:"pre-line",fontFamily:"monospace",maxHeight:220,overflowY:"auto"}}>
             {"IMPORTANT FETE DE MARQUETTE FESTIVAL APP INFORMATION\n\nHey team! 🎺 Fête de Marquette 2026 is almost here — here's everything you need before our meeting.\n\nSTART HERE — see exactly how the app works, step by step:\nfdm2026.netlify.app/demo\n\nOnce you've checked it out:\n📱 Worker App: fdm2026.netlify.app/field\n\nThe demo also shows you how to add the Worker App to your phone's home screen — takes 10 seconds and means no digging for links on festival day.\n\nSee you soon!\n— Devin"}
           </div>
-          {bulkObResult&&<div style={{fontSize:13,fontWeight:700,color:bulkObResult.failed>0?"#fbbf24":"#4ade80",background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px 12px"}}>
-            {"✅ Sent to "+bulkObResult.sent+" of "+bulkObResult.total+" staff"+(bulkObResult.failed>0?" · ⚠ "+bulkObResult.failed+" had no valid phone on file":"")}
+          {bulkObResult&&<div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{fontSize:13,fontWeight:700,color:bulkObResult.failed>0?"#fbbf24":"#4ade80"}}>
+              {"✅ Sent to "+bulkObResult.sent+" of "+bulkObResult.total+" staff"+(bulkObResult.failed>0?" · ⚠ "+bulkObResult.failed+" had no valid phone on file":"")}
+            </div>
+            <div style={{maxHeight:180,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
+              {bulkObResult.recipients.map((r,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#e2e8f0",padding:"3px 2px",borderBottom:i<bulkObResult.recipients.length-1?"1px solid rgba(255,255,255,0.06)":"none"}}>
+                  <span style={{fontWeight:700}}>{r.name}</span>
+                  <span style={{color:"#94a3b8"}}>{r.role}</span>
+                </div>
+              ))}
+            </div>
           </div>}
           <button
             style={{padding:"16px",borderRadius:12,border:"none",background:bulkObSending?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#10b981,#059669)",color:bulkObSending?"#64748b":"#fff",fontSize:16,fontWeight:800,cursor:bulkObSending?"not-allowed":"pointer"}}
@@ -2897,12 +2920,13 @@ Reply YES to acknowledge.`
               const message="IMPORTANT FETE DE MARQUETTE FESTIVAL APP INFORMATION\n\nHey team! 🎺 Fête de Marquette 2026 is almost here — here's everything you need before our meeting.\n\nSTART HERE — see exactly how the app works, step by step:\nfdm2026.netlify.app/demo\n\nOnce you've checked it out:\n📱 Worker App: fdm2026.netlify.app/field\n\nThe demo also shows you how to add the Worker App to your phone's home screen — takes 10 seconds and means no digging for links on festival day.\n\nSee you soon!\n— Devin";
               const validPhones=staffList.map(s=>fmtPhone(s.phone)).filter(Boolean);
               const failedCount=staffList.length-validPhones.length;
+              const sentNames=staffList.filter(s=>fmtPhone(s.phone)).map(s=>({name:s.name,role:hubDisplayRole(s.role)}));
               setBulkObSending(true);
               setBulkObResult(null);
               sendSMSList(validPhones,message);
               setTimeout(()=>{
                 setBulkObSending(false);
-                setBulkObResult({sent:validPhones.length,total:staffList.length,failed:failedCount});
+                setBulkObResult({sent:validPhones.length,total:staffList.length,failed:failedCount,recipients:sentNames});
               },1200);
             }}>
             {bulkObSending?"Sending...":"📤 Send to All Staff ("+staffList.length+")"}

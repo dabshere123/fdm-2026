@@ -96,8 +96,7 @@ const BROADCAST_ALERTS = [{
   id: "weather_imminent",
   label: "⛈ Inclement Weather",
   color: "#dc2626",
-  requiresWeatherType: true,
-  defaultMsg: "ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
+  defaultMsg: "ATTENTION ALL STAFF AND VENDORS: There is dangerous weather approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
   fields: []
 }, {
   id: "event_delayed",
@@ -4591,7 +4590,7 @@ DATE/TIME: ${now()}`;
   }, "📞 Voice + SMS")))) : (() => {
     const t = BROADCAST_ALERTS.find(x => x.id === alertView);
     const selectedReason = alertFields._reason || "";
-    const msgBase = (t?.defaultMsg || "").replace("[REASON]", selectedReason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom..." ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD");
+    const msgBase = (t?.defaultMsg || "").replace("[REASON]", selectedReason || "[select reason above]").replace("[TIME]", alertFields.eta || "time TBD");
     const preview = editedMsg || msgBase;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4772,56 +4771,7 @@ DATE/TIME: ${now()}`;
           setAlertFields(p => ({...p, _recipLocs: next}));
         }
       }, sel ? "\u2713 " : "", loc);
-    }))), t.requiresWeatherType && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 6
-      }
-    }, /*#__PURE__*/React.createElement("label", {
-      style: {
-        fontSize: 12,
-        color: "#94a3b8",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em"
-      }
-    }, "Type of Weather *"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 6
-      }
-    }, BCAST_WEATHER_TYPES.map(w => {
-      const selected = alertFields._weatherTypes || [];
-      const sel = selected.includes(w);
-      return /*#__PURE__*/React.createElement("button", {
-        key: w,
-        style: {
-          padding: "10px 14px",
-          borderRadius: 8,
-          border: `1px solid ${sel ? "rgba(239,68,68,0.6)" : "rgba(255,255,255,0.1)"}`,
-          background: sel ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.03)",
-          color: sel ? "#ef4444" : "#64748b",
-          fontSize: 14,
-          fontWeight: sel ? 700 : 400,
-          cursor: "pointer"
-        },
-        onClick: () => {
-          const cur = alertFields._weatherTypes || [];
-          const next = sel ? cur.filter(x => x !== w) : [...cur, w];
-          setAlertFields(p => ({
-            ...p,
-            _weatherTypes: next
-          }));
-          setEditedMsg("");
-        }
-      }, sel ? "✓ " : "", w);
-    }))), t.id === "weather_imminent" && (() => {
-      const wTypes = alertFields._weatherTypes || [];
-      const isHeavy = wTypes.some(w => ["Thunderstorm", "Severe Thunderstorm", "Tornado Watch", "Severe Thunderstorm Watch", "Tornado Warning"].includes(w));
-      const isRain = wTypes.some(w => ["Rain Storm", "Thunderstorm"].includes(w));
-    })(), (t.id === "weather_imminent" || t.id === "event_delayed") && /*#__PURE__*/React.createElement("div", {
+    }))), (t.id === "weather_imminent" || t.id === "event_delayed") && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -4913,7 +4863,7 @@ DATE/TIME: ${now()}`;
         lineHeight: 1.6,
         borderColor: "rgba(124,58,237,0.4)"
       },
-      value: editedMsg || (t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom..." ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"),
+      value: editedMsg || (t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[TIME]", alertFields.eta || "time TBD"),
       onChange: e => setEditedMsg(e.target.value),
       onFocus: e => {
         if (!editedMsg) setEditedMsg((t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[TIME]", alertFields.eta || "time TBD"));
@@ -4941,10 +4891,6 @@ DATE/TIME: ${now()}`;
       style: S.sendBtn,
       onClick: () => {
         const msg = editedMsg || preview;
-        // Build targeted areas string for weather
-        const wTypes = alertFields._weatherTypes || [];
-        const isHeavy = wTypes.some(w => ["Thunderstorm", "Severe Thunderstorm", "Tornado Watch", "Severe Thunderstorm Watch", "Tornado Warning"].includes(w));
-        const isRain = wTypes.some(w => ["Rain Storm"].includes(w));
         const finalMsg = msg;
         setBroadcastSending(true);
         setBroadcastAlerts(p => [{

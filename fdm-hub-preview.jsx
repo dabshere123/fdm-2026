@@ -20,8 +20,7 @@ const CANCEL_REASONS=["Weather","Safety Concern","Unforeseen Circumstances","Oth
 
 const BROADCAST_ALERTS=[
   {id:"weather_imminent",label:"⛈ Inclement Weather",color:"#dc2626",
-   requiresWeatherType:true,
-   defaultMsg:"ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
+   defaultMsg:"ATTENTION ALL STAFF AND VENDORS: There is dangerous weather approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
    fields:[]},
   {id:"event_delayed",label:"⏰ Event Delayed",color:"#f59e0b",
    defaultMsg:"Attention all staff and vendors — Fête de Marquette has been delayed. Expected resumption: [TIME]. Further information will be provided as it becomes available.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
@@ -1919,7 +1918,7 @@ DATE/TIME: ${now()}`;
       ):(()=>{
         const t=BROADCAST_ALERTS.find(x=>x.id===alertView);
         const selectedReason=alertFields._reason||"";
-        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD");
+        const msgBase=(t?.defaultMsg||"").replace("[REASON]",selectedReason||"[select reason above]").replace("[TIME]",alertFields.eta||"time TBD");
         const preview=editedMsg||msgBase;
         return(<><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 8px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.95)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
             <div style={{display:"inline-flex",padding:"4px 12px",borderRadius:20,fontSize:13,fontWeight:600,color:"#fff",background:t?.color}}>{t?.label}</div>
@@ -1981,30 +1980,6 @@ DATE/TIME: ${now()}`;
           </div>
 
           {/* WEATHER TYPE — for weather_imminent */}
-          {t.requiresWeatherType&&(
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <label style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Type of Weather *</label>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                {BCAST_WEATHER_TYPES.map(w=>{
-                  const selected=(alertFields._weatherTypes||[]);
-                  const sel=selected.includes(w);
-                  return(
-                    <button key={w} style={{padding:"10px 14px",borderRadius:8,border:`1px solid ${sel?"rgba(239,68,68,0.6)":"rgba(255,255,255,0.1)"}`,background:sel?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.03)",color:sel?"#ef4444":"#64748b",fontSize:14,fontWeight:sel?700:400,cursor:"pointer"}}
-                      onClick={()=>{
-                        const cur=alertFields._weatherTypes||[];
-                        const next=sel?cur.filter(x=>x!==w):[...cur,w];
-                        setAlertFields(p=>({...p,_weatherTypes:next}));
-                        setEditedMsg("");
-                      }}>
-                      {sel?"✓ ":""}{w}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* STAGE/AREA TARGETING */}
           {/* ESTIMATED ARRIVAL (for weather/delays) */}
           {(t.id==="weather_imminent"||t.id==="event_delayed")&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -2029,7 +2004,7 @@ DATE/TIME: ${now()}`;
               </div>
             </div>
           )}
-          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom..."?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[TIME]",alertFields.eta||"time TBD"));}}/>
+          <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} value={editedMsg||(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[TIME]",alertFields.eta||"time TBD")} onChange={e=>setEditedMsg(e.target.value)} onFocus={e=>{if(!editedMsg)setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[TIME]",alertFields.eta||"time TBD"));}}/>
           {editedMsg&&<button style={{background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>setEditedMsg("")}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
           <button style={S.sendBtn} onClick={()=>{

@@ -1,38 +1,31 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026 Hub</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link rel="manifest" href="/hub-manifest.json"/><link rel="apple-touch-icon" href="/icon-192.png"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script>
-window.fdmDeferredInstallPrompt = null;
-window.fdmAlreadyInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function(e){ console.log('SW register failed:', e); });
-}
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  window.fdmDeferredInstallPrompt = e;
-  window.dispatchEvent(new Event('fdm-install-available'));
-});
-window.addEventListener('appinstalled', function() {
-  window.fdmDeferredInstallPrompt = null;
-  window.dispatchEvent(new Event('fdm-install-done'));
-});
-window.fdmTriggerInstall = async function() {
-  if (!window.fdmDeferredInstallPrompt) return { ok: false, reason: 'unavailable' };
-  try {
-    window.fdmDeferredInstallPrompt.prompt();
-    const choice = await window.fdmDeferredInstallPrompt.userChoice;
-    window.fdmDeferredInstallPrompt = null;
-    return { ok: choice.outcome === 'accepted', reason: choice.outcome };
-  } catch (e) {
-    return { ok: false, reason: 'error', error: e.message };
-  }
-};
-</script><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>FDM Operations Hub</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+var useState = React.useState,
+  useEffect = React.useEffect,
+  useRef = React.useRef,
+  useCallback = React.useCallback,
+  useMemo = React.useMemo;
+var {
   useState,
   useEffect,
   useRef,
   useCallback,
   useMemo
 } = React;
-const ALL_LOCS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Financial 1", "Greeter Head Ingersoll Left", "Greeter Head Ingersoll Right", "Greeter Head Few", "Moon Stage Manager", "Lagniappe Manager", "Lafayette Manager", "Sun Stage Manager", "Cabaret Manager", "Med 1", "Med 2", "Hospitality", "First Aid", "Prize Wheel", "Sun Stage Vendors", "Moon Stage Vendors", "Lafayette Vendors"];
-const ALERT_COLORS = {
+var ALL_LOCS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Financial 1", "Greeter Head Ingersoll Left", "Greeter Head Ingersoll Right", "Greeter Head Few", "Moon Stage Manager", "Lagniappe Manager", "Lafayette Manager", "Sun Stage Manager", "Cabaret Manager", "Med 1", "Med 2", "Hospitality", "First Aid", "Prize Wheel", "Sun Stage Vendors", "Moon Stage Vendors", "Lafayette Vendors"];
+var ALERT_COLORS = {
   medical: {
     bg: "rgba(190,24,93,0.15)",
     border: "rgba(219,39,119,0.6)",
@@ -86,13 +79,13 @@ const ALERT_COLORS = {
     border: "rgba(234,179,8,0.6)",
     full: "rgba(202,138,4,0.90)",
     full2: "rgba(234,179,8,0.95)",
-    label: "REPORTED MISSING",
+    label: "LOST CHILD",
     icon: "🧒"
   }
 };
-const POSTPONE_REASONS = ["Weather", "Safety Concern", "Unforeseen Circumstances", "Other"];
-const CANCEL_REASONS = ["Weather", "Safety Concern", "Unforeseen Circumstances", "Other"];
-const BROADCAST_ALERTS = [{
+var POSTPONE_REASONS = ["Weather", "Safety Concern", "Unforeseen Circumstances", "Other"];
+var CANCEL_REASONS = ["Weather", "Safety Concern", "Unforeseen Circumstances", "Other"];
+var BROADCAST_ALERTS = [{
   id: "weather_imminent",
   label: "⛈ Inclement Weather",
   color: "#dc2626",
@@ -147,14 +140,110 @@ const BROADCAST_ALERTS = [{
     ph: "Type your message..."
   }]
 }];
-const BCAST_GROUP_ROLES={all_staff:["admin","a1","a2","a3","m1","med 1","med unit 1","m2","med 2","med unit 2","mb1","lagb","lafb","slb","srb","cb","ffb","etb","msb1","msb2","ssbl","ssbr","etecm","mtm","ms","lags","lafs","sst","cst","ffs","msm","ssm","lafm","lagm","sbl","sbr","ff","mb2","lb","lgb","eteb","sb","csb","fsf","laf","lag","mt","mkt","f1","f2","f3","f4","fip","youth organizer","sun bar left help","vend","oc1","oc2","oc3","oc4","hos","hosp","hospitality","misc"],admin:["admin","a1","a2","a3"],medical:["m1","med 1","med unit 1","m2","med 2","med unit 2"],bars:["mb1","lagb","lafb","slb","srb","cb","ffb","etb","msb1","msb2","ssbl","ssbr","etecm","mb2","sbl","sbr","lb","lgb","eteb","sb","csb","sun bar left help"],stages:["ms","lags","lafs","sst","cst","ffs","msm","ssm","lafm","lagm","ff","fsf","laf","lag","mt"],hospitality:["hos","hosp","hospitality"],misc:["fip","youth organizer","mkt","20th","misc","a3"],eec:["etb","etecm","eteb"],prize_wheel:["mt","mkt","mtm","prize wheel"]};
-const BCAST_GROUP_CHANNELS={all_staff:["AllStaff"],admin:["Admin"],medical:["AdminMed"],bars:["Bars","AllStaff"],stages:["AllStaff"],hospitality:["Hospitality"],misc:["AllStaff"],eec:["EverythingBar"],prize_wheel:["AllStaff"]};
-const BCAST_LOC_ROLES={"Admin":["admin","a1","a2","a3"],"Med 1":["m1","med 1","med unit 1"],"Med 2":["m2","med 2","med unit 2"],"Moon Stage":["ms","msm"],"Sun Stage":["sst","ssm","fsf","ss"],"Lagniappe Stage":["lags","lagm","lag","lagniappe stage"],"Lafayette Stage":["lafs","lafm","laf","lafayette stage"],"Family Fete Stage":["ffs","ff","family fete"],"Cabaret Stage":["cst","cb","cabaret"],"Moon Bar":["mb1","mb2","msb1","msb2"],"Sun Left Bar":["slb","ssbl","sbl","sun bar left help"],"Sun Right Bar":["srb","ssbr","sbr"],"Cabaret Bar":["cb","csb"],"Lafayette Bar":["lafb","lb"],"Lagniappe Bar":["lagb","lgb"],"Family Fete Bar":["ffb","sb"],"Everything Else Cafe":["etb","etecm","eteb"],"Prize Wheel":["mt","mkt","mtm"],"Hospitality":["hos","hosp","hospitality"]};
-const BCAST_LOC_CHANNELS={"Admin":"Admin","Med 1":"AdminMed","Med 2":"AdminMed","Moon Stage":"MoonST","Sun Stage":"SunST","Lagniappe Stage":"LagST","Lafayette Stage":"LafST","Family Fete Stage":"FamST","Cabaret Stage":"CabST","Moon Bar":"MoonBar","Sun Left Bar":"SunBarL","Sun Right Bar":"SunBarR","Cabaret Bar":"CabBar","Lafayette Bar":"LafBar","Lagniappe Bar":"LagBar","Family Fete Bar":"FamilyBar","Everything Else Cafe":"EverythingBar","Prize Wheel":"AllStaff","Hospitality":"Hospitality"};
-const BCAST_WEATHER_TYPES=["Thunderstorm","Severe Thunderstorm","Rain Storm","Tornado Watch","Severe Thunderstorm Watch","Tornado Warning","Custom"];
-const BCAST_GROUPS=[{id:"all_staff",label:"All Staff"},{id:"admin",label:"Admin"},{id:"medical",label:"Medical"},{id:"bars",label:"Bars"},{id:"stages",label:"Stages"},{id:"hospitality",label:"Hospitality"},{id:"misc",label:"Misc"},{id:"eec",label:"Everything Else Cafe"},{id:"prize_wheel",label:"Prize Wheel"}];
-const BCAST_LOCATIONS=["Admin","Med 1","Med 2","Moon Stage","Sun Stage","Lagniappe Stage","Lafayette Stage","Family Fete Stage","Cabaret Stage","Moon Bar","Sun Left Bar","Sun Right Bar","Cabaret Bar","Lafayette Bar","Lagniappe Bar","Family Fete Bar","Everything Else Cafe","Prize Wheel","Hospitality"];
-const EMS_STAGING = [{
+
+// ── BROADCAST RECIPIENT MAPPINGS ─────────────────────────────────────────
+// Groups → role codes used by byRole() for SMS/Voice lookup
+var BCAST_GROUP_ROLES = {
+  all_staff: ["admin", "a1", "a2", "a3", "m1", "med 1", "med unit 1", "m2", "med 2", "med unit 2", "mb1", "lagb", "lafb", "slb", "srb", "cb", "ffb", "etb", "msb1", "msb2", "ssbl", "ssbr", "etecm", "mtm", "ms", "lags", "lafs", "sst", "cst", "ffs", "msm", "ssm", "lafm", "lagm", "sbl", "sbr", "ff", "mb2", "lb", "lgb", "eteb", "sb", "csb", "fsf", "laf", "lag", "mt", "mkt", "f1", "f2", "f3", "f4", "fip", "youth organizer", "sun bar left help", "vend", "oc1", "oc2", "oc3", "oc4", "hos", "hosp", "hospitality", "misc"],
+  admin: ["admin", "a1", "a2", "a3"],
+  medical: ["m1", "med 1", "med unit 1", "m2", "med 2", "med unit 2"],
+  bars: ["mb1", "lagb", "lafb", "slb", "srb", "cb", "ffb", "etb", "msb1", "msb2", "ssbl", "ssbr", "etecm", "mb2", "sbl", "sbr", "lb", "lgb", "eteb", "sb", "csb", "sun bar left help"],
+  stages: ["ms", "lags", "lafs", "sst", "cst", "ffs", "msm", "ssm", "lafm", "lagm", "ff", "fsf", "laf", "lag", "mt"],
+  hospitality: ["hos", "hosp", "hospitality"],
+  misc: ["fip", "youth organizer", "mkt", "20th", "misc", "a3"],
+  eec: ["etb", "etecm", "eteb"],
+  prize_wheel: ["mt", "mkt", "mtm", "prize wheel"]
+};
+// Groups → Festival Chat channels
+var BCAST_GROUP_CHANNELS = {
+  all_staff: ["AllStaff"],
+  admin: ["Admin"],
+  medical: ["AdminMed"],
+  bars: ["Bars", "AllStaff"],
+  stages: ["AllStaff"],
+  hospitality: ["Hospitality"],
+  misc: ["AllStaff"],
+  eec: ["EverythingBar"],
+  prize_wheel: ["AllStaff"]
+};
+// Individual locations → role codes
+var BCAST_LOC_ROLES = {
+  "Admin": ["admin", "a1", "a2", "a3"],
+  "Med 1": ["m1", "med 1", "med unit 1"],
+  "Med 2": ["m2", "med 2", "med unit 2"],
+  "Moon Stage": ["ms", "msm"],
+  "Sun Stage": ["sst", "ssm", "fsf", "ss"],
+  "Lagniappe Stage": ["lags", "lagm", "lag", "lagniappe stage"],
+  "Lafayette Stage": ["lafs", "lafm", "laf", "lafayette stage"],
+  "Family Fete Stage": ["ffs", "ff", "family fete"],
+  "Cabaret Stage": ["cst", "cb", "cabaret"],
+  "Moon Bar": ["mb1", "mb2", "msb1", "msb2"],
+  "Sun Left Bar": ["slb", "ssbl", "sbl", "sun bar left help"],
+  "Sun Right Bar": ["srb", "ssbr", "sbr"],
+  "Cabaret Bar": ["cb", "csb"],
+  "Lafayette Bar": ["lafb", "lb"],
+  "Lagniappe Bar": ["lagb", "lgb"],
+  "Family Fete Bar": ["ffb", "sb"],
+  "Everything Else Cafe": ["etb", "etecm", "eteb"],
+  "Prize Wheel": ["mt", "mkt", "mtm"],
+  "Hospitality": ["hos", "hosp", "hospitality"]
+};
+// Individual locations → Festival Chat channels
+var BCAST_LOC_CHANNELS = {
+  "Admin": "Admin",
+  "Med 1": "AdminMed",
+  "Med 2": "AdminMed",
+  "Moon Stage": "MoonST",
+  "Sun Stage": "SunST",
+  "Lagniappe Stage": "LagST",
+  "Lafayette Stage": "LafST",
+  "Family Fete Stage": "FamST",
+  "Cabaret Stage": "CabST",
+  "Moon Bar": "MoonBar",
+  "Sun Left Bar": "SunBarL",
+  "Sun Right Bar": "SunBarR",
+  "Cabaret Bar": "CabBar",
+  "Lafayette Bar": "LafBar",
+  "Lagniappe Bar": "LagBar",
+  "Family Fete Bar": "FamilyBar",
+  "Everything Else Cafe": "EverythingBar",
+  "Prize Wheel": "AllStaff",
+  "Hospitality": "Hospitality",
+  "Greeter — Ingersoll Left": "AllStaff",
+  "Greeter — Ingersoll Right": "AllStaff",
+  "Greeter — Few St": "AllStaff"
+};
+var BCAST_WEATHER_TYPES = ["Thunderstorm", "Severe Thunderstorm", "Rain Storm", "Tornado Watch", "Severe Thunderstorm Watch", "Tornado Warning", "Custom"];
+var BCAST_GROUPS = [{
+  id: "all_staff",
+  label: "All Staff"
+}, {
+  id: "admin",
+  label: "Admin"
+}, {
+  id: "medical",
+  label: "Medical"
+}, {
+  id: "bars",
+  label: "Bars"
+}, {
+  id: "stages",
+  label: "Stages"
+}, {
+  id: "hospitality",
+  label: "Hospitality"
+}, {
+  id: "misc",
+  label: "Misc"
+}, {
+  id: "eec",
+  label: "Everything Else Cafe"
+}, {
+  id: "prize_wheel",
+  label: "Prize Wheel"
+}];
+var BCAST_LOCATIONS = ["Admin", "Med 1", "Med 2", "Moon Stage", "Sun Stage", "Lagniappe Stage", "Lafayette Stage", "Family Fete Stage", "Cabaret Stage", "Moon Bar", "Sun Left Bar", "Sun Right Bar", "Cabaret Bar", "Lafayette Bar", "Lagniappe Bar", "Family Fete Bar", "Everything Else Cafe", "Prize Wheel", "Hospitality"];
+var EMS_STAGING = [{
   id: "1",
   label: "#1 — First Aid Tent · Ingersoll & Wilson"
 }, {
@@ -164,7 +253,7 @@ const EMS_STAGING = [{
   id: "3",
   label: "#3 — Brearly & Willy St"
 }];
-const RESOURCE_TYPES = [{
+var RESOURCE_TYPES = [{
   id: "mpd",
   label: "MPD Officers",
   emoji: "👮",
@@ -195,7 +284,7 @@ const RESOURCE_TYPES = [{
   emoji: "📋",
   desc: "Request any other resource"
 }];
-const RESTOCK_ITEMS = [{
+var RESTOCK_ITEMS = [{
   id: "ice",
   label: "Ice",
   emoji: "🧊"
@@ -224,7 +313,7 @@ const RESTOCK_ITEMS = [{
   label: "Other",
   emoji: "➕"
 }];
-const QUANTITIES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"];
+var QUANTITIES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"];
 function now() {
   return new Date().toLocaleString("en-US", {
     weekday: "short",
@@ -325,17 +414,17 @@ function Fld({
     onChange: onChange
   }));
 }
-const MPD_VOICE_SCRIPT = (location, situation) => `Attention Madison Police Officers — you are requested to respond to ${location} for ${situation}. Please respond promptly. This call has been initiated by Fête de Marquette Operations. Thank you.`;
-const MPD_STANDDOWN_VOICE = () => `Per Fête de Marquette Operations — stand down. No response needed. Thank you!`;
-const MPD_STANDDOWN_SMS = () => `✅ STAND DOWN\nPer Fête de Marquette Operations — stand down. No response needed. Thank you!`;
-const MPD_SMS = (location, situation, requestedBy, timestamp) => `🚨 MPD RESPONSE REQUESTED\nFête de Marquette Operations\n\n📍 Location: ${location}\nSituation: ${situation}\nInitiated by: ${requestedBy} · ${timestamp}\n\nPlease respond promptly. Reply YES to acknowledge.\n— Fête de Marquette Operations`;
-const AudioCtx = typeof window !== "undefined" ? window.AudioContext || window.webkitAudioContext : null;
-let _actx = null;
-const getCtx = () => {
+var MPD_VOICE_SCRIPT = (location, situation) => `Attention Madison Police Officers — you are requested to respond to ${location} for ${situation}. Please respond promptly. This call has been initiated by Fête de Marquette Operations. Thank you.`;
+var MPD_STANDDOWN_VOICE = () => `Per Fête de Marquette Operations — stand down. No response needed. Thank you!`;
+var MPD_STANDDOWN_SMS = () => `✅ STAND DOWN\nPer Fête de Marquette Operations — stand down. No response needed. Thank you!`;
+var MPD_SMS = (location, situation, requestedBy, timestamp) => `🚨 MPD RESPONSE REQUESTED\nFête de Marquette Operations\n\n📍 Location: ${location}\nSituation: ${situation}\nInitiated by: ${requestedBy} · ${timestamp}\n\nPlease respond promptly. Reply YES to acknowledge.\n— Fête de Marquette Operations`;
+var AudioCtx = typeof window !== "undefined" ? window.AudioContext || window.webkitAudioContext : null;
+var _actx = null;
+var getCtx = () => {
   if (!_actx && AudioCtx) _actx = new AudioCtx();
   return _actx;
 };
-const playTone = cfg => {
+var playTone = cfg => {
   try {
     const ctx = getCtx();
     if (!ctx) return;
@@ -363,7 +452,7 @@ const playTone = cfg => {
     });
   } catch (e) {}
 };
-const SOUNDS = {
+var SOUNDS = {
   // LOUD — Medical: rapid urgent beeping
   medical: () => playTone({
     pattern: [[880, 0.12], [880, 0.12], [880, 0.12], [880, 0.12], [1100, 0.3]],
@@ -421,11 +510,13 @@ const SOUNDS = {
     type: "sine"
   })
 };
-const playAlert = type => {
+var playAlert = type => {
   const fn = SOUNDS[type];
   if (fn) fn();
 };
-const FESTIVAL_CHAT_CHANNEL_MAP = {
+
+// FESTIVAL_CHAT_CHANNEL_MAP — maps internal alert categories to real Festival Chat channels
+var FESTIVAL_CHAT_CHANNEL_MAP = {
   all_staff: "AllStaff",
   admin: "Admin",
   medical: "AdminMed",
@@ -435,7 +526,7 @@ const FESTIVAL_CHAT_CHANNEL_MAP = {
   maintenance: "Admin",
   AllStaff: "AllStaff"
 };
-const sendGroupMe = async (message, channels) => {
+var sendGroupMe = async (message, channels) => {
   try {
     const mapped = [...new Set((channels || []).map(c => FESTIVAL_CHAT_CHANNEL_MAP[c] || c))];
     await fetch('/.netlify/functions/send-message', {
@@ -596,7 +687,7 @@ function MedHome({
             message: medChatInput.trim(),
             isDM: true,
             toName: medDMThread.otherName,
-            toPhone: target?.phone || "",
+            toPhone: (target === null || target === void 0 ? void 0 : target.phone) || "",
             threadId: medDMThread.threadId
           })
         });
@@ -892,13 +983,13 @@ Madison Fire/EMS INBOUND — McPike Park`;
         letterSpacing: "0.1em",
         marginBottom: 4
       }
-    }, cc.icon, " ", cc.label, " — PRIORITY CALL ACTIVE"), /*#__PURE__*/React.createElement("div", {
+    }, cc.icon, " ", cc.label, " \u2014 PRIORITY CALL ACTIVE"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 22,
         fontWeight: 900,
         color: "#f1f5f9"
       }
-    }, "📍 ", pc.location), nineOneOneActive && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", pc.location), nineOneOneActive && /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 6,
         padding: "6px 10px",
@@ -909,7 +1000,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         fontWeight: 800,
         color: "#fca5a5"
       }
-    }, "🚨 911 ACTIVATED — EMS INBOUND")), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 911 ACTIVATED \u2014 EMS INBOUND")), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "16px",
         display: "flex",
@@ -950,14 +1041,14 @@ Madison Fire/EMS INBOUND — McPike Park`;
         color: "#475569",
         marginTop: 8
       }
-    }, "Called in: ", pc.timestamp || "--", " · Assigned to: ", role), nineOneOneActive && meetupLoc && /*#__PURE__*/React.createElement("div", {
+    }, "Called in: ", pc.timestamp || "--", " \xB7 Assigned to: ", role), nineOneOneActive && meetupLoc && /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 8,
         fontSize: 13,
         fontWeight: 700,
         color: "#fbbf24"
       }
-    }, "🚒 EMS Meetup: ", meetupLoc)), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDE92 EMS Meetup: ", meetupLoc)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8
@@ -1038,7 +1129,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
           })
         }).catch(() => {});
       }
-    }, "✅ On Scene"), isOnScene && /*#__PURE__*/React.createElement("div", {
+    }, "\u2705 On Scene"), isOnScene && /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         padding: "10px",
@@ -1046,7 +1137,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         fontWeight: 700,
         fontSize: 14
       }
-    }, "✅ On Scene — You are at the location"), !nineOneOneActive && /*#__PURE__*/React.createElement("div", {
+    }, "\u2705 On Scene \u2014 You are at the location"), !nineOneOneActive && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -1066,7 +1157,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         color: "#fca5a5",
         marginBottom: 3
       }
-    }, "⚠️ IMPORTANT"), /*#__PURE__*/React.createElement("div", {
+    }, "\u26A0\uFE0F IMPORTANT"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "#fecaca",
@@ -1076,7 +1167,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       style: {
         color: "#f87171"
       }
-    }, "YOU MUST CALL 911 YOURSELF"), " — this does NOT contact emergency services automatically.")), /*#__PURE__*/React.createElement("button", {
+    }, "YOU MUST CALL 911 YOURSELF"), " \u2014 this does NOT contact emergency services automatically.")), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
         padding: "16px",
@@ -1089,7 +1180,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         cursor: "pointer"
       },
       onClick: () => setShowMeetupModal(true)
-    }, "🚨 Activate 911 — Notify Admin & Med")), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDEA8 Activate 911 \u2014 Notify Admin & Med")), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
         padding: "16px",
@@ -1134,7 +1225,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         fontWeight: 900,
         color: "#fca5a5"
       }
-    }, "🚨 Activate 911"), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 Activate 911"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         color: "#94a3b8"
@@ -1186,7 +1277,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       },
       disabled: !meetupLoc.trim(),
       onClick: activate911
-    }, "🚨 CONFIRM — Activate 911")))));
+    }, "\uD83D\uDEA8 CONFIRM \u2014 Activate 911")))));
   }
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1254,7 +1345,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       fontSize: 22,
       flexShrink: 0
     }
-  }, "💬"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCAC"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       textAlign: "left"
@@ -1276,7 +1367,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       color: "#c4b5fd",
       fontSize: 18
     }
-  }, "→"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2192"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "4px 16px 0"
     }
@@ -1369,7 +1460,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       fontSize: 18
     }
-  }, "📋"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCB"), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "left"
     }
@@ -1380,7 +1471,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       fontWeight: 400,
       marginTop: 1
     }
-  }, "Medical · Fire · Security")))))), /*#__PURE__*/React.createElement("div", {
+  }, "Medical \xB7 Fire \xB7 Security")))))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "4px 16px 4px"
     }
@@ -1407,7 +1498,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       fontSize: 26
     }
-  }, "🚶"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEB6"), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "left"
     }
@@ -1423,7 +1514,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       color: "#e2e8f0",
       marginTop: 2
     }
-  }, "Patient walked in · alerts med units")))), /*#__PURE__*/React.createElement("div", {
+  }, "Patient walked in \xB7 alerts med units")))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "4px 16px 8px"
     }
@@ -1445,7 +1536,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       fontSize: 26
     }
-  }, "🧒"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD2"), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "left"
     }
@@ -1540,7 +1631,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         fontWeight: 900,
         color: "#f1f5f9"
       }
-    }, "📍 ", call.location), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", call.location), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         color: "#e2e8f0"
@@ -1585,7 +1676,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
           })
         }).catch(() => {});
       }
-    }, "✅ On Scene"), /*#__PURE__*/React.createElement("button", {
+    }, "\u2705 On Scene"), /*#__PURE__*/React.createElement("button", {
       style: {
         flex: 1,
         padding: "10px",
@@ -1610,7 +1701,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
           nature: call.problem
         }
       })
-    }, "🚨 911"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDEA8 911"), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
         padding: "10px",
@@ -1623,7 +1714,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         cursor: "pointer"
       },
       onClick: () => clearCall(call.id)
-    }, "Clear Call →")));
+    }, "Clear Call \u2192")));
   })), tab === "unassigned" && /*#__PURE__*/React.createElement(React.Fragment, null, unassigned.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
@@ -1657,7 +1748,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         fontWeight: 800,
         color: "#f1f5f9"
       }
-    }, "📍 ", call.location), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", call.location), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "#e2e8f0"
@@ -1680,7 +1771,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
         cursor: "pointer"
       },
       onClick: () => ackCall(call.id)
-    }, "Take — Assign to ", role), /*#__PURE__*/React.createElement("button", {
+    }, "Take \u2014 Assign to ", role), /*#__PURE__*/React.createElement("button", {
       style: {
         flex: 1,
         padding: "10px",
@@ -1726,7 +1817,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       fontSize: 24
     }
-  }, "🩺"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDE7A"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 900,
@@ -1738,7 +1829,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
       color: "#94a3b8",
       marginTop: 2
     }
-  }, "Festival Chat + SMS to Admin · Medical channel"))), /*#__PURE__*/React.createElement("button", {
+  }, "Festival Chat + SMS to Admin \xB7 Medical channel"))), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "18px 16px",
       borderRadius: 14,
@@ -1755,7 +1846,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       fontSize: 24
     }
-  }, "📢"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCE2"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 900,
@@ -1785,13 +1876,13 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       fontSize: 18
     }
-  }, "🔍"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDD0D"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 700,
       color: "#f1f5f9"
     }
-  }, "L&F Lookup Page →")), (lfItems || []).filter(i => i.status !== "Claimed").length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, "L&F Lookup Page \u2192")), (lfItems || []).filter(i => i.status !== "Claimed").length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       color: "#e2e8f0",
@@ -1824,13 +1915,13 @@ Madison Fire/EMS INBOUND — McPike Park`;
       color: "#94a3b8",
       marginTop: 2
     }
-  }, "📍 ", item.location, " · ", item.status))))));
+  }, "\uD83D\uDCCD ", item.location, " \xB7 ", item.status))))));
 }
 
 // ============================================================
 // SHARED INBOX CHAT COMPONENTS (hub version)
 // ============================================================
-const HUB_CHANNEL_LABELS = {
+var HUB_CHANNEL_LABELS = {
   AllStaff: 'All Staff',
   Hospitality: 'Hospitality',
   Bars: 'All Bars',
@@ -1851,7 +1942,7 @@ const HUB_CHANNEL_LABELS = {
   Admin: 'Admin',
   AdminMed: 'Medical'
 };
-const HUB_CHANNEL_GROUPS = [{
+var HUB_CHANNEL_GROUPS = [{
   label: 'General',
   channels: [{
     id: 'AllStaff',
@@ -1943,9 +2034,12 @@ function HubConversationView({
       const res = await fetch(url);
       const data = await res.json();
       if (data.messages) setMessages(data.messages);
-      setTimeout(() => msgEnd.current?.scrollIntoView({
-        behavior: 'smooth'
-      }), 100);
+      setTimeout(() => {
+        var _msgEnd$current;
+        return (_msgEnd$current = msgEnd.current) === null || _msgEnd$current === void 0 ? void 0 : _msgEnd$current.scrollIntoView({
+          behavior: 'smooth'
+        });
+      }, 100);
     } catch (e) {}
   }
   async function send() {
@@ -2047,7 +2141,7 @@ function HubConversationView({
         color: "#fca5a5",
         marginBottom: 2
       }
-    }, "🚨 ALERT · ", time), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 ALERT \xB7 ", time), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "#fecaca"
@@ -2067,7 +2161,7 @@ function HubConversationView({
         color: "#94a3b8",
         marginLeft: 4
       }
-    }, hubDisplayRole(msg.fromRole) || msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
+    }, hubDisplayRole(msg.fromRole) || msg.fromName, " \xB7 ", time), /*#__PURE__*/React.createElement("div", {
       style: {
         maxWidth: "82%",
         background: isMe ? "rgba(14,165,233,0.25)" : "rgba(255,255,255,0.07)",
@@ -2381,7 +2475,7 @@ function HubChatInbox({
       ...S.panelTitle,
       flex: 1
     }
-  }, "💬 Messages"), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDCAC Messages"), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "7px 14px",
       borderRadius: 10,
@@ -2393,7 +2487,7 @@ function HubChatInbox({
       cursor: "pointer"
     },
     onClick: () => setNewMsg(true)
-  }, "✏️ New")), loading && /*#__PURE__*/React.createElement("div", {
+  }, "\u270F\uFE0F New")), loading && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       color: "#475569",
@@ -2414,7 +2508,7 @@ function HubChatInbox({
       fontSize: 32,
       marginBottom: 12
     }
-  }, "💬"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCAC"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       fontWeight: 700,
@@ -2506,7 +2600,7 @@ function HubChatInbox({
     }, c.lastFrom && c.lastFrom !== myRole && c.lastFrom !== myName ? `${hubDisplayRole(c.lastFrom) || c.lastFrom}: ` : "", c.lastMessage)));
   }))));
 }
-const HUB_ROLE_DISPLAY = {
+var HUB_ROLE_DISPLAY = {
   mb1: 'Moon Bar Manager',
   lagb: 'Lagniappe Bar Manager',
   lafb: 'Lafayette Bar Manager',
@@ -2574,6 +2668,7 @@ function buildFoundAlert(f) {
 function HubApp({
   onBack
 }) {
+  var _RESOURCE_TYPES$find, _RESOURCE_TYPES$find2, _incidentView$type, _EMS_STAGING$find, _nineOneOne$info7, _nineOneOne$info8, _nineOneOne$info9, _nineOneOne$info10, _nineOneOne$info11, _nineOneOne$info12, _nineOneOne$info13, _nineOneOne$info14, _nineOneOne$info15, _nineOneOne$info16, _nineOneOne$info17, _nineOneOne$info18;
   const [role, setRole] = useState(() => {
     if (typeof window !== "undefined") {
       const p = new URLSearchParams(window.location.search);
@@ -2587,6 +2682,19 @@ function HubApp({
   const [canInstall, setCanInstall] = useState(!!window.fdmDeferredInstallPrompt);
   const [installed, setInstalled] = useState(!!window.fdmAlreadyInstalled);
   const [installMsg, setInstallMsg] = useState('');
+  useEffect(() => {
+    const onAvail = () => setCanInstall(true);
+    const onDone = () => {
+      setInstalled(true);
+      setCanInstall(false);
+    };
+    window.addEventListener('fdm-install-available', onAvail);
+    window.addEventListener('fdm-install-done', onDone);
+    return () => {
+      window.removeEventListener('fdm-install-available', onAvail);
+      window.removeEventListener('fdm-install-done', onDone);
+    };
+  }, []);
   const [holdTexts, setHoldTexts] = useState(false);
   const [obName, setObName] = useState('');
   const [obRole, setObRole] = useState('');
@@ -3022,17 +3130,6 @@ function HubApp({
   const [liveMode, setLiveMode] = useState(false);
   const [liveCalls, setLiveCalls] = useState([]);
 
-  useEffect(() => {
-    const onAvail = () => setCanInstall(true);
-    const onDone = () => { setInstalled(true); setCanInstall(false); };
-    window.addEventListener('fdm-install-available', onAvail);
-    window.addEventListener('fdm-install-done', onDone);
-    return () => {
-      window.removeEventListener('fdm-install-available', onAvail);
-      window.removeEventListener('fdm-install-done', onDone);
-    };
-  }, []);
-
   // Poll Airtable every 5 seconds in Live Mode
   useEffect(() => {
     if (!liveMode) return;
@@ -3062,12 +3159,13 @@ function HubApp({
           setLiveCalls(converted);
           // Check for 911 from med unit
           const nineOneOneCalls = converted.filter(c => c.nineOneOne && c.status === "pending");
-          if (nineOneOneCalls.length > 0 && !nineOneOne?.active) {
+          if (nineOneOneCalls.length > 0 && !(nineOneOne !== null && nineOneOne !== void 0 && nineOneOne.active)) {
+            var _c$history$;
             const c = nineOneOneCalls[0];
             set911({
               active: true,
               by: c.requestedBy,
-              at: new Date(c.history[0]?.ts).toLocaleTimeString(),
+              at: new Date((_c$history$ = c.history[0]) === null || _c$history$ === void 0 ? void 0 : _c$history$.ts).toLocaleTimeString(),
               info: {
                 location: c.location,
                 nature: c.problem
@@ -3118,22 +3216,25 @@ function HubApp({
       const d = await r.json();
       const features = d.features || [];
       const severe = features.filter(f => {
-        const ev = f.properties?.event || "";
+        var _f$properties;
+        const ev = ((_f$properties = f.properties) === null || _f$properties === void 0 ? void 0 : _f$properties.event) || "";
         return ["Tornado Warning", "Tornado Watch", "Severe Thunderstorm Warning", "Severe Thunderstorm Watch", "Flash Flood Warning", "Flash Flood Watch", "Special Weather Statement", "Winter Storm Warning", "Blizzard Warning", "High Wind Warning", "Wind Advisory"].some(x => ev.includes(x));
       });
       setNwsAlerts(severe);
 
       // Show banner for new alerts not yet dismissed
       if (severe.length > 0) {
+        var _top$properties;
         const top = severe[0];
-        const id = top.properties?.id;
+        const id = (_top$properties = top.properties) === null || _top$properties === void 0 ? void 0 : _top$properties.id;
         if (!weatherDismissed.includes(id)) {
+          var _top$properties2, _top$properties3, _top$properties4, _top$properties4$desc, _top$properties5;
           setWeatherAlertBanner({
             id,
-            event: top.properties?.event,
-            headline: top.properties?.headline,
-            description: top.properties?.description?.slice(0, 300),
-            expires: top.properties?.expires
+            event: (_top$properties2 = top.properties) === null || _top$properties2 === void 0 ? void 0 : _top$properties2.event,
+            headline: (_top$properties3 = top.properties) === null || _top$properties3 === void 0 ? void 0 : _top$properties3.headline,
+            description: (_top$properties4 = top.properties) === null || _top$properties4 === void 0 ? void 0 : (_top$properties4$desc = _top$properties4.description) === null || _top$properties4$desc === void 0 ? void 0 : _top$properties4$desc.slice(0, 300),
+            expires: (_top$properties5 = top.properties) === null || _top$properties5 === void 0 ? void 0 : _top$properties5.expires
           });
         }
       } else {
@@ -3142,14 +3243,16 @@ function HubApp({
 
       // ── ADMIN SMS + VOICE FOR SEVERE ALERTS ────────────────────
       for (const f of features) {
-        const ev = f.properties?.event || "";
-        const alertId = f.properties?.id || ev;
+        var _f$properties2, _f$properties3;
+        const ev = ((_f$properties2 = f.properties) === null || _f$properties2 === void 0 ? void 0 : _f$properties2.event) || "";
+        const alertId = ((_f$properties3 = f.properties) === null || _f$properties3 === void 0 ? void 0 : _f$properties3.id) || ev;
         if (sentAlertIds.current.has(alertId)) continue;
         const isSevere = SEVERE_TRIGGER.some(x => ev.toLowerCase().includes(x.toLowerCase()));
         const isApproach = !isSevere && APPROACH_TRIGGER.some(x => ev.toLowerCase().includes(x.toLowerCase()));
         if (isSevere || isApproach) {
+          var _f$properties4;
           sentAlertIds.current.add(alertId);
-          const headline = f.properties?.headline || ev;
+          const headline = ((_f$properties4 = f.properties) === null || _f$properties4 === void 0 ? void 0 : _f$properties4.headline) || ev;
           const smsMsg = isSevere ? `🚨 WEATHER ALERT — FDM 2026\n\n${ev}\n${headline}\n\nMcPike Park, Madison WI\nUse Broadcast to notify staff if needed.` : `⛈️ WEATHER ADVISORY — FDM 2026\n\n${ev}\n${headline}\n\nMonitor conditions at McPike Park.`;
 
           // SMS to Devin + Gary
@@ -3191,15 +3294,16 @@ function HubApp({
   // Current conditions — Madison WI (NWS station KMSN)
   const fetchWeather = async () => {
     try {
+      var _p$temperature, _p$windSpeed, _p$windDirection, _p$relativeHumidity;
       const r = await fetch('https://api.weather.gov/stations/KMSN/observations/latest');
       const d = await r.json();
       const p = d.properties;
       setCurrentWeather({
-        temp: p.temperature?.value != null ? Math.round(p.temperature.value * 9 / 5 + 32) : null,
+        temp: ((_p$temperature = p.temperature) === null || _p$temperature === void 0 ? void 0 : _p$temperature.value) != null ? Math.round(p.temperature.value * 9 / 5 + 32) : null,
         desc: p.textDescription,
-        wind: p.windSpeed?.value != null ? Math.round(p.windSpeed.value * 0.621371) : null,
-        windDir: p.windDirection?.value != null ? Math.round(p.windDirection.value) : null,
-        humidity: p.relativeHumidity?.value != null ? Math.round(p.relativeHumidity.value) : null
+        wind: ((_p$windSpeed = p.windSpeed) === null || _p$windSpeed === void 0 ? void 0 : _p$windSpeed.value) != null ? Math.round(p.windSpeed.value * 0.621371) : null,
+        windDir: ((_p$windDirection = p.windDirection) === null || _p$windDirection === void 0 ? void 0 : _p$windDirection.value) != null ? Math.round(p.windDirection.value) : null,
+        humidity: ((_p$relativeHumidity = p.relativeHumidity) === null || _p$relativeHumidity === void 0 ? void 0 : _p$relativeHumidity.value) != null ? Math.round(p.relativeHumidity.value) : null
       });
     } catch (e) {
       console.log('Weather fetch error:', e.message);
@@ -3262,7 +3366,8 @@ function HubApp({
   // Fetch MPD officers from Airtable
   useEffect(() => {
     fetch("/.netlify/functions/get-mpd-officers").then(r => r.json()).then(d => {
-      if (d.officers?.length) setMpdOfficers(d.officers);
+      var _d$officers;
+      if ((_d$officers = d.officers) !== null && _d$officers !== void 0 && _d$officers.length) setMpdOfficers(d.officers);
     }).catch(() => {});
   }, []);
   const [assignPanel, setAssignPanel] = useState(null); // callId being assigned
@@ -3489,17 +3594,20 @@ function HubApp({
         unit: by
       }]
     }));
-    setActivityLog(p => [{
-      id: Date.now(),
-      ts: tShort(),
-      date: now(),
-      type: "ack",
-      label: `Acknowledged by ${by}`,
-      msg: activeCalls.find(c => c.id === id)?.problem || ""
-    }, ...p]);
+    setActivityLog(p => {
+      var _activeCalls$find;
+      return [{
+        id: Date.now(),
+        ts: tShort(),
+        date: now(),
+        type: "ack",
+        label: `Acknowledged by ${by}`,
+        msg: ((_activeCalls$find = activeCalls.find(c => c.id === id)) === null || _activeCalls$find === void 0 ? void 0 : _activeCalls$find.problem) || ""
+      }, ...p];
+    });
     // Notify requester their call was acknowledged
     const ackedCall = activeCalls.find(c => c.id === id) || calls.find(c => c.id === id);
-    if (ackedCall?.phone) {
+    if (ackedCall !== null && ackedCall !== void 0 && ackedCall.phone) {
       const fmtP = p => {
         const d = String(p).replace(/\D/g, "");
         return d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === "1" ? `+${d}` : p;
@@ -3557,15 +3665,15 @@ function HubApp({
         body: JSON.stringify({
           incidentNumber: incNum,
           type: c.type,
-          location: incidentData?.location || c.location || "",
-          problem: incidentData?.problem || c.problem || "",
+          location: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.location) || c.location || "",
+          problem: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.problem) || c.problem || "",
           requestedBy: c.requestedBy || "Staff",
-          respondingUnit: incidentData?.respondingUnit || by,
-          disposition: incidentData?.disposition || `Cleared by ${by} at ${tShort()}`,
-          narrative: incidentData?.narrative || `${c.type} call at ${c.location}. ${c.problem}. Cleared by ${by} at ${tShort()}.`,
-          individualDescription: incidentData?.individualDescription || "",
-          interventions: incidentData?.interventions || "",
-          notes: incidentData?.notes || "",
+          respondingUnit: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.respondingUnit) || by,
+          disposition: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.disposition) || `Cleared by ${by} at ${tShort()}`,
+          narrative: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.narrative) || `${c.type} call at ${c.location}. ${c.problem}. Cleared by ${by} at ${tShort()}.`,
+          individualDescription: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.individualDescription) || "",
+          interventions: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.interventions) || "",
+          notes: (incidentData === null || incidentData === void 0 ? void 0 : incidentData.notes) || "",
           openedAt: c.firedAt ? new Date(c.firedAt).toISOString() : new Date().toISOString()
         })
       }).catch(() => {});
@@ -3648,6 +3756,7 @@ function HubApp({
       if (alertCall) break;
     }
     if (alertCall && (isAdmin || isMed || alertCall.type === "lost_child")) {
+      var _alertCall$history$;
       const ac = ALERT_COLORS[alertCall.type] || ALERT_COLORS.medical;
       const bg = lostChildBlink ? ac.full2 : ac.full;
       const isLC = alertCall.type === "lost_child";
@@ -3682,7 +3791,7 @@ function HubApp({
           color: "#fff",
           letterSpacing: "-0.01em"
         }
-      }, "📍 ", alertCall.location), /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDCCD ", alertCall.location), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 15,
           color: "rgba(255,255,255,0.88)",
@@ -3700,7 +3809,7 @@ function HubApp({
           fontWeight: 700,
           color: "rgba(255,255,255,0.85)"
         }
-      }, "From: ", alertCall.requestedBy, " · ", alertCall.history[0]?.ts), /*#__PURE__*/React.createElement("div", {
+      }, "From: ", alertCall.requestedBy, " \xB7 ", (_alertCall$history$ = alertCall.history[0]) === null || _alertCall$history$ === void 0 ? void 0 : _alertCall$history$.ts), /*#__PURE__*/React.createElement("div", {
         style: {
           width: "100%"
         }
@@ -3774,7 +3883,7 @@ function HubApp({
           background: "rgba(190,24,93,0.5)"
         },
         onClick: () => ackCall(alertCall.id, "Med 1")
-      }, "🩺 Med 1"), /*#__PURE__*/React.createElement("button", {
+      }, "\uD83E\uDE7A Med 1"), /*#__PURE__*/React.createElement("button", {
         style: {
           flex: 1,
           border: "2px solid rgba(255,255,255,0.5)",
@@ -3787,7 +3896,7 @@ function HubApp({
           background: "rgba(190,24,93,0.5)"
         },
         onClick: () => ackCall(alertCall.id, "Med 2")
-      }, "🩺 Med 2"), /*#__PURE__*/React.createElement("button", {
+      }, "\uD83E\uDE7A Med 2"), /*#__PURE__*/React.createElement("button", {
         style: {
           flex: 1,
           border: "2px solid rgba(255,255,255,0.5)",
@@ -3800,7 +3909,7 @@ function HubApp({
           background: "rgba(245,158,11,0.4)"
         },
         onClick: () => ackCall(alertCall.id, "Both")
-      }, "✅ Both"), isAdmin && /*#__PURE__*/React.createElement("button", {
+      }, "\u2705 Both"), isAdmin && /*#__PURE__*/React.createElement("button", {
         style: {
           flex: 1,
           border: "2px solid rgba(255,255,255,0.5)",
@@ -3813,7 +3922,7 @@ function HubApp({
           background: "rgba(99,102,241,0.4)"
         },
         onClick: () => ackCall(alertCall.id, role)
-      }, "⚡ Admin")), !nineOneOne.active && /*#__PURE__*/React.createElement("button", {
+      }, "\u26A1 Admin")), !nineOneOne.active && /*#__PURE__*/React.createElement("button", {
         style: {
           width: "100%",
           border: "2px solid rgba(220,38,38,0.7)",
@@ -3896,7 +4005,7 @@ function HubApp({
             }).catch(() => {});
           });
         }
-      }, "🚨 Activate 911 from This Call"), nineOneOne.active && /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDEA8 Activate 911 from This Call"), nineOneOne.active && /*#__PURE__*/React.createElement("div", {
         style: {
           textAlign: "center",
           color: "#fca5a5",
@@ -3905,7 +4014,7 @@ function HubApp({
           background: "rgba(180,0,0,0.2)",
           borderRadius: 10
         }
-      }, "🚨 911 ACTIVE")), isLC ? /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDEA8 911 ACTIVE")), isLC ? /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
@@ -3925,7 +4034,7 @@ function HubApp({
           // Force navigate away so alert screen dismisses
           setTimeout(() => setView("home"), 100);
         }
-      }, "✅ ACKNOWLEDGED — SEARCHING"), /*#__PURE__*/React.createElement("button", {
+      }, "\u2705 ACKNOWLEDGED \u2014 SEARCHING"), /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.bigAckBtn,
           background: "linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.6))",
@@ -3933,10 +4042,10 @@ function HubApp({
           fontSize: 16
         },
         onClick: () => clearCall(alertCall.id, role || "Admin")
-      }, "🧒 CHILD LOCATED — Close")) : /*#__PURE__*/React.createElement("button", {
+      }, "\uD83E\uDDD2 CHILD LOCATED \u2014 Close")) : /*#__PURE__*/React.createElement("button", {
         style: S.bigAckBtn,
         onClick: () => ackCall(alertCall.id, role || "Admin")
-      }, "✅ ACKNOWLEDGE")));
+      }, "\u2705 ACKNOWLEDGE")));
     }
   }
   if (!role) return /*#__PURE__*/React.createElement("div", {
@@ -3952,7 +4061,7 @@ function HubApp({
     style: {
       fontSize: 48
     }
-  }, "⚡"), /*#__PURE__*/React.createElement("div", {
+  }, "\u26A1"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 900,
@@ -3967,7 +4076,7 @@ function HubApp({
       letterSpacing: "0.08em",
       marginTop: 2
     }
-  }, "Fête de Marquette 2026")), canInstall && !installed && /*#__PURE__*/React.createElement("button", {
+  }, "F\xEAte de Marquette 2026")), canInstall && !installed && /*#__PURE__*/React.createElement("button", {
     style: {
       margin: "0 16px 12px",
       padding: "12px 16px",
@@ -3989,15 +4098,15 @@ function HubApp({
       if (result.ok) {
         setInstalled(true);
         setCanInstall(false);
-      } else if (result.reason === "unavailable") {
-        setInstallMsg("Install isn't available right now on this browser — try the Share/menu \"Add to Home Screen\" option instead, or reload the page and try again.");
-      } else if (result.reason === "dismissed") {
-        setInstallMsg("No problem — tap the button again anytime to install.");
+      } else if (result.reason === 'unavailable') {
+        setInstallMsg('Install isn\'t available right now on this browser — try the Share/menu "Add to Home Screen" option instead, or reload the page and try again.');
+      } else if (result.reason === 'dismissed') {
+        setInstallMsg('No problem — tap the button again anytime to install.');
       } else {
-        setInstallMsg("Something went wrong installing. Try the Share/menu \"Add to Home Screen\" option instead.");
+        setInstallMsg('Something went wrong installing. Try the Share/menu "Add to Home Screen" option instead.');
       }
     }
-  }, "📲 Add to Home Screen — one tap"), installMsg && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCF2 Add to Home Screen \u2014 one tap"), installMsg && /*#__PURE__*/React.createElement("div", {
     style: {
       margin: "0 16px 12px",
       padding: "10px 14px",
@@ -4022,7 +4131,7 @@ function HubApp({
       fontWeight: 700,
       textAlign: "center"
     }
-  }, "✅ Added! Find it on your home screen."), /*#__PURE__*/React.createElement("div", {
+  }, "\u2705 Added! Find it on your home screen."), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "0 16px 6px",
       fontSize: 12,
@@ -4091,7 +4200,7 @@ function HubApp({
       color: "#334155",
       lineHeight: 1.7
     }
-  }, "Admin → full hub · Med 1/2 → medical unit view")), /*#__PURE__*/React.createElement("div", {
+  }, "Admin \u2192 full hub \xB7 Med 1/2 \u2192 medical unit view")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "16px",
       marginTop: "auto"
@@ -4105,7 +4214,7 @@ function HubApp({
       fontSize: 13
     },
     onClick: onBack
-  }, "← Back to Launcher"))));
+  }, "\u2190 Back to Launcher"))));
 
   // RESOURCE REQUEST VIEW
   if (resourceView) return /*#__PURE__*/React.createElement("div", {
@@ -4173,13 +4282,13 @@ function HubApp({
     style: {
       fontSize: 22
     }
-  }, RESOURCE_TYPES.find(t => t.id === resourceType)?.emoji), /*#__PURE__*/React.createElement("span", {
+  }, (_RESOURCE_TYPES$find = RESOURCE_TYPES.find(t => t.id === resourceType)) === null || _RESOURCE_TYPES$find === void 0 ? void 0 : _RESOURCE_TYPES$find.emoji), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16,
       fontWeight: 700,
       color: "#f1f5f9"
     }
-  }, RESOURCE_TYPES.find(t => t.id === resourceType)?.label), /*#__PURE__*/React.createElement("button", {
+  }, (_RESOURCE_TYPES$find2 = RESOURCE_TYPES.find(t => t.id === resourceType)) === null || _RESOURCE_TYPES$find2 === void 0 ? void 0 : _RESOURCE_TYPES$find2.label), /*#__PURE__*/React.createElement("button", {
     style: {
       marginLeft: "auto",
       background: "none",
@@ -4266,7 +4375,7 @@ function HubApp({
       color: "#fcd34d",
       fontSize: 18
     }
-  }, "✓")))), adminSupplyItem && adminSupplyItem !== "other" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, "\u2713")))), adminSupplyItem && adminSupplyItem !== "other" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#e2e8f0",
@@ -4364,7 +4473,7 @@ DATE/TIME: ${now()}`;
       setResourceType(null);
       setResourceFields({});
     }
-  }, "📦 Send Supplies Request")), resourceType === "maintenance" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCE6 Send Supplies Request")), resourceType === "maintenance" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#e2e8f0",
@@ -4405,7 +4514,7 @@ DATE/TIME: ${now()}`;
       color: "#6ee7b7",
       fontSize: 18
     }
-  }, "✓")))), adminMaintProblem === "Other" && /*#__PURE__*/React.createElement("input", {
+  }, "\u2713")))), adminMaintProblem === "Other" && /*#__PURE__*/React.createElement("input", {
     style: {
       ...S.inp
     },
@@ -4480,7 +4589,7 @@ DATE/TIME: ${now()}`;
       setResourceType(null);
       setResourceFields({});
     }
-  }, "🔧 Send Maintenance Request")), resourceType !== "supplies" && resourceType !== "maintenance" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Fld, {
+  }, "\uD83D\uDD27 Send Maintenance Request")), resourceType !== "supplies" && resourceType !== "maintenance" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Fld, {
     label: "Location / Where needed",
     value: resourceFields.location || "",
     onChange: e => setResourceFields(p => ({
@@ -4514,14 +4623,17 @@ DATE/TIME: ${now()}`;
     },
     disabled: !resourceFields.location || !resourceFields.reason,
     onClick: () => {
-      setActivityLog(p => [{
-        id: Date.now(),
-        ts: tShort(),
-        date: now(),
-        type: "resource",
-        label: `Resource Request: ${RESOURCE_TYPES.find(t => t.id === resourceType)?.label}`,
-        msg: `${resourceFields.reason} — ${resourceFields.location}`
-      }, ...p]);
+      setActivityLog(p => {
+        var _RESOURCE_TYPES$find3;
+        return [{
+          id: Date.now(),
+          ts: tShort(),
+          date: now(),
+          type: "resource",
+          label: `Resource Request: ${(_RESOURCE_TYPES$find3 = RESOURCE_TYPES.find(t => t.id === resourceType)) === null || _RESOURCE_TYPES$find3 === void 0 ? void 0 : _RESOURCE_TYPES$find3.label}`,
+          msg: `${resourceFields.reason} — ${resourceFields.location}`
+        }, ...p];
+      });
       if (resourceType === "mfd" || resourceType === "ems_mfd") {
         set911({
           active: true,
@@ -4539,7 +4651,7 @@ DATE/TIME: ${now()}`;
       setResourceFields({});
       if (resourceType === "mfd" || resourceType === "ems_mfd") setView("911");
     }
-  }, "📋 SUBMIT RESOURCE REQUEST"))))));
+  }, "\uD83D\uDCCB SUBMIT RESOURCE REQUEST"))))));
 
   // BROADCAST VIEW
   if (view === "alert") return /*#__PURE__*/React.createElement("div", {
@@ -4588,10 +4700,10 @@ DATE/TIME: ${now()}`;
       fontSize: 11,
       color: "#a855f7"
     }
-  }, "📞 Voice + SMS")))) : (() => {
+  }, "\uD83D\uDCDE Voice + SMS")))) : (_t$fields => {
     const t = BROADCAST_ALERTS.find(x => x.id === alertView);
     const selectedReason = alertFields._reason || "";
-    const msgBase = (t?.defaultMsg || "").replace("[REASON]", selectedReason || "[select reason above]").replace("[TIME]", alertFields.eta || "time TBD");
+    const msgBase = ((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", selectedReason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD");
     const preview = editedMsg || msgBase;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4614,9 +4726,9 @@ DATE/TIME: ${now()}`;
         fontSize: 13,
         fontWeight: 600,
         color: "#fff",
-        background: t?.color
+        background: t === null || t === void 0 ? void 0 : t.color
       }
-    }, t?.label), /*#__PURE__*/React.createElement(BB, {
+    }, t === null || t === void 0 ? void 0 : t.label), /*#__PURE__*/React.createElement(BB, {
       onClick: () => setAlertView(null)
     })), /*#__PURE__*/React.createElement("div", {
       style: S.cWrap
@@ -4630,7 +4742,7 @@ DATE/TIME: ${now()}`;
         border: "1px solid rgba(168,85,247,0.2)",
         fontWeight: 600
       }
-    }, "📞 Voice call + SMS fires to all teams"), t?.fields?.map(f => f.type === "select" ? /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCDE Voice call + SMS fires to all teams"), t === null || t === void 0 ? void 0 : (_t$fields = t.fields) === null || _t$fields === void 0 ? void 0 : _t$fields.map(f => f.type === "select" ? /*#__PURE__*/React.createElement("div", {
       key: f.key,
       style: {
         display: "flex",
@@ -4661,7 +4773,7 @@ DATE/TIME: ${now()}`;
       multi: f.key === "notes" || f.key === "message"
     })), /*#__PURE__*/React.createElement("label", {
       style: S.lbl
-    }, "Message — Edit as needed"), /*#__PURE__*/React.createElement("div", {
+    }, "Message \u2014 Edit as needed"), /*#__PURE__*/React.createElement("div", {
       style: {
         background: "rgba(255,255,255,0.04)",
         borderRadius: 10,
@@ -4703,7 +4815,7 @@ DATE/TIME: ${now()}`;
         textTransform: "uppercase",
         letterSpacing: "0.06em"
       }
-    }, "Send to — Festival Chat + SMS/Voice"), /*#__PURE__*/React.createElement("div", {
+    }, "Send to \u2014 Festival Chat + SMS/Voice"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 4,
@@ -4711,7 +4823,7 @@ DATE/TIME: ${now()}`;
         borderRadius: 8,
         padding: 3
       }
-    }, [["groups", "Groups"], ["locations", "Select Locations"]].map(([mode, lbl]) => {
+    }, [["groups", "Groups"], ["locations", "Select Locations"]].map(([mode, label]) => {
       const active = (alertFields._recipMode || "groups") === mode;
       return /*#__PURE__*/React.createElement("button", {
         key: mode,
@@ -4726,10 +4838,19 @@ DATE/TIME: ${now()}`;
           fontWeight: active ? 800 : 400,
           cursor: "pointer"
         },
-        onClick: () => setAlertFields(p => ({...p, _recipMode: mode, _recipGroups: [], _recipLocs: []}))
-      }, lbl);
+        onClick: () => setAlertFields(p => ({
+          ...p,
+          _recipMode: mode,
+          _recipGroups: [],
+          _recipLocs: []
+        }))
+      }, label);
     })), (alertFields._recipMode || "groups") === "groups" && /*#__PURE__*/React.createElement("div", {
-      style: {display: "flex", flexWrap: "wrap", gap: 6}
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 6
+      }
     }, BCAST_GROUPS.map(g => {
       const sel = (alertFields._recipGroups || ["all_staff"]).includes(g.id);
       return /*#__PURE__*/React.createElement("button", {
@@ -4747,11 +4868,18 @@ DATE/TIME: ${now()}`;
         onClick: () => {
           const cur = alertFields._recipGroups || ["all_staff"];
           const next = sel ? cur.filter(x => x !== g.id) : [...cur, g.id];
-          setAlertFields(p => ({...p, _recipGroups: next}));
+          setAlertFields(p => ({
+            ...p,
+            _recipGroups: next
+          }));
         }
-      }, sel ? "\u2713 " : "", g.label);
+      }, sel ? "✓ " : "", g.label);
     })), alertFields._recipMode === "locations" && /*#__PURE__*/React.createElement("div", {
-      style: {display: "flex", flexWrap: "wrap", gap: 6}
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 6
+      }
     }, BCAST_LOCATIONS.map(loc => {
       const sel = (alertFields._recipLocs || []).includes(loc);
       return /*#__PURE__*/React.createElement("button", {
@@ -4769,9 +4897,12 @@ DATE/TIME: ${now()}`;
         onClick: () => {
           const cur = alertFields._recipLocs || [];
           const next = sel ? cur.filter(x => x !== loc) : [...cur, loc];
-          setAlertFields(p => ({...p, _recipLocs: next}));
+          setAlertFields(p => ({
+            ...p,
+            _recipLocs: next
+          }));
         }
-      }, sel ? "\u2713 " : "", loc);
+      }, sel ? "✓ " : "", loc);
     }))), t.requiresWeatherType && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -4810,15 +4941,27 @@ DATE/TIME: ${now()}`;
         onClick: () => {
           const cur = alertFields._weatherTypes || [];
           const next = sel ? cur.filter(x => x !== w) : [...cur, w];
-          setAlertFields(p => ({...p, _weatherTypes: next}));
+          setAlertFields(p => ({
+            ...p,
+            _weatherTypes: next
+          }));
           setEditedMsg("");
         }
-      }, sel ? "\u2713 " : "", w);
+      }, sel ? "✓ " : "", w);
     })), (alertFields._weatherTypes || []).includes("Custom") && /*#__PURE__*/React.createElement("input", {
-      style: {...S.inp, fontSize: 13},
+      style: {
+        ...S.inp,
+        fontSize: 13
+      },
       placeholder: "Describe the weather...",
       value: alertFields._customWeather || "",
-      onChange: e => { setAlertFields(p => ({...p, _customWeather: e.target.value})); setEditedMsg(""); }
+      onChange: e => {
+        setAlertFields(p => ({
+          ...p,
+          _customWeather: e.target.value
+        }));
+        setEditedMsg("");
+      }
     })), (t.id === "weather_imminent" || t.id === "event_delayed") && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -4838,7 +4981,7 @@ DATE/TIME: ${now()}`;
         ...S.inp,
         fontSize: 14
       },
-      placeholder: "e.g. 8:15 PM arrival · 45 min duration",
+      placeholder: "e.g. 8:15 PM arrival \xB7 45 min duration",
       value: alertFields._eta || "",
       onChange: e => {
         setAlertFields(p => ({
@@ -4847,7 +4990,7 @@ DATE/TIME: ${now()}`;
         }));
         setEditedMsg("");
       }
-    })), t?.requiresReason && /*#__PURE__*/React.createElement("div", {
+    })), (t === null || t === void 0 ? void 0 : t.requiresReason) && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -4911,10 +5054,10 @@ DATE/TIME: ${now()}`;
         lineHeight: 1.6,
         borderColor: "rgba(124,58,237,0.4)"
       },
-      value: editedMsg || (t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[TIME]", alertFields.eta || "time TBD"),
+      value: editedMsg || ((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"),
       onChange: e => setEditedMsg(e.target.value),
       onFocus: e => {
-        if (!editedMsg) setEditedMsg((t?.defaultMsg || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[TIME]", alertFields.eta || "time TBD"));
+        if (!editedMsg) setEditedMsg(((t === null || t === void 0 ? void 0 : t.defaultMsg) || "").replace("[REASON]", alertFields._reason === "Other" ? alertFields._customReason || "" : alertFields._reason || "[select reason above]").replace("[WEATHER_TYPE]", (alertFields._weatherTypes || []).length > 0 ? (alertFields._weatherTypes || []).map(w => w === "Custom" ? alertFields._customWeather || "Custom" : w).join(", ") : "[select weather type above]").replace("[TIME]", alertFields.eta || "time TBD"));
       }
     }), editedMsg && /*#__PURE__*/React.createElement("button", {
       style: {
@@ -4926,7 +5069,7 @@ DATE/TIME: ${now()}`;
         padding: 0
       },
       onClick: () => setEditedMsg("")
-    }, "↩ Reset to original"), /*#__PURE__*/React.createElement("div", {
+    }, "\u21A9 Reset to original"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "#f59e0b",
@@ -4935,7 +5078,7 @@ DATE/TIME: ${now()}`;
         padding: "8px 12px",
         border: "1px solid rgba(245,158,11,0.2)"
       }
-    }, "⏱ 90-sec ACK — ", ALL_LOCS.length, " locations"), /*#__PURE__*/React.createElement("button", {
+    }, "\u23F1 90-sec ACK \u2014 ", ALL_LOCS.length, " locations"), /*#__PURE__*/React.createElement("button", {
       style: S.sendBtn,
       onClick: () => {
         const msg = editedMsg || preview;
@@ -4963,6 +5106,8 @@ DATE/TIME: ${now()}`;
         const recipMode = alertFields._recipMode || "groups";
         const recipGroups = alertFields._recipGroups || ["all_staff"];
         const recipLocs = alertFields._recipLocs || [];
+
+        // Collect role codes and chat channels
         let allRoleCodes = [];
         let allChatChannels = [];
         if (recipMode === "groups") {
@@ -4979,14 +5124,24 @@ DATE/TIME: ${now()}`;
         }
         allRoleCodes = [...new Set(allRoleCodes.map(r => r.toLowerCase()))];
         allChatChannels = [...new Set(allChatChannels)];
+
+        // Get unique phone numbers for those roles
         const bcastPhones = [...new Set([ADMIN2_PHONE, ...byRole(allRoleCodes)])];
+
         // Async SMS + Voice to prevent UI freeze
         setTimeout(() => {
           const announcementHeader = t.id && t.id.startsWith("weather") ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nDANGEROUS WEATHER — ${t.label}` : ["event_delayed", "event_postponed", "event_cancelled_staff", "all_clear"].includes(t.id) ? `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nEVENT — ${t.label}` : `Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\n${t.label}`;
           const bcastMsg2 = `${announcementHeader}\n\n${finalMsg}`;
           sendSMSList(bcastPhones, bcastMsg2);
           sendVoice(bcastPhones, `Fete de Marquette announcement. ${finalMsg.replace(/\n/g, " ")}`);
-          sendGroupMe(`FDM 2026 — ${t.label}\n${new Date().toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})} · ${new Date().toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}\n\n${finalMsg}`, allChatChannels);
+          sendGroupMe(`FDM 2026 — ${t.label}\n${new Date().toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric"
+          })} · ${new Date().toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit"
+          })}\n\n${finalMsg}`, allChatChannels);
         }, 100);
         playAlert("broadcast");
         setBroadcastSending(false);
@@ -5026,7 +5181,7 @@ DATE/TIME: ${now()}`;
       style: {
         fontSize: 72
       }
-    }, "✅"), /*#__PURE__*/React.createElement("div", {
+    }, "\u2705"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 24,
         fontWeight: 900,
@@ -5056,18 +5211,18 @@ DATE/TIME: ${now()}`;
         color: "#6ee7b7",
         marginBottom: 4
       }
-    }, "✓ Festival Chat — ", broadcastSuccess.channels.length, " channels"), /*#__PURE__*/React.createElement("div", {
+    }, "\u2713 Festival Chat \u2014 ", broadcastSuccess.channels.length, " channels"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "#6ee7b7",
         marginBottom: 4
       }
-    }, "✓ SMS — ", broadcastSuccess.count, " recipients"), /*#__PURE__*/React.createElement("div", {
+    }, "\u2713 SMS \u2014 ", broadcastSuccess.count, " recipients"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "#6ee7b7"
       }
-    }, "✓ Voice calls firing")), /*#__PURE__*/React.createElement("div", {
+    }, "\u2713 Voice calls firing")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "#475569"
@@ -5101,7 +5256,7 @@ DATE/TIME: ${now()}`;
     style: {
       ...S.panelTitle
     }
-  }, "📋 New Call")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCB New Call")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "16px",
       display: "flex",
@@ -5191,7 +5346,7 @@ DATE/TIME: ${now()}`;
     onClick: function () {
       setNewCallType("");
     }
-  }, "← Change type"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2190 Change type"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: (newCallType === "medical" || newCallType === "walk_in" ? "#a855f7" : newCallType === "fire" ? "#ef4444" : "#3b82f6") + "22",
       border: "2px solid " + (newCallType === "medical" || newCallType === "walk_in" ? "#a855f7" : newCallType === "fire" ? "#ef4444" : "#3b82f6") + "88",
@@ -5226,7 +5381,7 @@ DATE/TIME: ${now()}`;
       outline: "none",
       width: "100%"
     },
-    placeholder: "e.g. Sun Stage · Moon Bar · First Aid",
+    placeholder: "e.g. Sun Stage \xB7 Moon Bar \xB7 First Aid",
     value: newCallLocation,
     onChange: function (e) {
       setNewCallLocation(e.target.value);
@@ -5300,7 +5455,7 @@ DATE/TIME: ${now()}`;
         alert("Error: " + e.message);
       });
     }
-  }, "🚨 Submit Call"), newCallType === "security" && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8 Submit Call"), newCallType === "security" && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(37,99,235,0.06)",
       border: "1px solid rgba(37,99,235,0.2)",
@@ -5318,7 +5473,7 @@ DATE/TIME: ${now()}`;
       textTransform: "uppercase",
       letterSpacing: "0.06em"
     }
-  }, "🚔 Madison Police Dept"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDE94 Madison Police Dept"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8
@@ -5340,7 +5495,7 @@ DATE/TIME: ${now()}`;
       setNewCallType("");
       setMpdRequestView(true);
     }
-  }, "🚔 Request MPD"), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDE94 Request MPD"), /*#__PURE__*/React.createElement("button", {
     style: {
       flex: 1,
       padding: "11px",
@@ -5400,7 +5555,7 @@ DATE/TIME: ${now()}`;
       style: S.panelHd
     }, /*#__PURE__*/React.createElement("span", {
       style: S.panelTitle
-    }, "🔧 Maintenance — Set Priority")), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDD27 Maintenance \u2014 Set Priority")), /*#__PURE__*/React.createElement("div", {
       style: S.cWrap
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5416,7 +5571,7 @@ DATE/TIME: ${now()}`;
         color: "#6ee7b7",
         marginBottom: 2
       }
-    }, "📍 ", mc2.location), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", mc2.location), /*#__PURE__*/React.createElement("div", {
       style: {
         color: "#e2e8f0"
       }
@@ -5434,7 +5589,7 @@ DATE/TIME: ${now()}`;
         textTransform: "uppercase",
         letterSpacing: "0.06em"
       }
-    }, "Select Priority — Reporter will be notified by SMS"), URGENCY_OPTIONS.map(opt => /*#__PURE__*/React.createElement("button", {
+    }, "Select Priority \u2014 Reporter will be notified by SMS"), URGENCY_OPTIONS.map(opt => /*#__PURE__*/React.createElement("button", {
       key: opt.id,
       style: {
         width: "100%",
@@ -5474,7 +5629,7 @@ DATE/TIME: ${now()}`;
         color: opt.color,
         fontSize: 18
       }
-    }, "✓"))), /*#__PURE__*/React.createElement(Fld, {
+    }, "\u2713"))), /*#__PURE__*/React.createElement(Fld, {
       label: "What was done / notes (optional)",
       value: incFields.maintNarrative || "",
       onChange: e => setIncFields(p => ({
@@ -5492,7 +5647,7 @@ DATE/TIME: ${now()}`;
         fontSize: 12,
         color: "#94a3b8"
       }
-    }, "📅 ", ts), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDCC5 ", ts), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: incFields._maintUrgency ? "linear-gradient(135deg,#059669,#047857)" : "rgba(255,255,255,0.04)",
@@ -5500,6 +5655,7 @@ DATE/TIME: ${now()}`;
       },
       disabled: !incFields._maintUrgency,
       onClick: () => {
+        var _URGENCY_OPTIONS$find;
         const ts2 = new Date().toLocaleString('en-US', {
           weekday: 'short',
           month: 'short',
@@ -5508,7 +5664,7 @@ DATE/TIME: ${now()}`;
           minute: '2-digit',
           timeZone: 'America/Chicago'
         });
-        const urgencyLabel = URGENCY_OPTIONS.find(o => o.id === incFields._maintUrgency)?.label || '';
+        const urgencyLabel = ((_URGENCY_OPTIONS$find = URGENCY_OPTIONS.find(o => o.id === incFields._maintUrgency)) === null || _URGENCY_OPTIONS$find === void 0 ? void 0 : _URGENCY_OPTIONS$find.label) || '';
         const maintMsg = `🔧 MAINTENANCE — ${urgencyLabel.toUpperCase()}\nLOCATION: ${mc2.location}\nISSUE: ${mc2.problem}\nPRIORITY: ${urgencyLabel}\n${incFields.maintNarrative ? `NOTES: ${incFields.maintNarrative}\n` : ""}ACKNOWLEDGED BY: ${clearBy2}\nDATE/TIME: ${ts2}`;
         sendGroupMe(maintMsg, ["Admin", "AllStaff"]);
         // SMS back to reporter
@@ -5570,7 +5726,7 @@ DATE/TIME: ${now()}`;
         setIncFields({});
         setView("home");
       }
-    }, "✅ Acknowledge & Notify Reporter"), /*#__PURE__*/React.createElement("button", {
+    }, "\u2705 Acknowledge & Notify Reporter"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "none",
@@ -5578,9 +5734,10 @@ DATE/TIME: ${now()}`;
         fontSize: 13
       },
       onClick: () => setMaintNarrativeForm(null)
-    }, "← Back to Call"))));
+    }, "\u2190 Back to Call"))));
   }
 
+  // LOST CHILD FOUND FORM
   if (lcFoundForm) {
     const ts = new Date().toLocaleString('en-US', {
       weekday: 'short',
@@ -5598,7 +5755,7 @@ DATE/TIME: ${now()}`;
       style: S.panelHd
     }, /*#__PURE__*/React.createElement("span", {
       style: S.panelTitle
-    }, "🧒 Child Found — Enter Details")), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83E\uDDD2 Child Found \u2014 Enter Details")), /*#__PURE__*/React.createElement("div", {
       style: S.cWrap
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5611,7 +5768,7 @@ DATE/TIME: ${now()}`;
         fontWeight: 700,
         textAlign: "center"
       }
-    }, "✅ Child has been located — please record details"), /*#__PURE__*/React.createElement(Fld, {
+    }, "\u2705 Child has been located \u2014 please record details"), /*#__PURE__*/React.createElement(Fld, {
       label: "Found Location *",
       value: incFields.foundLocation || "",
       onChange: e => setIncFields(p => ({
@@ -5653,7 +5810,7 @@ DATE/TIME: ${now()}`;
         fontSize: 12,
         color: "#94a3b8"
       }
-    }, "📅 Date/Time: ", ts), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDCC5 Date/Time: ", ts), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "linear-gradient(135deg,#10b981,#059669)"
@@ -5674,7 +5831,7 @@ DATE/TIME: ${now()}`;
         setLcFoundForm(null);
         setIncFields({});
       }
-    }, "✅ Confirm Child Found & Send All-Clear"), /*#__PURE__*/React.createElement("button", {
+    }, "\u2705 Confirm Child Found & Send All-Clear"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "none",
@@ -5682,7 +5839,7 @@ DATE/TIME: ${now()}`;
         fontSize: 13
       },
       onClick: () => setLcFoundForm(null)
-    }, "← Back"))));
+    }, "\u2190 Back"))));
   }
 
   // QUICK CLEAR INCIDENT FORM
@@ -5704,7 +5861,7 @@ DATE/TIME: ${now()}`;
       style: S.panelHd
     }, /*#__PURE__*/React.createElement("span", {
       style: S.panelTitle
-    }, "📋 Close Call — Incident Report")), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCB Close Call \u2014 Incident Report")), /*#__PURE__*/React.createElement("div", {
       style: S.cWrap
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5724,11 +5881,11 @@ DATE/TIME: ${now()}`;
       style: {
         color: "#e2e8f0"
       }
-    }, "📍 ", cc.location), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", cc.location), /*#__PURE__*/React.createElement("div", {
       style: {
         color: "#e2e8f0"
       }
-    }, "🔍 ", cc.problem)), /*#__PURE__*/React.createElement(Fld, {
+    }, "\uD83D\uDD0D ", cc.problem)), /*#__PURE__*/React.createElement(Fld, {
       label: "Responding Unit",
       value: incFields.respondingUnit || clearBy || "",
       onChange: e => setIncFields(p => ({
@@ -5808,7 +5965,7 @@ DATE/TIME: ${now()}`;
         ...incFields,
         respondingUnit: incFields.respondingUnit || clearBy
       })
-    }, "📋 Submit Report & Clear Call"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDCCB Submit Report & Clear Call"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "rgba(255,255,255,0.06)",
@@ -5819,7 +5976,7 @@ DATE/TIME: ${now()}`;
       onClick: () => submitAndClearCall(cc, clearBy, {
         respondingUnit: clearBy
       })
-    }, "⏭ Skip — Auto Report"), /*#__PURE__*/React.createElement("button", {
+    }, "\u23ED Skip \u2014 Auto Report"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "none",
@@ -5830,7 +5987,7 @@ DATE/TIME: ${now()}`;
         setClearIncView(null);
         setIncFields({});
       }
-    }, "← Back to Call"))));
+    }, "\u2190 Back to Call"))));
   }
   if (incidentView) return /*#__PURE__*/React.createElement("div", {
     style: S.root
@@ -5845,7 +6002,7 @@ DATE/TIME: ${now()}`;
     }
   }), /*#__PURE__*/React.createElement("span", {
     style: S.panelTitle
-  }, "📋 Incident Report")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCB Incident Report")), /*#__PURE__*/React.createElement("div", {
     style: S.cWrap
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -5869,7 +6026,7 @@ DATE/TIME: ${now()}`;
       fontWeight: 800,
       color: "#f1f5f9"
     }
-  }, incidentView.type?.toUpperCase(), " — ", incidentView.location), /*#__PURE__*/React.createElement("div", {
+  }, (_incidentView$type = incidentView.type) === null || _incidentView$type === void 0 ? void 0 : _incidentView$type.toUpperCase(), " \u2014 ", incidentView.location), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#e2e8f0"
@@ -5884,7 +6041,7 @@ DATE/TIME: ${now()}`;
       fontSize: 12,
       color: "#94a3b8"
     }
-  }, "Reported by: ", incidentView.requestedBy, " · Unit: ", incFields.respondingUnit)), /*#__PURE__*/React.createElement(Fld, {
+  }, "Reported by: ", incidentView.requestedBy, " \xB7 Unit: ", incFields.respondingUnit)), /*#__PURE__*/React.createElement(Fld, {
     label: "Individual Description",
     value: incFields.individualDescription || "",
     onChange: e => setIncFields(p => ({
@@ -5913,7 +6070,7 @@ DATE/TIME: ${now()}`;
     }))
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "Select disposition..."), /*#__PURE__*/React.createElement("option", null, "Treated on Scene"), /*#__PURE__*/React.createElement("option", null, "Transported — Madison Fire Medics"), /*#__PURE__*/React.createElement("option", null, "Transported — Private Vehicle"), /*#__PURE__*/React.createElement("option", null, "Refused Care"), /*#__PURE__*/React.createElement("option", null, "No Treatment Needed"), /*#__PURE__*/React.createElement("option", null, "Patron Removed"), /*#__PURE__*/React.createElement("option", null, "Police Custody"), /*#__PURE__*/React.createElement("option", null, "Other")), incFields.disposition === "Other" && /*#__PURE__*/React.createElement("input", {
+  }, "Select disposition..."), /*#__PURE__*/React.createElement("option", null, "Treated on Scene"), /*#__PURE__*/React.createElement("option", null, "Transported \u2014 Madison Fire Medics"), /*#__PURE__*/React.createElement("option", null, "Transported \u2014 Private Vehicle"), /*#__PURE__*/React.createElement("option", null, "Refused Care"), /*#__PURE__*/React.createElement("option", null, "No Treatment Needed"), /*#__PURE__*/React.createElement("option", null, "Patron Removed"), /*#__PURE__*/React.createElement("option", null, "Police Custody"), /*#__PURE__*/React.createElement("option", null, "Other")), incFields.disposition === "Other" && /*#__PURE__*/React.createElement("input", {
     style: {
       ...S.inp,
       marginTop: 6
@@ -5987,7 +6144,7 @@ DATE/TIME: ${now()}`;
       setIncidentView(null);
       setIncFields({});
     }
-  }, "📋 SUBMIT INCIDENT REPORT"), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDCCB SUBMIT INCIDENT REPORT"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.sendBtn,
       background: "rgba(255,255,255,0.05)",
@@ -6040,6 +6197,7 @@ DATE/TIME: ${now()}`;
         marginBottom: 8
       }
     }, unacked.map(c => {
+      var _c$history$2;
       const limit = ESCALATION_MS[c.type] || 60000;
       const elapsed = Math.min(Date.now() - c.firedAt, limit);
       const pct = Math.round(elapsed / limit * 100);
@@ -6067,18 +6225,18 @@ DATE/TIME: ${now()}`;
           fontWeight: 900,
           color: "#fff"
         }
-      }, color.icon, " ", color.label, " — NEW"), /*#__PURE__*/React.createElement("span", {
+      }, color.icon, " ", color.label, " \u2014 NEW"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           color: "rgba(255,255,255,0.5)"
         }
-      }, c.history[0]?.ts)), /*#__PURE__*/React.createElement("div", {
+      }, (_c$history$2 = c.history[0]) === null || _c$history$2 === void 0 ? void 0 : _c$history$2.ts)), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 18,
           fontWeight: 900,
           color: "#fff"
         }
-      }, "📍 ", c.location), /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDCCD ", c.location), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 15,
           color: "rgba(255,255,255,0.85)",
@@ -6136,7 +6294,7 @@ DATE/TIME: ${now()}`;
           background: "rgba(255,255,255,0.04)"
         },
         onClick: () => ackCall(c.id, "Admin")
-      }, "✅ ACKNOWLEDGE"));
+      }, "\u2705 ACKNOWLEDGE"));
     })), acked.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, unacked.length > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
@@ -6145,7 +6303,8 @@ DATE/TIME: ${now()}`;
         letterSpacing: "0.08em",
         padding: "4px 0 8px"
       }
-    }, "── Acknowledged"), acked.map(c => {
+    }, "\u2500\u2500 Acknowledged"), acked.map(c => {
+      var _c$history$3, _c$assignedOfficers, _c$assignedOfficers2, _c$assignedOfficers3, _c$assignedOfficers4;
       const color = ALERT_COLORS[c.type] || ALERT_COLORS.medical;
       const statuses = {
         acknowledged: {
@@ -6205,13 +6364,13 @@ DATE/TIME: ${now()}`;
           fontSize: 11,
           color: "#94a3b8"
         }
-      }, c.history[0]?.ts)), /*#__PURE__*/React.createElement("div", {
+      }, (_c$history$3 = c.history[0]) === null || _c$history$3 === void 0 ? void 0 : _c$history$3.ts)), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 17,
           fontWeight: 900,
           color: "#f1f5f9"
         }
-      }, "📍 ", c.location), /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDCCD ", c.location), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 14,
           color: "#e2e8f0",
@@ -6223,7 +6382,7 @@ DATE/TIME: ${now()}`;
           color: "#10b981",
           fontWeight: 600
         }
-      }, "👤 ", c.unit), c.type === "security" && c.assignedOfficers?.length > 0 && /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDC64 ", c.unit), c.type === "security" && ((_c$assignedOfficers = c.assignedOfficers) === null || _c$assignedOfficers === void 0 ? void 0 : _c$assignedOfficers.length) > 0 && /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexWrap: "wrap",
@@ -6243,7 +6402,7 @@ DATE/TIME: ${now()}`;
             color: "#93c5fd",
             fontWeight: 600
           }
-        }, "👮 ", o.name) : null;
+        }, "\uD83D\uDC6E ", o.name) : null;
       })), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
@@ -6302,13 +6461,13 @@ DATE/TIME: ${now()}`;
       }, c.unit === u ? "✅ " : "", u)), c.type === "security" && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
-          background: c.assignedOfficers?.length > 0 ? "rgba(59,130,246,0.4)" : "rgba(59,130,246,0.2)",
+          background: ((_c$assignedOfficers2 = c.assignedOfficers) === null || _c$assignedOfficers2 === void 0 ? void 0 : _c$assignedOfficers2.length) > 0 ? "rgba(59,130,246,0.4)" : "rgba(59,130,246,0.2)",
           fontSize: 12,
           padding: "8px 12px",
-          border: `1px solid ${c.assignedOfficers?.length > 0 ? "rgba(59,130,246,0.7)" : "rgba(59,130,246,0.4)"}`
+          border: `1px solid ${((_c$assignedOfficers3 = c.assignedOfficers) === null || _c$assignedOfficers3 === void 0 ? void 0 : _c$assignedOfficers3.length) > 0 ? "rgba(59,130,246,0.7)" : "rgba(59,130,246,0.4)"}`
         },
         onClick: () => setAssignPanel(assignPanel === c.id ? null : c.id)
-      }, "👮 ", c.assignedOfficers?.length > 0 ? `Officers (${c.assignedOfficers.length})` : "Police Officer"))), /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDC6E ", ((_c$assignedOfficers4 = c.assignedOfficers) === null || _c$assignedOfficers4 === void 0 ? void 0 : _c$assignedOfficers4.length) > 0 ? `Officers (${c.assignedOfficers.length})` : "Police Officer"))), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexWrap: "wrap",
@@ -6321,21 +6480,21 @@ DATE/TIME: ${now()}`;
           flex: 1
         },
         onClick: () => updCall(c.id, "on_scene", c.unit || "Admin")
-      }, "🔴 On Scene"), c.type === "supplies" && c.status === "acknowledged" && /*#__PURE__*/React.createElement("button", {
+      }, "\uD83D\uDD34 On Scene"), c.type === "supplies" && c.status === "acknowledged" && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "#10b981",
           flex: 1
         },
         onClick: () => updCall(c.id, "delivered", "Admin")
-      }, "✅ Delivered"), c.type === "security" && isAdmin && /*#__PURE__*/React.createElement("button", {
+      }, "\u2705 Delivered"), c.type === "security" && isAdmin && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "rgba(100,100,100,0.4)",
           flex: 1
         },
         onClick: () => clearCall(c.id, "Admin")
-      }, "✅ Clear — Admin"), c.type === "security" && isAdmin && /*#__PURE__*/React.createElement("button", {
+      }, "\u2705 Clear \u2014 Admin"), c.type === "security" && isAdmin && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "rgba(37,99,235,0.3)",
@@ -6365,7 +6524,7 @@ DATE/TIME: ${now()}`;
             msg: `Security at ${c.location}`
           }, ...p]);
         }
-      }, "👮 Request MPD"), c.type === "lost_child" && isAdmin && /*#__PURE__*/React.createElement("button", {
+      }, "\uD83D\uDC6E Request MPD"), c.type === "lost_child" && isAdmin && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.6))",
@@ -6373,7 +6532,7 @@ DATE/TIME: ${now()}`;
           flex: 1
         },
         onClick: () => clearCall(c.id, "Admin")
-      }, "🧒 CHILD LOCATED — Close"), c.type === "maintenance" && /*#__PURE__*/React.createElement("button", {
+      }, "\uD83E\uDDD2 CHILD LOCATED \u2014 Close"), c.type === "maintenance" && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "linear-gradient(135deg,rgba(22,163,74,0.5),rgba(15,118,55,0.5))",
@@ -6381,52 +6540,58 @@ DATE/TIME: ${now()}`;
           flex: 1
         },
         onClick: () => clearCall(c.id, role || "Admin")
-      }, "🔧 Acknowledge"), c.type !== "security" && c.type !== "lost_child" && c.type !== "maintenance" && /*#__PURE__*/React.createElement("button", {
+      }, "\uD83D\uDD27 Acknowledge"), c.type !== "security" && c.type !== "lost_child" && c.type !== "maintenance" && /*#__PURE__*/React.createElement("button", {
         style: {
           ...S.actBtn,
           background: "rgba(100,100,100,0.4)",
           flex: 1
         },
         onClick: () => clearCall(c.id, "Admin")
-      }, "✅ Clear")), c.type === "security" && isAdmin && assignPanel === c.id && (() => {
+      }, "\u2705 Clear")), c.type === "security" && isAdmin && assignPanel === c.id && (() => {
         const cNotifs = officerNotifs[c.id] || {};
         const selectedIds = c.assignedOfficers || [];
         const anyNotified = Object.values(cNotifs).some(n => n.notified && !n.cancelled);
         const cancelOfficer = oid => {
           const o = mpdOfficers.find(x => x.id === oid);
           const ts = tShort();
-          setOfficerNotifs(p => ({
-            ...p,
-            [c.id]: {
-              ...p[c.id],
-              [oid]: {
-                ...p[c.id]?.[oid],
-                cancelled: true,
-                cancelledAt: ts
+          setOfficerNotifs(p => {
+            var _p$c$id;
+            return {
+              ...p,
+              [c.id]: {
+                ...p[c.id],
+                [oid]: {
+                  ...((_p$c$id = p[c.id]) === null || _p$c$id === void 0 ? void 0 : _p$c$id[oid]),
+                  cancelled: true,
+                  cancelledAt: ts
+                }
               }
-            }
-          }));
+            };
+          });
           setActivityLog(prev => [{
             id: Date.now(),
             ts,
             date: now(),
             type: "security",
-            label: `MPD Stand Down — ${o?.name}`,
-            msg: `Stand down sent to ${o?.name} · ${c.location}\nVoice: "${MPD_STANDDOWN_VOICE(c.location)}"`
+            label: `MPD Stand Down — ${o === null || o === void 0 ? void 0 : o.name}`,
+            msg: `Stand down sent to ${o === null || o === void 0 ? void 0 : o.name} · ${c.location}\nVoice: "${MPD_STANDDOWN_VOICE(c.location)}"`
           }, ...prev]);
         };
         const simAck = oid => {
-          setOfficerNotifs(p => ({
-            ...p,
-            [c.id]: {
-              ...p[c.id],
-              [oid]: {
-                ...p[c.id]?.[oid],
-                acked: true,
-                ackedAt: tShort()
+          setOfficerNotifs(p => {
+            var _p$c$id2;
+            return {
+              ...p,
+              [c.id]: {
+                ...p[c.id],
+                [oid]: {
+                  ...((_p$c$id2 = p[c.id]) === null || _p$c$id2 === void 0 ? void 0 : _p$c$id2[oid]),
+                  acked: true,
+                  ackedAt: tShort()
+                }
               }
-            }
-          }));
+            };
+          });
         };
         // If panel just opened and no officers notified yet — fire all immediately
         const justOpened = Object.keys(cNotifs).length === 0;
@@ -6448,7 +6613,7 @@ DATE/TIME: ${now()}`;
             textTransform: "uppercase",
             letterSpacing: "0.06em"
           }
-        }, "👮 Officers Notified — ", c.location), /*#__PURE__*/React.createElement("div", {
+        }, "\uD83D\uDC6E Officers Notified \u2014 ", c.location), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: "#94a3b8",
@@ -6493,9 +6658,9 @@ Reply YES to acknowledge.`
           }
         }, mpdOfficers.map(o => {
           const notif = cNotifs[o.id];
-          const isNotified = notif?.notified && !notif?.cancelled;
-          const isAcked = notif?.acked;
-          const isCancelled = notif?.cancelled;
+          const isNotified = (notif === null || notif === void 0 ? void 0 : notif.notified) && !(notif !== null && notif !== void 0 && notif.cancelled);
+          const isAcked = notif === null || notif === void 0 ? void 0 : notif.acked;
+          const isCancelled = notif === null || notif === void 0 ? void 0 : notif.cancelled;
           const statusColor = isAcked ? "rgba(16,185,129,0.6)" : isCancelled ? "rgba(100,116,139,0.25)" : isNotified ? "rgba(59,130,246,0.5)" : "rgba(255,255,255,0.08)";
           const statusBg = isAcked ? "rgba(16,185,129,0.07)" : isCancelled ? "rgba(100,116,139,0.03)" : isNotified ? "rgba(59,130,246,0.06)" : "rgba(255,255,255,0.02)";
           return /*#__PURE__*/React.createElement("div", {
@@ -6530,27 +6695,27 @@ Reply YES to acknowledge.`
               fontSize: 11,
               color: "#94a3b8"
             }
-          }, o.badge, " · ", o.phone), isNotified && !isAcked && /*#__PURE__*/React.createElement("div", {
+          }, o.badge, " \xB7 ", o.phone), isNotified && !isAcked && /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
               color: "#60a5fa",
               fontWeight: 600,
               marginTop: 2
             }
-          }, "📞 Notified ", notif?.notifiedAt, " · Awaiting YES"), isAcked && /*#__PURE__*/React.createElement("div", {
+          }, "\uD83D\uDCDE Notified ", notif === null || notif === void 0 ? void 0 : notif.notifiedAt, " \xB7 Awaiting YES"), isAcked && /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
               color: "#10b981",
               fontWeight: 700,
               marginTop: 2
             }
-          }, "✅ Acknowledged · ", notif?.ackedAt), isCancelled && /*#__PURE__*/React.createElement("div", {
+          }, "\u2705 Acknowledged \xB7 ", notif === null || notif === void 0 ? void 0 : notif.ackedAt), isCancelled && /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
               color: "#e2e8f0",
               marginTop: 2
             }
-          }, "❌ Stood down ", notif?.cancelledAt)), /*#__PURE__*/React.createElement("div", {
+          }, "\u274C Stood down ", notif === null || notif === void 0 ? void 0 : notif.cancelledAt)), /*#__PURE__*/React.createElement("div", {
             style: {
               display: "flex",
               gap: 6,
@@ -6597,7 +6762,7 @@ Reply YES to acknowledge.`
             padding: "10px 12px",
             lineHeight: 1.6
           }
-        }, "📞 ", Object.values(cNotifs).filter(n => n.notified && !n.cancelled).length, " active · ✅ ", Object.values(cNotifs).filter(n => n.acked).length, " acknowledged · ❌ ", Object.values(cNotifs).filter(n => n.cancelled).length, " stood down"), /*#__PURE__*/React.createElement("button", {
+        }, "\uD83D\uDCDE ", Object.values(cNotifs).filter(n => n.notified && !n.cancelled).length, " active \xB7 \u2705 ", Object.values(cNotifs).filter(n => n.acked).length, " acknowledged \xB7 \u274C ", Object.values(cNotifs).filter(n => n.cancelled).length, " stood down"), /*#__PURE__*/React.createElement("button", {
           style: {
             padding: "10px 20px",
             borderRadius: 10,
@@ -6634,14 +6799,14 @@ Reply YES to acknowledge.`
         background: "#10b981",
         alignSelf: "flex-start"
       }
-    }, "✅ COMPLETED"), /*#__PURE__*/React.createElement("div", {
+    }, "\u2705 COMPLETED"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         fontWeight: 700,
         color: "#f1f5f9",
         marginTop: 4
       }
-    }, "📍 ", c.location), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", c.location), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "#cbd5e1"
@@ -6651,7 +6816,7 @@ Reply YES to acknowledge.`
         fontSize: 12,
         color: "#94a3b8"
       }
-    }, "Cleared by: ", c.clearedBy, " · ", c.clearedAt), /*#__PURE__*/React.createElement("div", {
+    }, "Cleared by: ", c.clearedBy, " \xB7 ", c.clearedAt), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -6697,7 +6862,7 @@ Reply YES to acknowledge.`
     }
   }), /*#__PURE__*/React.createElement("span", {
     style: S.panelTitle
-  }, "🚔 Manage MPD Officers"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDE94 Manage MPD Officers"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6
@@ -6714,7 +6879,7 @@ Reply YES to acknowledge.`
       cursor: "pointer"
     },
     onClick: fetchMPD
-  }, "↺ Refresh"), /*#__PURE__*/React.createElement("button", {
+  }, "\u21BA Refresh"), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "6px 12px",
       borderRadius: 8,
@@ -6760,7 +6925,7 @@ Reply YES to acknowledge.`
       fontSize: 24,
       marginBottom: 12
     }
-  }, "🚔"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDE94"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 700,
       color: "#94a3b8",
@@ -6774,7 +6939,7 @@ Reply YES to acknowledge.`
     style: {
       color: "#f1f5f9"
     }
-  }, "MPDOfficers"), " table in Airtable, then tap ↺ Refresh.")), mpdOfficers.map(o => /*#__PURE__*/React.createElement("div", {
+  }, "MPDOfficers"), " table in Airtable, then tap \u21BA Refresh.")), mpdOfficers.map(o => /*#__PURE__*/React.createElement("div", {
     key: o.id,
     style: {
       background: "rgba(255,255,255,0.04)",
@@ -6931,6 +7096,7 @@ Reply YES to acknowledge.`
       }
       setMpdAddStatus("Adding officer...");
       try {
+        var _d$error;
         // Add to Airtable
         const r = await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/MPDOfficers`, {
           method: "POST",
@@ -6948,7 +7114,7 @@ Reply YES to acknowledge.`
           })
         });
         const d = await r.json();
-        if (!r.ok) throw new Error(d.error?.message || "Airtable error");
+        if (!r.ok) throw new Error(((_d$error = d.error) === null || _d$error === void 0 ? void 0 : _d$error.message) || "Airtable error");
         // Send confirmation SMS via Netlify function
         await fetch("/.netlify/functions/confirm-mpd-registration", {
           method: "POST",
@@ -6986,7 +7152,7 @@ Reply YES to acknowledge.`
       fontWeight: 800,
       color: "#f1f5f9"
     }
-  }, "➕ Add MPD Officer"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2795 Add MPD Officer"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#64748b"
@@ -7102,7 +7268,7 @@ Reply YES to acknowledge.`
     style: {
       color: "#93c5fd"
     }
-  }, "Airtable — MPDOfficers table fields:"), /*#__PURE__*/React.createElement("br", null), "• Name, Phone, Badge, LastAck", /*#__PURE__*/React.createElement("br", null), "• MPDStatus: ", /*#__PURE__*/React.createElement("strong", {
+  }, "Airtable \u2014 MPDOfficers table fields:"), /*#__PURE__*/React.createElement("br", null), "\u2022 Name, Phone, Badge, LastAck", /*#__PURE__*/React.createElement("br", null), "\u2022 MPDStatus: ", /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#4ade80"
     }
@@ -7110,7 +7276,7 @@ Reply YES to acknowledge.`
     style: {
       color: "#64748b"
     }
-  }, "OFF"), " (not working — auto-set at shift end)", /*#__PURE__*/React.createElement("br", null), "• ThuStart–SunEnd (same time format as staff)", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
+  }, "OFF"), " (not working \u2014 auto-set at shift end)", /*#__PURE__*/React.createElement("br", null), "\u2022 ThuStart\u2013SunEnd (same time format as staff)", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#93c5fd"
     }
@@ -7118,7 +7284,7 @@ Reply YES to acknowledge.`
     style: {
       color: "#f1f5f9"
     }
-  }, "\"ON\""), " → automation fires confirmation text", /*#__PURE__*/React.createElement("br", null), "Trigger: When record matches condition → MPDStatus = \"ON\"", /*#__PURE__*/React.createElement("br", null), "Webhook URL:", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+  }, "\"ON\""), " \u2192 automation fires confirmation text", /*#__PURE__*/React.createElement("br", null), "Trigger: When record matches condition \u2192 MPDStatus = \"ON\"", /*#__PURE__*/React.createElement("br", null), "Webhook URL:", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#f1f5f9",
       fontSize: 10,
@@ -7798,7 +7964,7 @@ Reply YES to acknowledge.`
     onClick: () => setView("home")
   }), /*#__PURE__*/React.createElement("span", {
     style: S.panelTitle
-  }, "👥 Staff List"), /*#__PURE__*/React.createElement("span", {
+  }, "\uD83D\uDC65 Staff List"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#94a3b8",
@@ -7861,9 +8027,45 @@ Reply YES to acknowledge.`
   }, hubDisplayRole(s.role))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
-      color: "#38bdf8"
+      color: "#38bdf8",
+      display: "flex",
+      flexDirection: "column",
+      gap: 4
     }
-  }, s.phone || "—"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, s.phone || "—"), s.phone && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "tel:" + fmtPhone(s.phone),
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 3,
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#4ade80",
+      textDecoration: "none",
+      background: "rgba(74,222,128,0.12)",
+      padding: "3px 8px",
+      borderRadius: 8
+    }
+  }, "📞 Call"), /*#__PURE__*/React.createElement("a", {
+    href: "sms:" + fmtPhone(s.phone),
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 3,
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#38bdf8",
+      textDecoration: "none",
+      background: "rgba(56,189,248,0.12)",
+      padding: "3px 8px",
+      borderRadius: 8
+    }
+  }, "💬 Text"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#e2e8f0"
@@ -7879,8 +8081,8 @@ Reply YES to acknowledge.`
       fontSize: 10,
       color: "#475569"
     }
-  }, s.shiftStart, "–", s.shiftEnd)))))));
-if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
+  }, s.shiftStart, "\u2013", s.shiftEnd)))))));
+  if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       ...S.root,
       position: "relative"
@@ -8280,7 +8482,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontFamily: "inherit",
       outline: "none"
     },
-    placeholder: "Search items…",
+    placeholder: "Search items\u2026",
     value: lfSearch || "",
     onChange: function (e) {
       setLfSearch(e.target.value);
@@ -8513,7 +8715,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         cursor: "pointer"
       },
       onClick: () => setBroadcastAlerts(p => p.filter((_, j) => j !== i))
-    }, "✕")), /*#__PURE__*/React.createElement("div", {
+    }, "\u2715")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
@@ -8542,7 +8744,8 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         color: "#e2e8f0"
       }
     }, conf, "/", tot)), ALL_LOCS.map(loc => {
-      const t = a.acks?.[loc];
+      var _a$acks;
+      const t = (_a$acks = a.acks) === null || _a$acks === void 0 ? void 0 : _a$acks[loc];
       return /*#__PURE__*/React.createElement("div", {
         key: loc,
         style: {
@@ -8750,7 +8953,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         color: "#e2e8f0",
         fontWeight: 600
       }
-    }, "⏰ ", e.ts), e.date && e.date !== e.ts && /*#__PURE__*/React.createElement("span", {
+    }, "\u23F0 ", e.ts), e.date && e.date !== e.ts && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         padding: "3px 8px",
@@ -8758,7 +8961,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         background: "rgba(255,255,255,0.06)",
         color: "#94a3b8"
       }
-    }, "📅 ", e.date)), e.location && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCC5 ", e.date)), e.location && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -8777,7 +8980,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         color: "#f1f5f9",
         fontWeight: 700
       }
-    }, "📍 ", e.location)), e.msg && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", e.location)), e.msg && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -8815,7 +9018,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         fontSize: 13,
         color: "#f1f5f9"
       }
-    }, "👤 ", e.unit)), e.requestedBy && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDC64 ", e.unit)), e.requestedBy && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8
@@ -8855,7 +9058,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     onClick: () => setView("home")
   }), /*#__PURE__*/React.createElement("span", {
     style: S.panelTitle
-  }, "🌙 End of Night Report")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDF19 End of Night Report")), /*#__PURE__*/React.createElement("div", {
     style: S.cWrap
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9025,7 +9228,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 12,
       color: "#f1f5f9"
     }
-  }, "#", item.itemNumber, " — ", item.description), /*#__PURE__*/React.createElement("span", {
+  }, "#", item.itemNumber, " \u2014 ", item.description), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: item.status === "Claimed" ? "#10b981" : "#f59e0b"
@@ -9049,7 +9252,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 32,
       marginBottom: 8
     }
-  }, "✅"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2705"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       fontWeight: 900,
@@ -9061,7 +9264,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       color: "#64748b",
       marginTop: 4
     }
-  }, "Saved to Airtable · SMS sent to Admin"), /*#__PURE__*/React.createElement("button", {
+  }, "Saved to Airtable \xB7 SMS sent to Admin"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.sendBtn,
       background: "rgba(99,102,241,0.2)",
@@ -9075,7 +9278,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       setEndOfNightSent(false);
       setView("home");
     }
-  }, "← Back to Home")), !endOfNightSent && /*#__PURE__*/React.createElement("button", {
+  }, "\u2190 Back to Home")), !endOfNightSent && /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.sendBtn,
       background: "linear-gradient(135deg,#6366f1,#4f46e5)"
@@ -9098,7 +9301,10 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
           lostChild: [...calls, ...completed].filter(c => c.type === "lost_child").length
         },
         lostFound: lfItems.map(i => `#${i.itemNumber}: ${i.description} (${i.status})`).join("\n"),
-        broadcasts: broadcastAlerts.map(b => `${b.label}: ${b.msg?.slice(0, 80)}`).join("\n"),
+        broadcasts: broadcastAlerts.map(b => {
+          var _b$msg;
+          return `${b.label}: ${(_b$msg = b.msg) === null || _b$msg === void 0 ? void 0 : _b$msg.slice(0, 80)}`;
+        }).join("\n"),
         notes: endOfNightNotes || "",
         generatedBy: role,
         generatedAt: new Date().toLocaleString()
@@ -9149,7 +9355,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       }, ...p]);
       setEndOfNightSent(true);
     }
-  }, "📧 Generate & Send Report"))));
+  }, "\uD83D\uDCE7 Generate & Send Report"))));
   if (view === "911") return /*#__PURE__*/React.createElement("div", {
     style: S.root
   }, /*#__PURE__*/React.createElement(Bg, null), /*#__PURE__*/React.createElement("div", {
@@ -9168,7 +9374,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 40
     }
-  }, "🚨"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 20,
       fontWeight: 900,
@@ -9180,7 +9386,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 13,
       color: "rgba(255,255,255,0.7)"
     }
-  }, "911 Active · Initiated by ", nineOneOne.by, " · ", nineOneOne.at)), /*#__PURE__*/React.createElement("div", {
+  }, "911 Active \xB7 Initiated by ", nineOneOne.by, " \xB7 ", nineOneOne.at)), /*#__PURE__*/React.createElement("div", {
     style: S.panelHd
   }, /*#__PURE__*/React.createElement("span", {
     style: S.panelTitle
@@ -9188,21 +9394,24 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     onClick: () => setView("home")
   })), /*#__PURE__*/React.createElement("div", {
     style: S.cWrap
-  }, [["location", "Location", "e.g. Near Moon Stage 1"], ["nature", "Nature of Call", "e.g. Unresponsive adult"], ["patients", "Number of Patients", "e.g. 1"], ["age_sex", "Age / Sex", "e.g. 40s Male"], ["conscious", "Conscious / Breathing", "e.g. Unconscious, breathing"], ["interventions", "Interventions in Progress", "e.g. CPR in progress"], ["entry", "EMS Entry Point", "e.g. Main Gate on Willy St"], ["meeting", "Who's Meeting EMS", "e.g. Med 1 at gate"]].map(([k, l, p]) => /*#__PURE__*/React.createElement(Fld, {
-    key: k,
-    label: l,
-    value: nineOneOne.info?.[k] || "",
-    onChange: e => set911(prev => ({
-      ...prev,
-      info: {
-        ...prev.info,
-        [k]: e.target.value
-      }
-    })),
-    ph: p
-  })), /*#__PURE__*/React.createElement("label", {
+  }, [["location", "Location", "e.g. Near Moon Stage 1"], ["nature", "Nature of Call", "e.g. Unresponsive adult"], ["patients", "Number of Patients", "e.g. 1"], ["age_sex", "Age / Sex", "e.g. 40s Male"], ["conscious", "Conscious / Breathing", "e.g. Unconscious, breathing"], ["interventions", "Interventions in Progress", "e.g. CPR in progress"], ["entry", "EMS Entry Point", "e.g. Main Gate on Willy St"], ["meeting", "Who's Meeting EMS", "e.g. Med 1 at gate"]].map(([k, l, p]) => {
+    var _nineOneOne$info;
+    return /*#__PURE__*/React.createElement(Fld, {
+      key: k,
+      label: l,
+      value: ((_nineOneOne$info = nineOneOne.info) === null || _nineOneOne$info === void 0 ? void 0 : _nineOneOne$info[k]) || "",
+      onChange: e => set911(prev => ({
+        ...prev,
+        info: {
+          ...prev.info,
+          [k]: e.target.value
+        }
+      })),
+      ph: p
+    });
+  }), /*#__PURE__*/React.createElement("label", {
     style: S.lbl
-  }, "🏥 MFD Staging Location"), /*#__PURE__*/React.createElement("select", {
+  }, "\uD83C\uDFE5 MFD Staging Location"), /*#__PURE__*/React.createElement("select", {
     style: S.sel,
     value: emsForm.staging,
     onChange: e => setEmsForm(p => ({
@@ -9215,7 +9424,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     key: s.id,
     value: s.id
   }, s.label))), /*#__PURE__*/React.createElement(Fld, {
-    label: "⏱ EMS ETA",
+    label: "\u23F1 EMS ETA",
     value: emsForm.eta,
     onChange: e => setEmsForm(p => ({
       ...p,
@@ -9230,7 +9439,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     },
     disabled: !emsForm.staging || !emsForm.eta,
     onClick: () => setEmsDispatched(true)
-  }, "🚑 SEND EMS DISPATCH ALERT") : /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDE91 SEND EMS DISPATCH ALERT") : /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(16,185,129,0.1)",
       border: "1px solid #10b981",
@@ -9240,7 +9449,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       color: "#10b981",
       fontWeight: 700
     }
-  }, "✅ EMS Dispatch Alert Sent · ", EMS_STAGING.find(s => s.id === emsForm.staging)?.label, " · ETA: ", emsForm.eta), !emsAcked ? /*#__PURE__*/React.createElement("button", {
+  }, "\u2705 EMS Dispatch Alert Sent \xB7 ", (_EMS_STAGING$find = EMS_STAGING.find(s => s.id === emsForm.staging)) === null || _EMS_STAGING$find === void 0 ? void 0 : _EMS_STAGING$find.label, " \xB7 ETA: ", emsForm.eta), !emsAcked ? /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.sendBtn,
       background: "linear-gradient(135deg,#f59e0b,#d97706)",
@@ -9252,7 +9461,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       setEmsAlertDismissed(false);
       setView("home");
     }
-  }, "✅ ACKNOWLEDGE — MFD / EMS INBOUND") : /*#__PURE__*/React.createElement("div", {
+  }, "\u2705 ACKNOWLEDGE \u2014 MFD / EMS INBOUND") : /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(245,158,11,0.1)",
       border: "1px solid rgba(245,158,11,0.4)",
@@ -9262,18 +9471,19 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       color: "#f59e0b",
       fontWeight: 700
     }
-  }, "✅ Acknowledged — MFD / EMS Inbound banner active on home screen"), /*#__PURE__*/React.createElement("button", {
+  }, "\u2705 Acknowledged \u2014 MFD / EMS Inbound banner active on home screen"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.sendBtn,
       background: "linear-gradient(135deg,#10b981,#059669)"
     },
     onClick: () => {
+      var _nineOneOne$info2, _nineOneOne$info3, _nineOneOne$info4, _nineOneOne$info5;
       // Trigger incident report before closing
       const callData = {
         id: `911-${Date.now()}`,
         type: "medical",
-        location: nineOneOne.info?.location || "Festival Grounds",
-        problem: nineOneOne.info?.nature || "EMS/911 Incident",
+        location: ((_nineOneOne$info2 = nineOneOne.info) === null || _nineOneOne$info2 === void 0 ? void 0 : _nineOneOne$info2.location) || "Festival Grounds",
+        problem: ((_nineOneOne$info3 = nineOneOne.info) === null || _nineOneOne$info3 === void 0 ? void 0 : _nineOneOne$info3.nature) || "EMS/911 Incident",
         details: emsForm.notes || "",
         requestedBy: nineOneOne.by || role,
         timestamp: nineOneOne.at || new Date().toISOString()
@@ -9282,9 +9492,9 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       setIncFields({
         respondingUnit: role,
         disposition: "",
-        interventions: nineOneOne.info?.interventions || "",
+        interventions: ((_nineOneOne$info4 = nineOneOne.info) === null || _nineOneOne$info4 === void 0 ? void 0 : _nineOneOne$info4.interventions) || "",
         narrative: "",
-        notes: `ETA: ${emsForm.eta || ""} · Staging: ${emsForm.staging || ""} · Meeting EMS: ${nineOneOne.info?.meeting || ""}`
+        notes: `ETA: ${emsForm.eta || ""} · Staging: ${emsForm.staging || ""} · Meeting EMS: ${((_nineOneOne$info5 = nineOneOne.info) === null || _nineOneOne$info5 === void 0 ? void 0 : _nineOneOne$info5.meeting) || ""}`
       });
       set911({
         active: false,
@@ -9303,12 +9513,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       });
       setView("home");
     }
-  }, "✅ CLOSE INCIDENT & FILE REPORT"))));
+  }, "\u2705 CLOSE INCIDENT & FILE REPORT"))));
 
   // ACKS VIEW
 
   // ADMIN CALL DETAIL / OVERRIDE VIEW
   if (adminCallDetail && isAdmin) {
+    var _nineOneOne$info6;
     const ac = adminCallDetail;
     const typeColors = {
       medical: "#1e40af",
@@ -9326,7 +9537,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       walk_in: "WALK-IN PATIENT",
       maintenance: "MAINTENANCE",
       supplies: "SUPPLY REQUEST",
-      lost_child: "REPORTED MISSING"
+      lost_child: "LOST CHILD"
     };
     const bc = typeColors[ac.type] || "#1e40af";
     const bl = typeLabels[ac.type] || ac.type.toUpperCase();
@@ -9357,7 +9568,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         textTransform: "uppercase",
         letterSpacing: "0.1em"
       }
-    }, "Active Call — Admin View"), /*#__PURE__*/React.createElement("div", {
+    }, "Active Call \u2014 Admin View"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 18,
         fontWeight: 900,
@@ -9375,7 +9586,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         fontWeight: 700,
         color: "#fca5a5"
       }
-    }, "🚨 911 ACTIVATED by ", nineOneOne.by, " · Staging: ", nineOneOne.info?.staging || "Unknown", " · ", nineOneOne.at)), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 911 ACTIVATED by ", nineOneOne.by, " \xB7 Staging: ", ((_nineOneOne$info6 = nineOneOne.info) === null || _nineOneOne$info6 === void 0 ? void 0 : _nineOneOne$info6.staging) || "Unknown", " \xB7 ", nineOneOne.at)), /*#__PURE__*/React.createElement("div", {
       style: S.cWrap
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9545,7 +9756,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
           status: "on_scene"
         }));
       }
-    }, "📍 Mark On Scene"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDCCD Mark On Scene"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "rgba(29,78,216,0.15)",
@@ -9576,7 +9787,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
           msg: ac.problem
         }, ...p]);
       }
-    }, "👮 Notify MPD — Request Officer"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDC6E Notify MPD \u2014 Request Officer"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "rgba(16,185,129,0.1)",
@@ -9587,7 +9798,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         clearCall(ac.id, role);
         setAdminCallDetail(null);
       }
-    }, "✅ Clear Call — Generate Report"), /*#__PURE__*/React.createElement("button", {
+    }, "\u2705 Clear Call \u2014 Generate Report"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "none",
@@ -9595,7 +9806,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         fontSize: 13
       },
       onClick: () => setAdminCallDetail(null)
-    }, "← Back to Hub")))));
+    }, "\u2190 Back to Hub")))));
   }
 
   // MED CALL DETAIL VIEW
@@ -9644,31 +9855,31 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         letterSpacing: "0.08em",
         marginBottom: 6
       }
-    }, typeLabels[mc.type] || mc.type, " — ACTIVE CALL"), /*#__PURE__*/React.createElement("div", {
+    }, typeLabels[mc.type] || mc.type, " \u2014 ACTIVE CALL"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 20,
         fontWeight: 900,
         color: "#f1f5f9",
         marginBottom: 4
       }
-    }, "📍 ", mc.location), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", mc.location), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         color: "#cbd5e1",
         marginBottom: 4
       }
-    }, "🔍 ", mc.problem), mc.details && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDD0D ", mc.problem), mc.details && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "#e2e8f0"
       }
-    }, "ℹ️ ", mc.details), /*#__PURE__*/React.createElement("div", {
+    }, "\u2139\uFE0F ", mc.details), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "#64748b",
         marginTop: 6
       }
-    }, "Reported by ", mc.requestedBy, " · Acked by ", mc.unit, " · ", mc.acknowledgedAt)), /*#__PURE__*/React.createElement("div", {
+    }, "Reported by ", mc.requestedBy, " \xB7 Acked by ", mc.unit, " \xB7 ", mc.acknowledgedAt)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -9727,7 +9938,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
           }).catch(() => {});
         });
       }
-    }, "🚨 Activate 911 — EMS to This Call"), nineOneOne.active && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 Activate 911 \u2014 EMS to This Call"), nineOneOne.active && /*#__PURE__*/React.createElement("div", {
       style: {
         background: "rgba(180,0,0,0.15)",
         border: "2px solid rgba(180,0,0,0.5)",
@@ -9737,7 +9948,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         color: "#f87171",
         fontWeight: 900
       }
-    }, "🚨 911 ACTIVE — EMS INBOUND"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDEA8 911 ACTIVE \u2014 EMS INBOUND"), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
         padding: "14px",
@@ -9798,7 +10009,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         }).catch(() => {});
         sendGroupMe(mpdMsg, ["admin", "medical"]);
       }
-    }, "👮 Notify MPD — Request Officer"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDC6E Notify MPD \u2014 Request Officer"), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
         padding: "14px",
@@ -9814,7 +10025,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         clearCall(mc.id, role);
         setMedActiveCall(null);
       }
-    }, "✅ Clear Call — Generate Report"), /*#__PURE__*/React.createElement("button", {
+    }, "\u2705 Clear Call \u2014 Generate Report"), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
         padding: "12px",
@@ -9826,7 +10037,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         cursor: "pointer"
       },
       onClick: () => setMedActiveCall(null)
-    }, "← Back to Med Hub (call stays active)"))));
+    }, "\u2190 Back to Med Hub (call stays active)"))));
   }
   if (isMed) return /*#__PURE__*/React.createElement("div", {
     style: S.root
@@ -9845,7 +10056,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontWeight: 900,
       color: "#fff"
     }
-  }, "Fête de Marquette"), /*#__PURE__*/React.createElement("div", {
+  }, "F\xEAte de Marquette"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#475569",
@@ -9864,21 +10075,21 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 12
     },
     onClick: () => setRole(null)
-  }, "↩ Role"), /*#__PURE__*/React.createElement("button", {
+  }, "\u21A9 Role"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.backBtn,
       padding: "8px 10px",
       fontSize: 12
     },
     onClick: onBack
-  }, "← Apps"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2190 Apps"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#ec4899",
       fontWeight: 700,
       padding: "0 16px 8px"
     }
-  }, "🔴 ", role, " — Medical Unit"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDD34 ", role, " \u2014 Medical Unit"), /*#__PURE__*/React.createElement("div", {
     style: {
       margin: "0 16px 8px"
     }
@@ -9907,13 +10118,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       letterSpacing: "0.06em",
       textTransform: "uppercase"
     }
-  }, "🚨 MFD / EMS INBOUND — ACTIVE"), nineOneOne.info?.location && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8 MFD / EMS INBOUND \u2014 ACTIVE"), ((_nineOneOne$info7 = nineOneOne.info) === null || _nineOneOne$info7 === void 0 ? void 0 : _nineOneOne$info7.location) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 700,
       color: "#fff"
     }
-  }, "📍 ", nineOneOne.info.location), nineOneOne.info?.nature && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCD ", nineOneOne.info.location), ((_nineOneOne$info8 = nineOneOne.info) === null || _nineOneOne$info8 === void 0 ? void 0 : _nineOneOne$info8.nature) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#fca5a5"
@@ -9923,7 +10134,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 11,
       color: "rgba(255,255,255,0.5)"
     }
-  }, "Initiated by ", nineOneOne.by, nineOneOne.info?.activatedBy ? " · " + nineOneOne.info.activatedBy : "", " · ", nineOneOne.at), /*#__PURE__*/React.createElement("button", {
+  }, "Initiated by ", nineOneOne.by, (_nineOneOne$info9 = nineOneOne.info) !== null && _nineOneOne$info9 !== void 0 && _nineOneOne$info9.activatedBy ? " · " + nineOneOne.info.activatedBy : "", " \xB7 ", nineOneOne.at), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "10px",
       borderRadius: 8,
@@ -9935,7 +10146,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       cursor: "pointer"
     },
     onClick: () => setView("911")
-  }, "Update / View Details →")), /*#__PURE__*/React.createElement("button", {
+  }, "Update / View Details \u2192")), /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "14px",
@@ -9973,7 +10184,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         })
       }).catch(e => console.log(e));
     }
-  }, "➕ New Separate 911 Incident")) : /*#__PURE__*/React.createElement("button", {
+  }, "\u2795 New Separate 911 Incident")) : /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "18px",
@@ -9988,12 +10199,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       letterSpacing: "0.02em"
     },
     onClick: () => {
+      var _nineOneOne$info0, _nineOneOne$info1;
       // Pull info directly from current active call
-      const activeCall = myActive?.[0] || unassigned?.[0];
-      const callLoc = activeCall?.location || nineOneOne.info?.location || "Festival Grounds";
-      const callProblem = activeCall?.problem || nineOneOne.info?.nature || "";
-      const callType = activeCall?.type || "medical";
-      const callId = activeCall?.id;
+      const activeCall = (myActive === null || myActive === void 0 ? void 0 : myActive[0]) || (unassigned === null || unassigned === void 0 ? void 0 : unassigned[0]);
+      const callLoc = (activeCall === null || activeCall === void 0 ? void 0 : activeCall.location) || ((_nineOneOne$info0 = nineOneOne.info) === null || _nineOneOne$info0 === void 0 ? void 0 : _nineOneOne$info0.location) || "Festival Grounds";
+      const callProblem = (activeCall === null || activeCall === void 0 ? void 0 : activeCall.problem) || ((_nineOneOne$info1 = nineOneOne.info) === null || _nineOneOne$info1 === void 0 ? void 0 : _nineOneOne$info1.nature) || "";
+      const callType = (activeCall === null || activeCall === void 0 ? void 0 : activeCall.type) || "medical";
+      const callId = activeCall === null || activeCall === void 0 ? void 0 : activeCall.id;
       // Activate 911 with call data
       set911({
         active: true,
@@ -10040,7 +10252,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       });
       // No setView("911") — stay on call, form comes when call is cleared
     }
-  }, "🚨 Tap to Notify of 911 Activation")), /*#__PURE__*/React.createElement(MedHome, {
+  }, "\uD83D\uDEA8 Tap to Notify of 911 Activation")), /*#__PURE__*/React.createElement(MedHome, {
     role: role,
     calls: activeCalls,
     setCalls: setCalls,
@@ -10096,7 +10308,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontWeight: 900,
       color: "#fff"
     }
-  }, "Fête de Marquette"), /*#__PURE__*/React.createElement("div", {
+  }, "F\xEAte de Marquette"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#475569",
@@ -10115,21 +10327,21 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 12
     },
     onClick: () => setRole(null)
-  }, "↩ Role"), /*#__PURE__*/React.createElement("button", {
+  }, "\u21A9 Role"), /*#__PURE__*/React.createElement("button", {
     style: {
       ...S.backBtn,
       padding: "8px 10px",
       fontSize: 12
     },
     onClick: onBack
-  }, "← Apps"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2190 Apps"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#f59e0b",
       fontWeight: 700,
       padding: "0 16px 10px"
     }
-  }, "⚡ Command / Admin"), nineOneOne.active && /*#__PURE__*/React.createElement("button", {
+  }, "\u26A1 Command / Admin"), nineOneOne.active && /*#__PURE__*/React.createElement("button", {
     style: {
       margin: "0 16px 8px",
       background: "rgba(239,68,68,0.2)",
@@ -10143,7 +10355,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       textAlign: "center"
     },
     onClick: () => setView("911")
-  }, "🚨 911 ACTIVE — Tap to update"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8 911 ACTIVE \u2014 Tap to update"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -10200,7 +10412,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         alert("Error: " + e.message);
       }
     }
-  }, "🗑 Clear Test Calls"), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDDD1 Clear Test Calls"), /*#__PURE__*/React.createElement("button", {
     style: {
       background: "none",
       border: "1px solid rgba(255,255,255,0.1)",
@@ -10221,7 +10433,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         return !p;
       });
     }
-  }, "Switch")), nineOneOne?.active && emsAcked && /*#__PURE__*/React.createElement("div", {
+  }, "Switch")), (nineOneOne === null || nineOneOne === void 0 ? void 0 : nineOneOne.active) && emsAcked && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       border: "2px solid rgba(239,68,68,0.8)",
@@ -10246,7 +10458,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       letterSpacing: "0.08em",
       textTransform: "uppercase"
     }
-  }, "🚨 MFD / EMS INBOUND — ACTIVE INCIDENT"), /*#__PURE__*/React.createElement("button", {
+  }, "\uD83D\uDEA8 MFD / EMS INBOUND \u2014 ACTIVE INCIDENT"), /*#__PURE__*/React.createElement("button", {
     style: {
       background: "none",
       border: "none",
@@ -10256,13 +10468,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontWeight: 600
     },
     onClick: () => setView("911")
-  }, "Details →")), nineOneOne.info?.location && /*#__PURE__*/React.createElement("div", {
+  }, "Details \u2192")), ((_nineOneOne$info10 = nineOneOne.info) === null || _nineOneOne$info10 === void 0 ? void 0 : _nineOneOne$info10.location) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       fontWeight: 900,
       color: "#fff"
     }
-  }, "📍 ", nineOneOne.info.location), nineOneOne.info?.nature && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCD ", nineOneOne.info.location), ((_nineOneOne$info11 = nineOneOne.info) === null || _nineOneOne$info11 === void 0 ? void 0 : _nineOneOne$info11.nature) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 700,
@@ -10274,17 +10486,17 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       gap: 12,
       flexWrap: "wrap"
     }
-  }, nineOneOne.info?.patients && /*#__PURE__*/React.createElement("div", {
+  }, ((_nineOneOne$info12 = nineOneOne.info) === null || _nineOneOne$info12 === void 0 ? void 0 : _nineOneOne$info12.patients) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#e2e8f0"
     }
-  }, "👤 ", nineOneOne.info.patients, " patient", nineOneOne.info.patients !== "1" ? "s" : ""), nineOneOne.info?.age_sex && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDC64 ", nineOneOne.info.patients, " patient", nineOneOne.info.patients !== "1" ? "s" : ""), ((_nineOneOne$info13 = nineOneOne.info) === null || _nineOneOne$info13 === void 0 ? void 0 : _nineOneOne$info13.age_sex) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#e2e8f0"
     }
-  }, nineOneOne.info.age_sex), nineOneOne.info?.conscious && /*#__PURE__*/React.createElement("div", {
+  }, nineOneOne.info.age_sex), ((_nineOneOne$info14 = nineOneOne.info) === null || _nineOneOne$info14 === void 0 ? void 0 : _nineOneOne$info14.conscious) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#e2e8f0"
@@ -10295,12 +10507,12 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       color: "#fbbf24",
       fontWeight: 700
     }
-  }, "⏱ ETA: ", emsForm.eta)), nineOneOne.info?.interventions && /*#__PURE__*/React.createElement("div", {
+  }, "\u23F1 ETA: ", emsForm.eta)), ((_nineOneOne$info15 = nineOneOne.info) === null || _nineOneOne$info15 === void 0 ? void 0 : _nineOneOne$info15.interventions) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#e2e8f0"
     }
-  }, "Interventions: ", nineOneOne.info.interventions), nineOneOne.info?.meeting && /*#__PURE__*/React.createElement("div", {
+  }, "Interventions: ", nineOneOne.info.interventions), ((_nineOneOne$info16 = nineOneOne.info) === null || _nineOneOne$info16 === void 0 ? void 0 : _nineOneOne$info16.meeting) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#e2e8f0"
@@ -10310,7 +10522,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 11,
       color: "rgba(255,255,255,0.4)"
     }
-  }, "By ", nineOneOne.by, " · ", nineOneOne.at, " · Stays until incident closed")), Object.values(ackedBanners).map(c => {
+  }, "By ", nineOneOne.by, " \xB7 ", nineOneOne.at, " \xB7 Stays until incident closed")), Object.values(ackedBanners).map(c => {
     const ac = ALERT_COLORS[c.type] || ALERT_COLORS.medical;
     const bannerColors = {
       medical: "rgba(126,34,206,0.15)",
@@ -10355,7 +10567,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         letterSpacing: "0.06em",
         textTransform: "uppercase"
       }
-    }, ac.icon, " ", ac.label, " — ACKNOWLEDGED"), /*#__PURE__*/React.createElement("button", {
+    }, ac.icon, " ", ac.label, " \u2014 ACKNOWLEDGED"), /*#__PURE__*/React.createElement("button", {
       style: {
         background: "none",
         border: "none",
@@ -10365,13 +10577,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         fontWeight: 600
       },
       onClick: () => removeAckedBanner(c.id)
-    }, "✕ Clear")), /*#__PURE__*/React.createElement("div", {
+    }, "\u2715 Clear")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 19,
         fontWeight: 900,
         color: "#fff"
       }
-    }, "📍 ", c.location), c.problem && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", c.location), c.problem && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         fontWeight: 600,
@@ -10396,7 +10608,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         fontSize: 12,
         color: "#e2e8f0"
       }
-    }, "👤 Unit: ", /*#__PURE__*/React.createElement("span", {
+    }, "\uD83D\uDC64 Unit: ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: "#f1f5f9",
         fontWeight: 700
@@ -10416,13 +10628,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         fontSize: 12,
         color: "#e2e8f0"
       }
-    }, "⏰ ", /*#__PURE__*/React.createElement("span", {
+    }, "\u23F0 ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: "#f1f5f9",
         fontWeight: 700
       }
     }, c.ackedAt))));
-  }), nineOneOne?.active && !emsAcked && /*#__PURE__*/React.createElement("div", {
+  }), (nineOneOne === null || nineOneOne === void 0 ? void 0 : nineOneOne.active) && !emsAcked && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       border: "2px solid rgba(239,68,68,0.8)",
@@ -10443,13 +10655,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       letterSpacing: "0.08em",
       textTransform: "uppercase"
     }
-  }, "🚨 911 ACTIVE — TAP TO ACKNOWLEDGE"), nineOneOne.info?.location && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8 911 ACTIVE \u2014 TAP TO ACKNOWLEDGE"), ((_nineOneOne$info17 = nineOneOne.info) === null || _nineOneOne$info17 === void 0 ? void 0 : _nineOneOne$info17.location) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 800,
       color: "#fff"
     }
-  }, "📍 ", nineOneOne.info.location), nineOneOne.info?.nature && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCD ", nineOneOne.info.location), ((_nineOneOne$info18 = nineOneOne.info) === null || _nineOneOne$info18 === void 0 ? void 0 : _nineOneOne$info18.nature) && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: "#fca5a5"
@@ -10460,7 +10672,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       color: "#fbbf24",
       fontWeight: 700
     }
-  }, "⚠ Tap to view full details and acknowledge")), isAdmin && /*#__PURE__*/React.createElement("div", {
+  }, "\u26A0 Tap to view full details and acknowledge")), isAdmin && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
@@ -10492,30 +10704,30 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       textTransform: "uppercase",
       letterSpacing: "0.1em"
     }
-  }, "🌤 McPike Park"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDF24 McPike Park"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 26,
       fontWeight: 900,
       color: "#f1f5f9",
       lineHeight: 1
     }
-  }, currentWeather?.temp != null ? `${currentWeather.temp}°F` : "--°F"), /*#__PURE__*/React.createElement("div", {
+  }, (currentWeather === null || currentWeather === void 0 ? void 0 : currentWeather.temp) != null ? `${currentWeather.temp}°F` : "--°F"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#94a3b8",
       lineHeight: 1.3
     }
-  }, currentWeather?.desc || "Loading..."), currentWeather?.wind != null && /*#__PURE__*/React.createElement("div", {
+  }, (currentWeather === null || currentWeather === void 0 ? void 0 : currentWeather.desc) || "Loading..."), (currentWeather === null || currentWeather === void 0 ? void 0 : currentWeather.wind) != null && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#64748b"
     }
-  }, "💨 ", currentWeather.wind, " mph"), currentWeather?.humidity != null && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCA8 ", currentWeather.wind, " mph"), (currentWeather === null || currentWeather === void 0 ? void 0 : currentWeather.humidity) != null && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#64748b"
     }
-  }, "💧 ", currentWeather.humidity, "%"), nwsAlerts.length > 0 ? /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCA7 ", currentWeather.humidity, "%"), nwsAlerts.length > 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: "1px solid rgba(239,68,68,0.3)",
       paddingTop: 5,
@@ -10524,20 +10736,23 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       flexDirection: "column",
       gap: 4
     }
-  }, nwsAlerts.slice(0, 2).map((a, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      background: "rgba(239,68,68,0.1)",
-      borderRadius: 6,
-      padding: "5px 7px"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 900,
-      color: "#fca5a5"
-    }
-  }, "🚨 ", (a.properties?.event || "").replace("Watch", "Wtch").replace("Warning", "Wrng"))))) : /*#__PURE__*/React.createElement("div", {
+  }, nwsAlerts.slice(0, 2).map((a, i) => {
+    var _a$properties;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: "rgba(239,68,68,0.1)",
+        borderRadius: 6,
+        padding: "5px 7px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 900,
+        color: "#fca5a5"
+      }
+    }, "\uD83D\uDEA8 ", (((_a$properties = a.properties) === null || _a$properties === void 0 ? void 0 : _a$properties.event) || "").replace("Watch", "Wtch").replace("Warning", "Wrng")));
+  })) : /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: "1px solid rgba(34,197,94,0.2)",
       paddingTop: 5,
@@ -10549,7 +10764,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontWeight: 800,
       color: "#4ade80"
     }
-  }, "✅ No Weather Alerts")), /*#__PURE__*/React.createElement("button", {
+  }, "\u2705 No Weather Alerts")), /*#__PURE__*/React.createElement("button", {
     style: {
       marginTop: 2,
       padding: "4px 8px",
@@ -10587,7 +10802,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
         color: "#f1f5f9",
         marginBottom: 2
       }
-    }, "🩺 ", label), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83E\uDE7A ", label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 700,
@@ -10758,7 +10973,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       flexShrink: 0,
       position: "relative"
     }
-  }, "💬", chatUnread > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCAC", chatUnread > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: -6,
@@ -10803,7 +11018,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       color: "#38bdf8",
       fontWeight: 700
     }
-  }, "→")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -10835,7 +11050,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       paddingBottom: 4,
       borderBottom: "1px solid rgba(220,38,38,0.2)"
     }
-  }, "🚨 Safety"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8 Safety"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(239,68,68,0.05)",
       borderRadius: 10,
@@ -10846,7 +11061,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       lineHeight: 1.4,
       marginBottom: 2
     }
-  }, "⚠️ ", /*#__PURE__*/React.createElement("strong", {
+  }, "\u26A0\uFE0F ", /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#f87171"
     }
@@ -10903,7 +11118,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 20
     }
-  }, "📋"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCB"), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "left"
     }
@@ -10914,7 +11129,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontWeight: 400,
       marginTop: 2
     }
-  }, "Medical · Fire · Security"))), /*#__PURE__*/React.createElement("button", {
+  }, "Medical \xB7 Fire \xB7 Security"))), /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "10px",
@@ -10935,7 +11150,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16
     }
-  }, "🧒"), "REPORT LOST CHILD", activeCalls.filter(c => c.type === "lost_child").length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD2"), "REPORT LOST CHILD", activeCalls.filter(c => c.type === "lost_child").length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 4,
@@ -10963,7 +11178,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 13,
       fontWeight: 900
     }
-  }, "📢 Broadcast"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCE2 Broadcast"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -11032,7 +11247,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontWeight: 800,
       color: "#fbbf24"
     }
-  }, "📦 Supplies Request"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCE6 Supplies Request"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#64748b",
@@ -11043,7 +11258,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       color: "#fbbf24",
       fontSize: 20
     }
-  }, "→")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(234,179,8,0.06)",
       borderRadius: 14,
@@ -11065,13 +11280,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       justifyContent: "space-between"
     },
     onClick: () => window.open("https://fdm2026.netlify.app/equipment", "_blank")
-  }, /*#__PURE__*/React.createElement("span", null, "⚙️ Equipment Tracker"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "\u2699\uFE0F Equipment Tracker"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#fcd34d",
       fontWeight: 400
     }
-  }, "Open →")), /*#__PURE__*/React.createElement("div", {
+  }, "Open \u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "10px 14px",
       fontSize: 12,
@@ -11097,7 +11312,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       alignItems: "center",
       justifyContent: "space-between"
     }
-  }, /*#__PURE__*/React.createElement("span", null, "📦 Lost & Found"), lfItems.filter(i => i.status !== "Claimed").length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCE6 Lost & Found"), lfItems.filter(i => i.status !== "Claimed").length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(249,115,22,0.4)",
       color: "#fed7aa",
@@ -11133,7 +11348,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16
     }
-  }, "📋"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCCB"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -11144,7 +11359,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       fontSize: 11,
       color: "#64748b"
     }
-  }, "Log · box · clear"))), /*#__PURE__*/React.createElement("a", {
+  }, "Log \xB7 box \xB7 clear"))), /*#__PURE__*/React.createElement("a", {
     href: "https://fdm2026.netlify.app/lostfound?from=hub",
     target: "_blank",
     style: {
@@ -11161,7 +11376,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16
     }
-  }, "🔍"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDD0D"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -11195,7 +11410,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       textTransform: "uppercase",
       letterSpacing: "0.06em"
     }
-  }, "👥 Staff"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDC65 Staff"), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "8px",
       display: "flex",
@@ -11220,7 +11435,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14
     }
-  }, "👥"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDC65"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -11243,7 +11458,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14
     }
-  }, "⬇️"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2B07\uFE0F"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -11269,7 +11484,7 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14
     }
-  }, "📱"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCF1"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -11303,13 +11518,13 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       justifyContent: "space-between"
     },
     onClick: () => setView("endofnight")
-  }, /*#__PURE__*/React.createElement("span", null, "🌙 EOD"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83C\uDF19 EOD"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#a5b4fc",
       fontWeight: 400
     }
-  }, "Generate →")), /*#__PURE__*/React.createElement("div", {
+  }, "Generate \u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "10px 14px",
       fontSize: 12,
@@ -11339,12 +11554,12 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
       textTransform: "uppercase",
       letterSpacing: "0.06em"
     }
-  }, "📋 Log"), /*#__PURE__*/React.createElement("span", {
+  }, "\uD83D\uDCCB Log"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#64748b"
     }
-  }, activityLog.length, " →")), /*#__PURE__*/React.createElement("div", {
+  }, activityLog.length, " \u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "4px 8px",
       display: "flex",
@@ -11378,4 +11593,188 @@ if (view === "sendonboarding") return /*#__PURE__*/React.createElement("div", {
     }
   }, "No activity yet")))))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(HubApp,{onBack:function(){window.location.href="/"}}));</script></body></html>
+var S = {
+  root: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    background: "#0d0d1a",
+    fontFamily: "'DM Sans',sans-serif",
+    overflowX: "hidden"
+  },
+  panel: {
+    position: "relative",
+    zIndex: 1,
+    width: "100%",
+    maxWidth: 768,
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column"
+  },
+  sectionHdr: {
+    fontSize: 17,
+    fontWeight: 900,
+    color: "#f59e0b",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    padding: "12px 14px 8px",
+    background: "rgba(245,158,11,0.06)",
+    borderBottom: "1px solid rgba(245,158,11,0.15)"
+  },
+  panelHd: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "16px 16px 8px"
+  },
+  backBtn: {
+    background: "rgba(255,255,255,0.1)",
+    border: "1px solid rgba(255,255,255,0.2)",
+    color: "#f1f5f9",
+    padding: "10px 18px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 600
+  },
+  panelTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: 700,
+    color: "#f1f5f9"
+  },
+  cWrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    padding: "8px 16px 32px"
+  },
+  lbl: {
+    fontSize: 11,
+    color: "#64748b",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    fontWeight: 700
+  },
+  inp: {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    padding: "10px 12px",
+    color: "#f1f5f9",
+    fontSize: 14,
+    width: "100%",
+    boxSizing: "border-box",
+    outline: "none",
+    fontFamily: "inherit"
+  },
+  sel: {
+    background: "#1e293b",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    padding: "10px 12px",
+    color: "#f1f5f9",
+    fontSize: 14,
+    width: "100%",
+    boxSizing: "border-box"
+  },
+  ta: {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    padding: "10px 12px",
+    color: "#f1f5f9",
+    fontSize: 14,
+    width: "100%",
+    boxSizing: "border-box",
+    resize: "vertical",
+    fontFamily: "inherit"
+  },
+  sendBtn: {
+    background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
+    border: "none",
+    borderRadius: 14,
+    padding: "16px",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: 800,
+    cursor: "pointer"
+  },
+  bigAckBtn: {
+    background: "rgba(255,255,255,0.04)",
+    border: "2px solid rgba(255,255,255,0.7)",
+    borderRadius: 14,
+    padding: "18px",
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: 900,
+    cursor: "pointer",
+    width: "100%",
+    maxWidth: 380
+  },
+  tabRow: {
+    display: "flex",
+    padding: "0 20px",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    marginBottom: 4
+  },
+  tab: {
+    flex: 1,
+    padding: "10px",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 600
+  },
+  callQ: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    padding: "8px 16px 32px",
+    overflowY: "auto"
+  },
+  callCard: {
+    borderRadius: 12,
+    border: "2px solid",
+    padding: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    background: "rgba(255,255,255,0.02)"
+  },
+  actBtn: {
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 14px",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer"
+  },
+  persistAlert: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    gap: 16,
+    padding: "32px 24px",
+    textAlign: "center",
+    position: "relative",
+    zIndex: 1,
+    width: "100%",
+    maxWidth: 768,
+    boxSizing: "border-box"
+  },
+  empty: {
+    textAlign: "center",
+    color: "#475569",
+    padding: "48px 0",
+    fontSize: 14
+  }
+};
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(HubApp,{onBack:function(){window.location.href='/'}}));
+</script>
+</body></html>

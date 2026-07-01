@@ -2854,7 +2854,13 @@ Reply YES to acknowledge.`
               <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",lineHeight:1.3}}>{s.name}</div>
               {s.role&&<div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{hubDisplayRole(s.role)}</div>}
             </div>
-            <div style={{fontSize:12,color:"#38bdf8"}}>{s.phone||"—"}</div>
+            <div style={{fontSize:12,color:"#38bdf8",display:"flex",flexDirection:"column",gap:4}}>
+              <div>{s.phone||"—"}</div>
+              {s.phone&&<div style={{display:"flex",gap:10}}>
+                <a href={"tel:"+fmtPhone(s.phone)} style={{display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700,color:"#4ade80",textDecoration:"none",background:"rgba(74,222,128,0.12)",padding:"3px 8px",borderRadius:8}}>{"📞 Call"}</a>
+                <a href={"sms:"+fmtPhone(s.phone)} style={{display:"flex",alignItems:"center",gap:3,fontSize:11,fontWeight:700,color:"#38bdf8",textDecoration:"none",background:"rgba(56,189,248,0.12)",padding:"3px 8px",borderRadius:8}}>{"💬 Text"}</a>
+              </div>}
+            </div>
             <div style={{fontSize:12,color:"#e2e8f0"}}>{s.location||"—"}</div>
             <div style={{fontSize:11,color:"#e2e8f0",lineHeight:1.4}}>
               {s.days?<div>{s.days}</div>:"—"}

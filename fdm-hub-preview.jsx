@@ -1049,9 +1049,10 @@ function HubApp({onBack}){
     return [ADMIN2_PHONE];
   };
   const sendVoice = (phones, message) => {
-    phones.forEach(phone => {
-      fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message})}).catch(e=>console.log(e));
-    });
+    return Promise.allSettled(phones.map(phone =>
+      fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message})})
+        .then(r=>{if(!r.ok) throw new Error("Voice call failed ("+r.status+")");return r;})
+    ));
   };
   const fmtPhone = (p) => {
     if(!p) return null;
@@ -1062,11 +1063,12 @@ function HubApp({onBack}){
     return null;
   };
   const sendSMSList = (phones, message) => {
-    phones.forEach(phone => {
+    return Promise.allSettled(phones.map(phone => {
       const formatted = fmtPhone(phone);
-      if(!formatted) return;
-      fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:formatted,message})}).catch(e=>console.log(e));
-    });
+      if(!formatted) return Promise.reject(new Error("Invalid phone number on file"));
+      return fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:formatted,message})})
+        .then(r=>{if(!r.ok) throw new Error("SMS failed ("+r.status+")");return r;});
+    }));
   };
   const [serialNums,setSerialNums]=useState(()=>{try{return JSON.parse(localStorage.getItem("fdm-serials")||"{}");}catch{return {};}});
   const [showSerials,setShowSerials]=useState(false);
@@ -1075,6 +1077,7 @@ function HubApp({onBack}){
   const [scheduledMsgs,setScheduledMsgs]=useState([]);
   const [showScheduler,setShowScheduler]=useState(false);
   const [broadcastSending,setBroadcastSending]=useState(false);
+  const [broadcastError,setBroadcastError]=useState(null);
   const [gmRoster,setGmRoster]=useState(()=>{try{return JSON.parse(localStorage.getItem('fdm-gm-roster')||'[]');}catch{return [];}});
   const [gmNewName,setGmNewName]=useState("");
   const [gmNewUsername,setGmNewUsername]=useState("");
@@ -2035,67 +2038,119 @@ DATE/TIME: ${now()}`;
           <textarea style={{...S.ta,minHeight:110,fontSize:13,lineHeight:1.6,borderColor:"rgba(124,58,237,0.4)"}} placeholder="Type your custom message..." value={editedMsgTouched?editedMsg:(t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom"?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD")} onChange={e=>{setEditedMsg(e.target.value);setEditedMsgTouched(true);}} onFocus={()=>{if(!editedMsgTouched){setEditedMsg((t?.defaultMsg||"").replace("[REASON]",alertFields._reason==="Other"?alertFields._customReason||"":alertFields._reason||"[select reason above]").replace("[WEATHER_TYPE]",(alertFields._weatherTypes||[]).length>0?(alertFields._weatherTypes||[]).map(w=>w==="Custom"?alertFields._customWeather||"Custom":w).join(", "):"[select weather type above]").replace("[TIME]",alertFields.eta||"time TBD"));setEditedMsgTouched(true);}}}/>
           {editedMsgTouched&&<button style={{background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",padding:0}} onClick={()=>{setEditedMsg("");setEditedMsgTouched(false);}}>↩ Reset to original</button>}
           <div style={{fontSize:12,color:"#f59e0b",background:"rgba(245,158,11,0.08)",borderRadius:8,padding:"8px 12px",border:"1px solid rgba(245,158,11,0.2)"}}>⏱ 90-sec ACK — {ALL_LOCS.length} locations</div>
-          <button style={S.sendBtn} onClick={()=>{
-  const msg=preview;
-  const finalMsg=msg;
-  setBroadcastSending(true);
-  setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:finalMsg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
-  setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:finalMsg},...p]);
-  // Build recipient phone list and chat channels from new unified selector
-  const recipMode=alertFields._recipMode||"groups";
-  const recipGroups=alertFields._recipGroups||["all_staff"];
-  const recipLocs=alertFields._recipLocs||[];
-
-  // Collect role codes and chat channels
-  let allRoleCodes=[];
-  let allChatChannels=[];
-  if(recipMode==="groups"){
-    recipGroups.forEach(g=>{
-      allRoleCodes=[...allRoleCodes,...(BCAST_GROUP_ROLES[g]||[])];
-      allChatChannels=[...allChatChannels,...(BCAST_GROUP_CHANNELS[g]||["AllStaff"])];
-    });
-  } else {
-    recipLocs.forEach(loc=>{
-      allRoleCodes=[...allRoleCodes,...(BCAST_LOC_ROLES[loc]||[])];
-      const ch=BCAST_LOC_CHANNELS[loc];
-      if(ch) allChatChannels=[...allChatChannels,ch];
-    });
+          <button style={S.sendBtn} disabled={broadcastSending} onClick={async ()=>{
+  // Validate required fields BEFORE sending so we never fire a broken/blank alert
+  if(t.id==="weather_imminent"&&(alertFields._weatherTypes||[]).length===0){
+    setBroadcastError("Please select at least one Type of Weather before sending.");
+    return;
   }
-  allRoleCodes=[...new Set(allRoleCodes.map(r=>r.toLowerCase()))];
-  allChatChannels=[...new Set(allChatChannels)];
+  if(t?.requiresReason&&!alertFields._reason){
+    setBroadcastError("Please select a reason before sending.");
+    return;
+  }
+  if(t?.requiresReason&&alertFields._reason==="Other"&&!(alertFields._customReason||"").trim()){
+    setBroadcastError("Please type a reason before sending.");
+    return;
+  }
+  const recipMode0=alertFields._recipMode||"groups";
+  if(recipMode0==="groups"&&(alertFields._recipGroups||["all_staff"]).length===0){
+    setBroadcastError("Please select at least one recipient group before sending.");
+    return;
+  }
+  if(recipMode0==="locations"&&(alertFields._recipLocs||[]).length===0){
+    setBroadcastError("Please select at least one location before sending.");
+    return;
+  }
 
-  // Get unique phone numbers for those roles
-  const bcastPhones=[...new Set([ADMIN2_PHONE,...byRole(allRoleCodes)])];
-  // Match staff records by the same role codes so we can show WHO got the message
-  const matchedStaff=(staffList||[]).filter(s=>s.phone&&allRoleCodes.some(r=>(s.role||"").toLowerCase().includes(r)));
-  const namedRecipients=[...new Map(matchedStaff.map(s=>[s.phone,{name:s.name,role:hubDisplayRole(s.role)}])).values()];
-  const unmatchedCount=bcastPhones.length-namedRecipients.length; // e.g. Admin 2 hardcoded number w/ no staff record
+  setBroadcastError(null);
+  setBroadcastSending(true);
+  try{
+    const msg=preview;
+    const finalMsg=msg;
+    setBroadcastAlerts(p=>[{id:Date.now(),label:t.label,msg:finalMsg,requiresAck:true,firedAt:Date.now(),date:now(),acks:{},escalated:false},...p]);
+    setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"alert",label:`Broadcast: ${t.label}`,msg:finalMsg},...p]);
+    // Build recipient phone list and chat channels from new unified selector
+    const recipMode=alertFields._recipMode||"groups";
+    const recipGroups=alertFields._recipGroups||["all_staff"];
+    const recipLocs=alertFields._recipLocs||[];
 
-  // Async SMS + Voice to prevent UI freeze
-  setTimeout(()=>{
+    // Collect role codes and chat channels
+    let allRoleCodes=[];
+    let allChatChannels=[];
+    if(recipMode==="groups"){
+      recipGroups.forEach(g=>{
+        allRoleCodes=[...allRoleCodes,...(BCAST_GROUP_ROLES[g]||[])];
+        allChatChannels=[...allChatChannels,...(BCAST_GROUP_CHANNELS[g]||["AllStaff"])];
+      });
+    } else {
+      recipLocs.forEach(loc=>{
+        allRoleCodes=[...allRoleCodes,...(BCAST_LOC_ROLES[loc]||[])];
+        const ch=BCAST_LOC_CHANNELS[loc];
+        if(ch) allChatChannels=[...allChatChannels,ch];
+      });
+    }
+    allRoleCodes=[...new Set(allRoleCodes.map(r=>r.toLowerCase()))];
+    allChatChannels=[...new Set(allChatChannels)];
+
+    // Get unique phone numbers for those roles
+    const bcastPhones=[...new Set([ADMIN2_PHONE,...byRole(allRoleCodes)])];
+    // Match staff records by the same role codes so we can show WHO got the message
+    const matchedStaff=(staffList||[]).filter(s=>s.phone&&allRoleCodes.some(r=>(s.role||"").toLowerCase().includes(r)));
+    const namedRecipients=[...new Map(matchedStaff.map(s=>[s.phone,{name:s.name,role:hubDisplayRole(s.role)}])).values()];
+    const unmatchedCount=bcastPhones.length-namedRecipients.length; // e.g. Admin 2 hardcoded number w/ no staff record
+
+    if(bcastPhones.length===0){
+      throw new Error("No recipients found for the selected group(s)/location(s). Nothing was sent.");
+    }
+
     const announcementHeader=t.id&&t.id.startsWith("weather")?`Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nDANGEROUS WEATHER — ${t.label}`:["event_delayed","event_postponed","event_cancelled_staff","all_clear"].includes(t.id)?`Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\nEVENT — ${t.label}`:`Fête de Marquette 2026 IMPORTANT ANNOUNCEMENT\n${t.label}`;
     const bcastMsg2=`${announcementHeader}\n\n${finalMsg}`;
-    sendSMSList(bcastPhones,bcastMsg2);
-    sendVoice(bcastPhones,`Fete de Marquette announcement. ${finalMsg.replace(/\n/g," ")}`);
+
+    // Fire Festival Chat in the background — not blocking on it
     sendGroupMe(`FDM 2026 — ${t.label}\n${new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})} · ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}\n\n${finalMsg}`, allChatChannels);
-  },100);
-  playAlert("broadcast");
-  setBroadcastSending(false);
-  const _successData={label:t.label, channels:allChatChannels, count:bcastPhones.length, recipients:namedRecipients, unmatchedCount};
-  setTimeout(()=>{
+
+    // Wait for SMS + Voice to actually complete, with a timeout so we never hang forever
+    const timeoutMs=20000;
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Send timed out after 20 seconds — check your internet connection and try again.")),timeoutMs));
+    const [smsResults,voiceResults]=await Promise.race([
+      Promise.all([sendSMSList(bcastPhones,bcastMsg2),sendVoice(bcastPhones,`Fete de Marquette announcement. ${finalMsg.replace(/\n/g," ")}`)]),
+      timeout,
+    ]);
+
+    const smsFailed=smsResults.filter(r=>r.status==="rejected").length;
+    const voiceFailed=voiceResults.filter(r=>r.status==="rejected").length;
+
+    if(smsFailed===bcastPhones.length){
+      throw new Error(`SMS failed to send to all ${bcastPhones.length} recipient(s). Check your connection or Twilio status and try again.`);
+    }
+
+    playAlert("broadcast");
+    setBroadcastSending(false);
+    const _successData={label:t.label, channels:allChatChannels, count:bcastPhones.length, recipients:namedRecipients, unmatchedCount, smsFailed, voiceFailed};
     setBroadcastSuccess(_successData);
-  },50);
+  } catch(err){
+    setBroadcastSending(false);
+    setBroadcastError(err?.message||"Something went wrong sending the broadcast. Please try again.");
+  }
 }}>
   {broadcastSending?"⏳ Sending...":"🚀 SEND NOW"}
 </button>
+        {broadcastError&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:"32px"}}>
+          <div style={{fontSize:56}}>⚠️</div>
+          <div style={{fontSize:22,fontWeight:900,color:"#ef4444",textAlign:"center"}}>Broadcast Not Sent</div>
+          <div style={{background:"rgba(239,68,68,0.1)",border:"2px solid rgba(239,68,68,0.4)",borderRadius:14,padding:"18px 20px",textAlign:"center",maxWidth:360,width:"100%"}}>
+            <div style={{fontSize:14,color:"#fecaca",lineHeight:1.6}}>{broadcastError}</div>
+          </div>
+          <button style={{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#ef4444,#b91c1c)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}} onClick={()=>setBroadcastError(null)}>Fix &amp; Try Again</button>
+        </div>}
         {broadcastSuccess&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:"32px"}}>
           <div style={{fontSize:56}}>✅</div>
           <div style={{fontSize:22,fontWeight:900,color:"#10b981",textAlign:"center"}}>Broadcast Sent!</div>
           <div style={{background:"rgba(16,185,129,0.12)",border:"2px solid rgba(16,185,129,0.4)",borderRadius:14,padding:"18px 20px",textAlign:"left",maxWidth:380,width:"100%",display:"flex",flexDirection:"column",gap:10}}>
             <div style={{fontSize:16,fontWeight:800,color:"#f1f5f9",textAlign:"center",marginBottom:2}}>{broadcastSuccess.label}</div>
             <div style={{fontSize:13,color:"#6ee7b7"}}>✓ Festival Chat — {broadcastSuccess.channels.length} channels</div>
-            <div style={{fontSize:13,color:"#6ee7b7"}}>✓ Voice calls firing</div>
-            <div style={{fontSize:13,fontWeight:900,color:"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>{"✓ SMS — "+broadcastSuccess.count+" recipients"}</div>
+            <div style={{fontSize:13,color:broadcastSuccess.voiceFailed>0?"#fbbf24":"#6ee7b7"}}>{broadcastSuccess.voiceFailed>0?`⚠ Voice — ${broadcastSuccess.voiceFailed} call(s) failed`:"✓ Voice calls firing"}</div>
+            <div style={{fontSize:13,fontWeight:900,color:broadcastSuccess.smsFailed>0?"#fbbf24":"#6ee7b7",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:4}}>{broadcastSuccess.smsFailed>0?`⚠ SMS — ${broadcastSuccess.count-broadcastSuccess.smsFailed} of ${broadcastSuccess.count} sent`:"✓ SMS — "+broadcastSuccess.count+" recipients"}</div>
             <div style={{maxHeight:220,overflowY:"auto",display:"flex",flexDirection:"column",gap:5,background:"rgba(0,0,0,0.25)",borderRadius:10,padding:"8px 10px"}}>
               {broadcastSuccess.recipients.length===0&&<div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:6}}>No matching staff on file</div>}
               {broadcastSuccess.recipients.map((r,i)=>(

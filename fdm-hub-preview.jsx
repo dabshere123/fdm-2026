@@ -3923,6 +3923,18 @@ Reply YES to acknowledge.`
         </button>
       </div>
 
+    {/* ===== MPD ===== */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        <button style={{background:"rgba(37,99,235,0.08)",borderRadius:14,border:"1px solid rgba(37,99,235,0.3)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>setMpdRequestView(true)}>
+          <div style={{fontSize:15,fontWeight:800,color:"#93c5fd"}}>🚔 Request MPD</div>
+          <div style={{fontSize:11,color:"#64748b"}}>Dispatch officers to a location</div>
+        </button>
+        <button style={{background:"rgba(37,99,235,0.04)",borderRadius:14,border:"1px solid rgba(37,99,235,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
+          <div style={{fontSize:15,fontWeight:800,color:"#60a5fa"}}>👮 Manage Officers</div>
+          <div style={{fontSize:11,color:"#64748b"}}>Add or toggle on/off duty</div>
+        </button>
+      </div>
+
 
     {/* ===== ROW 2: EQUIPMENT TRACKER ===== */}
       <div style={{background:"rgba(234,179,8,0.06)",borderRadius:14,border:"1px solid rgba(234,179,8,0.3)",overflow:"hidden"}}>

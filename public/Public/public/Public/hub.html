@@ -11603,6 +11603,63 @@ Reply YES to acknowledge.`
     }
   }, "Log a maintenance issue"))), /*#__PURE__*/React.createElement("div", {
     style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "rgba(37,99,235,0.08)",
+      borderRadius: 14,
+      border: "1px solid rgba(37,99,235,0.3)",
+      padding: "14px 16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      cursor: "pointer",
+      textAlign: "left"
+    },
+    onClick: () => setMpdRequestView(true)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: "#93c5fd"
+    }
+  }, "\uD83D\uDE94 Request MPD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#64748b"
+    }
+  }, "Dispatch officers to a location")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "rgba(37,99,235,0.04)",
+      borderRadius: 14,
+      border: "1px solid rgba(37,99,235,0.2)",
+      padding: "14px 16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      cursor: "pointer",
+      textAlign: "left"
+    },
+    onClick: () => {
+      fetchMPD();
+      setMpdManageOpen(true);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      color: "#60a5fa"
+    }
+  }, "\uD83D\uDC6E Manage Officers"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#64748b"
+    }
+  }, "Add or toggle on/off duty"))), /*#__PURE__*/React.createElement("div", {
+    style: {
       background: "rgba(234,179,8,0.06)",
       borderRadius: 14,
       border: "1px solid rgba(234,179,8,0.3)",

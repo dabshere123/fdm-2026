@@ -126,11 +126,12 @@ const EMS_STAGING=[
 ];
 
 const RESOURCE_TYPES=[
+  {id:"supplies",label:"Supplies / Restock",emoji:"📦",desc:"Ice, cups, towels, water, etc."},
+  {id:"maintenance",label:"Maintenance Crew",emoji:"🔧",desc:"Request maintenance personnel"},
   {id:"mpd",label:"MPD Officers",emoji:"👮",desc:"Request additional police presence"},
   {id:"mfd",label:"MFD / Fire",emoji:"🚒",desc:"Request fire department response — auto-triggers 911"},
   {id:"ems_festival",label:"Festival Medics",emoji:"🚑",desc:"Request additional festival medical units"},
   {id:"ems_mfd",label:"Madison Fire Medics",emoji:"🏥",desc:"Request Madison Fire Department medics"},
-  {id:"maintenance",label:"Maintenance Crew",emoji:"🔧",desc:"Request maintenance personnel"},
   {id:"other",label:"Other Resource",emoji:"📋",desc:"Request any other resource"},
 ];
 
@@ -536,6 +537,15 @@ Madison Fire/EMS INBOUND — McPike Park`;
               <div style={{textAlign:"left"}}>
                 <div>NEW CALL</div>
                 <div style={{fontSize:10,color:"#94a3b8",fontWeight:400,marginTop:1}}>Medical · Fire · Security</div>
+              </div>
+            </button>
+
+            {/* REQUEST RESOURCES — Supplies, Maintenance, MPD, etc. */}
+            <button style={{width:"100%",padding:"11px",borderRadius:10,border:"2px solid rgba(245,158,11,0.6)",background:"linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.1))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>setResourceView(true)}>
+              <span style={{fontSize:18}}>📦</span>
+              <div style={{textAlign:"left"}}>
+                <div>REQUEST RESOURCES</div>
+                <div style={{fontSize:10,color:"#94a3b8",fontWeight:400,marginTop:1}}>Supplies · Maintenance · MPD · More</div>
               </div>
             </button>
           </div>
@@ -2213,8 +2223,8 @@ DATE/TIME: ${now()}`;
             <button style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"10px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}} onClick={function(){setNewCallType("");}}>
               ← Change type
             </button>
-            <div style={{background:(newCallType==="medical"||newCallType==="walk_in"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"22",border:"2px solid "+(newCallType==="medical"||newCallType==="walk_in"?"#a855f7":newCallType==="fire"?"#ef4444":"#3b82f6")+"88",borderRadius:10,padding:"12px 14px",fontSize:15,fontWeight:900,color:"#f1f5f9"}}>
-              {newCallType==="medical"?"🩺 Medical":newCallType==="walk_in"?"🚶 Walk-In Patient":newCallType==="fire"?"🔥 Fire / Life Safety":"🛡️ Security"}
+            <div style={{background:(newCallType==="medical"||newCallType==="walk_in"?"#a855f7":newCallType==="fire"?"#ef4444":newCallType==="security"?"#3b82f6":newCallType==="supplies"?"#d97706":newCallType==="maintenance"?"#10b981":"#64748b")+"22",border:"2px solid "+(newCallType==="medical"||newCallType==="walk_in"?"#a855f7":newCallType==="fire"?"#ef4444":newCallType==="security"?"#3b82f6":newCallType==="supplies"?"#d97706":newCallType==="maintenance"?"#10b981":"#64748b")+"88",borderRadius:10,padding:"12px 14px",fontSize:15,fontWeight:900,color:"#f1f5f9"}}>
+              {newCallType==="medical"?"🩺 Medical":newCallType==="walk_in"?"🚶 Walk-In Patient":newCallType==="fire"?"🔥 Fire / Life Safety":newCallType==="security"?"🛡️ Security":newCallType==="supplies"?"📦 Supplies":newCallType==="maintenance"?"🔧 Maintenance":newCallType}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Location *</div>
@@ -3902,7 +3912,7 @@ Reply YES to acknowledge.`
       </div>
 
     {/* ===== SUPPLIES ===== */}
-      <button style={{width:"100%",background:"rgba(245,158,11,0.06)",borderRadius:14,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",textAlign:"left"}} onClick={()=>{setNewCallType("supplies");setNewCallLocation("");setNewCallProblem("");setNewCallView(true);}}>
+      <button style={{width:"100%",background:"rgba(245,158,11,0.06)",borderRadius:14,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",textAlign:"left"}} onClick={()=>{setResourceType("supplies");setResourceView(true);}}>
         <div>
           <div style={{fontSize:15,fontWeight:800,color:"#fbbf24"}}>📦 Supplies Request</div>
           <div style={{fontSize:12,color:"#64748b",marginTop:3}}>Tap to log a supply or restock request</div>

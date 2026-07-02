@@ -45,6 +45,14 @@ exports.handler = async (event) => {
 
     const data = await res.json();
 
+    if (!res.ok || data.error_code) {
+      return {
+        statusCode: 502,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: data.message || 'Twilio rejected the call', code: data.code || data.error_code })
+      };
+    }
+
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },

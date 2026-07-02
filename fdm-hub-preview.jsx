@@ -1114,10 +1114,16 @@ function HubApp({onBack}){
     return [ADMIN2_PHONE];
   };
   const sendVoice = (phones, message) => {
-    return Promise.allSettled(phones.map(phone =>
-      fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message})})
-        .then(r=>{if(!r.ok) throw new Error("Voice call failed ("+r.status+")");return r;})
-    ));
+    return Promise.allSettled(phones.map(phone => {
+      const formatted = fmtPhone(phone);
+      if(!formatted) return Promise.reject(new Error("Invalid phone number on file"));
+      return fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:formatted,message})})
+        .then(async r=>{
+          const d=await r.json().catch(()=>({}));
+          if(!r.ok||d.error) throw new Error(d.error||("Voice call failed ("+r.status+")"));
+          return d;
+        });
+    }));
   };
   const fmtPhone = (p) => {
     if(!p) return null;
@@ -1132,7 +1138,11 @@ function HubApp({onBack}){
       const formatted = fmtPhone(phone);
       if(!formatted) return Promise.reject(new Error("Invalid phone number on file"));
       return fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:formatted,message})})
-        .then(r=>{if(!r.ok) throw new Error("SMS failed ("+r.status+")");return r;});
+        .then(async r=>{
+          const d=await r.json().catch(()=>({}));
+          if(!r.ok||d.error) throw new Error(d.error||("SMS failed ("+r.status+")"));
+          return d;
+        });
     }));
   };
   const [serialNums,setSerialNums]=useState(()=>{try{return JSON.parse(localStorage.getItem("fdm-serials")||"{}");}catch{return {};}});

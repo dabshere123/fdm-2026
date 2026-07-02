@@ -1081,35 +1081,36 @@ function HubApp({onBack}){
   const [adminReqView,setAdminReqView]=useState(false);
   // NOTIFICATION ROSTER — Admin 2 hardcoded, others from Airtable
   const ADMIN2_PHONE = "+16082289692";
-  const byRole = (roles) => (staffList||[])
+  const byRole = (roles) => [...new Set((staffList||[])
     .filter(s => roles.some(r => (s.role||"").toLowerCase().includes(r.toLowerCase())))
-    .map(s => s.phone).filter(Boolean);
+    .map(s => fmtPhone(s.phone)).filter(Boolean))];
   const getNotifyList = (type) => {
     // Get phones from staffList by role
     const safeList = staffList || [];
+    const dedupe = (arr) => [...new Set(arr.map(fmtPhone).filter(Boolean))];
     if(type==="lost_child"||type==="broadcast"){
-      return [...new Set([ADMIN2_PHONE, ...safeList.map(s=>s.phone).filter(Boolean)])];
+      return dedupe([ADMIN2_PHONE, ...safeList.map(s=>s.phone)]);
     }
     if(type==="vendors_sms"){
       // Combine staff vendors + checked-in food vendors from VendorCheckins
-      const staffVendors = safeList.filter(s=>(s.role||"").toLowerCase().includes("vendor")).map(s=>s.phone).filter(Boolean);
-      return [...new Set([...staffVendors,...vendorPhonesList])];
+      const staffVendors = safeList.filter(s=>(s.role||"").toLowerCase().includes("vendor")).map(s=>s.phone);
+      return dedupe([...staffVendors,...vendorPhonesList]);
     }
     if(type==="walk_in"){
-      return [...new Set([ADMIN2_PHONE, ...byRole(["med unit 1","med 1","m1","med unit 2","med 2","m2"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["med unit 1","med 1","m1","med unit 2","med 2","m2"])]);
     }
     if(type==="medical"||type==="fire"){
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2","med unit 1","med 1","m1","med unit 2","med 2","m2"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin","a1","a2","med unit 1","med 1","m1","med unit 2","med 2","m2"])]);
     }
     if(type==="security"){
       const mpdPhones=mpdOfficers.filter(o=>o.phone).map(o=>o.phone);
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2"]), ...mpdPhones])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin","a1","a2"]), ...mpdPhones]);
     }
     if(type==="supplies"){
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin","a1","a2"])]);
     }
     if(type==="maintenance"){
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin","a1","a2","oc1","oc2","oc3","oc4"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin","a1","a2","oc1","oc2","oc3","oc4"])]);
     }
     return [ADMIN2_PHONE];
   };

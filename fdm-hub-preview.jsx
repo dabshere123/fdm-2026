@@ -3911,14 +3911,17 @@ Reply YES to acknowledge.`
         </div>
       </div>
 
-    {/* ===== SUPPLIES ===== */}
-      <button style={{width:"100%",background:"rgba(245,158,11,0.06)",borderRadius:14,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",textAlign:"left"}} onClick={()=>{setResourceType("supplies");setResourceView(true);}}>
-        <div>
-          <div style={{fontSize:15,fontWeight:800,color:"#fbbf24"}}>📦 Supplies Request</div>
-          <div style={{fontSize:12,color:"#64748b",marginTop:3}}>Tap to log a supply or restock request</div>
-        </div>
-        <div style={{color:"#fbbf24",fontSize:20}}>→</div>
-      </button>
+    {/* ===== SUPPLIES + MAINTENANCE ===== */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        <button style={{background:"rgba(245,158,11,0.06)",borderRadius:14,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>{setResourceType("supplies");setResourceView(true);}}>
+          <div style={{fontSize:15,fontWeight:800,color:"#fbbf24"}}>📦 Supplies</div>
+          <div style={{fontSize:11,color:"#64748b"}}>Log a restock request</div>
+        </button>
+        <button style={{background:"rgba(16,185,129,0.06)",borderRadius:14,border:"1px solid rgba(16,185,129,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>{setResourceType("maintenance");setResourceView(true);}}>
+          <div style={{fontSize:15,fontWeight:800,color:"#6ee7b7"}}>🔧 Maintenance</div>
+          <div style={{fontSize:11,color:"#64748b"}}>Log a maintenance issue</div>
+        </button>
+      </div>
 
 
     {/* ===== ROW 2: EQUIPMENT TRACKER ===== */}

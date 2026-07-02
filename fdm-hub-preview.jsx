@@ -436,12 +436,12 @@ Madison Fire/EMS INBOUND — McPike Park`;
         const voiceMsg=`911 has been activated at Fête de Marquette by ${role}. Location: ${pc.location}. Meet EMS at ${meetupLoc||"the main entrance"}. EMS is now inbound to McPike Park.`;
         const adminPhones=["+16082289692","+16082352925"];
         adminPhones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg})}).catch(()=>{});});
-        fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:adminPhones,message:voiceMsg})}).catch(()=>{});
+        adminPhones.forEach(p=>{fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:voiceMsg})}).catch(()=>{});});
         const otherMedR=(role||"").toLowerCase().includes("1")?"m2":"m1";
         (staffList||[]).filter(s=>(s.role||"").toLowerCase()===otherMedR&&s.phone).forEach(s=>{
           const d=String(s.phone).replace(/[^0-9]/g,"");const fmt=d.length===10?`+1${d}`:`+${d}`;
           fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg})}).catch(()=>{});
-          fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:[fmt],message:voiceMsg})}).catch(()=>{});
+          fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:voiceMsg})}).catch(()=>{});
         });
         set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:pc.id,info:{location:pc.location,nature:pc.problem}});
         setNineOneOneActive(true);
@@ -1463,10 +1463,12 @@ function HubApp({onBack}){
           // Voice call for severe (Tornado/Thunderstorm Warning/Watch) only
           if(isSevere){
             const voiceMsg=`Urgent weather alert for Fête de Marquette. A ${ev} has been issued for Dane County, Wisconsin. McPike Park may be affected. Please take immediate action for the safety of all festival attendees and staff. Use the broadcast system to notify all workers immediately.`;
-            fetch("/.netlify/functions/send-voice",{
-              method:"POST",headers:{"Content-Type":"application/json"},
-              body:JSON.stringify({phones:ADMIN_PHONES,message:voiceMsg})
-            }).catch(()=>{});
+            for(const ph of ADMIN_PHONES){
+              fetch("/.netlify/functions/send-voice",{
+                method:"POST",headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({to:ph,message:voiceMsg})
+              }).catch(()=>{});
+            }
           }
         }
       }
@@ -1808,15 +1810,15 @@ function HubApp({onBack}){
                   const adminPhones=["+16082289692","+16082352925"];
                   adminPhones.forEach(p=>{
                     fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});
+                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`})}).catch(()=>{});
                   });
-                  fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:adminPhones,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`})}).catch(()=>{});
                   // SMS + Voice to OTHER med unit (not the one activating 911)
                   const otherMedRole=(role||"").toLowerCase()==="med 1"||role==="M1"?"m2":"m1";
                   const otherMed=(staffList||[]).filter(s=>(s.role||"").toLowerCase()===otherMedRole&&s.phone);
                   otherMed.forEach(s=>{
                     const d=String(s.phone).replace(/[^0-9]/g,"");const fmt=d.length===10?`+1${d}`:`+${d}`;
                     fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});
-                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phones:[fmt],message:`911 has been activated at Fête de Marquette. Location: ${alertCall.location}. EMS is inbound. Please stand by for coordination.`})}).catch(()=>{});
+                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 has been activated at Fête de Marquette. Location: ${alertCall.location}. EMS is inbound. Please stand by for coordination.`})}).catch(()=>{});
                   });
                 }}>🚨 Activate 911 from This Call</button>}
               {nineOneOne.active&&<div style={{textAlign:"center",color:"#fca5a5",fontWeight:900,padding:"10px",background:"rgba(180,0,0,0.2)",borderRadius:10}}>🚨 911 ACTIVE</div>}

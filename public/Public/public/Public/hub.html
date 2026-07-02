@@ -1047,16 +1047,18 @@ Madison Fire/EMS INBOUND — McPike Park`;
           })
         }).catch(() => {});
       });
-      fetch("/.netlify/functions/send-voice", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          phones: adminPhones,
-          message: voiceMsg
-        })
-      }).catch(() => {});
+      adminPhones.forEach(p => {
+        fetch("/.netlify/functions/send-voice", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            to: p,
+            message: voiceMsg
+          })
+        }).catch(() => {});
+      });
       const otherMedR = (role || "").toLowerCase().includes("1") ? "m2" : "m1";
       (staffList || []).filter(s => (s.role || "").toLowerCase() === otherMedR && s.phone).forEach(s => {
         const d = String(s.phone).replace(/[^0-9]/g, "");
@@ -1077,7 +1079,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            phones: [fmt],
+            to: fmt,
             message: voiceMsg
           })
         }).catch(() => {});
@@ -3032,50 +3034,56 @@ function HubApp({
   const [adminReqView, setAdminReqView] = useState(false);
   // NOTIFICATION ROSTER — Admin 2 hardcoded, others from Airtable
   const ADMIN2_PHONE = "+16082289692";
-  const byRole = roles => (staffList || []).filter(s => roles.some(r => (s.role || "").toLowerCase().includes(r.toLowerCase()))).map(s => s.phone).filter(Boolean);
+  const byRole = roles => [...new Set((staffList || []).filter(s => roles.some(r => (s.role || "").toLowerCase().includes(r.toLowerCase()))).map(s => fmtPhone(s.phone)).filter(Boolean))];
   const getNotifyList = type => {
     // Get phones from staffList by role
     const safeList = staffList || [];
+    const dedupe = arr => [...new Set(arr.map(fmtPhone).filter(Boolean))];
     if (type === "lost_child" || type === "broadcast") {
-      return [...new Set([ADMIN2_PHONE, ...safeList.map(s => s.phone).filter(Boolean)])];
+      return dedupe([ADMIN2_PHONE, ...safeList.map(s => s.phone)]);
     }
     if (type === "vendors_sms") {
       // Combine staff vendors + checked-in food vendors from VendorCheckins
-      const staffVendors = safeList.filter(s => (s.role || "").toLowerCase().includes("vendor")).map(s => s.phone).filter(Boolean);
-      return [...new Set([...staffVendors, ...vendorPhonesList])];
+      const staffVendors = safeList.filter(s => (s.role || "").toLowerCase().includes("vendor")).map(s => s.phone);
+      return dedupe([...staffVendors, ...vendorPhonesList]);
     }
     if (type === "walk_in") {
-      return [...new Set([ADMIN2_PHONE, ...byRole(["med unit 1", "med 1", "m1", "med unit 2", "med 2", "m2"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["med unit 1", "med 1", "m1", "med unit 2", "med 2", "m2"])]);
     }
     if (type === "medical" || type === "fire") {
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2", "med unit 1", "med 1", "m1", "med unit 2", "med 2", "m2"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2", "med unit 1", "med 1", "m1", "med unit 2", "med 2", "m2"])]);
     }
     if (type === "security") {
       const mpdPhones = mpdOfficers.filter(o => o.phone).map(o => o.phone);
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2"]), ...mpdPhones])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2"]), ...mpdPhones]);
     }
     if (type === "supplies") {
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2"])]);
     }
     if (type === "maintenance") {
-      return [...new Set([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2", "oc1", "oc2", "oc3", "oc4"])])];
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin", "a1", "a2", "oc1", "oc2", "oc3", "oc4"])]);
     }
     return [ADMIN2_PHONE];
   };
   const sendVoice = (phones, message) => {
-    return Promise.allSettled(phones.map(phone => fetch("/.netlify/functions/send-voice", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        to: phone,
-        message
-      })
-    }).then(r => {
-      if (!r.ok) throw new Error("Voice call failed (" + r.status + ")");
-      return r;
-    })));
+    return Promise.allSettled(phones.map(phone => {
+      const formatted = fmtPhone(phone);
+      if (!formatted) return Promise.reject(new Error("Invalid phone number on file"));
+      return fetch("/.netlify/functions/send-voice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          to: formatted,
+          message
+        })
+      }).then(async r => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || "Voice call failed (" + r.status + ")");
+        return d;
+      });
+    }));
   };
   const fmtPhone = p => {
     if (!p) return null;
@@ -3098,9 +3106,10 @@ function HubApp({
           to: formatted,
           message
         })
-      }).then(r => {
-        if (!r.ok) throw new Error("SMS failed (" + r.status + ")");
-        return r;
+      }).then(async r => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || "SMS failed (" + r.status + ")");
+        return d;
       });
     }));
   };
@@ -3523,16 +3532,18 @@ function HubApp({
           // Voice call for severe (Tornado/Thunderstorm Warning/Watch) only
           if (isSevere) {
             const voiceMsg = `Urgent weather alert for Fête de Marquette. A ${ev} has been issued for Dane County, Wisconsin. McPike Park may be affected. Please take immediate action for the safety of all festival attendees and staff. Use the broadcast system to notify all workers immediately.`;
-            fetch("/.netlify/functions/send-voice", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                phones: ADMIN_PHONES,
-                message: voiceMsg
-              })
-            }).catch(() => {});
+            for (const ph of ADMIN_PHONES) {
+              fetch("/.netlify/functions/send-voice", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  to: ph,
+                  message: voiceMsg
+                })
+              }).catch(() => {});
+            }
           }
         }
       }
@@ -4219,17 +4230,17 @@ function HubApp({
                 message: msg911
               })
             }).catch(() => {});
+            fetch("/.netlify/functions/send-voice", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                to: p,
+                message: `911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`
+              })
+            }).catch(() => {});
           });
-          fetch("/.netlify/functions/send-voice", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              phones: adminPhones,
-              message: `911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`
-            })
-          }).catch(() => {});
           // SMS + Voice to OTHER med unit (not the one activating 911)
           const otherMedRole = (role || "").toLowerCase() === "med 1" || role === "M1" ? "m2" : "m1";
           const otherMed = (staffList || []).filter(s => (s.role || "").toLowerCase() === otherMedRole && s.phone);
@@ -4252,7 +4263,7 @@ function HubApp({
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                phones: [fmt],
+                to: fmt,
                 message: `911 has been activated at Fête de Marquette. Location: ${alertCall.location}. EMS is inbound. Please stand by for coordination.`
               })
             }).catch(() => {});

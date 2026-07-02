@@ -2674,7 +2674,6 @@ Reply YES to acknowledge.`
           <span style={S.panelTitle}>🚔 Manage MPD Officers</span>
           <div style={{display:"flex",gap:6}}>
             <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(37,99,235,0.4)",background:"rgba(37,99,235,0.08)",color:"#93c5fd",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={fetchMPD}>↺ Refresh</button>
-            <button style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.08)",color:"#4ade80",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setMpdAddOpen(true);setMpdAddStatus('');}}>+ Add</button>
           </div>
         </div>
         <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,overflowY:"auto",flex:1}}>
@@ -2700,35 +2699,6 @@ Reply YES to acknowledge.`
               }}>{o.status==="ON"?"🟢 Online":"⚫ Offline"}</button>
             </div>
           ))}
-          {/* Add Officer Form */}
-          {mpdAddOpen&&(
-            <div style={{background:"rgba(34,197,94,0.06)",border:"2px solid rgba(34,197,94,0.3)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{fontSize:14,fontWeight:800,color:"#4ade80"}}>+ Add MPD Officer</div>
-              <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"11px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Officer Name *" value={mpdNewName} onChange={e=>setMpdNewName(e.target.value)}/>
-              <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"11px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Phone Number *" value={mpdNewPhone} onChange={e=>setMpdNewPhone(e.target.value)} type="tel"/>
-              <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"11px",color:"#f1f5f9",fontSize:15,fontFamily:"inherit",outline:"none"}} placeholder="Badge # (optional)" value={mpdNewBadge} onChange={e=>setMpdNewBadge(e.target.value)}/>
-              {mpdAddStatus&&<div style={{fontSize:12,color:mpdAddStatus.includes("✅")?"#4ade80":"#fca5a5"}}>{mpdAddStatus}</div>}
-              <div style={{display:"flex",gap:8}}>
-                <button style={{flex:1,padding:"11px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setMpdAddOpen(false)}>Cancel</button>
-                <button style={{flex:2,padding:"11px",borderRadius:8,border:"none",background:"linear-gradient(135deg,rgba(34,197,94,0.8),rgba(22,163,74,0.8))",color:"#fff",fontSize:13,fontWeight:900,cursor:"pointer"}} onClick={async()=>{
-                  if(!mpdNewName||!mpdNewPhone){setMpdAddStatus("Name and phone required.");return;}
-                  setMpdAddStatus("Adding officer...");
-                  try{
-                    // Add to Airtable
-                    const r=await fetch(`https://api.airtable.com/v0/appUVEp7kO9NeeJh0/MPDOfficers`,{method:"POST",headers:{"Authorization":`Bearer ${airtableToken}`,"Content-Type":"application/json"},body:JSON.stringify({fields:{Name:mpdNewName,Phone:mpdNewPhone,Badge:mpdNewBadge,MPDStatus:"OFF"}})});
-                    const d=await r.json();
-                    if(!r.ok) throw new Error(d.error?.message||"Airtable error");
-                    // Send confirmation SMS via Netlify function
-                    await fetch("/.netlify/functions/confirm-mpd-registration",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:mpdNewName,phone:mpdNewPhone})});
-                    setMpdAddStatus(`✅ ${mpdNewName} added. Confirmation text sent.`);
-                    setMpdNewName("");setMpdNewPhone("");setMpdNewBadge("");
-                    fetchMPD();
-                    setTimeout(()=>setMpdAddOpen(false),2000);
-                  }catch(e){setMpdAddStatus("Error: "+e.message);}
-                }}>Add &amp; Send Confirmation</button>
-              </div>
-            </div>
-          )}
 
           {/* ADD OFFICER FORM */}
           <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>

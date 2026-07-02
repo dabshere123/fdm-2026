@@ -80,6 +80,23 @@ There are 4 separate "Activate 911" buttons in the app (priority call screen, ca
 
 ---
 
+## 7. NWS Auto-Alerts (background weather monitoring — separate from Broadcast)
+
+This runs automatically in the background whenever the Hub is open — no button press needed. It polls the National Weather Service every 30 seconds for Dane County (zone WIZ064) and reacts in two tiers:
+
+| Tier | Triggered by | SMS | Voice | Chat |
+|---|---|---|---|---|
+| **Severe** | Tornado Warning, Tornado Watch, Severe Thunderstorm Warning, Severe Thunderstorm Watch | Admin (Devin + Gary) | Admin (Devin + Gary) | ❌ None automatically |
+| **Approach** | Thunderstorm, Special Weather Statement | Admin (Devin + Gary) | ❌ None | ❌ None automatically |
+
+Notes:
+- **Admin-only, always.** This never texts or calls general staff directly — it's designed to alert Devin/Gary so *they* can decide whether to push a full Broadcast to everyone.
+- **The on-screen weather banner shows a wider net than the SMS/voice trigger.** The little banner + alert list on the Hub home screen also lights up for Flash Flood Warning/Watch, Winter Storm Warning, Blizzard Warning, High Wind Warning, and Wind Advisory — but those extra types only show visually, they do **not** trigger SMS or voice.
+- **Fires once per alert.** Each NWS alert has a unique ID; once texted/called for, it won't repeat even though the poll keeps running every 30 seconds.
+- Pulled from `api.weather.gov`, not Twilio-dependent on the read side — only the notify step uses Twilio.
+
+---
+
 ## Notes on reliability
 - All of the above now format phone numbers to `+1XXXXXXXXXX` before sending and dedupe on the *formatted* number, so the same person won't get double-texted even if their number is stored inconsistently in Airtable.
 - Supplies and Maintenance are intentionally SMS-only (lower priority than safety alerts) — not a bug.

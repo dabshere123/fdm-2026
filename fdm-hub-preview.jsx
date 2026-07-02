@@ -1463,6 +1463,8 @@ function HubApp({onBack}){
   const [lcView,setLcView]=useState(false);
   const [lcMode,setLcMode]=useState("");
   const [lcPAScript,setLcPAScript]=useState("");
+  const [lcSendError,setLcSendError]=useState(null);
+  const [lcSending,setLcSending]=useState(false);
   // Per-call officer notifications: {callId: {officerId: {notified, acked, cancelled}}}
   const [officerNotifs,setOfficerNotifs]=useState({});
   const [resourceType,setResourceType]=useState(null);
@@ -2861,9 +2863,9 @@ Reply YES to acknowledge.`
           <Fld label="Assembly / Meet Point *" value={lcFields.assembly||""} onChange={e=>setLcFields(p=>({...p,assembly:e.target.value}))} ph="e.g. First Aid Tent, north entrance"/>
           <Fld label="Parent / Guardian Name" value={lcFields.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Sarah Johnson"/>
           <Fld label="Parent / Guardian Phone" value={lcFields.parentPhone||""} onChange={e=>setLcFields(p=>({...p,parentPhone:e.target.value}))} ph="(608) 555-1234"/>
-          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields.age||!lcFields.lastSeen||!lcFields.assembly)?0.5:1}}
-            disabled={!lcFields.age||!lcFields.lastSeen||!lcFields.assembly}
-            onClick={()=>{
+          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#f97316,#ea580c)",opacity:(!lcFields.age||!lcFields.lastSeen||!lcFields.assembly||lcSending)?0.5:1}}
+            disabled={!lcFields.age||!lcFields.lastSeen||!lcFields.assembly||lcSending}
+            onClick={async ()=>{
               const script=buildMissingScript(lcFields);
               const alertMsg=buildMissingAlert(lcFields);
               const alertCall={id:Date.now(),type:"lost_child",location:lcFields.lastSeen,problem:alertMsg,requestedBy:role,status:"new_call",acknowledged:false,history:[{status:"new_call",ts:tShort()}],unit:null,firedAt:Date.now()};
@@ -2873,9 +2875,31 @@ Reply YES to acknowledge.`
               setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lost_child",label:"Lost Child Reported",msg:alertMsg},...p]);
               fetch("/.netlify/functions/request-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:lcFields.lastSeen,situation:alertMsg,requestedBy:role,callType:"lost_child"})}).catch(()=>{});
               setLcPAScript(script);
+              setLcSendError(null);
+              setLcSending(true);
+              try{
+                const lcPhones=getNotifyList("lost_child");
+                if(lcPhones.length===0){
+                  throw new Error("No staff phone numbers found to notify.");
+                }
+                const [smsResults,voiceResults]=await Promise.race([
+                  Promise.all([sendSMSList(lcPhones,alertMsg),sendVoice(lcPhones,alertMsg.replace(/\n/g," "))]),
+                  new Promise((_,reject)=>setTimeout(()=>reject(new Error("SMS/Voice timed out after 20 seconds — check your connection.")),20000)),
+                ]);
+                const smsFailed=smsResults.filter(r=>r.status==="rejected").length;
+                const voiceFailed=voiceResults.filter(r=>r.status==="rejected").length;
+                if(smsFailed>0||voiceFailed>0){
+                  setLcSendError(`Festival Chat sent. But SMS failed for ${smsFailed} of ${lcPhones.length}, Voice failed for ${voiceFailed} of ${lcPhones.length}. Confirm staff were notified another way.`);
+                }
+              }catch(err){
+                setLcSendError((err?.message||"SMS/Voice failed to send.")+" Festival Chat message still went out — confirm staff by another method.");
+              }finally{
+                setLcSending(false);
+              }
             }}>
-            {"🚨 ALERT ALL STAFF + MPD + Get PA Script"}
+            {lcSending?"⏳ Sending SMS + Voice...":"🚨 ALERT ALL STAFF + MPD + Get PA Script"}
           </button>
+          {lcSendError&&<div style={{fontSize:12,color:"#fecaca",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:8,padding:"10px 12px",lineHeight:1.5}}>{"⚠️ "+lcSendError}</div>}
         </div>
       ) : (
         <div style={S.cWrap}>
@@ -2886,18 +2910,36 @@ Reply YES to acknowledge.`
           <Fld label="Clothing Description *" value={lcFields.clothing||""} onChange={e=>setLcFields(p=>({...p,clothing:e.target.value}))} ph="e.g. Red shirt, blue shorts"/>
           <Fld label="Your Location (where child is now) *" value={lcFields.foundLocation||""} onChange={e=>setLcFields(p=>({...p,foundLocation:e.target.value}))} ph="e.g. Moon Stage, Medical Tent"/>
           <Fld label="Guardian Name (if known)" value={lcFields.parentName||""} onChange={e=>setLcFields(p=>({...p,parentName:e.target.value}))} ph="e.g. Jane Smith"/>
-          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#16a34a,#15803d)",opacity:(!lcFields.age||!lcFields.clothing||!lcFields.foundLocation)?0.5:1}}
-            disabled={!lcFields.age||!lcFields.clothing||!lcFields.foundLocation}
-            onClick={()=>{
+          <button style={{...S.sendBtn,background:"linear-gradient(135deg,#16a34a,#15803d)",opacity:(!lcFields.age||!lcFields.clothing||!lcFields.foundLocation||lcSending)?0.5:1}}
+            disabled={!lcFields.age||!lcFields.clothing||!lcFields.foundLocation||lcSending}
+            onClick={async ()=>{
               const script=buildFoundScript(lcFields);
               const alertMsg=buildFoundAlert(lcFields);
               sendGroupMe(alertMsg,["admin","medical","AllStaff"]);
               fetch("/.netlify/functions/send-broadcast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:alertMsg,type:"found_child",sentBy:role})}).catch(()=>{});
               setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"found_child",label:"Found Child Reported",msg:alertMsg},...p]);
               setLcPAScript(script);
+              setLcSendError(null);
+              setLcSending(true);
+              try{
+                const lcPhones=getNotifyList("lost_child");
+                if(lcPhones.length>0){
+                  const voiceResults=await Promise.race([
+                    sendVoice(lcPhones,alertMsg.replace(/\n/g," ")),
+                    new Promise((_,reject)=>setTimeout(()=>reject(new Error("Voice calls timed out after 20 seconds.")),20000)),
+                  ]);
+                  const voiceFailed=voiceResults.filter(r=>r.status==="rejected").length;
+                  if(voiceFailed>0) setLcSendError(`SMS + Chat sent. But Voice failed for ${voiceFailed} of ${lcPhones.length}.`);
+                }
+              }catch(err){
+                setLcSendError((err?.message||"Voice calls failed to send.")+" SMS/Chat still went out.");
+              }finally{
+                setLcSending(false);
+              }
             }}>
-            {"🧒✅ Alert Staff + Get PA Script"}
+            {lcSending?"⏳ Sending...":"🧒✅ Alert Staff + Get PA Script"}
           </button>
+          {lcSendError&&<div style={{fontSize:12,color:"#fecaca",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.4)",borderRadius:8,padding:"10px 12px",lineHeight:1.5}}>{"⚠️ "+lcSendError}</div>}
         </div>
       )}
     </div></div>

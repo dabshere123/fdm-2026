@@ -3608,8 +3608,8 @@ Reply YES to acknowledge.`
               set911({active:true,by:role,at:now(),callId:mc.id,info:{location:mc.location,nature:mc.problem,type:mc.type}});
               const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${mc.location}\nCALL: ${mc.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
               sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
-              const phones=[...new Set([ADMIN2_PHONE,...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
-              phones.forEach(p=>{const d=p.replace(/\D/g,"");const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 activated by ${role} at Fete de Marquette. Responding to ${mc.location}. ${mc.problem}. EMS inbound. Clear a path.`})}).catch(()=>{});});
+              const phones=[...new Set([ADMIN2_PHONE,...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
+              phones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 activated by ${role} at Fete de Marquette. Responding to ${mc.location}. ${mc.problem}. EMS inbound. Clear a path.`})}).catch(()=>{});});
             }}>🚨 Activate 911 — EMS to This Call</button>}
           {nineOneOne.active&&<div style={{background:"rgba(180,0,0,0.15)",border:"2px solid rgba(180,0,0,0.5)",borderRadius:12,padding:"14px",textAlign:"center",color:"#f87171",fontWeight:900}}>🚨 911 ACTIVE — EMS INBOUND</div>}
           {/* On Scene button */}
@@ -3687,12 +3687,10 @@ Reply YES to acknowledge.`
               const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${callLoc}${callProblem?"\nCALL: "+callProblem:""}\nMADISON FIRE / EMS INBOUND\nTIME: ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}\nClear a path for emergency vehicles.`;
               // Fire SMS + Voice + GroupMe immediately — no second tap
               sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
-              const phones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean)])];
+              const phones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
               phones.forEach(p=>{
-                const d=p.replace(/\D/g,"");
-                const fmt=d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});
-                fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Staging 1, Ingersoll and Wilson. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`})}).catch(()=>{});
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});
+                fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Staging 1, Ingersoll and Wilson. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`})}).catch(()=>{});
               });
               // No setView("911") — stay on call, form comes when call is cleared
             }}>

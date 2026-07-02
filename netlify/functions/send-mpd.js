@@ -19,16 +19,30 @@ async function callOfficer(to, message) {
       body: new URLSearchParams({ To: to, From: TWILIO_FROM, Twiml: twiml }).toString()
     }
   );
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Voice call rejected by Twilio');
+  return data;
 }
 
 async function sendSMS(to, message) {
   const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64');
-  await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
     method: 'POST',
     headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ To: to, MessagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID || TWILIO_FROM, Body: message }).toString()
   });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'SMS rejected by Twilio');
+  return data;
+}
+
+function fmtPhone(p) {
+  if (!p) return null;
+  const d = String(p).replace(/\D/g, '');
+  if (d.length === 10) return `+1${d}`;
+  if (d.length === 11 && d[0] === '1') return `+${d}`;
+  if (String(p).startsWith('+')) return String(p);
+  return null;
 }
 
 exports.handler = async (event) => {
@@ -57,10 +71,12 @@ exports.handler = async (event) => {
   // Call all on-duty officers
   const onDuty = (officers || []).filter(o => o.phone);
   for (const officer of onDuty) {
+    const ph = fmtPhone(officer.phone);
+    if (!ph) { errors.push(`${officer.name}: invalid phone number`); continue; }
     try {
-      await callOfficer(officer.phone, voiceMsg);
-      await sendSMS(officer.phone, smsMsg);
-      called.push(officer.name || officer.phone);
+      await callOfficer(ph, voiceMsg);
+      await sendSMS(ph, smsMsg);
+      called.push(officer.name || ph);
     } catch (e) {
       errors.push(`${officer.name}: ${e.message}`);
     }

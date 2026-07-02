@@ -58,6 +58,7 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
 <body>
 
 <div class="hdr">
+  <div id="backBtn" style="display:none;font-size:20px;cursor:pointer;padding:4px 8px 4px 0;" onclick="goBack()">←</div>
   <div style="font-size:24px;">📋</div>
   <div style="flex:1;">
     <div class="hdr" style="padding:0;border:none;font-size:17px;font-weight:900;color:#f1f5f9;">Lost &amp; Found</div>
@@ -68,6 +69,9 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
 
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="Search by tag #, description, or location…" oninput="render()"/>
+  <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#64748b;cursor:pointer;">
+    <input type="checkbox" id="showClaimedToggle" onchange="render()" style="width:auto;"/> Show claimed items too
+  </label>
 </div>
 
 <div class="day-tabs" id="dayTabs">
@@ -94,6 +98,19 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
   </div>
 </div>
 
+<!-- Delete Single Item Modal -->
+<div id="deleteItemModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h2>🗑 Delete This Item</h2>
+    <p style="font-size:13px;color:#64748b;">This permanently removes this item from Lost &amp; Found. This cannot be undone. Enter admin PIN to confirm.</p>
+    <input type="password" id="deletePinInput" placeholder="Admin PIN" inputmode="numeric" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeDeleteItem()">Cancel</button>
+      <button class="btn-confirm" style="background:linear-gradient(135deg,#dc2626,#991b1b);" onclick="confirmDeleteItem()">Delete Item</button>
+    </div>
+  </div>
+</div>
+
 <!-- Claim Modal -->
 <div id="claimModal" class="modal-overlay" style="display:none;">
   <div class="modal">
@@ -111,6 +128,22 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
 let allItems = [];
 let currentDay = 'All';
 let claimingId = null;
+let deletingId = null;
+
+const urlParams = new URLSearchParams(location.search);
+const cameFrom = urlParams.get('from'); // 'hub' or 'field'
+(function setupBackBtn(){
+  const btn = document.getElementById('backBtn');
+  if(cameFrom === 'hub' || cameFrom === 'field'){
+    btn.style.display = 'block';
+    btn.title = cameFrom === 'hub' ? 'Back to Hub' : 'Back to Worker App';
+  }
+})();
+function goBack(){
+  if(cameFrom === 'hub') location.href = '/hub';
+  else if(cameFrom === 'field') location.href = '/field';
+  else history.back();
+}
 
 function selectDay(day){
   currentDay = day;
@@ -131,8 +164,9 @@ function render(){
   const search = (document.getElementById('searchInput').value || '').toLowerCase();
   const list = document.getElementById('itemList');
 
+  const showClaimed = document.getElementById('showClaimedToggle').checked;
   const filtered = allItems.filter(i => {
-    if(i.status === 'Claimed') return false;
+    if(i.status === 'Claimed' && !showClaimed) return false;
     if(!matchesDay(i, currentDay)) return false;
     if(search){
       const hay = [i.itemNumber,i.description,i.foundAt,i.currentLocation,i.dayFound].join(' ').toLowerCase();
@@ -162,15 +196,18 @@ function render(){
 
 function renderCard(i){
   const isOffice = i.atFestOffice === 'Yes';
-  const badge = isOffice
-    ? '<span class="badge badge-office">✅ At Fest Office</span>'
-    : '<span class="badge badge-unclaimed">Unclaimed</span>';
+  const isClaimed = i.status === 'Claimed';
+  const badge = isClaimed
+    ? '<span class="badge badge-claimed">✅ Claimed'+(i.claimantName?' by '+escHtml(i.claimantName):'')+'</span>'
+    : (isOffice
+      ? '<span class="badge badge-office">✅ At Fest Office</span>'
+      : '<span class="badge badge-unclaimed">Unclaimed</span>');
 
   const photo = i.photoData
     ? '<img src="'+i.photoData+'" alt="item photo" loading="lazy"/>'
     : '<div class="card-photo" style="height:100px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:36px;color:#334155;">📷</div>';
 
-  return `<div class="item-card ${isOffice?'office':''}" id="card-${i.id}">
+  return `<div class="item-card ${isOffice?'office':''} ${isClaimed?'claimed':''}" id="card-${i.id}">
     <div class="card-photo">${photo}</div>
     <div class="card-body">
       <div class="card-tag">TAG # ${i.itemNumber||'???'}</div>
@@ -183,8 +220,9 @@ function renderCard(i){
       </div>
       <div class="card-badges">${badge}</div>
       <div class="card-actions">
-        ${!isOffice?`<button class="btn btn-office" onclick="markOffice('${i.id}')">📦 At Fest Office</button>`:''}
-        <button class="btn btn-claim" onclick="openClaim('${i.id}')">✅ Mark Claimed</button>
+        ${!isClaimed&&!isOffice?`<button class="btn btn-office" onclick="markOffice('${i.id}')">📦 At Fest Office</button>`:''}
+        ${!isClaimed?`<button class="btn btn-claim" onclick="openClaim('${i.id}')">✅ Mark Claimed</button>`:''}
+        <button class="btn" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;" onclick="openDeleteItem('${i.id}')">🗑</button>
       </div>
     </div>
   </div>`;
@@ -239,6 +277,36 @@ async function loadItems(){
     render();
   }catch(e){
     document.getElementById('itemList').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Could not load items: '+e.message+'<br/><br/><button onclick="loadItems()" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#94a3b8;cursor:pointer;font-family:inherit;">Retry</button></div>';
+  }
+}
+
+function openDeleteItem(id){
+  deletingId = id;
+  document.getElementById('deletePinInput').value = '';
+  document.getElementById('deleteItemModal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('deletePinInput').focus(),100);
+}
+
+function closeDeleteItem(){
+  document.getElementById('deleteItemModal').style.display = 'none';
+  deletingId = null;
+}
+
+async function confirmDeleteItem(){
+  const pin = document.getElementById('deletePinInput').value.trim();
+  if(!pin){ alert('Please enter the admin PIN.'); return; }
+  try{
+    const r = await fetch('/.netlify/functions/clear-lost-found',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin,id:deletingId})});
+    const d = await r.json();
+    if(!r.ok || d.error){
+      alert(d.error === 'Incorrect PIN' ? 'Incorrect PIN.' : 'Error: '+(d.error||'Unknown error'));
+      return;
+    }
+    allItems = allItems.filter(i => i.id !== deletingId);
+    closeDeleteItem();
+    render();
+  }catch(e){
+    alert('Error: '+e.message);
   }
 }
 

@@ -1,5 +1,5 @@
-// clear-lost-found.js — permanently deletes ALL records in the LostFound table
-// Used to wipe demo/test items before the festival goes live
+// clear-lost-found.js — deletes ALL records, or a single record if `id` is provided
+// Used to wipe demo/test items before the festival goes live, and to let admin clear individual items
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const BASE  = 'appUVEp7kO9NeeJh0';
 const TABLE = 'LostFound';
@@ -10,9 +10,20 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST')    return { statusCode: 405, headers, body: 'Method not allowed' };
 
   try {
-    const { pin } = JSON.parse(event.body || '{}');
+    const { pin, id } = JSON.parse(event.body || '{}');
     if (pin !== '8510') {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Incorrect PIN' }) };
+    }
+
+    // Single-item delete
+    if (id) {
+      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}?records[]=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(JSON.stringify(d));
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, deleted: 1 }) };
     }
 
     // Fetch all record IDs (paginated)

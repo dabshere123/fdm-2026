@@ -1,36 +1,29 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/><title>FDM 2026</title><meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link rel="manifest" href="/field-manifest.json"/><link rel="apple-touch-icon" href="/icon-192.png"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{overflow-x:hidden;-webkit-overflow-scrolling:touch;font-size:16px;}body{background:#0d0d0d;width:100%;min-height:100vh;}input,select,textarea{font-size:16px!important;font-family:inherit;}button{font-family:inherit;}a{color:inherit;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script>
-window.fdmDeferredInstallPrompt = null;
-window.fdmAlreadyInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function(e){ console.log('SW register failed:', e); });
-}
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  window.fdmDeferredInstallPrompt = e;
-  window.dispatchEvent(new Event('fdm-install-available'));
-});
-window.addEventListener('appinstalled', function() {
-  window.fdmDeferredInstallPrompt = null;
-  window.dispatchEvent(new Event('fdm-install-done'));
-});
-window.fdmTriggerInstall = async function() {
-  if (!window.fdmDeferredInstallPrompt) return { ok: false, reason: 'unavailable' };
-  try {
-    window.fdmDeferredInstallPrompt.prompt();
-    const choice = await window.fdmDeferredInstallPrompt.userChoice;
-    window.fdmDeferredInstallPrompt = null;
-    return { ok: choice.outcome === 'accepted', reason: choice.outcome };
-  } catch (e) {
-    return { ok: false, reason: 'error', error: e.message };
-  }
-};
-</script><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>const {
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>FDM Worker App</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+var useState = React.useState,
+  useEffect = React.useEffect,
+  useRef = React.useRef,
+  useCallback = React.useCallback,
+  useMemo = React.useMemo;
+var {
   useState,
   useEffect,
   useRef
 } = React;
-const API = '/.netlify/functions';
-const CHANNEL_GROUPS = [{
+var API = '/.netlify/functions';
+var CHANNEL_GROUPS = [{
   id: 'general',
   label: 'General',
   channels: [{
@@ -115,8 +108,8 @@ const CHANNEL_GROUPS = [{
     emoji: '🏥'
   }]
 }];
-const CHANNELS = CHANNEL_GROUPS.flatMap(g => g.channels);
-const ROLE_CHANNEL = {
+var CHANNELS = CHANNEL_GROUPS.flatMap(g => g.channels);
+var ROLE_CHANNEL = {
   // Admin & Med
   a1: 'Admin',
   a2: 'Admin',
@@ -172,7 +165,7 @@ function roleChannel(r) {
 }
 
 // Display-friendly role label
-const ROLE_DISPLAY = {
+var ROLE_DISPLAY = {
   mb1: 'Moon Bar Manager',
   lagb: 'Lagniappe Bar Manager',
   lafb: 'Lafayette Bar Manager',
@@ -203,8 +196,8 @@ const ROLE_DISPLAY = {
 function displayRole(r) {
   return ROLE_DISPLAY[(r || '').toLowerCase()] || r || '';
 }
-const bg = '#0a0a14';
-const S = {
+var bg = '#0a0a14';
+var S = {
   root: {
     minHeight: '100vh',
     background: bg,
@@ -269,7 +262,7 @@ function BackBtn({
   return /*#__PURE__*/React.createElement("button", {
     style: S.backBtn,
     onClick: onBack
-  }, "← Back");
+  }, "\u2190 Back");
 }
 
 // ── LOGIN ────────────────────────────────────────────────────
@@ -288,7 +281,10 @@ function LoginView({
   }, []);
   useEffect(() => {
     const onAvail = () => setCanInstall(true);
-    const onDone = () => { setInstalled(true); setCanInstall(false); };
+    const onDone = () => {
+      setInstalled(true);
+      setCanInstall(false);
+    };
     window.addEventListener('fdm-install-available', onAvail);
     window.addEventListener('fdm-install-done', onDone);
     return () => {
@@ -309,7 +305,7 @@ function LoginView({
       fontSize: 18,
       fontWeight: 900
     }
-  }, "🎶 Fête de Marquette 2026")), canInstall && !installed && /*#__PURE__*/React.createElement("button", {
+  }, "\uD83C\uDFB6 F\xEAte de Marquette 2026")), canInstall && !installed && /*#__PURE__*/React.createElement("button", {
     style: {
       margin: '10px 16px 0',
       padding: '12px 16px',
@@ -331,14 +327,14 @@ function LoginView({
         setInstalled(true);
         setCanInstall(false);
       } else if (result.reason === 'unavailable') {
-        setInstallMsg("Install isn't available right now on this browser — try the Share/menu \"Add to Home Screen\" option instead, or reload the page and try again.");
+        setInstallMsg('Install isn\'t available right now on this browser — try the Share/menu "Add to Home Screen" option instead, or reload the page and try again.');
       } else if (result.reason === 'dismissed') {
         setInstallMsg('No problem — tap the button again anytime to install.');
       } else {
         setInstallMsg('Something went wrong installing. Try the Share/menu "Add to Home Screen" option instead.');
       }
     }
-  }, "📲 Add to Home Screen — one tap"), installMsg && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCF2 Add to Home Screen \u2014 one tap"), installMsg && /*#__PURE__*/React.createElement("div", {
     style: {
       margin: '10px 16px 0',
       padding: '10px 14px',
@@ -363,7 +359,7 @@ function LoginView({
       fontWeight: 700,
       textAlign: 'center'
     }
-  }, "✅ Added! Find it on your home screen."), /*#__PURE__*/React.createElement("div", {
+  }, "\u2705 Added! Find it on your home screen."), /*#__PURE__*/React.createElement("div", {
     style: S.body
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -470,6 +466,7 @@ function NewCallView({
   callType,
   onBack
 }) {
+  var _TYPES$find;
   const [type, setType] = useState(callType || '');
   const [location, setLocation] = useState(user.location || '');
   const [problem, setProblem] = useState('');
@@ -609,7 +606,7 @@ function NewCallView({
     style: {
       fontSize: 56
     }
-  }, "✅"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2705"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 20,
       fontWeight: 900
@@ -637,7 +634,7 @@ function NewCallView({
         fontWeight: 900,
         color: '#fcd34d'
       }
-    }, "🚨 PA Script Ready")), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 PA Script Ready")), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '16px',
         display: 'flex',
@@ -660,12 +657,12 @@ function NewCallView({
         letterSpacing: '0.1em',
         marginBottom: 4
       }
-    }, "🚨 Alert sent — All staff notified"), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 Alert sent \u2014 All staff notified"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: '#fecaca'
       }
-    }, "Hub · SMS · Voice · MPD all fired")), /*#__PURE__*/React.createElement("div", {
+    }, "Hub \xB7 SMS \xB7 Voice \xB7 MPD all fired")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: 'rgba(0,0,0,0.5)',
         border: '2px solid rgba(234,179,8,0.6)',
@@ -681,7 +678,7 @@ function NewCallView({
         letterSpacing: '0.1em',
         marginBottom: 10
       }
-    }, "📢 STAGE MANAGER — READ OVER PA NOW"), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCE2 STAGE MANAGER \u2014 READ OVER PA NOW"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         color: '#f1f5f9',
@@ -706,7 +703,7 @@ function NewCallView({
         }
         alert('Script copied!');
       }
-    }, "📋 Copy Script"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDCCB Copy Script"), /*#__PURE__*/React.createElement("button", {
       style: {
         padding: '14px',
         borderRadius: 12,
@@ -770,7 +767,7 @@ function NewCallView({
       fontWeight: 700,
       color: '#f1f5f9'
     }
-  }, TYPES.find(t => t.id === callType)?.label || callType), isLostChild && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, ((_TYPES$find = TYPES.find(t => t.id === callType)) === null || _TYPES$find === void 0 ? void 0 : _TYPES$find.label) || callType), isLostChild && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       background: 'rgba(234,179,8,0.1)',
       border: '2px solid rgba(234,179,8,0.4)',
@@ -784,12 +781,12 @@ function NewCallView({
       color: '#fcd34d',
       marginBottom: 2
     }
-  }, "🧒 Lost Child Report"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD2 Lost Child Report"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#94a3b8'
     }
-  }, "Fill in as much as you know — all fields help")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "Fill in as much as you know \u2014 all fields help")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -1292,7 +1289,7 @@ function NewCallView({
 }
 
 // ── CHAT ─────────────────────────────────────────────────────
-const CHANNEL_LABELS = {
+var CHANNEL_LABELS = {
   AllStaff: 'All Staff',
   Hospitality: 'Hospitality',
   Bars: 'All Bars',
@@ -1313,8 +1310,6 @@ const CHANNEL_LABELS = {
   Admin: 'Admin',
   AdminMed: 'Medical'
 };
-
-
 function ChatInbox({
   user,
   onBack
@@ -1400,7 +1395,7 @@ function ChatInbox({
       cursor: 'pointer'
     },
     onClick: () => setNewMsg(true)
-  }, "✏️ New")), loading && /*#__PURE__*/React.createElement("div", {
+  }, "\u270F\uFE0F New")), loading && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       color: '#475569',
@@ -1421,7 +1416,7 @@ function ChatInbox({
       fontSize: 32,
       marginBottom: 12
     }
-  }, "💬"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCAC"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       fontWeight: 700,
@@ -1539,9 +1534,12 @@ function ConversationView({
       const res = await fetch(url);
       const data = await res.json();
       if (data.messages) setMessages(data.messages);
-      setTimeout(() => msgEnd.current?.scrollIntoView({
-        behavior: 'smooth'
-      }), 100);
+      setTimeout(() => {
+        var _msgEnd$current;
+        return (_msgEnd$current = msgEnd.current) === null || _msgEnd$current === void 0 ? void 0 : _msgEnd$current.scrollIntoView({
+          behavior: 'smooth'
+        });
+      }, 100);
     } catch (e) {}
   }
   async function send() {
@@ -1618,7 +1616,7 @@ function ConversationView({
       fontSize: 13,
       padding: '24px 0'
     }
-  }, "No messages yet — say something!"), messages.map(msg => {
+  }, "No messages yet \u2014 say something!"), messages.map(msg => {
     const isMe = msg.fromName === user.name || msg.fromRole && msg.fromRole === user.role;
     const isAlert = msg.isAlert;
     const time = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString('en-US', {
@@ -1642,7 +1640,7 @@ function ConversationView({
         color: '#fca5a5',
         marginBottom: 2
       }
-    }, "🚨 ALERT · ", time), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDEA8 ALERT \xB7 ", time), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: '#fecaca'
@@ -1662,7 +1660,7 @@ function ConversationView({
         color: '#64748b',
         marginLeft: 4
       }
-    }, msg.fromRole || msg.fromName, " · ", time), /*#__PURE__*/React.createElement("div", {
+    }, msg.fromRole || msg.fromName, " \xB7 ", time), /*#__PURE__*/React.createElement("div", {
       style: {
         maxWidth: '82%',
         background: isMe ? 'rgba(14,165,233,0.25)' : 'rgba(255,255,255,0.07)',
@@ -2209,7 +2207,10 @@ function LFView({
       gap: 10,
       cursor: 'pointer'
     },
-    onClick: () => photoRef.current?.click()
+    onClick: () => {
+      var _photoRef$current;
+      return (_photoRef$current = photoRef.current) === null || _photoRef$current === void 0 ? void 0 : _photoRef$current.click();
+    }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 40
@@ -2259,7 +2260,7 @@ function LFView({
       resize: 'none',
       minHeight: 80
     },
-    placeholder: "e.g. Black iPhone 14, cracked screen · Blue Hydro Flask, green lid · Car keys, Toyota fob",
+    placeholder: "e.g. Black iPhone 14, cracked screen \xB7 Blue Hydro Flask, green lid \xB7 Car keys, Toyota fob",
     value: description,
     onChange: e => setDescription(e.target.value)
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -2367,6 +2368,7 @@ function OvernightView({
   user,
   onLogout
 }) {
+  var _activeTab$color, _activeTab$color2;
   const [arrived, setArrived] = useState(false);
   const [arrivedTime, setArrivedTime] = useState('');
   const [tab, setTab] = useState('police');
@@ -2471,7 +2473,7 @@ Fête de Marquette 2026 Operations`;
       hour: 'numeric',
       minute: '2-digit'
     });
-    const label = activeTab?.label || tab;
+    const label = (activeTab === null || activeTab === void 0 ? void 0 : activeTab.label) || tab;
     const msg = `📋 OVERNIGHT LOG — ${label.toUpperCase()}
 
 Time: ${ts}
@@ -2495,7 +2497,7 @@ Fête de Marquette 2026`;
       type: label,
       time: ts,
       what,
-      icon: activeTab?.icon || '📋'
+      icon: (activeTab === null || activeTab === void 0 ? void 0 : activeTab.icon) || '📋'
     }, ...p]);
     setSent(true);
     setTime('');
@@ -2569,13 +2571,13 @@ Fête de Marquette 2026`;
         color: '#fff',
         letterSpacing: '0.06em'
       }
-    }, "REPORTED MISSING"), /*#__PURE__*/React.createElement("div", {
+    }, "LOST CHILD"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 22,
         fontWeight: 900,
         color: '#fff'
       }
-    }, "📍 ", lostChildAlert.location), lostChildAlert.problem && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCD ", lostChildAlert.location), lostChildAlert.problem && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         color: 'rgba(255,255,255,0.92)',
@@ -2592,7 +2594,7 @@ Fête de Marquette 2026`;
         fontWeight: 700,
         color: 'rgba(255,255,255,0.85)'
       }
-    }, "Reported by: ", lostChildAlert.reportedBy, " · ", lostChildAlert.at), /*#__PURE__*/React.createElement("div", {
+    }, "Reported by: ", lostChildAlert.reportedBy, " \xB7 ", lostChildAlert.at), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 16,
         fontWeight: 800,
@@ -2615,7 +2617,7 @@ Fête de Marquette 2026`;
         cursor: 'pointer'
       },
       onClick: () => setLostChildAlert(null)
-    }, "✅ ACKNOWLEDGED — SEARCHING"), showStagePopup && /*#__PURE__*/React.createElement("div", {
+    }, "\u2705 ACKNOWLEDGED \u2014 SEARCHING"), showStagePopup && /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'fixed',
         inset: 0,
@@ -2640,7 +2642,7 @@ Fête de Marquette 2026`;
         textAlign: 'center',
         marginBottom: 12
       }
-    }, "📢"), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCE2"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 20,
         fontWeight: 900,
@@ -2670,7 +2672,7 @@ Fête de Marquette 2026`;
       style: {
         color: '#fcd34d'
       }
-    }, "\"Attention festival guests — we are looking for a lost child last seen near ", lostChildAlert?.location, ". If you have information please come to the festival information booth immediately or see any staff member in an orange vest.\"")), /*#__PURE__*/React.createElement("button", {
+    }, "\"Attention festival guests \u2014 we are looking for a lost child last seen near ", lostChildAlert === null || lostChildAlert === void 0 ? void 0 : lostChildAlert.location, ". If you have information please come to the festival information booth immediately or see any staff member in an orange vest.\"")), /*#__PURE__*/React.createElement("button", {
       style: {
         width: '100%',
         padding: '16px',
@@ -2683,7 +2685,7 @@ Fête de Marquette 2026`;
         cursor: 'pointer'
       },
       onClick: () => setShowStagePopup(false)
-    }, "✅ Announcer Notified")))));
+    }, "\u2705 Announcer Notified")))));
   }
   return /*#__PURE__*/React.createElement("div", {
     style: S.root
@@ -2698,12 +2700,12 @@ Fête de Marquette 2026`;
       fontSize: 16,
       fontWeight: 900
     }
-  }, user.name.split(' ')[0], " — Overnight"), /*#__PURE__*/React.createElement("div", {
+  }, user.name.split(' ')[0], " \u2014 Overnight"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: '#64748b'
     }
-  }, "McPike Park · FDM 2026")), /*#__PURE__*/React.createElement("button", {
+  }, "McPike Park \xB7 FDM 2026")), /*#__PURE__*/React.createElement("button", {
     style: {
       background: 'rgba(255,255,255,0.05)',
       border: '1px solid rgba(255,255,255,0.08)',
@@ -2737,7 +2739,7 @@ Fête de Marquette 2026`;
     style: {
       fontSize: 28
     }
-  }, "✋"), /*#__PURE__*/React.createElement("div", {
+  }, "\u270B"), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'left'
     }
@@ -2767,13 +2769,13 @@ Fête de Marquette 2026`;
     style: {
       fontSize: 18
     }
-  }, "✅"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "\u2705"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 700,
       color: '#4ade80'
     }
-  }, "Admin Notified — Onsite at ", arrivedTime)))), /*#__PURE__*/React.createElement("div", {
+  }, "Admin Notified \u2014 Onsite at ", arrivedTime)))), /*#__PURE__*/React.createElement("div", {
     style: {
       overflowX: 'auto',
       display: 'flex',
@@ -2820,10 +2822,10 @@ Fête de Marquette 2026`;
       fontWeight: 700,
       textAlign: 'center'
     }
-  }, "✅ Logged and sent to admin"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2705 Logged and sent to admin"), /*#__PURE__*/React.createElement("div", {
     style: {
-      background: `${activeTab?.color?.replace('0.7', '0.08')}`,
-      border: `1px solid ${activeTab?.color?.replace('0.7', '0.3')}`,
+      background: `${activeTab === null || activeTab === void 0 ? void 0 : (_activeTab$color = activeTab.color) === null || _activeTab$color === void 0 ? void 0 : _activeTab$color.replace('0.7', '0.08')}`,
+      border: `1px solid ${activeTab === null || activeTab === void 0 ? void 0 : (_activeTab$color2 = activeTab.color) === null || _activeTab$color2 === void 0 ? void 0 : _activeTab$color2.replace('0.7', '0.3')}`,
       borderRadius: 12,
       padding: '14px 16px'
     }
@@ -2834,12 +2836,12 @@ Fête de Marquette 2026`;
       color: '#f1f5f9',
       marginBottom: 2
     }
-  }, activeTab?.icon, " ", activeTab?.label), /*#__PURE__*/React.createElement("div", {
+  }, activeTab === null || activeTab === void 0 ? void 0 : activeTab.icon, " ", activeTab === null || activeTab === void 0 ? void 0 : activeTab.label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#64748b'
     }
-  }, "Log this event — admin notified immediately")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "Log this event \u2014 admin notified immediately")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -2893,7 +2895,7 @@ Fête de Marquette 2026`;
     },
     disabled: !what.trim() || sending,
     onClick: submitLog
-  }, sending ? 'Logging...' : 'Log Event — Notify Admin'), logs.filter(l => l.type === activeTab?.label).length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, sending ? 'Logging...' : 'Log Event — Notify Admin'), logs.filter(l => l.type === (activeTab === null || activeTab === void 0 ? void 0 : activeTab.label)).length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -2902,7 +2904,7 @@ Fête de Marquette 2026`;
       letterSpacing: '0.08em',
       marginBottom: 6
     }
-  }, "Logged Tonight"), logs.filter(l => l.type === activeTab?.label).map(log => /*#__PURE__*/React.createElement("div", {
+  }, "Logged Tonight"), logs.filter(l => l.type === (activeTab === null || activeTab === void 0 ? void 0 : activeTab.label)).map(log => /*#__PURE__*/React.createElement("div", {
     key: log.id,
     style: {
       ...S.card,
@@ -2941,7 +2943,7 @@ Fête de Marquette 2026`;
       color: '#fb923c',
       marginBottom: 2
     }
-  }, "📦 Lost & Found"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCE6 Lost & Found"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#64748b'
@@ -2962,7 +2964,7 @@ Fête de Marquette 2026`;
     style: {
       fontSize: 20
     }
-  }, "📦"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -2982,9 +2984,8 @@ Fête de Marquette 2026`;
     style: {
       color: '#fb923c'
     }
-  }, "→")), /*#__PURE__*/React.createElement("a", {
-    href: "https://fdm2026.netlify.app/lostfound",
-    target: "_blank",
+  }, "\u2192")), /*#__PURE__*/React.createElement("a", {
+    href: "https://fdm2026.netlify.app/lostfound?from=field",
     target: "_blank",
     style: {
       ...S.card,
@@ -3000,7 +3001,7 @@ Fête de Marquette 2026`;
     style: {
       fontSize: 20
     }
-  }, "🔍"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDD0D"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -3020,7 +3021,7 @@ Fête de Marquette 2026`;
     style: {
       color: '#c4b5fd'
     }
-  }, "→")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -3050,7 +3051,7 @@ Fête de Marquette 2026`;
       cursor: 'pointer'
     },
     onClick: submitLog
-  }, "Log Note — Notify Admin")), tab === 'eod' && /*#__PURE__*/React.createElement("div", {
+  }, "Log Note \u2014 Notify Admin")), tab === 'eod' && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -3066,7 +3067,7 @@ Fête de Marquette 2026`;
       fontSize: 52,
       marginBottom: 12
     }
-  }, "🌙"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDF19"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 900,
@@ -3091,7 +3092,7 @@ Fête de Marquette 2026`;
       color: '#a5b4fc',
       marginBottom: 2
     }
-  }, "🌙 End of Night Report"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDF19 End of Night Report"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#64748b'
@@ -3245,7 +3246,8 @@ function FoundLostChildView({
     if (!canSubmit) return;
     setSending(true);
     const desc = [childName ? `Child: ${childName}` : 'Unknown name', childAge ? `Age: ${childAge}` : '', childHair ? `Hair: ${childHair}` : '', `Clothing: ${childClothing}`, `Location: ${childLocation}`, guardianName ? `Guardian: ${guardianName}` : ''].filter(Boolean).join(' · ');
-    const alertMsg = "🧒✅ FOUND CHILD at " + (childLocation || "unknown location") + "\n" + (childName || "Unidentified child") + ", " + (childAge || "?") + ", " + (childHair || "") + (childClothing ? ", wearing " + childClothing : "") + (guardianName ? "\nGuardian: " + guardianName : "");
+    const clothing = childClothing || '';
+    const alertMsg = "🧒✅ FOUND CHILD at " + (childLocation || "unknown location") + "\n" + (childName || "Unidentified child") + ", " + (childAge || "?") + ", " + (childHair || "") + (clothing ? ", wearing " + clothing : "") + (guardianName ? "\nGuardian: " + guardianName : "");
     try {
       await fetch(`${API}/submit-call`, {
         method: 'POST',
@@ -3308,7 +3310,7 @@ Thank you, and enjoy the festival.`;
         fontWeight: 900,
         color: '#4ade80'
       }
-    }, "🧒✅ PA Script Ready")), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83E\uDDD2\u2705 PA Script Ready")), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '16px',
         display: 'flex',
@@ -3331,12 +3333,12 @@ Thank you, and enjoy the festival.`;
         letterSpacing: '0.1em',
         marginBottom: 4
       }
-    }, "✅ Alert sent to all staff"), /*#__PURE__*/React.createElement("div", {
+    }, "\u2705 Alert sent to all staff"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: '#86efac'
       }
-    }, "Hub notified · Broadcast sent")), /*#__PURE__*/React.createElement("div", {
+    }, "Hub notified \xB7 Broadcast sent")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: 'rgba(0,0,0,0.4)',
         border: '2px solid rgba(234,179,8,0.5)',
@@ -3352,7 +3354,7 @@ Thank you, and enjoy the festival.`;
         letterSpacing: '0.1em',
         marginBottom: 10
       }
-    }, "📢 STAGE MANAGER — READ OVER PA NOW"), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCE2 STAGE MANAGER \u2014 READ OVER PA NOW"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         color: '#f1f5f9',
@@ -3377,7 +3379,7 @@ Thank you, and enjoy the festival.`;
         }
         alert('Script copied to clipboard!');
       }
-    }, "📋 Copy Script"), /*#__PURE__*/React.createElement("button", {
+    }, "\uD83D\uDCCB Copy Script"), /*#__PURE__*/React.createElement("button", {
       style: {
         padding: '14px',
         borderRadius: 12,
@@ -3403,7 +3405,7 @@ Thank you, and enjoy the festival.`;
       fontWeight: 900,
       color: '#4ade80'
     }
-  }, "🧒✅ Found Child")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD2\u2705 Found Child")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '16px',
       display: 'flex',
@@ -3709,7 +3711,7 @@ function HomeView({
       fontSize: 16,
       fontWeight: 900
     }
-  }, "🧒 LOST CHILD")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD2 LOST CHILD")), /*#__PURE__*/React.createElement("div", {
     style: S.body
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3739,7 +3741,7 @@ function HomeView({
     style: {
       fontSize: 34
     }
-  }, "🚨"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDEA8"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       fontWeight: 900,
@@ -3751,7 +3753,7 @@ function HomeView({
       color: '#94a3b8',
       marginTop: 3
     }
-  }, "A parent or guardian has reported their child missing — alert all staff immediately"))), /*#__PURE__*/React.createElement("button", {
+  }, "A parent or guardian has reported their child missing \u2014 alert all staff immediately"))), /*#__PURE__*/React.createElement("button", {
     style: {
       width: '100%',
       padding: '20px 16px',
@@ -3769,19 +3771,19 @@ function HomeView({
     style: {
       fontSize: 34
     }
-  }, "🧒✅"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "\uD83E\uDDD2\u2705"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       fontWeight: 900,
       color: '#4ade80'
     }
-  }, "LOST — NOT REPORTED"), /*#__PURE__*/React.createElement("div", {
+  }, "LOST \u2014 NOT REPORTED"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: '#94a3b8',
       marginTop: 3
     }
-  }, "A child is with you, separated from their guardian, and hasn't been reported missing yet — generate a PA announcement")))));
+  }, "A child is with you, separated from their guardian, and hasn't been reported missing yet \u2014 generate a PA announcement")))));
   if (foundChildView) return /*#__PURE__*/React.createElement(FoundLostChildView, {
     user: user,
     onBack: () => {
@@ -3851,7 +3853,7 @@ function HomeView({
       textTransform: 'uppercase',
       letterSpacing: '0.06em'
     }
-  }, "💬 ", currentNotif.channel, notifQueue.length > 1 && /*#__PURE__*/React.createElement("span", {
+  }, "\uD83D\uDCAC ", currentNotif.channel, notifQueue.length > 1 && /*#__PURE__*/React.createElement("span", {
     style: {
       marginLeft: 8,
       background: 'rgba(249,115,22,0.3)',
@@ -3877,7 +3879,7 @@ function HomeView({
     },
     onClick: () => setNotifIdx(p => Math.max(0, p - 1)),
     disabled: notifIdx === 0
-  }, "←"), /*#__PURE__*/React.createElement("button", {
+  }, "\u2190"), /*#__PURE__*/React.createElement("button", {
     style: {
       background: 'rgba(255,255,255,0.08)',
       border: 'none',
@@ -3889,7 +3891,7 @@ function HomeView({
     },
     onClick: () => setNotifIdx(p => Math.min(notifQueue.length - 1, p + 1)),
     disabled: notifIdx === notifQueue.length - 1
-  }, "→")), /*#__PURE__*/React.createElement("button", {
+  }, "\u2192")), /*#__PURE__*/React.createElement("button", {
     style: {
       background: 'none',
       border: 'none',
@@ -3899,7 +3901,7 @@ function HomeView({
       padding: 0
     },
     onClick: () => dismissNotif()
-  }, "✕"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
@@ -3917,7 +3919,7 @@ function HomeView({
       fontWeight: 800,
       color: '#4ade80'
     }
-  }, "✅ Reply sent!"), /*#__PURE__*/React.createElement("div", {
+  }, "\u2705 Reply sent!"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -3931,7 +3933,7 @@ function HomeView({
       textTransform: 'uppercase',
       letterSpacing: '0.06em'
     }
-  }, "↩ Reply to ", currentNotif.channel), /*#__PURE__*/React.createElement("textarea", {
+  }, "\u21A9 Reply to ", currentNotif.channel), /*#__PURE__*/React.createElement("textarea", {
     style: {
       ...S.inp,
       minHeight: 70,
@@ -4014,7 +4016,7 @@ function HomeView({
       flexShrink: 0,
       position: 'relative'
     }
-  }, "💬", unread > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCAC", unread > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       top: -6,
@@ -4051,7 +4053,7 @@ function HomeView({
       color: '#38bdf8',
       fontSize: 18
     }
-  }, "→")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
@@ -4227,8 +4229,7 @@ function HomeView({
       marginTop: 2
     }
   }, "Add to L&F")), /*#__PURE__*/React.createElement("a", {
-    href: "https://fdm2026.netlify.app/lostfound",
-    target: "_blank",
+    href: "https://fdm2026.netlify.app/lostfound?from=field",
     target: "_blank",
     style: {
       padding: '14px 10px',
@@ -4301,4 +4302,6 @@ function FieldApp() {
     onLogout: () => setUser(null)
   });
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(FieldApp,null));</script></body></html>
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(FieldApp,{onBack:function(){window.location.href='/'}}));
+</script>
+</body></html>

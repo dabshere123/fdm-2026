@@ -15,9 +15,14 @@ exports.handler = async (event) => {
       id: r.id,
       name: r.fields.Name || '',
       phone: r.fields.Phone || '',
-      badge: r.fields.Badge || '',
       status: r.fields.MPDStatus || 'OFF',
       lastAck: r.fields.LastAck || '',
+      sched: {
+        ThuStart: r.fields.ThuStart || '', ThuEnd: r.fields.ThuEnd || '',
+        FriStart: r.fields.FriStart || '', FriEnd: r.fields.FriEnd || '',
+        SatStart: r.fields.SatStart || '', SatEnd: r.fields.SatEnd || '',
+        SunStart: r.fields.SunStart || '', SunEnd: r.fields.SunEnd || '',
+      },
     }));
     return { statusCode: 200, headers, body: JSON.stringify({ officers }) };
   } catch (e) {

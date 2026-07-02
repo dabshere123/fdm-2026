@@ -11,12 +11,17 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
   try {
-    const { name, phone, badge } = JSON.parse(event.body || '{}');
+    const { name, phone, ThuStart, ThuEnd, FriStart, FriEnd, SatStart, SatEnd, SunStart, SunEnd } = JSON.parse(event.body || '{}');
     if (!name || !phone) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Name and phone required' }) };
 
     // Clean phone number
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `+1${cleanPhone}` : `+${cleanPhone}`;
+
+    // Only include schedule fields that were actually provided
+    const schedFields = {};
+    [['ThuStart',ThuStart],['ThuEnd',ThuEnd],['FriStart',FriStart],['FriEnd',FriEnd],['SatStart',SatStart],['SatEnd',SatEnd],['SunStart',SunStart],['SunEnd',SunEnd]]
+      .forEach(([k,v]) => { if (v !== undefined && v !== null && v !== '') schedFields[k] = v; });
 
     // Create record in Airtable
     const res = await fetch(`https://api.airtable.com/v0/${BASE}/MPDOfficers`, {
@@ -25,9 +30,9 @@ exports.handler = async (event) => {
       body: JSON.stringify({ fields: {
         Name: name,
         Phone: phone,
-        Badge: badge || '',
         MPDStatus: 'OFF',
         LastAck: '',
+        ...schedFields,
       }})
     });
     const data = await res.json();

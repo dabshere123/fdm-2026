@@ -419,6 +419,141 @@ function Fld({
     onChange: onChange
   }));
 }
+function MPDScheduleEditor({
+  schedTimes,
+  setSchedTimes
+}) {
+  const days = [['Thu', 'Thu 7/9'], ['Fri', 'Fri 7/10'], ['Sat', 'Sat 7/11'], ['Sun', 'Sun 7/12']];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#94a3b8",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Shift Schedule (enables auto-offline when shift ends)"), days.map(([key, label]) => /*#__PURE__*/React.createElement("div", {
+    key: key,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 52,
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#94a3b8",
+      flexShrink: 0
+    }
+  }, label), /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    style: {
+      flex: 1,
+      minWidth: 0,
+      background: "rgba(255,255,255,0.07)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 8,
+      padding: "8px",
+      color: "#f1f5f9",
+      fontSize: 13,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    value: schedTimes[key].start,
+    onChange: e => setSchedTimes(p => ({
+      ...p,
+      [key]: {
+        ...p[key],
+        start: e.target.value
+      }
+    }))
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#475569",
+      fontSize: 11,
+      flexShrink: 0
+    }
+  }, "to"), /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    style: {
+      flex: 1,
+      minWidth: 0,
+      background: "rgba(255,255,255,0.07)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 8,
+      padding: "8px",
+      color: "#f1f5f9",
+      fontSize: 13,
+      fontFamily: "inherit",
+      outline: "none"
+    },
+    value: schedTimes[key].end,
+    onChange: e => setSchedTimes(p => ({
+      ...p,
+      [key]: {
+        ...p[key],
+        end: e.target.value
+      }
+    }))
+  }), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 3,
+      fontSize: 9,
+      color: "#64748b",
+      whiteSpace: "nowrap",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: schedTimes[key].endNext,
+    onChange: e => setSchedTimes(p => ({
+      ...p,
+      [key]: {
+        ...p[key],
+        endNext: e.target.checked
+      }
+    })),
+    style: {
+      width: "auto"
+    }
+  }), " +1day"))));
+}
+function schedTimesToFields(schedTimes) {
+  const out = {};
+  ['Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+    const {
+      start,
+      end,
+      endNext
+    } = schedTimes[d];
+    out[d + 'Start'] = timeToDecimal(start, false);
+    out[d + 'End'] = timeToDecimal(end, endNext);
+  });
+  return out;
+}
+function schedFieldsToTimes(sched) {
+  const out = {};
+  ['Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+    const s = decToTimeParts(sched === null || sched === void 0 ? void 0 : sched[d + 'Start']);
+    const e = decToTimeParts(sched === null || sched === void 0 ? void 0 : sched[d + 'End']);
+    out[d] = {
+      start: s.time,
+      end: e.time,
+      endNext: e.afterMidnight
+    };
+  });
+  return out;
+}
 var MPD_VOICE_SCRIPT = (location, situation) => `Attention Madison Police Officers — you are requested to respond to ${location} for ${situation}. Please respond promptly. This call has been initiated by Fête de Marquette Operations. Thank you.`;
 var MPD_STANDDOWN_VOICE = () => `Per Fête de Marquette Operations — stand down. No response needed. Thank you!`;
 var MPD_STANDDOWN_SMS = () => `✅ STAND DOWN\nPer Fête de Marquette Operations — stand down. No response needed. Thank you!`;
@@ -2682,6 +2817,33 @@ var HUB_ROLE_DISPLAY = {
 function hubDisplayRole(r) {
   return HUB_ROLE_DISPLAY[(r || '').toLowerCase()] || r || '';
 }
+// Decimal-hour <-> HH:MM helpers for MPD officer shift schedules (24=midnight, 26=2am next day)
+function decToTimeParts(dec) {
+  if (dec === undefined || dec === null || dec === '') return {
+    time: '',
+    afterMidnight: false
+  };
+  let d = parseFloat(dec);
+  if (isNaN(d)) return {
+    time: '',
+    afterMidnight: false
+  };
+  const afterMidnight = d > 24;
+  if (afterMidnight) d -= 24;
+  const h = Math.floor(d);
+  const m = Math.round((d - h) * 60);
+  return {
+    time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+    afterMidnight
+  };
+}
+function timeToDecimal(hhmm, afterMidnight) {
+  if (!hhmm) return '';
+  const [h, m] = hhmm.split(':').map(Number);
+  let dec = h + (m || 0) / 60;
+  if (afterMidnight) dec += 24;
+  return String(dec);
+}
 function buildMissingScript(f) {
   const age = f.age ? "approximately " + f.age + " years old" : "a child";
   const hair = f.hair ? ", " + f.hair + " hair" : "";
@@ -2749,8 +2911,51 @@ function HubApp({
   const [mpdResult, setMpdResult] = useState(null);
   const [mpdAddName, setMpdAddName] = useState('');
   const [mpdAddPhone, setMpdAddPhone] = useState('');
-  const [mpdAddBadge, setMpdAddBadge] = useState('');
-  const [mpdAddSched, setMpdAddSched] = useState({});
+  const [mpdAddSchedTimes, setMpdAddSchedTimes] = useState({
+    Thu: {
+      start: '',
+      end: '',
+      endNext: false
+    },
+    Fri: {
+      start: '',
+      end: '',
+      endNext: false
+    },
+    Sat: {
+      start: '',
+      end: '',
+      endNext: false
+    },
+    Sun: {
+      start: '',
+      end: '',
+      endNext: false
+    }
+  });
+  const [mpdEditingSchedId, setMpdEditingSchedId] = useState(null);
+  const [mpdEditSchedTimes, setMpdEditSchedTimes] = useState({
+    Thu: {
+      start: '',
+      end: '',
+      endNext: false
+    },
+    Fri: {
+      start: '',
+      end: '',
+      endNext: false
+    },
+    Sat: {
+      start: '',
+      end: '',
+      endNext: false
+    },
+    Sun: {
+      start: '',
+      end: '',
+      endNext: false
+    }
+  });
   const [mpdAddSending, setMpdAddSending] = useState(false);
   const [mpdAddDone, setMpdAddDone] = useState('');
   const [mpdAddOpen, setMpdAddOpen] = useState(false);
@@ -6924,7 +7129,7 @@ Reply YES to acknowledge.`
               fontSize: 11,
               color: "#94a3b8"
             }
-          }, o.badge, " \xB7 ", o.phone), isNotified && !isAcked && /*#__PURE__*/React.createElement("div", {
+          }, o.phone), isNotified && !isAcked && /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
               color: "#60a5fa",
@@ -7161,6 +7366,12 @@ Reply YES to acknowledge.`
       borderRadius: 12,
       padding: "14px",
       display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
       alignItems: "center",
       gap: 12
     }
@@ -7174,17 +7385,31 @@ Reply YES to acknowledge.`
       fontWeight: 800,
       color: "#f1f5f9"
     }
-  }, o.name), o.badge && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#64748b"
-    }
-  }, "Badge #", o.badge), /*#__PURE__*/React.createElement("div", {
+  }, o.name), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#64748b"
     }
   }, o.phone)), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "6px 10px",
+      borderRadius: 8,
+      border: "1px solid rgba(255,255,255,0.12)",
+      background: "rgba(255,255,255,0.04)",
+      color: "#94a3b8",
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer"
+    },
+    onClick: () => {
+      if (mpdEditingSchedId === o.id) {
+        setMpdEditingSchedId(null);
+      } else {
+        setMpdEditSchedTimes(schedFieldsToTimes(o.sched || {}));
+        setMpdEditingSchedId(o.id);
+      }
+    }
+  }, mpdEditingSchedId === o.id ? "Close" : "📅 Schedule"), /*#__PURE__*/React.createElement("button", {
     style: {
       padding: "8px 14px",
       borderRadius: 10,
@@ -7209,7 +7434,44 @@ Reply YES to acknowledge.`
       });
       fetchMPD();
     }
-  }, o.status === "ON" ? "🟢 Online" : "⚫ Offline"))), /*#__PURE__*/React.createElement("div", {
+  }, o.status === "ON" ? "🟢 Online" : "⚫ Offline")), mpdEditingSchedId === o.id && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      paddingTop: 10,
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(MPDScheduleEditor, {
+    schedTimes: mpdEditSchedTimes,
+    setSchedTimes: setMpdEditSchedTimes
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "10px",
+      borderRadius: 8,
+      border: "none",
+      background: "linear-gradient(135deg,rgba(37,99,235,0.8),rgba(29,78,216,0.8))",
+      color: "#fff",
+      fontSize: 13,
+      fontWeight: 800,
+      cursor: "pointer"
+    },
+    onClick: async () => {
+      const schedule = schedTimesToFields(mpdEditSchedTimes);
+      await fetch("/.netlify/functions/update-mpd-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          id: o.id,
+          schedule
+        })
+      });
+      setMpdEditingSchedId(null);
+      fetchMPD();
+    }
+  }, "Save Schedule")))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(255,255,255,0.03)",
       border: "1px solid rgba(255,255,255,0.1)",
@@ -7259,20 +7521,9 @@ Reply YES to acknowledge.`
     type: "tel",
     value: mpdAddPhone,
     onChange: e => setMpdAddPhone(e.target.value)
-  }), /*#__PURE__*/React.createElement("input", {
-    style: {
-      background: "rgba(255,255,255,0.07)",
-      border: "1.5px solid rgba(255,255,255,0.12)",
-      borderRadius: 10,
-      padding: "12px 14px",
-      color: "#f1f5f9",
-      fontSize: 16,
-      fontFamily: "inherit",
-      outline: "none"
-    },
-    placeholder: "Badge # (optional)",
-    value: mpdAddBadge,
-    onChange: e => setMpdAddBadge(e.target.value)
+  }), /*#__PURE__*/React.createElement(MPDScheduleEditor, {
+    schedTimes: mpdAddSchedTimes,
+    setSchedTimes: setMpdAddSchedTimes
   }), mpdAddDone && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(34,197,94,0.1)",
@@ -7299,6 +7550,7 @@ Reply YES to acknowledge.`
       setMpdAddSending(true);
       setMpdAddDone('');
       try {
+        const schedule = schedTimesToFields(mpdAddSchedTimes);
         const r = await fetch("/.netlify/functions/add-mpd-officer", {
           method: "POST",
           headers: {
@@ -7307,8 +7559,7 @@ Reply YES to acknowledge.`
           body: JSON.stringify({
             name: mpdAddName,
             phone: mpdAddPhone,
-            badge: mpdAddBadge,
-            ...mpdAddSched
+            ...schedule
           })
         });
         const d = await r.json();
@@ -7316,7 +7567,28 @@ Reply YES to acknowledge.`
           setMpdAddDone(`✅ ${mpdAddName} added — confirmation text sent to ${mpdAddPhone}`);
           setMpdAddName('');
           setMpdAddPhone('');
-          setMpdAddBadge('');
+          setMpdAddSchedTimes({
+            Thu: {
+              start: '',
+              end: '',
+              endNext: false
+            },
+            Fri: {
+              start: '',
+              end: '',
+              endNext: false
+            },
+            Sat: {
+              start: '',
+              end: '',
+              endNext: false
+            },
+            Sun: {
+              start: '',
+              end: '',
+              endNext: false
+            }
+          });
           fetchMPD();
         } else {
           setMpdAddDone('❌ Error: ' + d.error);

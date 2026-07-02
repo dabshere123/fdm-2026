@@ -6,11 +6,14 @@ exports.handler = async (event) => {
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   try {
-    const { id, status } = JSON.parse(event.body || '{}');
+    const { id, status, schedule } = JSON.parse(event.body || '{}');
+    const fields = {};
+    if (status !== undefined) fields.MPDStatus = status;
+    if (schedule && typeof schedule === 'object') Object.assign(fields, schedule);
     await fetch(`https://api.airtable.com/v0/${BASE}/MPDOfficers/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { MPDStatus: status } })
+      body: JSON.stringify({ fields })
     });
     return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch (e) {

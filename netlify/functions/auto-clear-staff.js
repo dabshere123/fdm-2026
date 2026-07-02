@@ -106,10 +106,16 @@ exports.handler = async (event) => {
       }
     }
 
-    console.log(`Auto-clear: ${cleared.length} staff cleared for ${todayDate} at ${currentHour.toFixed(1)}h CDT`);
+    // Also auto-offline any MPD officers whose shift has ended
+    let mpdOfflined = 0;
+    try {
+      mpdOfflined = await autoOfflineMPD(AIRTABLE_TOKEN, BASE);
+    } catch (e) { console.log('MPD auto-offline error:', e.message); }
+
+    console.log(`Auto-clear: ${cleared.length} staff cleared for ${todayDate} at ${currentHour.toFixed(1)}h CDT · ${mpdOfflined} MPD officers auto-offlined`);
     return {
       statusCode: 200, headers,
-      body: JSON.stringify({ success: true, cleared: cleared.length, names: cleared, day: dayCode, hour: currentHour.toFixed(1) })
+      body: JSON.stringify({ success: true, cleared: cleared.length, names: cleared, day: dayCode, hour: currentHour.toFixed(1), mpdOfflined })
     };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
@@ -124,9 +130,10 @@ async function autoOfflineMPD(token, base) {
   const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
   const dayName = dayMap[today.getDay()];
   const festDays = ['Thu','Fri','Sat','Sun'];
-  if (!festDays.includes(dayName)) return;
+  if (!festDays.includes(dayName)) return 0;
 
   const hourNow = today.getHours() + today.getMinutes() / 60;
+  let offlined = 0;
 
   try {
     const res = await fetch(
@@ -148,9 +155,11 @@ async function autoOfflineMPD(token, base) {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ fields: { MPDStatus: 'OFF' } })
         }).catch(() => {});
+        offlined++;
       }
     }
   } catch (e) {
     console.log('MPD auto-offline error:', e.message);
   }
+  return offlined;
 }

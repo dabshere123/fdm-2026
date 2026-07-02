@@ -155,6 +155,43 @@ function BB({onClick,label="← Back"}){return(
 );
 }
 function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={{...S.lbl,color:"#94a3b8"}}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}
+function MPDScheduleEditor({schedTimes,setSchedTimes}){
+  const days=[['Thu','Thu 7/9'],['Fri','Fri 7/10'],['Sat','Sat 7/11'],['Sun','Sun 7/12']];
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Shift Schedule (enables auto-offline when shift ends)</div>
+      {days.map(([key,label])=>(
+        <div key={key} style={{display:"flex",alignItems:"center",gap:6}}>
+          <div style={{width:52,fontSize:12,fontWeight:700,color:"#94a3b8",flexShrink:0}}>{label}</div>
+          <input type="time" style={{flex:1,minWidth:0,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"8px",color:"#f1f5f9",fontSize:13,fontFamily:"inherit",outline:"none"}} value={schedTimes[key].start} onChange={e=>setSchedTimes(p=>({...p,[key]:{...p[key],start:e.target.value}}))}/>
+          <span style={{color:"#475569",fontSize:11,flexShrink:0}}>to</span>
+          <input type="time" style={{flex:1,minWidth:0,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"8px",color:"#f1f5f9",fontSize:13,fontFamily:"inherit",outline:"none"}} value={schedTimes[key].end} onChange={e=>setSchedTimes(p=>({...p,[key]:{...p[key],end:e.target.value}}))}/>
+          <label style={{display:"flex",alignItems:"center",gap:3,fontSize:9,color:"#64748b",whiteSpace:"nowrap",flexShrink:0}}>
+            <input type="checkbox" checked={schedTimes[key].endNext} onChange={e=>setSchedTimes(p=>({...p,[key]:{...p[key],endNext:e.target.checked}}))} style={{width:"auto"}}/> +1day
+          </label>
+        </div>
+      ))}
+    </div>
+  );
+}
+function schedTimesToFields(schedTimes){
+  const out={};
+  ['Thu','Fri','Sat','Sun'].forEach(d=>{
+    const {start,end,endNext}=schedTimes[d];
+    out[d+'Start']=timeToDecimal(start,false);
+    out[d+'End']=timeToDecimal(end,endNext);
+  });
+  return out;
+}
+function schedFieldsToTimes(sched){
+  const out={};
+  ['Thu','Fri','Sat','Sun'].forEach(d=>{
+    const s=decToTimeParts(sched?.[d+'Start']);
+    const e=decToTimeParts(sched?.[d+'End']);
+    out[d]={start:s.time,end:e.time,endNext:e.afterMidnight};
+  });
+  return out;
+}
 
 
 const MPD_VOICE_SCRIPT=(location,situation)=>
@@ -917,6 +954,24 @@ const HUB_ROLE_DISPLAY={
   msm:'Moon Stage Manager', ssm:'Sun Stage Manager', lafm:'Lafayette Stage Manager', lagm:'Lagniappe Stage Manager',
 };
 function hubDisplayRole(r){return HUB_ROLE_DISPLAY[(r||'').toLowerCase()]||r||'';}
+// Decimal-hour <-> HH:MM helpers for MPD officer shift schedules (24=midnight, 26=2am next day)
+function decToTimeParts(dec){
+  if(dec===undefined||dec===null||dec==='') return {time:'',afterMidnight:false};
+  let d=parseFloat(dec);
+  if(isNaN(d)) return {time:'',afterMidnight:false};
+  const afterMidnight=d>24;
+  if(afterMidnight) d-=24;
+  const h=Math.floor(d);
+  const m=Math.round((d-h)*60);
+  return {time:`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,afterMidnight};
+}
+function timeToDecimal(hhmm,afterMidnight){
+  if(!hhmm) return '';
+  const [h,m]=hhmm.split(':').map(Number);
+  let dec=h+(m||0)/60;
+  if(afterMidnight) dec+=24;
+  return String(dec);
+}
 
 
 function buildMissingScript(f){
@@ -984,8 +1039,9 @@ function HubApp({onBack}){
   const [mpdResult,setMpdResult]=useState(null);
   const [mpdAddName,setMpdAddName]=useState('');
   const [mpdAddPhone,setMpdAddPhone]=useState('');
-  const [mpdAddBadge,setMpdAddBadge]=useState('');
-  const [mpdAddSched,setMpdAddSched]=useState({});
+  const [mpdAddSchedTimes,setMpdAddSchedTimes]=useState({Thu:{start:'',end:'',endNext:false},Fri:{start:'',end:'',endNext:false},Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
+  const [mpdEditingSchedId,setMpdEditingSchedId]=useState(null);
+  const [mpdEditSchedTimes,setMpdEditSchedTimes]=useState({Thu:{start:'',end:'',endNext:false},Fri:{start:'',end:'',endNext:false},Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
   const [mpdAddSending,setMpdAddSending]=useState(false);
   const [mpdAddDone,setMpdAddDone]=useState('');
   const [mpdAddOpen,setMpdAddOpen]=useState(false);
@@ -2615,7 +2671,7 @@ Reply YES to acknowledge.`
                               <span style={{fontSize:20,flexShrink:0}}>{isAcked?"✅":isCancelled?"❌":"📞"}</span>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:700,color:isCancelled?"#64748b":"#f1f5f9"}}>{o.name}</div>
-                                <div style={{fontSize:11,color:"#94a3b8"}}>{o.badge} · {o.phone}</div>
+                                <div style={{fontSize:11,color:"#94a3b8"}}>{o.phone}</div>
                                 {isNotified&&!isAcked&&<div style={{fontSize:11,color:"#60a5fa",fontWeight:600,marginTop:2}}>📞 Notified {notif?.notifiedAt} · Awaiting YES</div>}
                                 {isAcked&&<div style={{fontSize:11,color:"#10b981",fontWeight:700,marginTop:2}}>✅ Acknowledged · {notif?.ackedAt}</div>}
                                 {isCancelled&&<div style={{fontSize:11,color:"#e2e8f0",marginTop:2}}>❌ Stood down {notif?.cancelledAt}</div>}
@@ -2686,17 +2742,33 @@ Reply YES to acknowledge.`
             </div>
           )}
           {mpdOfficers.map(o=>(
-            <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
-              <div style={{flex:1}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>{o.name}</div>
-                {o.badge&&<div style={{fontSize:11,color:"#64748b"}}>Badge #{o.badge}</div>}
-                <div style={{fontSize:11,color:"#64748b"}}>{o.phone}</div>
+            <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>{o.name}</div>
+                  <div style={{fontSize:11,color:"#64748b"}}>{o.phone}</div>
+                </div>
+                <button style={{padding:"6px 10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.12)",background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>{
+                  if(mpdEditingSchedId===o.id){setMpdEditingSchedId(null);}
+                  else{setMpdEditSchedTimes(schedFieldsToTimes(o.sched||{}));setMpdEditingSchedId(o.id);}
+                }}>{mpdEditingSchedId===o.id?"Close":"📅 Schedule"}</button>
+                <button style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:o.status==="ON"?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",color:o.status==="ON"?"#4ade80":"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
+                  const newStatus=o.status==="ON"?"OFF":"ON";
+                  await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:newStatus})});
+                  fetchMPD();
+                }}>{o.status==="ON"?"🟢 Online":"⚫ Offline"}</button>
               </div>
-              <button style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:o.status==="ON"?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",color:o.status==="ON"?"#4ade80":"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
-                const newStatus=o.status==="ON"?"OFF":"ON";
-                await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:newStatus})});
-                fetchMPD();
-              }}>{o.status==="ON"?"🟢 Online":"⚫ Offline"}</button>
+              {mpdEditingSchedId===o.id&&(
+                <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:10,display:"flex",flexDirection:"column",gap:10}}>
+                  <MPDScheduleEditor schedTimes={mpdEditSchedTimes} setSchedTimes={setMpdEditSchedTimes}/>
+                  <button style={{padding:"10px",borderRadius:8,border:"none",background:"linear-gradient(135deg,rgba(37,99,235,0.8),rgba(29,78,216,0.8))",color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
+                    const schedule=schedTimesToFields(mpdEditSchedTimes);
+                    await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,schedule})});
+                    setMpdEditingSchedId(null);
+                    fetchMPD();
+                  }}>Save Schedule</button>
+                </div>
+              )}
             </div>
           ))}
 
@@ -2706,18 +2778,20 @@ Reply YES to acknowledge.`
             <div style={{fontSize:12,color:"#64748b"}}>Adds officer to Airtable and sends them a confirmation text automatically.</div>
             <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Officer Name *" value={mpdAddName} onChange={e=>setMpdAddName(e.target.value)}/>
             <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Cell Phone Number *" type="tel" value={mpdAddPhone} onChange={e=>setMpdAddPhone(e.target.value)}/>
-            <input style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"12px 14px",color:"#f1f5f9",fontSize:16,fontFamily:"inherit",outline:"none"}} placeholder="Badge # (optional)" value={mpdAddBadge} onChange={e=>setMpdAddBadge(e.target.value)}/>
+            <MPDScheduleEditor schedTimes={mpdAddSchedTimes} setSchedTimes={setMpdAddSchedTimes}/>
             {mpdAddDone&&<div style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#4ade80",fontWeight:700}}>{mpdAddDone}</div>}
             <button style={{padding:"13px",borderRadius:10,border:"none",background:(!mpdAddName||!mpdAddPhone||mpdAddSending)?"rgba(255,255,255,0.05)":"linear-gradient(135deg,rgba(37,99,235,0.8),rgba(29,78,216,0.8))",color:(!mpdAddName||!mpdAddPhone||mpdAddSending)?"#475569":"#fff",fontSize:14,fontWeight:900,cursor:(!mpdAddName||!mpdAddPhone||mpdAddSending)?"not-allowed":"pointer"}}
               disabled={!mpdAddName||!mpdAddPhone||mpdAddSending}
               onClick={async()=>{
                 setMpdAddSending(true);setMpdAddDone('');
                 try{
-                  const r=await fetch("/.netlify/functions/add-mpd-officer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:mpdAddName,phone:mpdAddPhone,badge:mpdAddBadge,...mpdAddSched})});
+                  const schedule=schedTimesToFields(mpdAddSchedTimes);
+                  const r=await fetch("/.netlify/functions/add-mpd-officer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:mpdAddName,phone:mpdAddPhone,...schedule})});
                   const d=await r.json();
                   if(d.success){
                     setMpdAddDone(`✅ ${mpdAddName} added — confirmation text sent to ${mpdAddPhone}`);
-                    setMpdAddName('');setMpdAddPhone('');setMpdAddBadge('');
+                    setMpdAddName('');setMpdAddPhone('');
+                    setMpdAddSchedTimes({Thu:{start:'',end:'',endNext:false},Fri:{start:'',end:'',endNext:false},Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
                     fetchMPD();
                   } else {
                     setMpdAddDone('❌ Error: '+d.error);

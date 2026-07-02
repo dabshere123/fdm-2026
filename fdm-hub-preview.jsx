@@ -240,7 +240,7 @@ const sendGroupMe = async (message, channels) => {
 // ============================================================
 // MED HOME COMPONENT
 // ============================================================
-function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,resourceView,setResourceView,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild,setNewCallView,setNewCallType,setNewCallLocation,setNewCallProblem,staffList,setClearIncView,lfItems}){
+function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myActive,unassigned,set911,setView,resourceView,setResourceView,setResourceType,nineOneOne,triggerIncident,sendGroupMe,liveMode,openLostChild,setNewCallView,setNewCallType,setNewCallLocation,setNewCallProblem,staffList,setClearIncView,lfItems}){
   const [tab,setTab]=React.useState("mycalls");
   const [medChatMessages,setMedChatMessages]=React.useState([]);
   const [medChatInput,setMedChatInput]=React.useState("");
@@ -540,12 +540,12 @@ Madison Fire/EMS INBOUND — McPike Park`;
               </div>
             </button>
 
-            {/* REQUEST RESOURCES — Supplies, Maintenance, MPD, etc. */}
-            <button style={{width:"100%",padding:"11px",borderRadius:10,border:"2px solid rgba(245,158,11,0.6)",background:"linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.1))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>setResourceView(true)}>
+            {/* SUPPLIES — same shortcut as admin hub */}
+            <button style={{width:"100%",padding:"11px",borderRadius:10,border:"2px solid rgba(245,158,11,0.6)",background:"linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.1))",color:"#fcd34d",fontSize:12,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>{setResourceType("supplies");setResourceView(true);}}>
               <span style={{fontSize:18}}>📦</span>
               <div style={{textAlign:"left"}}>
-                <div>REQUEST RESOURCES</div>
-                <div style={{fontSize:10,color:"#94a3b8",fontWeight:400,marginTop:1}}>Supplies · Maintenance · MPD · More</div>
+                <div>SUPPLIES</div>
+                <div style={{fontSize:10,color:"#94a3b8",fontWeight:400,marginTop:1}}>Log a restock request</div>
               </div>
             </button>
           </div>
@@ -3643,7 +3643,7 @@ Reply YES to acknowledge.`
           </button>
         )}
       </div>
-      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} nineOneOne={nineOneOne} triggerIncident={(call)=>{setIncidentView(call);setIncFields({respondingUnit:role,disposition:"",interventions:"",narrative:"",notes:""});}} sendGroupMe={sendGroupMe} liveMode={liveMode} openLostChild={()=>setLcView(true)} setNewCallView={setNewCallView} setNewCallType={setNewCallType} setNewCallLocation={setNewCallLocation} setNewCallProblem={setNewCallProblem} staffList={staffList} setClearIncView={setClearIncView} lfItems={lfItems}/>
+      <MedHome role={role} calls={activeCalls} setCalls={setCalls} completed={completed} setCompleted={setCompleted} medSt={medSt} setMedSt={setMedSt} myActive={myActive} unassigned={unassigned} set911={set911} setView={setView} resourceView={resourceView} setResourceView={setResourceView} setResourceType={setResourceType} nineOneOne={nineOneOne} triggerIncident={(call)=>{setIncidentView(call);setIncFields({respondingUnit:role,disposition:"",interventions:"",narrative:"",notes:""});}} sendGroupMe={sendGroupMe} liveMode={liveMode} openLostChild={()=>setLcView(true)} setNewCallView={setNewCallView} setNewCallType={setNewCallType} setNewCallLocation={setNewCallLocation} setNewCallProblem={setNewCallProblem} staffList={staffList} setClearIncView={setClearIncView} lfItems={lfItems}/>
     </div></div>
   );
 

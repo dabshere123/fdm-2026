@@ -569,6 +569,7 @@ function MedHome({
   setView,
   resourceView,
   setResourceView,
+  setResourceType,
   nineOneOne,
   triggerIncident,
   sendGroupMe,
@@ -1491,7 +1492,10 @@ Madison Fire/EMS INBOUND — McPike Park`;
       alignItems: "center",
       gap: 8
     },
-    onClick: () => setResourceView(true)
+    onClick: () => {
+      setResourceType("supplies");
+      setResourceView(true);
+    }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 18
@@ -1500,14 +1504,14 @@ Madison Fire/EMS INBOUND — McPike Park`;
     style: {
       textAlign: "left"
     }
-  }, /*#__PURE__*/React.createElement("div", null, "REQUEST RESOURCES"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, "SUPPLIES"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#94a3b8",
       fontWeight: 400,
       marginTop: 1
     }
-  }, "Supplies \xB7 Maintenance \xB7 MPD \xB7 More")))))), /*#__PURE__*/React.createElement("div", {
+  }, "Log a restock request")))))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "4px 16px 4px"
     }
@@ -10580,6 +10584,7 @@ Reply YES to acknowledge.`
     setView: setView,
     resourceView: resourceView,
     setResourceView: setResourceView,
+    setResourceType: setResourceType,
     nineOneOne: nineOneOne,
     triggerIncident: call => {
       setIncidentView(call);

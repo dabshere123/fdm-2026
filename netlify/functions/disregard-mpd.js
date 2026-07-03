@@ -18,7 +18,7 @@ exports.handler = async (event) => {
     const data = await res.json();
     const officers = (data.records || []).map(r => ({
       name: r.fields.Name,
-      phone: String(r.fields.Phone || '').replace(/[^0-9]/g,''),
+      phone: String(r.fields.PhoneNumber || '').replace(/[^0-9]/g,''),
     })).filter(o => o.phone.length >= 10);
 
     if (!TWILIO_SID || !TWILIO_AUTH) {

@@ -29,7 +29,7 @@ exports.handler = async (event) => {
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields: {
         Name: name,
-        Phone: phone,
+        PhoneNumber: phone,
         MPDStatus: 'OFF',
         LastAck: '',
         ...schedFields,

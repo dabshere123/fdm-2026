@@ -33,7 +33,7 @@ exports.handler = async (event) => {
     );
     const mpdData = await mpdRes.json();
     const officer = (mpdData.records || []).find(r => {
-      const p = String(r.fields.Phone || '').replace(/[^0-9]/g, '').slice(-10);
+      const p = String(r.fields.PhoneNumber || '').replace(/[^0-9]/g, '').slice(-10);
       return p === fromPhone;
     });
 

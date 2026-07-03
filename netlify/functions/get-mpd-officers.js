@@ -14,7 +14,7 @@ exports.handler = async (event) => {
     const officers = (data.records || []).map(r => ({
       id: r.id,
       name: r.fields.Name || '',
-      phone: r.fields.Phone || '',
+      phone: r.fields.PhoneNumber || '',
       status: r.fields.MPDStatus || 'OFF',
       lastAck: r.fields.LastAck || '',
       sched: {

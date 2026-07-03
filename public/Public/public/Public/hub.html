@@ -2869,6 +2869,18 @@ function buildFoundScript(f) {
 function buildFoundAlert(f) {
   return "\U0001F9D2\u2705 FOUND CHILD at " + (f.foundLocation || "unknown location") + "\n" + (f.childName || "Unidentified child") + ", " + (f.age || "?") + ", " + (f.hair || "") + (f.clothing ? ", wearing " + f.clothing : "") + (f.parentName ? "\nGuardian: " + f.parentName : "");
 }
+// Voice-only versions: no child's name spoken aloud (privacy over open phone lines), "Meet at" instead of "Assembly"
+function buildMissingVoiceMsg(f) {
+  const clothing = [f.top, f.bottom].filter(Boolean).join(", ") || "";
+  return "Missing child. Location: " + (f.lastSeen || "Unknown") + ". Description: Age " + (f.age || "unknown") + ", " + (f.gender || "unknown gender") + (f.hair ? ", " + f.hair : "") + (clothing ? ", " + clothing : "") + ". Last seen: " + (f.lastSeen || "Unknown") + (f.lastSeenTime ? " at " + f.lastSeenTime : "") + ". Meet at: " + (f.assembly || "Medical Tent") + (f.parentName ? ". Guardian: " + f.parentName + (f.parentPhone ? " " + f.parentPhone : "") : "") + ".";
+}
+function buildFoundVoiceMsg(f) {
+  return "Found child at " + (f.foundLocation || "unknown location") + ". " + (f.age ? "Age " + f.age : "Child") + (f.hair ? ", " + f.hair + " hair" : "") + (f.clothing ? ", wearing " + f.clothing : "") + (f.parentName ? ". Guardian: " + f.parentName : "") + ".";
+}
+// Strip a child's name and normalize wording for voice, when only free text (not structured fields) is available (e.g. on ack)
+function voiceSafeLostChild(text) {
+  return (text || "").replace(/Name:\s*[^-\n]+-\s*/i, "").replace(/ASSEMBLY:/gi, "MEET AT:").replace(/\n/g, " ").trim();
+}
 function HubApp({
   onBack
 }) {
@@ -3829,7 +3841,7 @@ function HubApp({
           const lcPhones = getNotifyList("lost_child");
           const lcPhonesFinal = lcPhones.length > 0 ? lcPhones : [ADMIN2_PHONE];
           sendSMSList(lcPhonesFinal, msg);
-          sendVoice(lcPhonesFinal, `Urgent. Lost child at Fete de Marquette. ${(call.problem || "").replace(/\n/g, " ")}. Location: ${call.location}. All staff please be on alert immediately.`);
+          sendVoice(lcPhonesFinal, `Urgent. Lost child at Fete de Marquette. ${voiceSafeLostChild(call.problem)}. Location: ${call.location}. All staff please be on alert immediately.`);
         }, 100);
         fetch("/.netlify/functions/send-mpd", {
           method: "POST",
@@ -4237,7 +4249,7 @@ function HubApp({
               },
               body: JSON.stringify({
                 to: p,
-                message: `911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`
+                message: `911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Meet EMS at ${alertCall.location}. EMS is now inbound to McPike Park.`
               })
             }).catch(() => {});
           });
@@ -4264,7 +4276,7 @@ function HubApp({
               },
               body: JSON.stringify({
                 to: fmt,
-                message: `911 has been activated at Fête de Marquette. Location: ${alertCall.location}. EMS is inbound. Please stand by for coordination.`
+                message: `911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Meet EMS at ${alertCall.location}. EMS is now inbound to McPike Park.`
               })
             }).catch(() => {});
           });
@@ -8231,7 +8243,7 @@ Reply YES to acknowledge.`
         if (lcPhones.length === 0) {
           throw new Error("No staff phone numbers found to notify.");
         }
-        const [smsResults, voiceResults] = await Promise.race([Promise.all([sendSMSList(lcPhones, alertMsg), sendVoice(lcPhones, alertMsg.replace(/\n/g, " "))]), new Promise((_, reject) => setTimeout(() => reject(new Error("SMS/Voice timed out after 20 seconds — check your connection.")), 20000))]);
+        const [smsResults, voiceResults] = await Promise.race([Promise.all([sendSMSList(lcPhones, alertMsg), sendVoice(lcPhones, buildMissingVoiceMsg(lcFields))]), new Promise((_, reject) => setTimeout(() => reject(new Error("SMS/Voice timed out after 20 seconds — check your connection.")), 20000))]);
         const smsFailed = smsResults.filter(r => r.status === "rejected").length;
         const voiceFailed = voiceResults.filter(r => r.status === "rejected").length;
         if (smsFailed > 0 || voiceFailed > 0) {
@@ -8349,7 +8361,7 @@ Reply YES to acknowledge.`
       try {
         const lcPhones = getNotifyList("lost_child");
         if (lcPhones.length > 0) {
-          const voiceResults = await Promise.race([sendVoice(lcPhones, alertMsg.replace(/\n/g, " ")), new Promise((_, reject) => setTimeout(() => reject(new Error("Voice calls timed out after 20 seconds.")), 20000))]);
+          const voiceResults = await Promise.race([sendVoice(lcPhones, buildFoundVoiceMsg(lcFields)), new Promise((_, reject) => setTimeout(() => reject(new Error("Voice calls timed out after 20 seconds.")), 20000))]);
           const voiceFailed = voiceResults.filter(r => r.status === "rejected").length;
           if (voiceFailed > 0) setLcSendError(`SMS + Chat sent. But Voice failed for ${voiceFailed} of ${lcPhones.length}.`);
         }
@@ -10384,7 +10396,7 @@ Reply YES to acknowledge.`
             },
             body: JSON.stringify({
               to: p,
-              message: `911 activated by ${role} at Fete de Marquette. Responding to ${mc.location}. ${mc.problem}. EMS inbound. Clear a path.`
+              message: `911 has been activated at Fête de Marquette by ${role}. Location: ${mc.location}. Meet EMS at ${mc.location}. EMS is now inbound to McPike Park.`
             })
           }).catch(() => {});
         });
@@ -10695,7 +10707,7 @@ Reply YES to acknowledge.`
           },
           body: JSON.stringify({
             to: p,
-            message: `911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Staging 1, Ingersoll and Wilson. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`
+            message: `911 has been activated at Fête de Marquette by ${role}. Location: ${callLoc}. Meet EMS at ${callLoc}. EMS is now inbound to McPike Park.`
           })
         }).catch(() => {});
       });

@@ -58,10 +58,11 @@ exports.handler = async (event) => {
   let voiceMsg, smsMsg;
 
   if (isLostChild) {
-    voiceMsg = `Attention. This is Fete de Marquette Operations. We have a lost child. ${situation || ''}. Last seen: ${location || 'festival grounds'}. Please be on alert and report any sightings to the festival office immediately.`;
+    const situationVoice = (situation||'').replace(/Name:\s*[^-\n]+-\s*/i,'').replace(/ASSEMBLY:/gi,'MEET AT:').replace(/\n/g,' ').trim();
+    voiceMsg = `Missing child. Location: ${location || 'festival grounds'}. ${situationVoice}. Please be on alert and report any sightings to the festival office immediately.`;
     smsMsg   = `🧒 LOST CHILD — FDM 2026\nLast seen: ${location || 'festival grounds'}\n${situation || ''}\nPlease be on alert.`;
   } else {
-    voiceMsg = `Attention. This is Fete de Marquette Operations requesting police assistance. ${situation || 'Security incident in progress'}. Location: ${location || 'festival grounds'}. Please respond.`;
+    voiceMsg = `MPD, you are requested to respond immediately to ${location || 'festival grounds'} for ${situation || 'a security incident'}. This is requested by Admin. Please respond text with ACK.`;
     smsMsg   = `🚨 MPD REQUESTED — FDM 2026\nLocation: ${location || 'festival grounds'}\nSituation: ${situation || ''}\nPlease respond.`;
   }
 

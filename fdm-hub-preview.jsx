@@ -1000,6 +1000,18 @@ function buildFoundScript(f){
 function buildFoundAlert(f){
   return "\U0001F9D2\u2705 FOUND CHILD at "+(f.foundLocation||"unknown location")+"\n"+(f.childName||"Unidentified child")+", "+(f.age||"?")+", "+(f.hair||"")+(f.clothing?", wearing "+f.clothing:"")+(f.parentName?"\nGuardian: "+f.parentName:"");
 }
+// Voice-only versions: no child's name spoken aloud (privacy over open phone lines), "Meet at" instead of "Assembly"
+function buildMissingVoiceMsg(f){
+  const clothing=[f.top,f.bottom].filter(Boolean).join(", ")||"";
+  return "Missing child. Location: "+(f.lastSeen||"Unknown")+". Description: Age "+(f.age||"unknown")+", "+(f.gender||"unknown gender")+(f.hair?", "+f.hair:"")+(clothing?", "+clothing:"")+". Last seen: "+(f.lastSeen||"Unknown")+(f.lastSeenTime?" at "+f.lastSeenTime:"")+". Meet at: "+(f.assembly||"Medical Tent")+(f.parentName?". Guardian: "+f.parentName+(f.parentPhone?" "+f.parentPhone:""):"")+".";
+}
+function buildFoundVoiceMsg(f){
+  return "Found child at "+(f.foundLocation||"unknown location")+". "+(f.age?"Age "+f.age:"Child")+(f.hair?", "+f.hair+" hair":"")+(f.clothing?", wearing "+f.clothing:"")+(f.parentName?". Guardian: "+f.parentName:"")+".";
+}
+// Strip a child's name and normalize wording for voice, when only free text (not structured fields) is available (e.g. on ack)
+function voiceSafeLostChild(text){
+  return (text||"").replace(/Name:\s*[^-\n]+-\s*/i,"").replace(/ASSEMBLY:/gi,"MEET AT:").replace(/\n/g," ").trim();
+}
 
 function HubApp({onBack}){
   const [role,setRole]=useState(()=>{
@@ -1693,7 +1705,7 @@ function HubApp({onBack}){
           const lcPhones=getNotifyList("lost_child");
           const lcPhonesFinal=lcPhones.length>0?lcPhones:[ADMIN2_PHONE];
           sendSMSList(lcPhonesFinal,msg);
-          sendVoice(lcPhonesFinal,`Urgent. Lost child at Fete de Marquette. ${(call.problem||"").replace(/\n/g," ")}. Location: ${call.location}. All staff please be on alert immediately.`);
+          sendVoice(lcPhonesFinal,`Urgent. Lost child at Fete de Marquette. ${voiceSafeLostChild(call.problem)}. Location: ${call.location}. All staff please be on alert immediately.`);
         },100);
         fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({type:"lost_child",officers:mpdOfficers,location:call.location,situation:msg})
@@ -1810,7 +1822,7 @@ function HubApp({onBack}){
                   const adminPhones=["+16082289692","+16082352925"];
                   adminPhones.forEach(p=>{
                     fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});
-                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Madison Fire and EMS are inbound to McPike Park. Please clear the path and meet EMS at the agreed location.`})}).catch(()=>{});
+                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Meet EMS at ${alertCall.location}. EMS is now inbound to McPike Park.`})}).catch(()=>{});
                   });
                   // SMS + Voice to OTHER med unit (not the one activating 911)
                   const otherMedRole=(role||"").toLowerCase()==="med 1"||role==="M1"?"m2":"m1";
@@ -1818,7 +1830,7 @@ function HubApp({onBack}){
                   otherMed.forEach(s=>{
                     const d=String(s.phone).replace(/[^0-9]/g,"");const fmt=d.length===10?`+1${d}`:`+${d}`;
                     fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});
-                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 has been activated at Fête de Marquette. Location: ${alertCall.location}. EMS is inbound. Please stand by for coordination.`})}).catch(()=>{});
+                    fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Meet EMS at ${alertCall.location}. EMS is now inbound to McPike Park.`})}).catch(()=>{});
                   });
                 }}>🚨 Activate 911 from This Call</button>}
               {nineOneOne.active&&<div style={{textAlign:"center",color:"#fca5a5",fontWeight:900,padding:"10px",background:"rgba(180,0,0,0.2)",borderRadius:10}}>🚨 911 ACTIVE</div>}
@@ -2951,7 +2963,7 @@ Reply YES to acknowledge.`
                   throw new Error("No staff phone numbers found to notify.");
                 }
                 const [smsResults,voiceResults]=await Promise.race([
-                  Promise.all([sendSMSList(lcPhones,alertMsg),sendVoice(lcPhones,alertMsg.replace(/\n/g," "))]),
+                  Promise.all([sendSMSList(lcPhones,alertMsg),sendVoice(lcPhones,buildMissingVoiceMsg(lcFields))]),
                   new Promise((_,reject)=>setTimeout(()=>reject(new Error("SMS/Voice timed out after 20 seconds — check your connection.")),20000)),
                 ]);
                 const smsFailed=smsResults.filter(r=>r.status==="rejected").length;
@@ -2993,7 +3005,7 @@ Reply YES to acknowledge.`
                 const lcPhones=getNotifyList("lost_child");
                 if(lcPhones.length>0){
                   const voiceResults=await Promise.race([
-                    sendVoice(lcPhones,alertMsg.replace(/\n/g," ")),
+                    sendVoice(lcPhones,buildFoundVoiceMsg(lcFields)),
                     new Promise((_,reject)=>setTimeout(()=>reject(new Error("Voice calls timed out after 20 seconds.")),20000)),
                   ]);
                   const voiceFailed=voiceResults.filter(r=>r.status==="rejected").length;
@@ -3610,7 +3622,7 @@ Reply YES to acknowledge.`
               const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${mc.location}\nCALL: ${mc.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
               sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
               const phones=[...new Set([ADMIN2_PHONE,...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
-              phones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 activated by ${role} at Fete de Marquette. Responding to ${mc.location}. ${mc.problem}. EMS inbound. Clear a path.`})}).catch(()=>{});});
+              phones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${mc.location}. Meet EMS at ${mc.location}. EMS is now inbound to McPike Park.`})}).catch(()=>{});});
             }}>🚨 Activate 911 — EMS to This Call</button>}
           {nineOneOne.active&&<div style={{background:"rgba(180,0,0,0.15)",border:"2px solid rgba(180,0,0,0.5)",borderRadius:12,padding:"14px",textAlign:"center",color:"#f87171",fontWeight:900}}>🚨 911 ACTIVE — EMS INBOUND</div>}
           {/* On Scene button */}
@@ -3691,7 +3703,7 @@ Reply YES to acknowledge.`
               const phones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
               phones.forEach(p=>{
                 fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});
-                fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 ACTIVATED by ${role} at Fete de Marquette. Responding to: ${callLoc}. ${callProblem}. EMS staging at Staging 1, Ingersoll and Wilson. Clear a path for emergency vehicles. Responding to: ${callLoc}. ${callProblem}. Clear a path for emergency vehicles.`})}).catch(()=>{});
+                fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${callLoc}. Meet EMS at ${callLoc}. EMS is now inbound to McPike Park.`})}).catch(()=>{});
               });
               // No setView("911") — stay on call, form comes when call is cleared
             }}>

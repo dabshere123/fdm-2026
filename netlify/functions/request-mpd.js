@@ -30,7 +30,10 @@ exports.handler = async (event) => {
     }
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
     const smsBody = `🚔 MPD REQUESTED — FDM 2026\n\nLocation: ${location}\nSituation: ${situation}\nRequested by: ${requestedBy}\n\nPlease respond to McPike Park.\nReply DISREGARD to cancel.`;
-    const voiceMsg = `Madison Police Department requested at Fête de Marquette. Location: ${location}. Situation: ${situation}. Requested by ${requestedBy}. Please respond to McPike Park.`;
+    const situationVoice = (situation||'').replace(/Name:\s*[^-\n]+-\s*/i,'').replace(/ASSEMBLY:/gi,'MEET AT:').replace(/\n/g,' ').trim();
+    const voiceMsg = callType === 'lost_child'
+      ? `Missing child. Location: ${location || 'festival grounds'}. ${situationVoice}. Please be on alert and report any sightings to the festival office immediately.`
+      : `MPD, you are requested to respond immediately to ${location || 'festival grounds'} for ${situation || 'a security incident'}. This is requested by ${requestedBy || 'Admin'}. Please respond text with ACK.`;
     const twiml = `<Response><Say voice="alice">${voiceMsg}</Say><Pause length="1"/><Say voice="alice">${voiceMsg}</Say></Response>`;
 
     for (const o of officers) {

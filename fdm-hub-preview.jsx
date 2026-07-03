@@ -372,9 +372,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
 
   function clearCall(callId){
     const call=calls.find(c=>c.id===callId);
-    if(call) setClearIncView(call);
-    setCalls(p=>p.map(c=>c.id===callId?{...c,status:"cleared",clearedBy:role}:c));
-    if(call) setCompleted(p=>[...p,{...call,clearedBy:role,clearedAt:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}]);
+    if(call) setClearIncView({call,by:role});
     setMedStatus("available");
   }
 

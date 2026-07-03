@@ -27,7 +27,7 @@ exports.handler = async (event) => {
     const res = await fetch(`https://api.airtable.com/v0/${BASE}/MPDOfficers`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: {
+      body: JSON.stringify({ typecast: true, fields: {
         Name: name,
         PhoneNumber: phone,
         MPDStatus: 'OFF',

@@ -153,7 +153,7 @@ async function autoOfflineMPD(token, base) {
         await fetch(`https://api.airtable.com/v0/${base}/MPDOfficers/${r.id}`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { MPDStatus: 'OFF' } })
+          body: JSON.stringify({ typecast: true, fields: { MPDStatus: 'OFF' } })
         }).catch(() => {});
         offlined++;
       }

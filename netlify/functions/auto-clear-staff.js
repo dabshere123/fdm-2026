@@ -106,24 +106,24 @@ exports.handler = async (event) => {
       }
     }
 
-    // Also auto-offline any MPD officers whose shift has ended
-    let mpdOfflined = 0;
+    // Also auto-toggle MPD officers On/Off by their shift schedule
+    let mpdChanged = 0;
     try {
-      mpdOfflined = await autoOfflineMPD(AIRTABLE_TOKEN, BASE);
-    } catch (e) { console.log('MPD auto-offline error:', e.message); }
+      mpdChanged = await autoOfflineMPD(AIRTABLE_TOKEN, BASE);
+    } catch (e) { console.log('MPD auto on/off error:', e.message); }
 
-    console.log(`Auto-clear: ${cleared.length} staff cleared for ${todayDate} at ${currentHour.toFixed(1)}h CDT · ${mpdOfflined} MPD officers auto-offlined`);
+    console.log(`Auto-clear: ${cleared.length} staff cleared for ${todayDate} at ${currentHour.toFixed(1)}h CDT · ${mpdChanged} MPD officers auto-toggled`);
     return {
       statusCode: 200, headers,
-      body: JSON.stringify({ success: true, cleared: cleared.length, names: cleared, day: dayCode, hour: currentHour.toFixed(1), mpdOfflined })
+      body: JSON.stringify({ success: true, cleared: cleared.length, names: cleared, day: dayCode, hour: currentHour.toFixed(1), mpdChanged })
     };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
   }
 };
 
-// ── MPD OFFICER AUTO-OFFLINE ──
-// Also runs as part of the same scheduled function
+// ── MPD OFFICER AUTO ON/OFF BY SCHEDULE ──
+// Also runs as part of the same scheduled function (every 30 min)
 // MPDOfficers table needs: ThuStart, ThuEnd, FriStart, FriEnd, SatStart, SatEnd, SunStart, SunEnd
 async function autoOfflineMPD(token, base) {
   const dayMap = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
@@ -133,33 +133,60 @@ async function autoOfflineMPD(token, base) {
   if (!festDays.includes(dayName)) return 0;
 
   const hourNow = today.getHours() + today.getMinutes() / 60;
-  let offlined = 0;
+  let changed = 0;
 
   try {
+    // Fetch ALL officers (not just On) so we can also catch Off ones whose shift is starting
     const res = await fetch(
-      `https://api.airtable.com/v0/${base}/MPDOfficers?filterByFormula={MPDStatus}="On"&maxRecords=100`,
+      `https://api.airtable.com/v0/${base}/MPDOfficers?maxRecords=100`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
     const data = await res.json();
     for (const r of data.records || []) {
+      const status = r.fields.MPDStatus;
+      const startField = r.fields[`${dayName}Start`];
       const endField = r.fields[`${dayName}End`];
-      if (!endField) continue;
-      const endHour = parseFloat(endField);
-      if (!endHour || endHour === 0) continue;
-      const effectiveEnd = endHour > 24 ? endHour - 24 : endHour;
-      const isNextDay = endHour > 24;
-      const shiftEnded = isNextDay ? (hourNow < 12 && hourNow >= effectiveEnd) : hourNow >= effectiveEnd;
-      if (shiftEnded) {
-        await fetch(`https://api.airtable.com/v0/${base}/MPDOfficers/${r.id}`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ typecast: true, fields: { MPDStatus: 'Off' } })
-        }).catch(() => {});
-        offlined++;
+
+      // ── Auto-OFF: shift has ended and they're still marked On ──
+      if (status === 'On' && endField) {
+        const endHour = parseFloat(endField);
+        if (endHour && endHour !== 0) {
+          const effectiveEnd = endHour > 24 ? endHour - 24 : endHour;
+          const isNextDay = endHour > 24;
+          const shiftEnded = isNextDay ? (hourNow < 12 && hourNow >= effectiveEnd) : hourNow >= effectiveEnd;
+          if (shiftEnded) {
+            await fetch(`https://api.airtable.com/v0/${base}/MPDOfficers/${r.id}`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ typecast: true, fields: { MPDStatus: 'Off' } })
+            }).catch(() => {});
+            changed++;
+            continue;
+          }
+        }
+      }
+
+      // ── Auto-ON: shift is just starting and they're still marked Off ──
+      // Only fires in a narrow window right after Start, so a manual "Off" during
+      // the shift is never overridden back to "On" by this scheduled check.
+      if (status === 'Off' && startField) {
+        const startHour = parseFloat(startField);
+        if (startHour && startHour !== 0) {
+          const effectiveStart = startHour > 24 ? startHour - 24 : startHour;
+          const withinCatchWindow = hourNow >= effectiveStart && hourNow < effectiveStart + 0.6; // ~35 min catch window
+          if (withinCatchWindow) {
+            await fetch(`https://api.airtable.com/v0/${base}/MPDOfficers/${r.id}`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ typecast: true, fields: { MPDStatus: 'On' } })
+            }).catch(() => {});
+            changed++;
+          }
+        }
       }
     }
   } catch (e) {
-    console.log('MPD auto-offline error:', e.message);
+    console.log('MPD auto on/off error:', e.message);
   }
-  return offlined;
+  return changed;
 }

@@ -2819,7 +2819,8 @@ Reply YES to acknowledge.`
           <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
             <strong style={{color:"#93c5fd"}}>Airtable — MPDOfficers table fields:</strong><br/>
             • Name, PhoneNumber, LastAck<br/>
-            • MPDStatus (single select): <strong style={{color:"#4ade80"}}>On</strong> (working) / <strong style={{color:"#64748b"}}>Off</strong> (not working — auto-set at shift end)<br/>
+            • MPDStatus (single select): <strong style={{color:"#4ade80"}}>On</strong> (working) / <strong style={{color:"#64748b"}}>Off</strong> (not working)<br/>
+            • Auto-toggles based on schedule: flips to <strong style={{color:"#4ade80"}}>On</strong> near shift start, back to <strong style={{color:"#64748b"}}>Off</strong> at shift end. A manual Offline tap during a shift sticks — it won't be auto-reversed.<br/>
             • ThuStart–SunEnd (same time format as staff)<br/><br/>
             <strong style={{color:"#93c5fd"}}>Adding via Airtable:</strong><br/>
             Set MPDStatus to <strong style={{color:"#f1f5f9"}}>"On"</strong> → automation fires confirmation text<br/>

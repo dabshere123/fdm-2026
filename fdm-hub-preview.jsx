@@ -2953,7 +2953,7 @@ Reply YES to acknowledge.`
               sendGroupMe(alertMsg,["admin","medical","AllStaff"]);
               playAlert("lost_child");
               setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"lost_child",label:"Lost Child Reported",msg:alertMsg},...p]);
-              fetch("/.netlify/functions/request-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:lcFields.lastSeen,situation:alertMsg,requestedBy:role,callType:"lost_child"})}).catch(()=>{});
+              fetch("/.netlify/functions/request-mpd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:lcFields.lastSeen,situation:alertMsg,requestedBy:role,callType:"lost_child",age:lcFields.age,gender:lcFields.gender,hair:lcFields.hair,top:lcFields.top,bottom:lcFields.bottom,lastSeenTime:lcFields.lastSeenTime,assembly:lcFields.assembly,parentName:lcFields.parentName,parentPhone:lcFields.parentPhone})}).catch(()=>{});
               setLcPAScript(script);
               setLcSendError(null);
               setLcSending(true);

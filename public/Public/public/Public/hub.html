@@ -8232,7 +8232,16 @@ Reply YES to acknowledge.`
           location: lcFields.lastSeen,
           situation: alertMsg,
           requestedBy: role,
-          callType: "lost_child"
+          callType: "lost_child",
+          age: lcFields.age,
+          gender: lcFields.gender,
+          hair: lcFields.hair,
+          top: lcFields.top,
+          bottom: lcFields.bottom,
+          lastSeenTime: lcFields.lastSeenTime,
+          assembly: lcFields.assembly,
+          parentName: lcFields.parentName,
+          parentPhone: lcFields.parentPhone
         })
       }).catch(() => {});
       setLcPAScript(script);

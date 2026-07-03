@@ -547,7 +547,8 @@ function NewCallView({
             problem: alertMsg,
             details: `Name: ${lcChildName || 'Unknown'} | Age: ${lcAge} | Gender: ${lcGender || '?'} | Hair: ${lcHair || '?'} | Top: ${lcTop || '?'} | Bottom: ${lcBottom || '?'} | Last seen time: ${lcLastSeenTime || '?'} | Assembly: ${lcAssembly} | Guardian: ${lcParentName || '?'} | Guardian Phone: ${lcParentPhone || '?'}`,
             requestedBy: user.name,
-            role: user.role
+            role: user.role,
+            phone: user.phone || ''
           })
         });
         fetch(`${API}/request-mpd`, {
@@ -583,7 +584,8 @@ function NewCallView({
           location,
           problem,
           requestedBy: user.name,
-          role: user.role
+          role: user.role,
+          phone: user.phone || ''
         })
       });
       setSent(true);
@@ -1103,7 +1105,8 @@ function NewCallView({
           problem: fullProblem,
           details: `Qty: ${supplyQty} · Item: ${itemLabel} · Sent: ${ts}`,
           requestedBy: user.name,
-          role: user.role
+          role: user.role,
+          phone: user.phone || ''
         })
       });
       setSent(true);
@@ -3260,7 +3263,8 @@ function FoundLostChildView({
           problem: desc,
           requestedBy: user.name,
           role: user.role,
-          callType: 'found_child'
+          callType: 'found_child',
+          phone: user.phone || ''
         })
       });
       await fetch(`${API}/send-broadcast`, {

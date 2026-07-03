@@ -236,7 +236,7 @@ function NewCallView({user,callType,onBack}){
         await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
           type:'lost_child',location,problem:alertMsg,
           details:`Name: ${lcChildName||'Unknown'} | Age: ${lcAge} | Gender: ${lcGender||'?'} | Hair: ${lcHair||'?'} | Top: ${lcTop||'?'} | Bottom: ${lcBottom||'?'} | Last seen time: ${lcLastSeenTime||'?'} | Assembly: ${lcAssembly} | Guardian: ${lcParentName||'?'} | Guardian Phone: ${lcParentPhone||'?'}`,
-          requestedBy:user.name,role:user.role
+          requestedBy:user.name,role:user.role,phone:user.phone||''
         })});
         fetch(`${API}/request-mpd`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location,situation:alertMsg,requestedBy:user.name,callType:'lost_child'})}).catch(()=>{});
         setLcScript(script);
@@ -248,7 +248,7 @@ function NewCallView({user,callType,onBack}){
     if(!type||!location||!problem) return;
     setSending(true);
     try{
-      await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,location,problem,requestedBy:user.name,role:user.role})});
+      await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,location,problem,requestedBy:user.name,role:user.role,phone:user.phone||''})});
       setSent(true);
       setTimeout(onBack,2000);
     }catch(e){setSending(false);}
@@ -410,7 +410,7 @@ function NewCallView({user,callType,onBack}){
               const loc=user.location||location||'unknown location';
               const ts=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
               const fullProblem=`${supplyQty}x ${itemLabel}`;
-              fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'supplies',location:loc,problem:fullProblem,details:`Qty: ${supplyQty} · Item: ${itemLabel} · Sent: ${ts}`,requestedBy:user.name,role:user.role})});
+              fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'supplies',location:loc,problem:fullProblem,details:`Qty: ${supplyQty} · Item: ${itemLabel} · Sent: ${ts}`,requestedBy:user.name,role:user.role,phone:user.phone||''})});
               setSent(true);
               setTimeout(onBack,2000);
             }}>
@@ -1209,7 +1209,7 @@ function FoundLostChildView({user,onBack}){
     const clothing=childClothing||'';
     const alertMsg="🧒✅ FOUND CHILD at "+(childLocation||"unknown location")+"\n"+(childName||"Unidentified child")+", "+(childAge||"?")+", "+(childHair||"")+(clothing?", wearing "+clothing:"")+(guardianName?"\nGuardian: "+guardianName:"");
     try{
-      await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'found_child',location:childLocation,problem:desc,requestedBy:user.name,role:user.role,callType:'found_child'})});
+      await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'found_child',location:childLocation,problem:desc,requestedBy:user.name,role:user.role,callType:'found_child',phone:user.phone||''})});
       await fetch(`${API}/send-broadcast`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:alertMsg,type:'found_child',sentBy:user.name})}).catch(()=>{});
     }catch(e){}
     setSending(false);

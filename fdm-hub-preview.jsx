@@ -1235,6 +1235,11 @@ function HubApp({onBack}){
   const [lfDay,setLfDay]=useState("All");
   const [lfSearch,setLfSearch]=useState("");
   const [lfLoading,setLfLoading]=useState(false);
+  const [lfAddOpen,setLfAddOpen]=useState(false);
+  const [lfAddFields,setLfAddFields]=useState({description:"",foundAt:"",dayFound:"",currentLocation:"",foundBy:"",atFestOffice:false});
+  const [lfAddSending,setLfAddSending]=useState(false);
+  const [lfAddError,setLfAddError]=useState(null);
+  const [lfAddDone,setLfAddDone]=useState(null);
 
   async function fetchLFItems(){
     setLfLoading(true);
@@ -3170,7 +3175,65 @@ Reply YES to acknowledge.`
         <BB onClick={()=>setView("home")}/>
         <span style={{fontSize:17,fontWeight:900,color:"#f1f5f9",flex:1}}>{"📋 Manage Lost & Found"}</span>
         <button style={{fontSize:12,fontWeight:700,color:"#4ade80",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:8,padding:"7px 12px",cursor:"pointer"}} onClick={fetchLFItems}>{"↺ Refresh"}</button>
+        <button style={{fontSize:12,fontWeight:700,color:"#fb923c",background:"rgba(251,146,60,0.1)",border:"1px solid rgba(251,146,60,0.3)",borderRadius:8,padding:"7px 12px",cursor:"pointer"}} onClick={()=>{setLfAddFields({description:"",foundAt:"",dayFound:"",currentLocation:"",foundBy:"",atFestOffice:false});setLfAddError(null);setLfAddDone(null);setLfAddOpen(true);}}>{"➕ Log Item"}</button>
       </div>
+
+      {lfAddOpen&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+        <div style={{background:"#12121f",borderTopLeftRadius:20,borderTopRightRadius:20,padding:"20px 18px 28px",maxHeight:"88vh",overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:17,fontWeight:900,color:"#f1f5f9"}}>➕ Log Lost & Found Item</span>
+            <button style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:4}} onClick={()=>setLfAddOpen(false)}>×</button>
+          </div>
+          <div style={{fontSize:12,color:"#64748b"}}>For items handed to you directly, or to recover an item that failed to save from the field.</div>
+          <Fld label="Description" required value={lfAddFields.description} onChange={e=>setLfAddFields(p=>({...p,description:e.target.value}))} ph="e.g. Black iPhone with cracked screen"/>
+          <Fld label="Found At (location)" required value={lfAddFields.foundAt} onChange={e=>setLfAddFields(p=>({...p,foundAt:e.target.value}))} ph="e.g. Moon Bar near east exit"/>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={{...S.lbl,color:"#94a3b8"}}>Day Found</label>
+            <div style={{display:"flex",gap:6}}>
+              {["Thursday","Friday","Saturday","Sunday"].map(d=>(
+                <button key={d} style={{flex:1,padding:"9px 4px",borderRadius:8,border:`1px solid ${lfAddFields.dayFound===d?"rgba(251,146,60,0.6)":"rgba(255,255,255,0.1)"}`,background:lfAddFields.dayFound===d?"rgba(251,146,60,0.15)":"rgba(255,255,255,0.03)",color:lfAddFields.dayFound===d?"#fb923c":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setLfAddFields(p=>({...p,dayFound:d}))}>{d.slice(0,3)}</button>
+              ))}
+            </div>
+          </div>
+          <Fld label="Current Location (if different from Found At)" value={lfAddFields.currentLocation} onChange={e=>setLfAddFields(p=>({...p,currentLocation:e.target.value}))} ph="Leave blank if still with finder"/>
+          <Fld label="Found By" value={lfAddFields.foundBy} onChange={e=>setLfAddFields(p=>({...p,foundBy:e.target.value}))} ph="Staff name"/>
+          <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:"#94a3b8",cursor:"pointer"}}>
+            <input type="checkbox" checked={lfAddFields.atFestOffice} onChange={e=>setLfAddFields(p=>({...p,atFestOffice:e.target.checked}))} style={{width:"auto"}}/>
+            Already at Fest Office
+          </label>
+          {lfAddError&&<div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#fca5a5",lineHeight:1.5}}>{"⚠️ "+lfAddError}</div>}
+          {lfAddDone&&<div style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#4ade80",fontWeight:700}}>{lfAddDone}</div>}
+          <button style={{padding:"14px",borderRadius:12,border:"none",background:(!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#fb923c,#ea580c)",color:(!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"#475569":"#fff",fontSize:15,fontWeight:900,cursor:(!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"not-allowed":"pointer"}}
+            disabled={!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending}
+            onClick={async()=>{
+              setLfAddSending(true);setLfAddError(null);setLfAddDone(null);
+              try{
+                const r=await fetch("/.netlify/functions/submit-lost-found",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+                  description:lfAddFields.description.trim(),
+                  foundAt:lfAddFields.foundAt.trim(),
+                  currentLocation:lfAddFields.currentLocation.trim()||lfAddFields.foundAt.trim(),
+                  dayFound:lfAddFields.dayFound||"Unknown",
+                  foundBy:lfAddFields.foundBy.trim()||"Admin",
+                  role:role,
+                  atFestOffice:lfAddFields.atFestOffice?"Yes":"No",
+                })});
+                const d=await r.json();
+                if(d.success){
+                  setLfAddDone(`✅ Logged as ${d.itemNumber}`);
+                  await fetchLFItems();
+                  setTimeout(()=>setLfAddOpen(false),1400);
+                } else {
+                  setLfAddError((d.airtableError?"Airtable rejected the save — check that the FoundAt/DayFound columns are text fields, not Date. ":"")+"Tag "+(d.itemNumber||"???")+" was generated but NOT saved. "+(d.error||d.airtableError||""));
+                }
+              }catch(e){
+                setLfAddError("Network error: "+e.message);
+              }
+              setLfAddSending(false);
+            }}>
+            {lfAddSending?"Saving...":"Save Item"}
+          </button>
+        </div>
+      </div>}
 
       {/* STATS ROW */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,padding:"12px 14px"}}>

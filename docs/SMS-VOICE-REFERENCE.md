@@ -116,7 +116,8 @@ Notes:
 **Severe Weather (NWS auto-alert):** "Urgent weather alert for Fête de Marquette. A [event type] has been issued for Dane County, Wisconsin. McPike Park may be affected. Please take immediate action for the safety of all festival attendees and staff. Use the broadcast system to notify all workers immediately."
 
 **MPD Dispatch:**
-> Lost child: "Missing child. Location: [location]. [situation]. Please be on alert and report any sightings to the festival office immediately."
+> Lost child (from Missing Child form — full detail): "Missing child. Location: [last seen]. Description: Age [age], [gender], [hair], [clothing]. Last seen: [location] at [time]. Meet at: [assembly point]. Guardian: [name] [phone]."
+> Lost child (from call-queue acknowledgment — name stripped, less structured): "Missing child. Location: [location]. [situation]. Please be on alert and report any sightings to the festival office immediately."
 > Security: "MPD, you are requested to respond immediately to [location] for [situation]. This is requested by [Admin/requester]. Please respond text with ACK."
 
 ---

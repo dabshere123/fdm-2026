@@ -97,6 +97,30 @@ Notes:
 
 ---
 
+## 8. Actual Voice Message Wording
+
+**Medical / Walk-In:** "Medical alert at Fete de Marquette. [problem]. Location: [location]. Please respond immediately."
+
+**Fire / Life Safety:** "Life safety alert at Fete de Marquette. [problem]. Location: [location]. Please respond immediately."
+
+**Security:** "Security alert at Fete de Marquette. [problem]. Location: [location]. Please respond."
+
+**Lost Child** (Missing report, ack, Found report — child's name is deliberately left out of voice, unlike SMS, since it's read aloud over an open phone line):
+> "Missing child. Location: [last seen]. Description: Age [age], [gender], [hair], [clothing]. Last seen: [location] at [time]. Meet at: [assembly point]. Guardian: [name] [phone]."
+
+**Broadcast Alert** (any group/location): "Fete de Marquette announcement. [your message text]"
+
+**911 Activation** — same single template everywhere, regardless of which of the app's several "Activate 911" buttons triggered it:
+> "911 has been activated at Fête de Marquette by [role]. Location: [location]. Meet EMS at [location]. EMS is now inbound to McPike Park."
+
+**Severe Weather (NWS auto-alert):** "Urgent weather alert for Fête de Marquette. A [event type] has been issued for Dane County, Wisconsin. McPike Park may be affected. Please take immediate action for the safety of all festival attendees and staff. Use the broadcast system to notify all workers immediately."
+
+**MPD Dispatch:**
+> Lost child: "Missing child. Location: [location]. [situation]. Please be on alert and report any sightings to the festival office immediately."
+> Security: "MPD, you are requested to respond immediately to [location] for [situation]. This is requested by [Admin/requester]. Please respond text with ACK."
+
+---
+
 ## Notes on reliability
 - All of the above now format phone numbers to `+1XXXXXXXXXX` before sending and dedupe on the *formatted* number, so the same person won't get double-texted even if their number is stored inconsistently in Airtable.
 - Supplies and Maintenance are intentionally SMS-only (lower priority than safety alerts) — not a bug.

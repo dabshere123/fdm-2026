@@ -7373,7 +7373,7 @@ Reply YES to acknowledge.`
     key: o.id,
     style: {
       background: "rgba(255,255,255,0.04)",
-      border: `1px solid ${o.status === "ON" ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.08)"}`,
+      border: `1px solid ${o.status === "On" ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.08)"}`,
       borderRadius: 12,
       padding: "14px",
       display: "flex",
@@ -7424,15 +7424,15 @@ Reply YES to acknowledge.`
     style: {
       padding: "8px 14px",
       borderRadius: 10,
-      border: `1px solid ${o.status === "ON" ? "rgba(34,197,94,0.5)" : "rgba(255,255,255,0.15)"}`,
-      background: o.status === "ON" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
-      color: o.status === "ON" ? "#4ade80" : "#64748b",
+      border: `1px solid ${o.status === "On" ? "rgba(34,197,94,0.5)" : "rgba(255,255,255,0.15)"}`,
+      background: o.status === "On" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
+      color: o.status === "On" ? "#4ade80" : "#64748b",
       fontSize: 12,
       fontWeight: 800,
       cursor: "pointer"
     },
     onClick: async () => {
-      const newStatus = o.status === "ON" ? "OFF" : "ON";
+      const newStatus = o.status === "On" ? "Off" : "On";
       await fetch("/.netlify/functions/update-mpd-status", {
         method: "POST",
         headers: {
@@ -7445,7 +7445,7 @@ Reply YES to acknowledge.`
       });
       fetchMPD();
     }
-  }, o.status === "ON" ? "🟢 Online" : "⚫ Offline")), mpdEditingSchedId === o.id && /*#__PURE__*/React.createElement("div", {
+  }, o.status === "On" ? "🟢 Online" : "⚫ Offline")), mpdEditingSchedId === o.id && /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: "1px solid rgba(255,255,255,0.08)",
       paddingTop: 10,
@@ -7624,15 +7624,15 @@ Reply YES to acknowledge.`
     style: {
       color: "#93c5fd"
     }
-  }, "Airtable \u2014 MPDOfficers table fields:"), /*#__PURE__*/React.createElement("br", null), "\u2022 Name, Phone, Badge, LastAck", /*#__PURE__*/React.createElement("br", null), "\u2022 MPDStatus: ", /*#__PURE__*/React.createElement("strong", {
+  }, "Airtable \u2014 MPDOfficers table fields:"), /*#__PURE__*/React.createElement("br", null), "\u2022 Name, PhoneNumber, LastAck", /*#__PURE__*/React.createElement("br", null), "\u2022 MPDStatus (single select): ", /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#4ade80"
     }
-  }, "ON"), " (working) / ", /*#__PURE__*/React.createElement("strong", {
+  }, "On"), " (working) / ", /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#64748b"
     }
-  }, "OFF"), " (not working \u2014 auto-set at shift end)", /*#__PURE__*/React.createElement("br", null), "\u2022 ThuStart\u2013SunEnd (same time format as staff)", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
+  }, "Off"), " (not working \u2014 auto-set at shift end)", /*#__PURE__*/React.createElement("br", null), "\u2022 ThuStart\u2013SunEnd (same time format as staff)", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("strong", {
     style: {
       color: "#93c5fd"
     }
@@ -7640,7 +7640,7 @@ Reply YES to acknowledge.`
     style: {
       color: "#f1f5f9"
     }
-  }, "\"ON\""), " \u2192 automation fires confirmation text", /*#__PURE__*/React.createElement("br", null), "Trigger: When record matches condition \u2192 MPDStatus = \"ON\"", /*#__PURE__*/React.createElement("br", null), "Webhook URL:", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+  }, "\"On\""), " \u2192 automation fires confirmation text", /*#__PURE__*/React.createElement("br", null), "Trigger: When record matches condition \u2192 MPDStatus = \"On\"", /*#__PURE__*/React.createElement("br", null), "Webhook URL:", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#f1f5f9",
       fontSize: 10,

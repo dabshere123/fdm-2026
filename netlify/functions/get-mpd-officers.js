@@ -15,7 +15,7 @@ exports.handler = async (event) => {
       id: r.id,
       name: r.fields.Name || '',
       phone: r.fields.PhoneNumber || '',
-      status: r.fields.MPDStatus || 'OFF',
+      status: r.fields.MPDStatus || 'Off',
       lastAck: r.fields.LastAck || '',
       sched: {
         ThuStart: r.fields.ThuStart || '', ThuEnd: r.fields.ThuEnd || '',

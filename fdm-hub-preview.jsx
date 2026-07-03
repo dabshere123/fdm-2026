@@ -2755,7 +2755,7 @@ Reply YES to acknowledge.`
             </div>
           )}
           {mpdOfficers.map(o=>(
-            <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div key={o.id} style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${o.status==="On"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 <div style={{flex:1}}>
                   <div style={{fontSize:15,fontWeight:800,color:"#f1f5f9"}}>{o.name}</div>
@@ -2765,11 +2765,11 @@ Reply YES to acknowledge.`
                   if(mpdEditingSchedId===o.id){setMpdEditingSchedId(null);}
                   else{setMpdEditSchedTimes(schedFieldsToTimes(o.sched||{}));setMpdEditingSchedId(o.id);}
                 }}>{mpdEditingSchedId===o.id?"Close":"📅 Schedule"}</button>
-                <button style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${o.status==="ON"?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:o.status==="ON"?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",color:o.status==="ON"?"#4ade80":"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
-                  const newStatus=o.status==="ON"?"OFF":"ON";
+                <button style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${o.status==="On"?"rgba(34,197,94,0.5)":"rgba(255,255,255,0.15)"}`,background:o.status==="On"?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",color:o.status==="On"?"#4ade80":"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
+                  const newStatus=o.status==="On"?"Off":"On";
                   await fetch("/.netlify/functions/update-mpd-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:newStatus})});
                   fetchMPD();
-                }}>{o.status==="ON"?"🟢 Online":"⚫ Offline"}</button>
+                }}>{o.status==="On"?"🟢 Online":"⚫ Offline"}</button>
               </div>
               {mpdEditingSchedId===o.id&&(
                 <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:10,display:"flex",flexDirection:"column",gap:10}}>
@@ -2818,12 +2818,12 @@ Reply YES to acknowledge.`
 
           <div style={{marginTop:8,background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"12px 14px",fontSize:12,color:"#94a3b8",lineHeight:1.7}}>
             <strong style={{color:"#93c5fd"}}>Airtable — MPDOfficers table fields:</strong><br/>
-            • Name, Phone, Badge, LastAck<br/>
-            • MPDStatus: <strong style={{color:"#4ade80"}}>ON</strong> (working) / <strong style={{color:"#64748b"}}>OFF</strong> (not working — auto-set at shift end)<br/>
+            • Name, PhoneNumber, LastAck<br/>
+            • MPDStatus (single select): <strong style={{color:"#4ade80"}}>On</strong> (working) / <strong style={{color:"#64748b"}}>Off</strong> (not working — auto-set at shift end)<br/>
             • ThuStart–SunEnd (same time format as staff)<br/><br/>
             <strong style={{color:"#93c5fd"}}>Adding via Airtable:</strong><br/>
-            Set MPDStatus to <strong style={{color:"#f1f5f9"}}>"ON"</strong> → automation fires confirmation text<br/>
-            Trigger: When record matches condition → MPDStatus = "ON"<br/>
+            Set MPDStatus to <strong style={{color:"#f1f5f9"}}>"On"</strong> → automation fires confirmation text<br/>
+            Trigger: When record matches condition → MPDStatus = "On"<br/>
             Webhook URL:<br/>
             <span style={{color:"#f1f5f9",fontSize:10,wordBreak:"break-all"}}>https://fdm2026.netlify.app/.netlify/functions/send-mpd-confirmation</span><br/>
             Body: {"{"}  "name": {"{{"}Name{"}}"}, "phone": {"{{"}Phone{"}}"} {"}"}<br/><br/>

@@ -30,7 +30,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ typecast: true, fields: {
         Name: name,
         PhoneNumber: phone,
-        MPDStatus: 'OFF',
+        MPDStatus: 'Off',
         LastAck: '',
         ...schedFields,
       }})

@@ -3797,7 +3797,7 @@ function HubApp({
       })} · ${tShort()}`;
       let msg = "";
       if (call.type === "medical" || call.type === "walk_in") {
-        msg = [`🩺 MEDICAL ALERT 🩺`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`, ``, `Reply ACK MED to acknowledge, then confirm on the two-way radio with your location.`].filter(Boolean).join("\n");
+        msg = [`🩺 MEDICAL ALERT 🩺`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Med roster (async so UI doesn't freeze)
         setTimeout(() => {
           const medPhones = getNotifyList(call.type === "walk_in" ? "walk_in" : "medical");
@@ -3806,7 +3806,7 @@ function HubApp({
           sendVoice(medPhonesFinal, `Medical alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
         }, 100);
       } else if (call.type === "fire") {
-        msg = [`🔥 LIFE SAFETY ALERT 🔥`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`, ``, `Reply ACK FIRE to acknowledge, then confirm on the two-way radio with your location.`].filter(Boolean).join("\n");
+        msg = [`🔥 LIFE SAFETY ALERT 🔥`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Med roster for fire (async)
         setTimeout(() => {
           const firePhones = getNotifyList("fire");
@@ -3815,7 +3815,7 @@ function HubApp({
           sendVoice(firePhonesFinal, `Life safety alert at Fete de Marquette. ${call.problem || ""}. Location: ${call.location}. Please respond immediately.`);
         }, 100);
       } else if (call.type === "security") {
-        msg = [`👮 SECURITY 👮`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`, ``, `Reply ACK SEC to acknowledge, then confirm on the two-way radio with your location.`].filter(Boolean).join("\n");
+        msg = [`👮 SECURITY 👮`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REPORTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Security roster (async)
         setTimeout(() => {
           const secPhones = getNotifyList("security");

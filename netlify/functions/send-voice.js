@@ -1,19 +1,17 @@
 // send-voice.js
-// Makes a Twilio voice call with a spoken message. Automatically redials if not
-// answered (no-answer / busy / failed) up to MAX_RETRIES times — see voice-status-callback.js
-// POST body: { to, message, retry }  (retry is internal — omit it on the first call)
+// Makes a Twilio voice call with a spoken message
+// POST body: { to, message }
 
 const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_FROM  = process.env.TWILIO_PHONE_NUMBER;
-const SITE_URL     = 'https://fdm2026.netlify.app';
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
   }
 
-  const { to, message, retry } = JSON.parse(event.body || '{}');
+  const { to, message } = JSON.parse(event.body || '{}');
 
   if (!to || !message) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing to or message' }) };
@@ -26,8 +24,6 @@ exports.handler = async (event) => {
   <Pause length="2"/>
   <Say voice="Polly.Matthew" language="en-US">${safe}</Say>
 </Response>`;
-
-  const statusCallback = `${SITE_URL}/.netlify/functions/voice-status-callback?to=${encodeURIComponent(to)}&retry=${retry||0}&msg=${encodeURIComponent(message)}`;
 
   try {
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64');
@@ -42,10 +38,7 @@ exports.handler = async (event) => {
         body: new URLSearchParams({
           To: to,
           From: TWILIO_FROM,
-          Twiml: twiml,
-          StatusCallback: statusCallback,
-          StatusCallbackEvent: 'completed',
-          StatusCallbackMethod: 'POST',
+          Twiml: twiml
         }).toString()
       }
     );

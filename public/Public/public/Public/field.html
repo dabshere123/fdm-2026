@@ -4292,7 +4292,19 @@ function HomeView({
 
 // ── MAIN ─────────────────────────────────────────────────────
 function FieldApp() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("fdm-field-user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    try {
+      if (user) localStorage.setItem("fdm-field-user", JSON.stringify(user));else localStorage.removeItem("fdm-field-user");
+    } catch {}
+  }, [user]);
   if (!user) return /*#__PURE__*/React.createElement(LoginView, {
     onLogin: setUser
   });

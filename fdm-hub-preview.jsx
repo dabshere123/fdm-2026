@@ -1018,9 +1018,19 @@ function HubApp({onBack}){
       const r=p.get("role");
       if(r==="med1") return "Med 1";
       if(r==="med2") return "Med 2";
+      try{
+        const saved=localStorage.getItem("fdm-hub-role");
+        if(saved) return saved;
+      }catch{}
     }
     return null;
   });
+  useEffect(()=>{
+    try{
+      if(role) localStorage.setItem("fdm-hub-role",role);
+      else localStorage.removeItem("fdm-hub-role");
+    }catch{}
+  },[role]);
   const [view,setView]=useState("home");
   const [canInstall,setCanInstall]=useState(!!window.fdmDeferredInstallPrompt);
   const [installed,setInstalled]=useState(!!window.fdmAlreadyInstalled);

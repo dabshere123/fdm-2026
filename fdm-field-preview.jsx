@@ -1531,7 +1531,18 @@ function HomeView({user,onLogout}){
 
 // ── MAIN ─────────────────────────────────────────────────────
 function FieldApp(){
-  const [user,setUser]=useState(null);
+  const [user,setUser]=useState(()=>{
+    try{
+      const saved=localStorage.getItem("fdm-field-user");
+      return saved?JSON.parse(saved):null;
+    }catch{return null;}
+  });
+  useEffect(()=>{
+    try{
+      if(user) localStorage.setItem("fdm-field-user",JSON.stringify(user));
+      else localStorage.removeItem("fdm-field-user");
+    }catch{}
+  },[user]);
   if(!user) return <LoginView onLogin={setUser}/>;
   const r=(user.role||'').toLowerCase();
   if(r.includes('overnight')) return <OvernightView user={user} onLogout={()=>setUser(null)}/>;

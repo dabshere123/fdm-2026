@@ -20,9 +20,16 @@ var useState = React.useState,
 
 // ── EQUIPMENT DATA ─────────────────────────────────────────────────────────────
 var LOCATIONS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Kids/Family Fete", "Prize Wheel", "Cabaret Stage", "Lafayette Stage", "Lagniappe Stage", "Moon Stage", "First Aid 1", "First Aid 2", "Medical Tent", "Devin", "Marketing", "MPD 1", "MPD 2", "MPD 3", "MPD 4", "Extra 1", "Extra 2", "Extra 3"];
-var READER_LOCATIONS = ["Sun Left", "Sun Right", "Cabaret", "Lafayette", "Lagniappe", "Moon Stage 1", "Moon Stage 2", "Kids/Family Fete", "Prize Wheel"];
+var BAR_LOCATIONS = ["Cabaret Bar", "Sun Left Bar", "Sun Right Bar", "Lagniappe Bar", "Lafayette Bar", "Moon Bar", "Family Bar", "Everything Else Cafe"];
+var STAGE_LOCATIONS = ["Cabaret Stage", "Sun Stage", "Lafayette Stage", "Lagniappe Stage", "Moon Stage", "Family Stage"];
 
-// 25 radios — serial numbers filled in by admin
+// Radios go to all 8 bars + 6 stages + Prize Wheel = 15 named spots, rest are spares
+var RADIO_LOCATIONS = [...BAR_LOCATIONS, ...STAGE_LOCATIONS, "Prize Wheel"];
+
+// Readers go to bars only, NOT Lagniappe, plus Prize Wheel = 8 spots
+var READER_LOCATIONS = [...BAR_LOCATIONS.filter(b => b !== "Lagniappe Bar"), "Prize Wheel"];
+
+// 25 radios — first 15 pre-assigned to bars/stages/prize wheel, rest are spares
 var INIT_RADIOS = Array.from({
   length: 25
 }, (_, i) => ({
@@ -30,9 +37,8 @@ var INIT_RADIOS = Array.from({
   num: i + 1,
   label: `Radio ${i + 1}`,
   serial: "",
-  location: i < 9 ? READER_LOCATIONS[i] : LOCATIONS[i] || `Extra ${i - 21}`,
-  paired: i < 9,
-  // radios 1-9 paired with readers
+  location: i < RADIO_LOCATIONS.length ? RADIO_LOCATIONS[i] : `Spare ${i - RADIO_LOCATIONS.length + 1}`,
+  paired: false,
   status: "available",
   // available | out | returned
   checkedOutBy: "",
@@ -41,6 +47,8 @@ var INIT_RADIOS = Array.from({
   checkedInAt: null,
   notes: ""
 }));
+
+// 22 readers — not assigned yet, admin will assign to the 8 reader locations this week
 var INIT_READERS = Array.from({
   length: 22
 }, (_, i) => ({
@@ -157,6 +165,19 @@ function Badge({
 }
 function EquipmentTracker() {
   const saved = load();
+  const migratedRadios = (() => {
+    const existing = saved === null || saved === void 0 ? void 0 : saved.radios;
+    if (!existing) return INIT_RADIOS;
+    const validNames = new Set(RADIO_LOCATIONS);
+    return existing.map((r, i) => {
+      var _INIT_RADIOS$i;
+      const isValid = validNames.has(r.location) || /^Spare \d+$/.test(r.location || "");
+      return isValid ? r : {
+        ...r,
+        location: ((_INIT_RADIOS$i = INIT_RADIOS[i]) === null || _INIT_RADIOS$i === void 0 ? void 0 : _INIT_RADIOS$i.location) || r.location
+      };
+    });
+  })();
   const migratedReaders = (() => {
     const existing = (saved === null || saved === void 0 ? void 0 : saved.readers) || [];
     if (existing.length >= 22) return existing;
@@ -164,7 +185,7 @@ function EquipmentTracker() {
     const extra = INIT_READERS.slice(existing.length);
     return [...existing, ...extra];
   })();
-  const [radios, setRadios] = useState((saved === null || saved === void 0 ? void 0 : saved.radios) || INIT_RADIOS);
+  const [radios, setRadios] = useState(migratedRadios);
   const [readers, setReaders] = useState(migratedReaders);
   const [tab, setTab] = useState("overview"); // overview | radios | readers | admin | notifications
   const [adminUnlocked, setAdminUnlocked] = useState(false);
@@ -1082,7 +1103,7 @@ function EquipmentTracker() {
         color: "#64748b",
         padding: "0 4px 8px"
       }
-    }, "\uD83D\uDCFB Radios (25)"), radios.map(r => /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCFB Radios (25) \u2014 bars, stages, prize wheel + spares"), radios.map(r => /*#__PURE__*/React.createElement("div", {
       key: r.id,
       style: {
         display: "flex",
@@ -1099,34 +1120,25 @@ function EquipmentTracker() {
         color: "#f1f5f9",
         minWidth: 70
       }
-    }, r.label), /*#__PURE__*/React.createElement("input", {
+    }, r.label), /*#__PURE__*/React.createElement("select", {
       style: {
         ...S.inp,
-        width: 110,
+        width: 150,
         fontSize: 12,
         padding: "6px 8px"
       },
-      placeholder: "Location",
-      value: editLocation[r.id] !== undefined ? editLocation[r.id] : r.location,
-      onChange: e => setEditLocation(p => ({
-        ...p,
-        [r.id]: e.target.value
-      })),
-      onBlur: () => {
-        if (editLocation[r.id] !== undefined) {
-          updateRadio(r.id, {
-            location: editLocation[r.id]
-          });
-          setEditLocation(p => {
-            const n = {
-              ...p
-            };
-            delete n[r.id];
-            return n;
-          });
-        }
-      }
-    }), /*#__PURE__*/React.createElement("input", {
+      value: r.location,
+      onChange: e => updateRadio(r.id, {
+        location: e.target.value
+      })
+    }, /*#__PURE__*/React.createElement("option", {
+      value: ""
+    }, "\u2014 Spare / Unassigned \u2014"), RADIO_LOCATIONS.map(loc => /*#__PURE__*/React.createElement("option", {
+      key: loc,
+      value: loc
+    }, loc)), !RADIO_LOCATIONS.includes(r.location) && r.location && /*#__PURE__*/React.createElement("option", {
+      value: r.location
+    }, r.location)), /*#__PURE__*/React.createElement("input", {
       style: {
         ...S.inp,
         width: 100,
@@ -1159,7 +1171,7 @@ function EquipmentTracker() {
         color: "#64748b",
         padding: "12px 4px 8px"
       }
-    }, "\uD83D\uDCB3 Readers (22) \u2014 assign locations here"), readers.map(r => /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCB3 Readers (22) \u2014 bars (no Lagniappe) + prize wheel \u2014 assign here"), readers.map(r => /*#__PURE__*/React.createElement("div", {
       key: r.id,
       style: {
         display: "flex",
@@ -1176,35 +1188,24 @@ function EquipmentTracker() {
         color: "#f1f5f9",
         minWidth: 70
       }
-    }, r.label), /*#__PURE__*/React.createElement("input", {
+    }, r.label), /*#__PURE__*/React.createElement("select", {
       style: {
         ...S.inp,
-        width: 110,
+        width: 150,
         fontSize: 12,
         padding: "6px 8px",
         border: !r.location ? "1px solid rgba(245,158,11,0.5)" : S.inp.border
       },
-      placeholder: "Location \u2014 not set",
-      value: editLocation[r.id] !== undefined ? editLocation[r.id] : r.location,
-      onChange: e => setEditLocation(p => ({
-        ...p,
-        [r.id]: e.target.value
-      })),
-      onBlur: () => {
-        if (editLocation[r.id] !== undefined) {
-          updateReader(r.id, {
-            location: editLocation[r.id]
-          });
-          setEditLocation(p => {
-            const n = {
-              ...p
-            };
-            delete n[r.id];
-            return n;
-          });
-        }
-      }
-    }), /*#__PURE__*/React.createElement("input", {
+      value: r.location,
+      onChange: e => updateReader(r.id, {
+        location: e.target.value
+      })
+    }, /*#__PURE__*/React.createElement("option", {
+      value: ""
+    }, "\u26A0\uFE0F Not assigned yet"), READER_LOCATIONS.map(loc => /*#__PURE__*/React.createElement("option", {
+      key: loc,
+      value: loc
+    }, loc))), /*#__PURE__*/React.createElement("input", {
       style: {
         ...S.inp,
         width: 100,

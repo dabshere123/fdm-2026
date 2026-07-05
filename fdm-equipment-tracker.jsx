@@ -10,25 +10,37 @@ const LOCATIONS = [
   "Extra 1","Extra 2","Extra 3"
 ];
 
-const READER_LOCATIONS = [
-  "Sun Left","Sun Right","Cabaret","Lafayette","Lagniappe",
-  "Moon Stage 1","Moon Stage 2","Kids/Family Fete","Prize Wheel"
+const BAR_LOCATIONS = [
+  "Cabaret Bar","Sun Left Bar","Sun Right Bar","Lagniappe Bar",
+  "Lafayette Bar","Moon Bar","Family Bar","Everything Else Cafe"
 ];
 
-// 25 radios — serial numbers filled in by admin
+const STAGE_LOCATIONS = [
+  "Cabaret Stage","Sun Stage","Lafayette Stage",
+  "Lagniappe Stage","Moon Stage","Family Stage"
+];
+
+// Radios go to all 8 bars + 6 stages + Prize Wheel = 15 named spots, rest are spares
+const RADIO_LOCATIONS = [...BAR_LOCATIONS, ...STAGE_LOCATIONS, "Prize Wheel"];
+
+// Readers go to bars only, NOT Lagniappe, plus Prize Wheel = 8 spots
+const READER_LOCATIONS = [...BAR_LOCATIONS.filter(b=>b!=="Lagniappe Bar"), "Prize Wheel"];
+
+// 25 radios — first 15 pre-assigned to bars/stages/prize wheel, rest are spares
 const INIT_RADIOS = Array.from({length:25},(_,i)=>({
   id:`R${String(i+1).padStart(2,"0")}`,
   num:i+1,
   label:`Radio ${i+1}`,
   serial:"",
-  location: i<9 ? READER_LOCATIONS[i] : LOCATIONS[i] || `Extra ${i-21}`,
-  paired: i<9, // radios 1-9 paired with readers
+  location: i<RADIO_LOCATIONS.length ? RADIO_LOCATIONS[i] : `Spare ${i-RADIO_LOCATIONS.length+1}`,
+  paired: false,
   status:"available", // available | out | returned
   checkedOutBy:"",checkedOutAt:null,
   checkedInBy:"",checkedInAt:null,
   notes:"",
 }));
 
+// 22 readers — not assigned yet, admin will assign to the 8 reader locations this week
 const INIT_READERS = Array.from({length:22},(_,i)=>({
   id:`CR${String(i+1).padStart(2,"0")}`,
   num:i+1,
@@ -71,6 +83,15 @@ function Badge({status}){
 
 export default function EquipmentTracker(){
   const saved = load();
+  const migratedRadios = (() => {
+    const existing = saved?.radios;
+    if (!existing) return INIT_RADIOS;
+    const validNames = new Set(RADIO_LOCATIONS);
+    return existing.map((r,i) => {
+      const isValid = validNames.has(r.location) || /^Spare \d+$/.test(r.location||"");
+      return isValid ? r : { ...r, location: INIT_RADIOS[i]?.location || r.location };
+    });
+  })();
   const migratedReaders = (() => {
     const existing = saved?.readers || [];
     if (existing.length >= 22) return existing;
@@ -78,7 +99,7 @@ export default function EquipmentTracker(){
     const extra = INIT_READERS.slice(existing.length);
     return [...existing, ...extra];
   })();
-  const [radios,setRadios] = useState(saved?.radios||INIT_RADIOS);
+  const [radios,setRadios] = useState(migratedRadios);
   const [readers,setReaders] = useState(migratedReaders);
   const [tab,setTab] = useState("overview"); // overview | radios | readers | admin | notifications
   const [adminUnlocked,setAdminUnlocked] = useState(false);
@@ -353,22 +374,27 @@ export default function EquipmentTracker(){
             <div style={{...S.card,border:"1px solid rgba(245,158,11,0.3)"}}>
               <div style={{background:"rgba(245,158,11,0.12)",padding:"10px 14px",fontSize:13,fontWeight:900,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.06em"}}>📟 Serial # &amp; Location</div>
               <div style={{padding:"10px",display:"flex",flexDirection:"column",gap:0}}>
-                <div style={{fontSize:11,color:"#64748b",padding:"0 4px 8px"}}>📻 Radios (25)</div>
+                <div style={{fontSize:11,color:"#64748b",padding:"0 4px 8px"}}>📻 Radios (25) — bars, stages, prize wheel + spares</div>
                 {radios.map(r=>(
                   <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)",flexWrap:"wrap"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",minWidth:70}}>{r.label}</div>
-                    <input style={{...S.inp,width:110,fontSize:12,padding:"6px 8px"}} placeholder="Location" value={editLocation[r.id]!==undefined?editLocation[r.id]:r.location} onChange={e=>setEditLocation(p=>({...p,[r.id]:e.target.value}))}
-                      onBlur={()=>{if(editLocation[r.id]!==undefined){updateRadio(r.id,{location:editLocation[r.id]});setEditLocation(p=>{const n={...p};delete n[r.id];return n;});}}}/>
+                    <select style={{...S.inp,width:150,fontSize:12,padding:"6px 8px"}} value={r.location} onChange={e=>updateRadio(r.id,{location:e.target.value})}>
+                      <option value="">— Spare / Unassigned —</option>
+                      {RADIO_LOCATIONS.map(loc=><option key={loc} value={loc}>{loc}</option>)}
+                      {!RADIO_LOCATIONS.includes(r.location)&&r.location&&<option value={r.location}>{r.location}</option>}
+                    </select>
                     <input style={{...S.inp,width:100,fontSize:12,padding:"6px 8px"}} placeholder="Serial #" value={editSerial[r.id]!==undefined?editSerial[r.id]:r.serial} onChange={e=>setEditSerial(p=>({...p,[r.id]:e.target.value}))}
                       onBlur={()=>{if(editSerial[r.id]!==undefined){updateRadio(r.id,{serial:editSerial[r.id]});setEditSerial(p=>{const n={...p};delete n[r.id];return n;});}}}/>
                   </div>
                 ))}
-                <div style={{fontSize:11,color:"#64748b",padding:"12px 4px 8px"}}>💳 Readers (22) — assign locations here</div>
+                <div style={{fontSize:11,color:"#64748b",padding:"12px 4px 8px"}}>💳 Readers (22) — bars (no Lagniappe) + prize wheel — assign here</div>
                 {readers.map(r=>(
                   <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)",flexWrap:"wrap"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",minWidth:70}}>{r.label}</div>
-                    <input style={{...S.inp,width:110,fontSize:12,padding:"6px 8px",border:!r.location?"1px solid rgba(245,158,11,0.5)":S.inp.border}} placeholder="Location — not set" value={editLocation[r.id]!==undefined?editLocation[r.id]:r.location} onChange={e=>setEditLocation(p=>({...p,[r.id]:e.target.value}))}
-                      onBlur={()=>{if(editLocation[r.id]!==undefined){updateReader(r.id,{location:editLocation[r.id]});setEditLocation(p=>{const n={...p};delete n[r.id];return n;});}}}/>
+                    <select style={{...S.inp,width:150,fontSize:12,padding:"6px 8px",border:!r.location?"1px solid rgba(245,158,11,0.5)":S.inp.border}} value={r.location} onChange={e=>updateReader(r.id,{location:e.target.value})}>
+                      <option value="">⚠️ Not assigned yet</option>
+                      {READER_LOCATIONS.map(loc=><option key={loc} value={loc}>{loc}</option>)}
+                    </select>
                     <input style={{...S.inp,width:100,fontSize:12,padding:"6px 8px"}} placeholder="Serial #" value={editSerial[r.id]!==undefined?editSerial[r.id]:r.serial} onChange={e=>setEditSerial(p=>({...p,[r.id]:e.target.value}))}
                       onBlur={()=>{if(editSerial[r.id]!==undefined){updateReader(r.id,{serial:editSerial[r.id]});setEditSerial(p=>{const n={...p};delete n[r.id];return n;});}}}/>
                   </div>

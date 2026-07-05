@@ -12,7 +12,7 @@ exports.handler = async (event) => {
     const body = Object.fromEntries(new URLSearchParams(event.body || '').entries());
     const fromPhone = (body.From || '').replace(/[^0-9]/g, '').slice(-10);
     const msgBody  = (body.Body || '').trim().toUpperCase();
-    const WEATHER_ACK_KEYWORDS = ['ACK WA', 'AWA', 'ACK WEATHER', 'ACK WEATHER ALERT'];
+    const WEATHER_ACK_KEYWORDS = ['AWA', 'ACK WA', 'ACK WEATHER', 'ACK WEATHER ALERT'];
     const isWeatherAck = WEATHER_ACK_KEYWORDS.includes(msgBody);
 
     if (msgBody !== 'ACK' && !isWeatherAck) {

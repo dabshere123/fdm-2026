@@ -29,12 +29,12 @@ const INIT_RADIOS = Array.from({length:25},(_,i)=>({
   notes:"",
 }));
 
-const INIT_READERS = Array.from({length:9},(_,i)=>({
+const INIT_READERS = Array.from({length:22},(_,i)=>({
   id:`CR${String(i+1).padStart(2,"0")}`,
   num:i+1,
   label:`Reader ${i+1}`,
   serial:"",
-  location: READER_LOCATIONS[i],
+  location: "", // not assigned yet — will be set by admin this week
   status:"available",
   checkedOutBy:"",checkedOutAt:null,
   checkedInBy:"",checkedInAt:null,
@@ -71,8 +71,15 @@ function Badge({status}){
 
 export default function EquipmentTracker(){
   const saved = load();
+  const migratedReaders = (() => {
+    const existing = saved?.readers || [];
+    if (existing.length >= 22) return existing;
+    // Upgrade from an older 9 (or fewer) reader save without losing existing check-out data
+    const extra = INIT_READERS.slice(existing.length);
+    return [...existing, ...extra];
+  })();
   const [radios,setRadios] = useState(saved?.radios||INIT_RADIOS);
-  const [readers,setReaders] = useState(saved?.readers||INIT_READERS);
+  const [readers,setReaders] = useState(migratedReaders);
   const [tab,setTab] = useState("overview"); // overview | radios | readers | admin | notifications
   const [adminUnlocked,setAdminUnlocked] = useState(false);
   const [pinInput,setPinInput] = useState("");
@@ -85,6 +92,7 @@ export default function EquipmentTracker(){
   const [itemNotes,setItemNotes] = useState("");
   const [adminSearch,setAdminSearch] = useState("");
   const [editSerial,setEditSerial] = useState({}); // {id: serial}
+  const [editLocation,setEditLocation] = useState({}); // {id: location}
   const [log,setLog] = useState(saved?.log||[]);
   const [notifSettings,setNotifSettings] = useState(saved?.notifSettings||{
     preEventTime:"09:00",
@@ -167,7 +175,7 @@ export default function EquipmentTracker(){
           <div style={{padding:"20px 16px",display:"flex",flexDirection:"column",gap:14}}>
             <div style={{...S.card,padding:14}}>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,fontSize:13}}>
-                <div><div style={{color:"#64748b",fontSize:11,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Location</div><div style={{color:"#f1f5f9",fontWeight:700}}>{selItem.location}</div></div>
+                <div><div style={{color:"#64748b",fontSize:11,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Location</div><div style={{color:selItem.location?"#f1f5f9":"#fbbf24",fontWeight:700}}>{selItem.location||"⚠️ Not assigned yet"}</div></div>
                 <div><div style={{color:"#64748b",fontSize:11,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Serial #</div><div style={{color:"#f1f5f9",fontWeight:700}}>{selItem.serial||"—"}</div></div>
                 {selItem.checkedOutBy&&<div><div style={{color:"#64748b",fontSize:11,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Checked Out By</div><div style={{color:"#fbbf24",fontWeight:700}}>{selItem.checkedOutBy}</div></div>}
                 {selItem.checkedOutAt&&<div><div style={{color:"#64748b",fontSize:11,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>At</div><div style={{color:"#f1f5f9"}}>{selItem.checkedOutAt}</div></div>}
@@ -341,23 +349,27 @@ export default function EquipmentTracker(){
           </div>
           <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:12}}>
 
-            {/* Serial Number Entry */}
+            {/* Serial Numbers + Locations */}
             <div style={{...S.card,border:"1px solid rgba(245,158,11,0.3)"}}>
-              <div style={{background:"rgba(245,158,11,0.12)",padding:"10px 14px",fontSize:13,fontWeight:900,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.06em"}}>📟 Serial Numbers</div>
+              <div style={{background:"rgba(245,158,11,0.12)",padding:"10px 14px",fontSize:13,fontWeight:900,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.06em"}}>📟 Serial # &amp; Location</div>
               <div style={{padding:"10px",display:"flex",flexDirection:"column",gap:0}}>
+                <div style={{fontSize:11,color:"#64748b",padding:"0 4px 8px"}}>📻 Radios (25)</div>
                 {radios.map(r=>(
-                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)",flexWrap:"wrap"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",minWidth:70}}>{r.label}</div>
-                    <div style={{fontSize:11,color:"#64748b",flex:1}}>{r.location}</div>
-                    <input style={{...S.inp,width:130,fontSize:13,padding:"6px 10px"}} placeholder="Serial #" value={editSerial[r.id]!==undefined?editSerial[r.id]:r.serial} onChange={e=>setEditSerial(p=>({...p,[r.id]:e.target.value}))}
+                    <input style={{...S.inp,width:110,fontSize:12,padding:"6px 8px"}} placeholder="Location" value={editLocation[r.id]!==undefined?editLocation[r.id]:r.location} onChange={e=>setEditLocation(p=>({...p,[r.id]:e.target.value}))}
+                      onBlur={()=>{if(editLocation[r.id]!==undefined){updateRadio(r.id,{location:editLocation[r.id]});setEditLocation(p=>{const n={...p};delete n[r.id];return n;});}}}/>
+                    <input style={{...S.inp,width:100,fontSize:12,padding:"6px 8px"}} placeholder="Serial #" value={editSerial[r.id]!==undefined?editSerial[r.id]:r.serial} onChange={e=>setEditSerial(p=>({...p,[r.id]:e.target.value}))}
                       onBlur={()=>{if(editSerial[r.id]!==undefined){updateRadio(r.id,{serial:editSerial[r.id]});setEditSerial(p=>{const n={...p};delete n[r.id];return n;});}}}/>
                   </div>
                 ))}
+                <div style={{fontSize:11,color:"#64748b",padding:"12px 4px 8px"}}>💳 Readers (22) — assign locations here</div>
                 {readers.map(r=>(
-                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)",flexWrap:"wrap"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",minWidth:70}}>{r.label}</div>
-                    <div style={{fontSize:11,color:"#64748b",flex:1}}>{r.location}</div>
-                    <input style={{...S.inp,width:130,fontSize:13,padding:"6px 10px"}} placeholder="Serial #" value={editSerial[r.id]!==undefined?editSerial[r.id]:r.serial} onChange={e=>setEditSerial(p=>({...p,[r.id]:e.target.value}))}
+                    <input style={{...S.inp,width:110,fontSize:12,padding:"6px 8px",border:!r.location?"1px solid rgba(245,158,11,0.5)":S.inp.border}} placeholder="Location — not set" value={editLocation[r.id]!==undefined?editLocation[r.id]:r.location} onChange={e=>setEditLocation(p=>({...p,[r.id]:e.target.value}))}
+                      onBlur={()=>{if(editLocation[r.id]!==undefined){updateReader(r.id,{location:editLocation[r.id]});setEditLocation(p=>{const n={...p};delete n[r.id];return n;});}}}/>
+                    <input style={{...S.inp,width:100,fontSize:12,padding:"6px 8px"}} placeholder="Serial #" value={editSerial[r.id]!==undefined?editSerial[r.id]:r.serial} onChange={e=>setEditSerial(p=>({...p,[r.id]:e.target.value}))}
                       onBlur={()=>{if(editSerial[r.id]!==undefined){updateReader(r.id,{serial:editSerial[r.id]});setEditSerial(p=>{const n={...p};delete n[r.id];return n;});}}}/>
                   </div>
                 ))}
@@ -429,7 +441,7 @@ export default function EquipmentTracker(){
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:14,fontWeight:800,color:"#f1f5f9"}}>{i.label} {i.serial&&<span style={{fontSize:11,color:"#64748b",fontWeight:400}}>#{i.serial}</span>}</div>
-                  <div style={{fontSize:12,color:"#64748b"}}>{i.location}</div>
+                  <div style={{fontSize:12,color:i.location?"#64748b":"#fbbf24"}}>{i.location||"⚠️ Not assigned yet"}</div>
                   {i.status==="out"&&<div style={{fontSize:12,color:"#fbbf24",marginTop:2}}>→ {i.checkedOutBy} · {i.checkedOutAt}</div>}
                   {i.status==="returned"&&<div style={{fontSize:12,color:"#a5b4fc",marginTop:2}}>Returned by {i.checkedInBy} · {i.checkedInAt}</div>}
                 </div>

@@ -177,8 +177,7 @@ exports.handler = async (event) => {
         ``,
         `Generated: ${new Date().toLocaleString()} by ${data.respondingUnit || 'Operations'}`,
         `fdm2026.netlify.app/hub`,
-      ].join('
-');
+      ].join('\n');
 
       await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`, {
         method: 'POST',
@@ -196,8 +195,7 @@ exports.handler = async (event) => {
           '',
           docBody,
           '--boundary--'
-        ].join('
-')
+        ].join('\n')
       });
       console.log('Google Doc created:', docTitle);
     } catch(e) { console.log('Google Doc error:', e.message); }

@@ -1623,6 +1623,8 @@ function HubApp({onBack}){
           call.details?`DESCRIPTION: ${call.details}`:"",
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
+          ``,
+          `Reply ACK MED to acknowledge, then confirm on the two-way radio with your location.`,
         ].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Med roster (async so UI doesn't freeze)
         setTimeout(()=>{
@@ -1640,6 +1642,8 @@ function HubApp({onBack}){
           call.details?`DESCRIPTION: ${call.details}`:"",
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
+          ``,
+          `Reply ACK FIRE to acknowledge, then confirm on the two-way radio with your location.`,
         ].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Med roster for fire (async)
         setTimeout(()=>{
@@ -1657,6 +1661,8 @@ function HubApp({onBack}){
           call.details?`DESCRIPTION: ${call.details}`:"",
           `REPORTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
+          ``,
+          `Reply ACK SEC to acknowledge, then confirm on the two-way radio with your location.`,
         ].filter(Boolean).join("\n");
         // SMS + Voice to Admin + Security roster (async)
         setTimeout(()=>{

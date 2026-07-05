@@ -14,9 +14,17 @@ exports.handler = async (event) => {
     const msgBody  = (body.Body || '').trim().toUpperCase();
     const WEATHER_ACK_KEYWORDS = ['AWA', 'ACK WA', 'ACK WEATHER', 'ACK WEATHER ALERT'];
     const isWeatherAck = WEATHER_ACK_KEYWORDS.includes(msgBody);
+    const CALL_ACK_MAP = {
+      'ACK MED':      { types: ['medical', 'walk_in'], label: 'MEDICAL' },
+      'ACK MEDICAL':  { types: ['medical', 'walk_in'], label: 'MEDICAL' },
+      'ACK FIRE':     { types: ['fire'], label: 'FIRE / LIFE SAFETY' },
+      'ACK SEC':      { types: ['security'], label: 'SECURITY' },
+      'ACK SECURITY': { types: ['security'], label: 'SECURITY' },
+    };
+    const callAck = CALL_ACK_MAP[msgBody] || null;
 
-    if (msgBody !== 'ACK' && !isWeatherAck) {
-      // Only handle ACK / weather-alert ACK — ignore everything else silently
+    if (msgBody !== 'ACK' && !isWeatherAck && !callAck) {
+      // Only handle ACK / weather-alert ACK / call-type ACK — ignore everything else silently
       return { statusCode: 200, headers, body: '<?xml version="1.0" encoding="UTF-8"?><Response></Response>' };
     }
 
@@ -79,10 +87,58 @@ exports.handler = async (event) => {
       }
     }
 
+    // ── Medical / Fire / Security call acknowledgment ──
+    // Finds the most recent still-open call of the matching type, marks it Acknowledged,
+    // texts the original requester (autofill location comes from the call record itself).
+    let callLocation = null;
+    if (callAck) {
+      try {
+        const typeFormula = callAck.types.map(t => `LOWER({Type})="${t}"`).join(',');
+        const callsRes = await fetch(
+          `https://api.airtable.com/v0/${BASE}/ActiveMedCalls?filterByFormula=AND(OR(${typeFormula}),{Status}="Pending")&maxRecords=50`,
+          { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+        );
+        const callsData = await callsRes.json();
+        const matchingCalls = callsData.records || [];
+        const targetCall = matchingCalls[matchingCalls.length - 1]; // most recently created pending call of this type
+
+        if (targetCall) {
+          callLocation = targetCall.fields.Location || 'festival grounds';
+          await fetch(`https://api.airtable.com/v0/${BASE}/ActiveMedCalls/${targetCall.id}`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: { Status: 'Acknowledged', Unit: `${personName} (text)`, AcknowledgedAt: new Date().toISOString() } })
+          }).catch(() => {});
+
+          // Notify the original requester, same as an in-app acknowledgment would
+          const reqPhone = String(targetCall.fields.Phone || '').replace(/[^0-9]/g, '');
+          if (reqPhone.length >= 10) {
+            const fmtReq = reqPhone.length === 10 ? `+1${reqPhone}` : `+${reqPhone}`;
+            const TWILIO_SID2  = process.env.TWILIO_ACCOUNT_SID;
+            const TWILIO_AUTH2 = process.env.TWILIO_AUTH_TOKEN;
+            const MSG_SID2     = process.env.TWILIO_MESSAGING_SERVICE_SID;
+            const TWILIO_FROM2 = process.env.TWILIO_PHONE_NUMBER;
+            if (TWILIO_SID2 && TWILIO_AUTH2) {
+              const auth2 = Buffer.from(`${TWILIO_SID2}:${TWILIO_AUTH2}`).toString('base64');
+              await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID2}/Messages.json`, {
+                method: 'POST',
+                headers: { 'Authorization': `Basic ${auth2}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ To: fmtReq, MessagingServiceSid: MSG_SID2 || TWILIO_FROM2, Body: `✅ FDM 2026 — Your ${callAck.label} request at ${callLocation} has been acknowledged by ${personName}. Help is on the way.` }).toString()
+              }).catch(() => {});
+            }
+          }
+        }
+      } catch (e) { /* fall through with whatever we have */ }
+
+      replyMsg = callLocation
+        ? `✅ ${callAck.label} alert acknowledged, ${personName.split(' ')[0]} (${personRole}). Responding to ${callLocation}. Please also confirm on the two-way radio with your location. — FDM 2026`
+        : `✅ ${callAck.label} alert acknowledged, ${personName.split(' ')[0]} (${personRole}). No open ${callAck.label.toLowerCase()} call found to attach this to — please also confirm on the two-way radio with your location. — FDM 2026`;
+    }
+
     // Post acknowledgment to admin chat so hub shows it
     const channel = personRole === 'MPD' ? 'Admin' : 'AllStaff';
-    const icon = isWeatherAck ? '⛈✅' : (personRole === 'MPD' ? '🚔' : '✅');
-    const chatLabel = isWeatherAck ? 'acknowledged the WEATHER ALERT' : 'acknowledged';
+    const icon = callAck ? '🚨✅' : isWeatherAck ? '⛈✅' : (personRole === 'MPD' ? '🚔' : '✅');
+    const chatLabel = callAck ? `acknowledged the ${callAck.label} alert${callLocation ? ' at ' + callLocation : ''}` : isWeatherAck ? 'acknowledged the WEATHER ALERT' : 'acknowledged';
     await fetch(`https://api.airtable.com/v0/${BASE}/Messages`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
@@ -103,7 +159,9 @@ exports.handler = async (event) => {
     const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
     const DEVIN_PHONE = '+16082289692';
     if (TWILIO_SID && TWILIO_AUTH) {
-      const fwdMsg = isWeatherAck
+      const fwdMsg = callAck
+        ? `🚨✅ ${callAck.label} ACK: ${personName} (${personRole}) responding to ${callLocation || 'unknown location'} at ${now}`
+        : isWeatherAck
         ? `⛈✅ WEATHER ACK: ${personName} (${personRole}) acknowledged at ${now}`
         : personRole === 'MPD'
         ? `🚔 MPD ACK: ${personName} acknowledged the alert at ${now}`

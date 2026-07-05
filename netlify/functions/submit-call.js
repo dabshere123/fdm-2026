@@ -92,13 +92,11 @@ exports.handler = async (event) => {
         for (const ph of targetPhones) {
           await sendSMS(ph, sms);
         }
-        const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
-        const twiml = `<Response><Say voice="alice">${voice}</Say><Pause length="1"/><Say voice="alice">${voice}</Say></Response>`;
         for (const ph of targetPhones) {
-          await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
+          fetch(`https://fdm2026.netlify.app/.netlify/functions/send-voice`, {
             method: 'POST',
-            headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: ph, message: voice }),
           }).catch(() => {});
         }
       } else {
@@ -107,15 +105,13 @@ exports.handler = async (event) => {
           await sendSMS(ph, sms);
         }
 
-        // Voice call to Devin + Gary for Medical and Fire
+        // Voice call to Devin + Gary for Medical and Fire — auto-redials if not answered/declined
         if (['medical', 'fire'].includes(type.toLowerCase())) {
-          const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
-          const twiml = `<Response><Say voice="alice">${voice}</Say><Pause length="1"/><Say voice="alice">${voice}</Say></Response>`;
           for (const ph of ADMIN_PHONES) {
-            await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
+            fetch(`https://fdm2026.netlify.app/.netlify/functions/send-voice`, {
               method: 'POST',
-              headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ to: ph, message: voice }),
             }).catch(() => {});
           }
         }

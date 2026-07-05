@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+<title>FDM 2026 — Setup Day</title>
+<style>
+  :root{
+    --bg:#0a0f1e; --card:#11182c; --border:rgba(255,255,255,0.08);
+    --amber:#f59e0b; --amber-dim:rgba(245,158,11,0.15);
+    --text:#f1f5f9; --sub:#94a3b8; --faint:#475569;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100vh;}
+  .wrap{max-width:640px; margin:0 auto; padding:0 0 60px;}
+  .hdr{padding:28px 20px 20px; text-align:center; border-bottom:1px solid var(--border); background:linear-gradient(180deg, rgba(245,158,11,0.08), transparent);}
+  .hdr .eyebrow{font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:var(--amber); margin-bottom:6px;}
+  .hdr h1{margin:0; font-size:24px; font-weight:900; letter-spacing:-0.01em;}
+  .hdr .sub{margin-top:6px; font-size:14px; color:var(--sub);}
+  .content{padding:18px 16px;}
+  .search{width:100%; background:rgba(255,255,255,0.06); border:1.5px solid var(--border); border-radius:12px; padding:14px 16px; color:var(--text); font-size:16px; margin-bottom:16px; outline:none;}
+  .search:focus{border-color:var(--amber);}
+  .team-list{display:flex; flex-direction:column; gap:10px;}
+  .team-card{display:flex; align-items:center; gap:14px; padding:16px; border-radius:14px; border:1.5px solid var(--border); background:var(--card); cursor:pointer; text-align:left; width:100%;}
+  .team-card:active{transform:scale(0.98);}
+  .team-dot{width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;}
+  .team-info{flex:1; min-width:0;}
+  .team-name{font-size:16px; font-weight:800; color:var(--text);}
+  .team-oneliner{font-size:13px; color:var(--sub); margin-top:2px;}
+  .team-arrow{color:var(--faint); font-size:18px; flex-shrink:0;}
+  .empty{text-align:center; padding:40px 20px; color:var(--faint); font-size:14px;}
+
+  /* Detail view */
+  .detail{display:none;}
+  .detail.active{display:block;}
+  .team-list-view.hidden{display:none;}
+  .back-btn{display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:none; color:var(--text); font-size:14px; font-weight:700; padding:10px 16px; border-radius:10px; cursor:pointer; margin-bottom:16px;}
+  .detail-header{display:flex; align-items:center; gap:14px; margin-bottom:20px;}
+  .detail-dot{width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0;}
+  .detail-title{font-size:22px; font-weight:900;}
+  .detail-report{font-size:13px; color:var(--sub); margin-top:2px;}
+  .section{background:var(--card); border:1.5px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:12px;}
+  .section-label{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--amber); margin-bottom:8px;}
+  .section-body{font-size:15px; line-height:1.7; color:var(--text); white-space:pre-wrap;}
+  .section.location .section-label{color:#6ee7b7;}
+  .section.location{border-color:rgba(16,185,129,0.25);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div class="eyebrow">Fête de Marquette 2026</div>
+    <h1>Setup Day</h1>
+    <div class="sub">Find your team below to see your task and where things go</div>
+  </div>
+
+  <div class="content">
+
+    <!-- TEAM LIST -->
+    <div id="listView" class="team-list-view">
+      <input class="search" id="search" placeholder="Search your team or name..." oninput="renderList()"/>
+      <div class="team-list" id="teamList"></div>
+      <div class="empty" id="emptyState" style="display:none;">No team matches that search.</div>
+    </div>
+
+    <!-- DETAIL VIEW -->
+    <div id="detailView" class="detail">
+      <button class="back-btn" onclick="showList()">← All Teams</button>
+      <div class="detail-header">
+        <div class="detail-dot" id="detailDot"></div>
+        <div>
+          <div class="detail-title" id="detailName"></div>
+          <div class="detail-report" id="detailReport"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-label">What You're Doing</div>
+        <div class="section-body" id="detailTask"></div>
+      </div>
+      <div class="section location">
+        <div class="section-label">Where Your Stuff Goes</div>
+        <div class="section-body" id="detailLocation"></div>
+      </div>
+      <div class="section" id="notesSection" style="display:none;">
+        <div class="section-label">Notes</div>
+        <div class="section-body" id="detailNotes"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── EDIT THIS LIST ──────────────────────────────────────────────────────────
+// One entry per team. "color" is a hex used for the icon background.
+// "reportTo" and "notes" are optional — leave as "" to hide them.
+const TEAMS = [
+  {
+    id: "bars",
+    name: "Bars Crew",
+    emoji: "🍹",
+    color: "#f59e0b",
+    oneliner: "Set up all 8 bar stations",
+    reportTo: "Report to Devin at the festival office, 8:00 AM",
+    task: "Unload and set up bar tables, coolers, and signage at all 8 bar locations. Confirm each bar has power run to it before moving to the next.",
+    location: "Cabaret Bar, Sun Left Bar, Sun Right Bar, Lagniappe Bar, Lafayette Bar, Moon Bar, Family Bar, Everything Else Cafe — one crew member per bar once stations are up.",
+    notes: "Radios and card readers go out separately — Equipment Tracker will handle that once bars are physically ready."
+  },
+  {
+    id: "stages",
+    name: "Stage Crew",
+    emoji: "🎤",
+    color: "#6366f1",
+    oneliner: "Build all 6 stages",
+    reportTo: "Report to Stage Lead at Moon Stage, 7:00 AM",
+    task: "Assemble staging, backline risers, and barricades at each of the 6 stages. Sound company will follow behind for PA setup.",
+    location: "Cabaret Stage, Sun Stage, Lafayette Stage, Lagniappe Stage, Moon Stage, Family Stage.",
+    notes: ""
+  },
+  {
+    id: "signage",
+    name: "Signage Team",
+    emoji: "🪧",
+    color: "#10b981",
+    oneliner: "Hang directional and safety signage",
+    reportTo: "Report to Marketing tent, 9:00 AM",
+    task: "Hang directional signs, bar menus, and safety/exit signage throughout the grounds per the site map.",
+    location: "Signage boxes are in the storage trailer, labeled by location name. Match each box to its spot on the printed site map.",
+    notes: ""
+  },
+  {
+    id: "prizewheel",
+    name: "Prize Wheel Team",
+    emoji: "🎡",
+    color: "#ec4899",
+    oneliner: "Assemble and stock the Prize Wheel",
+    reportTo: "Report to Devin, 10:00 AM",
+    task: "Assemble the prize wheel structure and set up the prize table and cash box.",
+    location: "Prize Wheel — near the main entrance, see site map.",
+    notes: ""
+  },
+];
+// ─────────────────────────────────────────────────────────────────────────────
+
+function renderList(){
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const list = document.getElementById('teamList');
+  const filtered = TEAMS.filter(t => !q || t.name.toLowerCase().includes(q) || t.oneliner.toLowerCase().includes(q));
+  list.innerHTML = filtered.map(t => `
+    <button class="team-card" onclick="showDetail('${t.id}')">
+      <div class="team-dot" style="background:${t.color}22;color:${t.color};">${t.emoji}</div>
+      <div class="team-info">
+        <div class="team-name">${t.name}</div>
+        <div class="team-oneliner">${t.oneliner}</div>
+      </div>
+      <div class="team-arrow">→</div>
+    </button>
+  `).join('');
+  document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+}
+
+function showDetail(id){
+  const t = TEAMS.find(x => x.id === id);
+  if(!t) return;
+  document.getElementById('detailDot').style.background = t.color + '22';
+  document.getElementById('detailDot').style.color = t.color;
+  document.getElementById('detailDot').textContent = t.emoji;
+  document.getElementById('detailName').textContent = t.name;
+  document.getElementById('detailReport').textContent = t.reportTo || '';
+  document.getElementById('detailTask').textContent = t.task;
+  document.getElementById('detailLocation').textContent = t.location;
+  const notesEl = document.getElementById('notesSection');
+  if(t.notes){ notesEl.style.display='block'; document.getElementById('detailNotes').textContent = t.notes; }
+  else { notesEl.style.display='none'; }
+
+  document.getElementById('listView').classList.add('hidden');
+  document.getElementById('detailView').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showList(){
+  document.getElementById('detailView').classList.remove('active');
+  document.getElementById('listView').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+renderList();
+</script>
+</body>
+</html>

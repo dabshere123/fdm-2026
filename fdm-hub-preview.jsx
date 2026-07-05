@@ -1164,6 +1164,10 @@ function HubApp({onBack}){
   const [showScheduler,setShowScheduler]=useState(false);
   const [broadcastSending,setBroadcastSending]=useState(false);
   const [broadcastError,setBroadcastError]=useState(null);
+  const [weatherAckChecking,setWeatherAckChecking]=useState(false);
+  const [weatherAckResult,setWeatherAckResult]=useState(null);
+  const [weatherReminderSending,setWeatherReminderSending]=useState(false);
+  const [weatherReminderSent,setWeatherReminderSent]=useState(null);
   const [gmRoster,setGmRoster]=useState(()=>{try{return JSON.parse(localStorage.getItem('fdm-gm-roster')||'[]');}catch{return [];}});
   const [gmNewName,setGmNewName]=useState("");
   const [gmNewUsername,setGmNewUsername]=useState("");
@@ -2224,7 +2228,8 @@ DATE/TIME: ${now()}`;
 
     playAlert("broadcast");
     setBroadcastSending(false);
-    const _successData={label:t.label, channels:allChatChannels, count:bcastPhones.length, recipients:namedRecipients, unmatchedCount, smsFailed, voiceFailed};
+    const _successData={label:t.label, channels:allChatChannels, count:bcastPhones.length, recipients:namedRecipients, unmatchedCount, smsFailed, voiceFailed, sentAt:new Date().toISOString(), isWeather:t.id==="weather_imminent"};
+    setWeatherAckResult(null);setWeatherReminderSent(null);
     setBroadcastSuccess(_successData);
   } catch(err){
     setBroadcastSending(false);
@@ -2260,8 +2265,50 @@ DATE/TIME: ${now()}`;
               {broadcastSuccess.unmatchedCount>0&&<div style={{fontSize:11,color:"#64748b",textAlign:"center",paddingTop:4}}>{"+ "+broadcastSuccess.unmatchedCount+" admin number(s) not tied to a staff record"}</div>}
             </div>
           </div>
+          {broadcastSuccess.isWeather&&<div style={{background:"rgba(37,99,235,0.08)",border:"1px solid rgba(37,99,235,0.25)",borderRadius:14,padding:"16px 18px",maxWidth:380,width:"100%",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#93c5fd"}}>⛈ Weather Alert Follow-Up</div>
+            {!weatherAckResult&&<button style={{padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",fontSize:13,fontWeight:800,cursor:weatherAckChecking?"not-allowed":"pointer",opacity:weatherAckChecking?0.6:1}}
+              disabled={weatherAckChecking}
+              onClick={async()=>{
+                setWeatherAckChecking(true);
+                try{
+                  const r=await fetch("/.netlify/functions/get-weather-acks?since="+encodeURIComponent(broadcastSuccess.sentAt));
+                  const d=await r.json();
+                  const ackedNames=new Set((d.acked||[]).map(a=>(a.name||"").toLowerCase().trim()));
+                  const notResponded=broadcastSuccess.recipients.filter(rp=>!ackedNames.has((rp.name||"").toLowerCase().trim()));
+                  setWeatherAckResult({acked:d.acked||[],notResponded});
+                }catch(e){
+                  setWeatherAckResult({acked:[],notResponded:broadcastSuccess.recipients,error:"Couldn't check yet — try again in a moment."});
+                }
+                setWeatherAckChecking(false);
+              }}>{weatherAckChecking?"⏳ Checking...":"🔎 Check Who Hasn't Responded (AWA)"}</button>}
+            {weatherAckResult&&<>
+              <div style={{fontSize:12,color:"#93c5fd"}}>{"✓ "+weatherAckResult.acked.length+" acknowledged · "+weatherAckResult.notResponded.length+" have not yet"}</div>
+              {weatherAckResult.notResponded.length>0&&<div style={{maxHeight:160,overflowY:"auto",display:"flex",flexDirection:"column",gap:4,background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"8px 10px"}}>
+                {weatherAckResult.notResponded.map((rp,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#e2e8f0"}}>
+                    <span style={{fontWeight:700}}>{rp.name}</span>
+                    <span style={{color:"#94a3b8"}}>{rp.role}</span>
+                  </div>
+                ))}
+              </div>}
+              {weatherAckResult.notResponded.length>0&&!weatherReminderSent&&<button style={{padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontSize:13,fontWeight:800,cursor:weatherReminderSending?"not-allowed":"pointer",opacity:weatherReminderSending?0.6:1}}
+                disabled={weatherReminderSending}
+                onClick={async()=>{
+                  setWeatherReminderSending(true);
+                  const phones=weatherAckResult.notResponded.map(rp=>(staffList||[]).find(s=>(s.name||"").toLowerCase().trim()===(rp.name||"").toLowerCase().trim())?.phone).filter(Boolean);
+                  const reminderMsg=`⛈ REMINDER — Fête de Marquette: Please reply AWA now to acknowledge the weather alert, then confirm on the two-way radio with your location.`;
+                  try{ await sendSMSList(phones, reminderMsg); }catch(e){}
+                  setWeatherReminderSending(false);
+                  setWeatherReminderSent(phones.length);
+                }}>{weatherReminderSending?"⏳ Sending...":"📲 Text Reminder to Non-Responders"}</button>}
+              {weatherReminderSent!==null&&<div style={{fontSize:12,color:"#4ade80",fontWeight:700}}>{"✓ Reminder sent to "+weatherReminderSent+" people"}</div>}
+              {weatherAckResult.notResponded.length===0&&<div style={{fontSize:12,color:"#4ade80",fontWeight:700}}>✓ Everyone has acknowledged!</div>}
+            </>}
+          </div>}
           <button style={{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}} onClick={()=>{
             setBroadcastSuccess(null);
+            setWeatherAckResult(null);setWeatherReminderSent(null);
             setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");setEditedMsgTouched(false);
           }}>Done</button>
         </div>}

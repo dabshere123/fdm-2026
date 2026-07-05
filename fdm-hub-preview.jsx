@@ -21,7 +21,7 @@ const CANCEL_REASONS=["Weather","Safety Concern","Unforeseen Circumstances","Oth
 const BROADCAST_ALERTS=[
   {id:"weather_imminent",label:"⛈ Inclement Weather",color:"#dc2626",
    requiresWeatherType:true,
-   defaultMsg:"ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",
+   defaultMsg:"ATTENTION ALL STAFF AND VENDORS: There is dangerous weather ([WEATHER_TYPE]) approaching festival grounds. Expected arrival: [TIME]. Please begin storm procedures and secure all items immediately. Food, beverage, and merchandise sales are postponed until further notice. Additional information will follow.\n\nREPLY ACK WA TO ACKNOWLEDGE, THEN CONFIRM ON THE TWO-WAY RADIO WITH YOUR LOCATION.",
    fields:[]},
   {id:"event_delayed",label:"⏰ Event Delayed",color:"#f59e0b",
    defaultMsg:"Attention all staff and vendors — Fête de Marquette has been delayed. Expected resumption: [TIME]. Further information will be provided as it becomes available.\n\nREPLY YES TO CONFIRM YOU RECEIVED THIS MESSAGE.",

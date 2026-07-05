@@ -12,9 +12,11 @@ exports.handler = async (event) => {
     const body = Object.fromEntries(new URLSearchParams(event.body || '').entries());
     const fromPhone = (body.From || '').replace(/[^0-9]/g, '').slice(-10);
     const msgBody  = (body.Body || '').trim().toUpperCase();
+    const WEATHER_ACK_KEYWORDS = ['ACK WA', 'AWA', 'ACK WEATHER', 'ACK WEATHER ALERT'];
+    const isWeatherAck = WEATHER_ACK_KEYWORDS.includes(msgBody);
 
-    if (msgBody !== 'ACK') {
-      // Only handle ACK — ignore everything else silently
+    if (msgBody !== 'ACK' && !isWeatherAck) {
+      // Only handle ACK / weather-alert ACK — ignore everything else silently
       return { statusCode: 200, headers, body: '<?xml version="1.0" encoding="UTF-8"?><Response></Response>' };
     }
 
@@ -46,7 +48,9 @@ exports.handler = async (event) => {
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { LastAck: now } })
       }).catch(() => {});
-      replyMsg = `✅ Acknowledged, ${personName.split(' ')[0]}. En route to McPike Park — FDM 2026`;
+      replyMsg = isWeatherAck
+        ? `⛈✅ Weather alert acknowledged, ${personName.split(' ')[0]} (MPD). Please also confirm on the two-way radio with your location. — FDM 2026`
+        : `✅ Acknowledged, ${personName.split(' ')[0]}. En route to McPike Park — FDM 2026`;
     } else {
       // Check Staff table
       const staffRes = await fetch(
@@ -62,18 +66,23 @@ exports.handler = async (event) => {
       if (staffMember) {
         personName = staffMember.fields.Name1 || 'Staff';
         personRole = staffMember.fields.Role || 'Staff';
-        replyMsg = `✅ ACK received, ${personName.split(' ')[0]}. — FDM 2026`;
+        replyMsg = isWeatherAck
+          ? `⛈✅ Weather alert acknowledged, ${personName.split(' ')[0]} (${personRole}). Please also confirm on the two-way radio with your location. — FDM 2026`
+          : `✅ ACK received, ${personName.split(' ')[0]}. — FDM 2026`;
       } else {
         // Unknown sender — just reply
         personName = `Unknown (${body.From})`;
         personRole = 'Unknown';
-        replyMsg = `✅ ACK received — FDM 2026`;
+        replyMsg = isWeatherAck
+          ? `⛈✅ Weather alert acknowledged. We don't have your number on file for auto-name/role — please also confirm on the two-way radio with your name and location. — FDM 2026`
+          : `✅ ACK received — FDM 2026`;
       }
     }
 
     // Post acknowledgment to admin chat so hub shows it
     const channel = personRole === 'MPD' ? 'Admin' : 'AllStaff';
-    const icon = personRole === 'MPD' ? '🚔' : '✅';
+    const icon = isWeatherAck ? '⛈✅' : (personRole === 'MPD' ? '🚔' : '✅');
+    const chatLabel = isWeatherAck ? 'acknowledged the WEATHER ALERT' : 'acknowledged';
     await fetch(`https://api.airtable.com/v0/${BASE}/Messages`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
@@ -81,7 +90,7 @@ exports.handler = async (event) => {
         FromName: personName,
         FromRole: personRole,
         Channel: channel,
-        Message: `${icon} ${personName} acknowledged at ${now}`,
+        Message: `${icon} ${personName} (${personRole}) ${chatLabel} at ${now}`,
         SentAt: new Date().toISOString(),
         IsAlert: 'No', IsDM: 'No', IsFirst: 'No',
       }})
@@ -94,7 +103,9 @@ exports.handler = async (event) => {
     const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
     const DEVIN_PHONE = '+16082289692';
     if (TWILIO_SID && TWILIO_AUTH) {
-      const fwdMsg = personRole === 'MPD'
+      const fwdMsg = isWeatherAck
+        ? `⛈✅ WEATHER ACK: ${personName} (${personRole}) acknowledged at ${now}`
+        : personRole === 'MPD'
         ? `🚔 MPD ACK: ${personName} acknowledged the alert at ${now}`
         : `✅ Staff ACK: ${personName} acknowledged at ${now}`;
       const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');

@@ -1,4 +1,17 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/><title>FDM 2026</title><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="theme-color" content="#0d0d0d"/><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.85;}}</style></head><body><div id="root"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script>
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>FDM Equipment Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0d0d;}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
 var useState = React.useState,
   useEffect = React.useEffect,
   useRef = React.useRef,
@@ -6,11 +19,11 @@ var useState = React.useState,
   useMemo = React.useMemo;
 
 // ── EQUIPMENT DATA ─────────────────────────────────────────────────────────────
-const LOCATIONS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Kids/Family Fete", "Prize Wheel", "Cabaret Stage", "Lafayette Stage", "Lagniappe Stage", "Moon Stage", "First Aid 1", "First Aid 2", "Medical Tent", "Devin", "Marketing", "MPD 1", "MPD 2", "MPD 3", "MPD 4", "Extra 1", "Extra 2", "Extra 3"];
-const READER_LOCATIONS = ["Sun Left", "Sun Right", "Cabaret", "Lafayette", "Lagniappe", "Moon Stage 1", "Moon Stage 2", "Kids/Family Fete", "Prize Wheel"];
+var LOCATIONS = ["Moon Stage 1", "Moon Stage 2", "Lafayette", "Lagniappe", "Sun Left", "Sun Right", "Cabaret", "Kids/Family Fete", "Prize Wheel", "Cabaret Stage", "Lafayette Stage", "Lagniappe Stage", "Moon Stage", "First Aid 1", "First Aid 2", "Medical Tent", "Devin", "Marketing", "MPD 1", "MPD 2", "MPD 3", "MPD 4", "Extra 1", "Extra 2", "Extra 3"];
+var READER_LOCATIONS = ["Sun Left", "Sun Right", "Cabaret", "Lafayette", "Lagniappe", "Moon Stage 1", "Moon Stage 2", "Kids/Family Fete", "Prize Wheel"];
 
 // 25 radios — serial numbers filled in by admin
-const INIT_RADIOS = Array.from({
+var INIT_RADIOS = Array.from({
   length: 25
 }, (_, i) => ({
   id: `R${String(i + 1).padStart(2, "0")}`,
@@ -28,7 +41,7 @@ const INIT_RADIOS = Array.from({
   checkedInAt: null,
   notes: ""
 }));
-const INIT_READERS = Array.from({
+var INIT_READERS = Array.from({
   length: 9
 }, (_, i) => ({
   id: `CR${String(i + 1).padStart(2, "0")}`,
@@ -43,8 +56,8 @@ const INIT_READERS = Array.from({
   checkedInAt: null,
   notes: ""
 }));
-const ADMIN_PIN = "8510";
-const STORAGE_KEY = "fdm2026-equipment-v1";
+var ADMIN_PIN = "8510";
+var STORAGE_KEY = "fdm2026-equipment-v1";
 function ts() {
   return new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -72,7 +85,7 @@ function save(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {}
 }
-const S = {
+var S = {
   root: {
     minHeight: "100vh",
     background: "#0a0f1e",
@@ -143,8 +156,8 @@ function Badge({
 }
 function EquipmentTracker() {
   const saved = load();
-  const [radios, setRadios] = useState(saved?.radios || INIT_RADIOS);
-  const [readers, setReaders] = useState(saved?.readers || INIT_READERS);
+  const [radios, setRadios] = useState((saved === null || saved === void 0 ? void 0 : saved.radios) || INIT_RADIOS);
+  const [readers, setReaders] = useState((saved === null || saved === void 0 ? void 0 : saved.readers) || INIT_READERS);
   const [tab, setTab] = useState("overview"); // overview | radios | readers | admin | notifications
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState("");
@@ -157,39 +170,8 @@ function EquipmentTracker() {
   const [itemNotes, setItemNotes] = useState("");
   const [adminSearch, setAdminSearch] = useState("");
   const [editSerial, setEditSerial] = useState({}); // {id: serial}
-  const [log, setLog] = useState(saved?.log || []);
-  const [pairs, setPairs] = useState(saved?.pairs || {
-    R01: "CR01",
-    R02: "CR02",
-    R03: "CR03",
-    R04: "CR04",
-    R05: "CR05",
-    R06: "CR06",
-    R07: "CR07",
-    R08: "CR08",
-    R09: "CR09"
-  });
-  const [pairRadio, setPairRadio] = useState("");
-  const [pairReader, setPairReader] = useState("");
-  const [customItems, setCustomItems] = useState(saved?.customItems || []);
-  const [newEqLabel, setNewEqLabel] = useState("");
-  const [newEqLocation, setNewEqLocation] = useState("");
-
-  // Deep link from QR code: ?item=R01&type=radio
-  useEffect(() => {
-    try {
-      const p = new URLSearchParams(window.location.search);
-      const item = p.get("item");
-      const type = p.get("type");
-      if (item && type) {
-        setSelectedItem({
-          type: type === "reader" ? "reader" : "radio",
-          id: item.toUpperCase()
-        });
-      }
-    } catch (e) {}
-  }, []);
-  const [notifSettings, setNotifSettings] = useState(saved?.notifSettings || {
+  const [log, setLog] = useState((saved === null || saved === void 0 ? void 0 : saved.log) || []);
+  const [notifSettings, setNotifSettings] = useState((saved === null || saved === void 0 ? void 0 : saved.notifSettings) || {
     preEventTime: "09:00",
     followupMins: "30",
     broadcastSMS: "Hi team! This is Fête de Marquette Operations. A friendly reminder to stop by the festival office to pick up your radio and/or credit card reader before your shift begins. See you out there!",
@@ -206,11 +188,9 @@ function EquipmentTracker() {
       radios,
       readers,
       log,
-      notifSettings,
-      pairs,
-      customItems
+      notifSettings
     });
-  }, [radios, readers, log, notifSettings, pairs, customItems]);
+  }, [radios, readers, log, notifSettings]);
   const addLog = msg => setLog(p => [{
     id: Date.now(),
     ts: dt(),
@@ -224,9 +204,6 @@ function EquipmentTracker() {
   })), ...readers.map(r => ({
     ...r,
     type: "reader"
-  })), ...customItems.map(r => ({
-    ...r,
-    type: "custom"
   }))];
   const out = allItems.filter(i => i.status === "out").length;
   const available = allItems.filter(i => i.status === "available").length;
@@ -243,23 +220,8 @@ function EquipmentTracker() {
       ...fields
     } : r));
   }
-  function updateCustom(id, fields) {
-    setCustomItems(p => p.map(r => r.id === id ? {
-      ...r,
-      ...fields
-    } : r));
-  }
   function updateItem(type, id, fields) {
-    if (type === "custom") return updateCustom(id, fields);
     type === "radio" ? updateRadio(id, fields) : updateReader(id, fields);
-  }
-
-  // Paired bundle: R01–R09 <-> CR01–CR09
-  function pairedId(type, id) {
-    if (type === "radio") return pairs[id] || null;
-    // reader: find the radio mapped to it
-    const entry = Object.entries(pairs).find(([r, cr]) => cr === id);
-    return entry ? entry[0] : null;
   }
   function checkout(type, id, name) {
     if (!name.trim()) return;
@@ -270,79 +232,16 @@ function EquipmentTracker() {
       checkedInBy: "",
       checkedInAt: null
     });
-    // Sync to Airtable
-    fetch("/.netlify/functions/equipment-action", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "checkout",
-        itemId: id,
-        type,
-        checkedOutBy: name
-      })
-    }).catch(() => {});
-    const pid = pairedId(type, id);
-    if (pid) {
-      const ptype = type === "radio" ? "reader" : "radio";
-      updateItem(ptype, pid, {
-        status: "out",
-        checkedOutBy: name,
-        checkedOutAt: ts(),
-        checkedInBy: "",
-        checkedInAt: null
-      });
-      fetch("/.netlify/functions/equipment-action", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          action: "checkout",
-          itemId: pid,
-          type: ptype,
-          checkedOutBy: name
-        })
-      }).catch(() => {});
-      addLog(`📦 BUNDLE: ${id} + ${pid} checked out to ${name}`);
-    } else {
-      addLog(`${id} checked out to ${name}`);
-    }
+    addLog(`${id} checked out to ${name}`);
     setCheckoutName("");
     setSelectedItem(null);
   }
   function checkin(type, id, byName, isAdmin) {
-    const checkinBy = byName || (isAdmin ? "Admin Override" : "");
     updateItem(type, id, {
       status: "returned",
-      checkedInBy: checkinBy,
+      checkedInBy: byName || (isAdmin ? "Admin Override" : ""),
       checkedInAt: ts()
     });
-    fetch("/.netlify/functions/equipment-action", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "checkin",
-        itemId: id,
-        type,
-        checkedInBy: checkinBy
-      })
-    }).catch(() => {});
-    const pid = pairedId(type, id);
-    if (pid) {
-      const ptype = type === "radio" ? "reader" : "radio";
-      updateItem(ptype, pid, {
-        status: "returned",
-        checkedInBy: byName || (isAdmin ? "Admin Override" : ""),
-        checkedInAt: ts()
-      });
-      addLog(`📦 BUNDLE: ${id} + ${pid} checked in by ${byName || "Admin"}`);
-      addLog(`${id} checked in by ${byName || "Admin"}`);
-      return;
-    }
     addLog(`${id} checked in by ${byName || "Admin"}`);
     setCheckinName("");
     setSelectedItem(null);
@@ -365,18 +264,9 @@ function EquipmentTracker() {
       checkedInBy: "",
       checkedInAt: null
     })));
-    setCustomItems(p => p.map(r => ({
-      ...r,
-      status: "available",
-      checkedOutBy: "",
-      checkedOutAt: null,
-      checkedInBy: "",
-      checkedInAt: null
-    })));
     addLog("Full reset by Admin");
   }
-  const selItem = selectedItem ? (selectedItem.type === "radio" ? radios : selectedItem.type === "custom" ? customItems : readers).find(i => i.id === selectedItem.id) : null;
-  const selPairedId = selectedItem ? pairedId(selectedItem.type, selectedItem.id) : null;
+  const selItem = selectedItem ? (selectedItem.type === "radio" ? radios : readers).find(i => i.id === selectedItem.id) : null;
 
   // Filter helper
   function filterItems(items) {
@@ -528,17 +418,7 @@ function EquipmentTracker() {
       value: checkoutName,
       onChange: e => setCheckoutName(e.target.value),
       onKeyDown: e => e.key === "Enter" && checkout(selectedItem.type, selItem.id, checkoutName)
-    }), selPairedId && /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "rgba(99,102,241,0.12)",
-        border: "1px solid rgba(99,102,241,0.35)",
-        borderRadius: 10,
-        padding: "10px 12px",
-        fontSize: 13,
-        color: "#a5b4fc",
-        fontWeight: 700
-      }
-    }, "\uD83D\uDCE6 Bundle: ", selItem.id, " + ", selPairedId, " check out together"), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.btn,
         background: "linear-gradient(135deg,#f59e0b,#d97706)",
@@ -547,7 +427,7 @@ function EquipmentTracker() {
       },
       disabled: !checkoutName,
       onClick: () => checkout(selectedItem.type, selItem.id, checkoutName)
-    }, "\uD83D\uDCE4 Check Out", selPairedId ? " Bundle" : "")), isOut && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCE4 Check Out")), isOut && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -1168,251 +1048,6 @@ function EquipmentTracker() {
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         ...S.card,
-        border: "1px solid rgba(16,185,129,0.35)"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "rgba(16,185,129,0.12)",
-        padding: "10px 14px",
-        fontSize: 13,
-        fontWeight: 900,
-        color: "#6ee7b7",
-        textTransform: "uppercase",
-        letterSpacing: "0.06em"
-      }
-    }, "\uD83E\uDDF0 Add Custom Equipment"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: "12px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 10
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("input", {
-      style: {
-        ...S.inp,
-        flex: 1
-      },
-      placeholder: "Item name (e.g. Megaphone)",
-      value: newEqLabel,
-      onChange: e => setNewEqLabel(e.target.value)
-    }), /*#__PURE__*/React.createElement("input", {
-      style: {
-        ...S.inp,
-        flex: 1
-      },
-      placeholder: "Location / assigned to",
-      value: newEqLocation,
-      onChange: e => setNewEqLocation(e.target.value)
-    }), /*#__PURE__*/React.createElement("button", {
-      style: {
-        ...S.btn,
-        background: "linear-gradient(135deg,#10b981,#059669)",
-        color: "#fff",
-        opacity: !newEqLabel.trim() ? 0.5 : 1
-      },
-      disabled: !newEqLabel.trim(),
-      onClick: () => {
-        const num = customItems.length + 1;
-        const id = `EQ${String(num).padStart(2, "0")}`;
-        setCustomItems(p => [...p, {
-          id,
-          num,
-          label: newEqLabel.trim(),
-          serial: "",
-          location: newEqLocation.trim() || "Festival Grounds",
-          status: "available",
-          checkedOutBy: "",
-          checkedOutAt: null,
-          checkedInBy: "",
-          checkedInAt: null,
-          notes: ""
-        }]);
-        addLog(`🧰 Added custom equipment ${id}: ${newEqLabel.trim()}`);
-        setNewEqLabel("");
-        setNewEqLocation("");
-      }
-    }, "+ Add")), customItems.length > 0 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 4
-      }
-    }, customItems.map(it => /*#__PURE__*/React.createElement("div", {
-      key: it.id,
-      style: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "8px 10px",
-        background: "rgba(16,185,129,0.06)",
-        borderRadius: 8,
-        border: "1px solid rgba(16,185,129,0.2)"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 700,
-        color: "#a7f3d0"
-      }
-    }, it.id, " \u2014 ", it.label, " ", /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: "#475569",
-        fontWeight: 400
-      }
-    }, "(", it.location, ")")), /*#__PURE__*/React.createElement("button", {
-      style: {
-        background: "rgba(239,68,68,0.15)",
-        border: "1px solid rgba(239,68,68,0.3)",
-        borderRadius: 6,
-        padding: "3px 10px",
-        color: "#fca5a5",
-        fontSize: 11,
-        fontWeight: 700,
-        cursor: "pointer"
-      },
-      onClick: () => {
-        setCustomItems(p => p.filter(x => x.id !== it.id));
-        addLog(`🧰 Removed ${it.id}: ${it.label}`);
-      }
-    }, "Remove")))))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        ...S.card,
-        border: "1px solid rgba(99,102,241,0.35)"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "rgba(99,102,241,0.12)",
-        padding: "10px 14px",
-        fontSize: 13,
-        fontWeight: 900,
-        color: "#a5b4fc",
-        textTransform: "uppercase",
-        letterSpacing: "0.06em"
-      }
-    }, "\uD83D\uDCE6 Bundle Pairing"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: "12px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 10
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "#64748b"
-      }
-    }, "Pair a radio with a card reader \u2014 they check out and in together."), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("select", {
-      style: {
-        ...S.inp,
-        flex: 1
-      },
-      value: pairRadio,
-      onChange: e => setPairRadio(e.target.value)
-    }, /*#__PURE__*/React.createElement("option", {
-      value: ""
-    }, "Radio..."), radios.map(r => /*#__PURE__*/React.createElement("option", {
-      key: r.id,
-      value: r.id
-    }, r.id, " \u2014 ", r.location))), /*#__PURE__*/React.createElement("select", {
-      style: {
-        ...S.inp,
-        flex: 1
-      },
-      value: pairReader,
-      onChange: e => setPairReader(e.target.value)
-    }, /*#__PURE__*/React.createElement("option", {
-      value: ""
-    }, "Reader..."), readers.map(r => /*#__PURE__*/React.createElement("option", {
-      key: r.id,
-      value: r.id
-    }, r.id, " \u2014 ", r.location))), /*#__PURE__*/React.createElement("button", {
-      style: {
-        ...S.btn,
-        background: "linear-gradient(135deg,#6366f1,#4f46e5)",
-        color: "#fff",
-        opacity: !pairRadio || !pairReader ? 0.5 : 1
-      },
-      disabled: !pairRadio || !pairReader,
-      onClick: () => {
-        setPairs(p => {
-          const n = {
-            ...p
-          };
-          // remove this reader from any other radio
-          Object.keys(n).forEach(k => {
-            if (n[k] === pairReader) delete n[k];
-          });
-          n[pairRadio] = pairReader;
-          return n;
-        });
-        addLog(`📦 Paired ${pairRadio} ↔ ${pairReader}`);
-        setPairRadio("");
-        setPairReader("");
-      }
-    }, "Pair")), Object.keys(pairs).length > 0 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 4
-      }
-    }, Object.entries(pairs).sort().map(([r, cr]) => /*#__PURE__*/React.createElement("div", {
-      key: r,
-      style: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "8px 10px",
-        background: "rgba(99,102,241,0.07)",
-        borderRadius: 8,
-        border: "1px solid rgba(99,102,241,0.2)"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 700,
-        color: "#c7d2fe"
-      }
-    }, "\uD83D\uDCE6 ", r, " \u2194 ", cr), /*#__PURE__*/React.createElement("button", {
-      style: {
-        background: "rgba(239,68,68,0.15)",
-        border: "1px solid rgba(239,68,68,0.3)",
-        borderRadius: 6,
-        padding: "3px 10px",
-        color: "#fca5a5",
-        fontSize: 11,
-        fontWeight: 700,
-        cursor: "pointer"
-      },
-      onClick: () => {
-        setPairs(p => {
-          const n = {
-            ...p
-          };
-          delete n[r];
-          return n;
-        });
-        addLog(`📦 Unpaired ${r} ↔ ${cr}`);
-      }
-    }, "Unpair")))), Object.keys(pairs).length === 0 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "#475569",
-        textAlign: "center",
-        padding: "8px"
-      }
-    }, "No bundles \u2014 all items check out individually"))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        ...S.card,
         border: "1px solid rgba(245,158,11,0.3)"
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -1660,13 +1295,10 @@ function EquipmentTracker() {
   }
 
   // ── ITEMS LIST (radios / readers) ─────────────────────────────────────────────
-  if (tab === "radios" || tab === "readers" || tab === "gear") {
+  if (tab === "radios" || tab === "readers") {
     const items = filterItems(tab === "radios" ? radios.map(r => ({
       ...r,
       type: "radio"
-    })) : tab === "gear" ? customItems.map(r => ({
-      ...r,
-      type: "custom"
     })) : readers.map(r => ({
       ...r,
       type: "reader"
@@ -1689,7 +1321,7 @@ function EquipmentTracker() {
         fontWeight: 800,
         color: "#f59e0b"
       }
-    }, tab === "radios" ? "📟 Radios" : tab === "gear" ? "🧰 Other Gear" : "💳 Readers"), /*#__PURE__*/React.createElement("span", {
+    }, tab === "radios" ? "📻 Radios" : "💳 Readers"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         color: "#64748b"
@@ -1918,42 +1550,7 @@ function EquipmentTracker() {
       fontSize: 12,
       color: "#64748b"
     }
-  }, readers.filter(r => r.status === "out").length, " out of ", readers.length))), /*#__PURE__*/React.createElement("button", {
-    style: {
-      ...S.card,
-      padding: "16px",
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      cursor: "pointer",
-      border: "1px solid rgba(16,185,129,0.25)",
-      textAlign: "left"
-    },
-    onClick: () => setTab("gear")
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 28
-    }
-  }, "\uD83E\uDDF0"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 800,
-      color: "#f1f5f9"
-    }
-  }, "Other Gear"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "#64748b"
-    }
-  }, customItems.filter(i => i.status === "out").length, " out \xB7 ", customItems.length, " total")), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#475569"
-    }
-  }, "\u203A"))), outItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, readers.filter(r => r.status === "out").length, " out of ", readers.length)))), outItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -2067,5 +1664,6 @@ function BottomNav({
     }
   }, label, id === "admin" && adminUnlocked ? " 🔓" : ""))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(EquipmentTracker));
-</script></body></html>
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(EquipmentTracker,{onBack:function(){window.location.href='/'}}));
+</script>
+</body></html>

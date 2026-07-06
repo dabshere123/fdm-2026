@@ -1740,9 +1740,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const phones=getNotifyList("maintenance");
           sendSMSList(phones,msg);
-          // Voice for maintenance: just Tony (Sun Left bar manager), everyone else stays SMS-only
-          const tony=(staffList||[]).find(s=>(s.name||"").toLowerCase().includes("tony")&&s.phone);
-          if(tony) sendVoice([tony.phone],`Maintenance request at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond.`);
+          // No voice for maintenance — SMS only for everyone, including Tony
         },100);
       } else if(call.type==="lost_child"){
         msg=[

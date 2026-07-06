@@ -1252,10 +1252,29 @@ function HubApp({onBack}){
   const [lfSearch,setLfSearch]=useState("");
   const [lfLoading,setLfLoading]=useState(false);
   const [lfAddOpen,setLfAddOpen]=useState(false);
+  const [lfAddPhoto,setLfAddPhoto]=useState(null);
+  const lfAddPhotoRef=useRef(null);
   const [lfAddFields,setLfAddFields]=useState({description:"",foundAt:"",dayFound:"",currentLocation:"",foundBy:"",atFestOffice:false});
   const [lfAddSending,setLfAddSending]=useState(false);
   const [lfAddError,setLfAddError]=useState(null);
   const [lfAddDone,setLfAddDone]=useState(null);
+  function compressLFPhoto(file,cb){
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=700;
+        let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        const c=document.createElement("canvas");
+        c.width=w;c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        cb(c.toDataURL("image/jpeg",0.65));
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  }
 
   async function fetchLFItems(){
     setLfLoading(true);
@@ -3243,16 +3262,37 @@ Reply YES to acknowledge.`
         <BB onClick={()=>setView("home")}/>
         <span style={{fontSize:17,fontWeight:900,color:"#f1f5f9",flex:1}}>{"📋 Manage Lost & Found"}</span>
         <button style={{fontSize:12,fontWeight:700,color:"#4ade80",background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:8,padding:"7px 12px",cursor:"pointer"}} onClick={fetchLFItems}>{"↺ Refresh"}</button>
-        <button style={{fontSize:12,fontWeight:700,color:"#fb923c",background:"rgba(251,146,60,0.1)",border:"1px solid rgba(251,146,60,0.3)",borderRadius:8,padding:"7px 12px",cursor:"pointer"}} onClick={()=>{setLfAddFields({description:"",foundAt:"",dayFound:"",currentLocation:"",foundBy:"",atFestOffice:false});setLfAddError(null);setLfAddDone(null);setLfAddOpen(true);}}>{"➕ Log Item"}</button>
+        <button style={{fontSize:12,fontWeight:700,color:"#fb923c",background:"rgba(251,146,60,0.1)",border:"1px solid rgba(251,146,60,0.3)",borderRadius:8,padding:"7px 12px",cursor:"pointer"}} onClick={()=>{setLfAddFields({description:"",foundAt:"",dayFound:"",currentLocation:"",foundBy:"",atFestOffice:false});setLfAddPhoto(null);setLfAddError(null);setLfAddDone(null);setLfAddOpen(true);}}>{"➕ Log Item"}</button>
       </div>
 
       {lfAddOpen&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
         <div style={{background:"#12121f",borderTopLeftRadius:20,borderTopRightRadius:20,padding:"20px 18px 28px",maxHeight:"88vh",overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span style={{fontSize:17,fontWeight:900,color:"#f1f5f9"}}>➕ Log Lost & Found Item</span>
-            <button style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:4}} onClick={()=>setLfAddOpen(false)}>×</button>
+            <button style={{background:"none",border:"none",color:"#64748b",fontSize:22,cursor:"pointer",padding:4}} onClick={()=>{setLfAddOpen(false);setLfAddPhoto(null);}}>×</button>
           </div>
           <div style={{fontSize:12,color:"#64748b"}}>For items handed to you directly, or to recover an item that failed to save from the field.</div>
+
+          {/* PHOTO — REQUIRED */}
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:11,fontWeight:900,color:lfAddPhoto?"#4ade80":"#f97316",textTransform:"uppercase",letterSpacing:"0.08em"}}>
+              {lfAddPhoto?"✅ Photo Captured":"📷 Photo Required *"}
+            </div>
+            {lfAddPhoto?(
+              <div style={{position:"relative",borderRadius:12,overflow:"hidden",border:"2px solid rgba(34,197,94,0.4)"}}>
+                <img src={lfAddPhoto} alt="item" style={{width:"100%",maxHeight:200,objectFit:"cover",display:"block"}}/>
+                <button style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.7)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:"#f1f5f9",padding:"6px 10px",fontSize:12,cursor:"pointer"}} onClick={()=>setLfAddPhoto(null)}>Retake</button>
+              </div>
+            ):(
+              <div style={{background:"rgba(249,115,22,0.06)",border:"2px dashed rgba(249,115,22,0.4)",borderRadius:12,padding:"28px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>lfAddPhotoRef.current?.click()}>
+                <div style={{fontSize:36}}>📷</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#fb923c"}}>Tap to Take/Upload Photo</div>
+                <div style={{fontSize:12,color:"#64748b"}}>Required before saving</div>
+              </div>
+            )}
+            <input ref={lfAddPhotoRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) compressLFPhoto(e.target.files[0],setLfAddPhoto);}}/>
+          </div>
+
           <Fld label="Description" required value={lfAddFields.description} onChange={e=>setLfAddFields(p=>({...p,description:e.target.value}))} ph="e.g. Black iPhone with cracked screen"/>
           <Fld label="Found At (location)" required value={lfAddFields.foundAt} onChange={e=>setLfAddFields(p=>({...p,foundAt:e.target.value}))} ph="e.g. Moon Bar near east exit"/>
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -3271,8 +3311,8 @@ Reply YES to acknowledge.`
           </label>
           {lfAddError&&<div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#fca5a5",lineHeight:1.5}}>{"⚠️ "+lfAddError}</div>}
           {lfAddDone&&<div style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#4ade80",fontWeight:700}}>{lfAddDone}</div>}
-          <button style={{padding:"14px",borderRadius:12,border:"none",background:(!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#fb923c,#ea580c)",color:(!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"#475569":"#fff",fontSize:15,fontWeight:900,cursor:(!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"not-allowed":"pointer"}}
-            disabled={!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending}
+          <button style={{padding:"14px",borderRadius:12,border:"none",background:(!lfAddPhoto||!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#fb923c,#ea580c)",color:(!lfAddPhoto||!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"#475569":"#fff",fontSize:15,fontWeight:900,cursor:(!lfAddPhoto||!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending)?"not-allowed":"pointer"}}
+            disabled={!lfAddPhoto||!lfAddFields.description.trim()||!lfAddFields.foundAt.trim()||lfAddSending}
             onClick={async()=>{
               setLfAddSending(true);setLfAddError(null);setLfAddDone(null);
               try{
@@ -3284,12 +3324,13 @@ Reply YES to acknowledge.`
                   foundBy:lfAddFields.foundBy.trim()||"Admin",
                   role:role,
                   atFestOffice:lfAddFields.atFestOffice?"Yes":"No",
+                  photoData:lfAddPhoto,
                 })});
                 const d=await r.json();
                 if(d.success){
                   setLfAddDone(`✅ Logged as ${d.itemNumber}`);
                   await fetchLFItems();
-                  setTimeout(()=>setLfAddOpen(false),1400);
+                  setTimeout(()=>{setLfAddOpen(false);setLfAddPhoto(null);},1400);
                 } else {
                   setLfAddError((d.airtableError?"Airtable rejected the save — check that the FoundAt/DayFound columns are text fields, not Date. ":"")+"Tag "+(d.itemNumber||"???")+" was generated but NOT saved. "+(d.error||d.airtableError||""));
                 }

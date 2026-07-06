@@ -4020,23 +4020,6 @@ Reply YES to acknowledge.`
                 {radarVisible?"Hide Radar":"📡 Radar"}
               </button>
             </div>
-            {/* Med 1 + Med 2 Status */}
-            {[["med1","Med 1"],["med2","Med 2"]].map(([key,label])=>{
-              const st=medSt[key]||{status:"available"};
-              const isOnCall=st.status==="on_call";
-              const isClear=st.status==="cleared";
-              const bg=isOnCall?"rgba(147,51,234,0.15)":isClear?"rgba(16,185,129,0.1)":"rgba(255,255,255,0.03)";
-              const br=isOnCall?"rgba(147,51,234,0.5)":isClear?"rgba(16,185,129,0.4)":"rgba(255,255,255,0.1)";
-              const tc=isOnCall?"#d8b4fe":isClear?"#6ee7b7":"#64748b";
-              const sl=isOnCall?"🟣 On Call":isClear?"🟢 Cleared":"⚪ Available";
-              return(
-                <div key={key} style={{background:bg,borderRadius:10,border:`1px solid ${br}`,padding:"9px 11px"}}>
-                  <div style={{fontSize:12,fontWeight:900,color:"#f1f5f9",marginBottom:2}}>🩺 {label}</div>
-                  <div style={{fontSize:11,fontWeight:700,color:tc}}>{sl}</div>
-                  {st.since&&<div style={{fontSize:9,color:"#e2e8f0",marginTop:1}}>{st.since}</div>}
-                </div>
-              );
-            })}
           </div>
           {/* RIGHT: Active calls only — alerts are inside weather box */}
           <div style={{flex:1,display:"flex",flexDirection:"column",gap:8,minWidth:0}}>
@@ -4091,6 +4074,26 @@ Reply YES to acknowledge.`
         </div>
         <div style={{fontSize:18,color:"#38bdf8",fontWeight:700}}>→</div>
       </button>
+
+    {/* Med 1 + Med 2 Status — side by side, just above Safety */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        {[["med1","Med 1"],["med2","Med 2"]].map(([key,label])=>{
+          const st=medSt[key]||{status:"available"};
+          const isOnCall=st.status==="on_call";
+          const isClear=st.status==="cleared";
+          const bg=isOnCall?"rgba(147,51,234,0.15)":isClear?"rgba(16,185,129,0.1)":"rgba(255,255,255,0.03)";
+          const br=isOnCall?"rgba(147,51,234,0.5)":isClear?"rgba(16,185,129,0.4)":"rgba(255,255,255,0.1)";
+          const tc=isOnCall?"#d8b4fe":isClear?"#6ee7b7":"#64748b";
+          const sl=isOnCall?"🟣 On Call":isClear?"🟢 Cleared":"⚪ Available";
+          return(
+            <div key={key} style={{background:bg,borderRadius:10,border:`1px solid ${br}`,padding:"9px 11px"}}>
+              <div style={{fontSize:12,fontWeight:900,color:"#f1f5f9",marginBottom:2}}>🩺 {label}</div>
+              <div style={{fontSize:11,fontWeight:700,color:tc}}>{sl}</div>
+              {st.since&&<div style={{fontSize:9,color:"#e2e8f0",marginTop:1}}>{st.since}</div>}
+            </div>
+          );
+        })}
+      </div>
 
     {/* ===== SAFETY + BROADCAST ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>

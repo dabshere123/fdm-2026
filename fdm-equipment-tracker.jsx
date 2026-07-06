@@ -231,7 +231,10 @@ export default function EquipmentTracker(){
       <div style={S.root}>
         <div style={S.panel}>
           <div style={S.hdr}>
-            <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setSelectedItem(null)}>← Back</button>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setSelectedItem(null)}>← Back</button>
+              {cameFromHub&&<button title="Back to Hub" style={{background:"rgba(255,255,255,0.06)",border:"none",borderRadius:8,color:"#f59e0b",fontSize:15,padding:"6px 9px",cursor:"pointer"}} onClick={()=>{window.location.href="/hub";}}>🏠</button>}
+            </div>
             <span style={{fontWeight:800,color:"#f59e0b",fontSize:16}}>{selItem.label}</span>
             <Badge status={selItem.status}/>
           </div>
@@ -286,7 +289,10 @@ export default function EquipmentTracker(){
       <div style={S.root}>
         <div style={S.panel}>
           <div style={S.hdr}>
-            <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+              {cameFromHub&&<button title="Back to Hub" style={{background:"rgba(255,255,255,0.06)",border:"none",borderRadius:8,color:"#f59e0b",fontSize:15,padding:"6px 9px",cursor:"pointer"}} onClick={()=>{window.location.href="/hub";}}>🏠</button>}
+            </div>
             <span style={{fontWeight:800,color:"#f59e0b"}}>Admin Access</span>
             <span/>
           </div>
@@ -308,7 +314,10 @@ export default function EquipmentTracker(){
       <div style={S.root}>
         <div style={S.panel}>
           <div style={S.hdr}>
-            <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+              {cameFromHub&&<button title="Back to Hub" style={{background:"rgba(255,255,255,0.06)",border:"none",borderRadius:8,color:"#f59e0b",fontSize:15,padding:"6px 9px",cursor:"pointer"}} onClick={()=>{window.location.href="/hub";}}>🏠</button>}
+            </div>
             <span style={{fontWeight:800,color:"#f59e0b"}}>🔔 Notifications</span>
             <button style={{...S.btn,background:notifDirty?"linear-gradient(135deg,#10b981,#059669)":"rgba(255,255,255,0.06)",color:notifDirty?"#fff":"#64748b",fontSize:12}} onClick={()=>{setNotifDirty(false);addLog("Notification settings saved");}}>💾 Save</button>
           </div>
@@ -406,7 +415,10 @@ export default function EquipmentTracker(){
       <div style={S.root}>
         <div style={S.panel}>
           <div style={S.hdr}>
-            <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+              {cameFromHub&&<button title="Back to Hub" style={{background:"rgba(255,255,255,0.06)",border:"none",borderRadius:8,color:"#f59e0b",fontSize:15,padding:"6px 9px",cursor:"pointer"}} onClick={()=>{window.location.href="/hub";}}>🏠</button>}
+            </div>
             <span style={{fontWeight:800,color:"#f59e0b"}}>⚙️ Admin</span>
             <button style={{...S.btn,background:"rgba(239,68,68,0.2)",color:"#fca5a5",border:"1px solid rgba(239,68,68,0.4)",fontSize:12}} onClick={resetAll}>Reset All</button>
           </div>
@@ -490,7 +502,10 @@ export default function EquipmentTracker(){
       <div style={S.root}>
         <div style={S.panel}>
           <div style={S.hdr}>
-            <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button style={{...S.btn,background:"rgba(255,255,255,0.1)",color:"#f1f5f9"}} onClick={()=>setTab("overview")}>← Back</button>
+              {cameFromHub&&<button title="Back to Hub" style={{background:"rgba(255,255,255,0.06)",border:"none",borderRadius:8,color:"#f59e0b",fontSize:15,padding:"6px 9px",cursor:"pointer"}} onClick={()=>{window.location.href="/hub";}}>🏠</button>}
+            </div>
             <span style={{fontWeight:800,color:"#f59e0b"}}>{tab==="radios"?"📻 Radios":"💳 Readers"}</span>
             <span style={{fontSize:12,color:"#64748b"}}>{items.length} items</span>
           </div>

@@ -48,7 +48,13 @@ exports.handler = async (event) => {
     // Generate item number FIRST — always returned even if Airtable fails
     itemNumber = generateItemNumber(dayFound, foundAt);
 
-    const safePhoto = photoData && photoData.length > 80000 ? photoData.slice(0, 80000) : (photoData || '');
+    // IMPORTANT: never truncate base64 image data — a cut-off base64 string can never
+    // decode back into an image, so a truncated photo is a guaranteed broken link.
+    // The client now compresses photos to stay under this limit; if one still doesn't
+    // fit, drop it entirely (item still saves) rather than storing corrupted data.
+    const PHOTO_LIMIT = 90000;
+    const photoTooLarge = photoData && photoData.length > PHOTO_LIMIT;
+    const safePhoto = photoTooLarge ? '' : (photoData || '');
 
     const fieldsWithPhoto = {
       Description:     description,
@@ -111,7 +117,8 @@ exports.handler = async (event) => {
         success: !airtableError,
         itemNumber,
         id: data.id || null,
-        airtableError: airtableError || null
+        airtableError: airtableError || null,
+        photoDropped: photoTooLarge || null,
       })
     };
 

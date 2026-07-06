@@ -1259,17 +1259,25 @@ function HubApp({onBack}){
   const [lfAddError,setLfAddError]=useState(null);
   const [lfAddDone,setLfAddDone]=useState(null);
   function compressLFPhoto(file,cb){
+    const SAFE_LIMIT=70000;
     const r=new FileReader();
     r.onload=e=>{
       const img=new Image();
       img.onload=()=>{
-        const MAX=700;
-        let w=img.width,h=img.height;
-        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-        const c=document.createElement("canvas");
-        c.width=w;c.height=h;
-        c.getContext("2d").drawImage(img,0,0,w,h);
-        cb(c.toDataURL("image/jpeg",0.65));
+        const tryEncode=(maxDim,quality)=>{
+          let w=img.width,h=img.height;
+          if(w>maxDim||h>maxDim){if(w>h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;}}
+          const c=document.createElement("canvas");
+          c.width=w;c.height=h;
+          c.getContext("2d").drawImage(img,0,0,w,h);
+          return c.toDataURL("image/jpeg",quality);
+        };
+        const attempts=[[700,0.65],[600,0.5],[500,0.4],[400,0.35],[320,0.3]];
+        let result=tryEncode(attempts[0][0],attempts[0][1]);
+        for(let i=1;i<attempts.length&&result.length>SAFE_LIMIT;i++){
+          result=tryEncode(attempts[i][0],attempts[i][1]);
+        }
+        cb(result.length>SAFE_LIMIT?null:result);
       };
       img.src=e.target.result;
     };
@@ -3290,7 +3298,7 @@ Reply YES to acknowledge.`
                 <div style={{fontSize:12,color:"#64748b"}}>Required before saving</div>
               </div>
             )}
-            <input ref={lfAddPhotoRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) compressLFPhoto(e.target.files[0],setLfAddPhoto);}}/>
+            <input ref={lfAddPhotoRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{if(e.target.files[0]) compressLFPhoto(e.target.files[0],p=>{setLfAddPhoto(p);if(!p)alert("That photo could not be compressed small enough to save. Please try a different photo.");});}}/>
           </div>
 
           <Fld label="Description" required value={lfAddFields.description} onChange={e=>setLfAddFields(p=>({...p,description:e.target.value}))} ph="e.g. Black iPhone with cracked screen"/>

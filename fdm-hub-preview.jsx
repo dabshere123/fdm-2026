@@ -1133,7 +1133,7 @@ function HubApp({onBack}){
       return dedupe([ADMIN2_PHONE, ...byRole(["admin","a1","a2"])]);
     }
     if(type==="maintenance"){
-      return dedupe([ADMIN2_PHONE, ...byRole(["admin","a1","a2","oc1","oc2","oc3","oc4"])]);
+      return dedupe([ADMIN2_PHONE, ...byRole(["admin","a1","a2","oc1","oc2","oc3","oc4","slb","ssbl","sbl"])]);
     }
     return [ADMIN2_PHONE];
   };
@@ -1740,7 +1740,9 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const phones=getNotifyList("maintenance");
           sendSMSList(phones,msg);
-          // No voice for maintenance
+          // Voice for maintenance: just Tony (Sun Left bar manager), everyone else stays SMS-only
+          const tony=(staffList||[]).find(s=>(s.name||"").toLowerCase().includes("tony")&&s.phone);
+          if(tony) sendVoice([tony.phone],`Maintenance request at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond.`);
         },100);
       } else if(call.type==="lost_child"){
         msg=[

@@ -82,6 +82,7 @@ function Badge({status}){
 }
 
 export default function EquipmentTracker(){
+  const cameFromHub = typeof window!=="undefined" && new URLSearchParams(window.location.search).get("from")==="hub";
   const saved = load();
   const migratedRadios = (() => {
     const existing = saved?.radios;
@@ -488,9 +489,12 @@ export default function EquipmentTracker(){
     <div style={S.root}>
       <div style={S.panel}>
         <div style={S.hdr}>
-          <div>
-            <div style={{fontSize:18,fontWeight:900,color:"#f59e0b"}}>📻 Equipment Tracker</div>
-            <div style={{fontSize:11,color:"#64748b"}}>Fête de Marquette 2026</div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {cameFromHub&&<button style={{background:"rgba(255,255,255,0.08)",border:"none",borderRadius:8,color:"#f1f5f9",fontSize:18,padding:"4px 10px",cursor:"pointer"}} onClick={()=>{window.location.href="/hub";}}>←</button>}
+            <div>
+              <div style={{fontSize:18,fontWeight:900,color:"#f59e0b"}}>📻 Equipment Tracker</div>
+              <div style={{fontSize:11,color:"#64748b"}}>Fête de Marquette 2026</div>
+            </div>
           </div>
           <button style={{...S.btn,background:"rgba(245,158,11,0.15)",color:"#fbbf24",border:"1px solid rgba(245,158,11,0.3)",fontSize:12}} onClick={()=>setTab("notifications")}>🔔 Notifications</button>
         </div>

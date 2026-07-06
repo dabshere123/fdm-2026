@@ -4178,7 +4178,7 @@ Reply YES to acknowledge.`
 
     {/* ===== ROW 2: EQUIPMENT TRACKER ===== */}
       <div style={{background:"rgba(234,179,8,0.06)",borderRadius:14,border:"1px solid rgba(234,179,8,0.3)",overflow:"hidden"}}>
-        <div style={{background:"rgba(234,179,8,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment","_blank")}>
+        <div style={{background:"rgba(234,179,8,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment?from=hub","_blank")}>
           <span>⚙️ Equipment Tracker</span>
           <span style={{fontSize:11,color:"#fcd34d",fontWeight:400}}>Open →</span>
         </div>

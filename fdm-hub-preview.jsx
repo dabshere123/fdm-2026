@@ -57,6 +57,7 @@ const BCAST_GROUP_ROLES={
   misc:["fip","youth organizer","mkt","20th","misc","a3"],
   eec:["etb","etecm","eteb"],
   prize_wheel:["mt","mkt","mtm","prize wheel"],
+  vendors:["vend"],
 };
 // Groups → Festival Chat channels
 const BCAST_GROUP_CHANNELS={
@@ -69,6 +70,7 @@ const BCAST_GROUP_CHANNELS={
   misc:["AllStaff"],
   eec:["EverythingBar"],
   prize_wheel:["AllStaff"],
+  vendors:["AllStaff"],
 };
 // Individual locations → role codes
 const BCAST_LOC_ROLES={
@@ -115,6 +117,7 @@ const BCAST_GROUPS=[
   {id:"misc",label:"Misc"},
   {id:"eec",label:"Everything Else Cafe"},
   {id:"prize_wheel",label:"Prize Wheel"},
+  {id:"vendors",label:"Vendors"},
 ];
 const BCAST_LOCATIONS=["Admin","Med 1","Med 2","Moon Stage","Sun Stage","Lagniappe Stage","Lafayette Stage","Family Fete Stage","Cabaret Stage","Moon Bar","Sun Left Bar","Sun Right Bar","Cabaret Bar","Lafayette Bar","Lagniappe Bar","Family Fete Bar","Everything Else Cafe","Prize Wheel","Hospitality"];
 
@@ -1186,6 +1189,7 @@ function HubApp({onBack}){
   const [broadcastSuccess,setBroadcastSuccess]=useState(null); // {label, channels}
   const [staffList,setStaffList]=useState([]);
   const [vendorPhonesList,setVendorPhonesList]=useState([]);
+  const [vendorContacts,setVendorContacts]=useState([]); // [{name,phone}] for display in broadcast recipient lists
   const [vendorCheckins,setVendorCheckins]=useState([]);
   const [vendorToasts,setVendorToasts]=useState([]);
   const [vendorSeenIds,setVendorSeenIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('fdm-vendor-seen')||'[]');}catch{return [];}});
@@ -1411,6 +1415,10 @@ function HubApp({onBack}){
     fetch("/.netlify/functions/get-staff-list")
       .then(r=>r.json())
       .then(d=>setStaffList(d.staff||d.members||[]))
+      .catch(()=>{});
+    fetch("/.netlify/functions/get-vendor-phones")
+      .then(r=>r.json())
+      .then(d=>{setVendorPhonesList(d.phones||[]);setVendorContacts(d.contacts||[]);})
       .catch(()=>{});
   },[]);
 
@@ -2204,11 +2212,16 @@ DATE/TIME: ${now()}`;
     allRoleCodes=[...new Set(allRoleCodes.map(r=>r.toLowerCase()))];
     allChatChannels=[...new Set(allChatChannels)];
 
+    // Vendors live in a separate Airtable table, not the Staff roster — merge their phones in directly
+    const includesVendors=recipMode==="groups"&&recipGroups.includes("vendors");
+    const vendorExtraPhones=includesVendors?vendorPhonesList:[];
+
     // Get unique phone numbers for those roles
-    const bcastPhones=[...new Set([ADMIN2_PHONE,...byRole(allRoleCodes)])];
+    const bcastPhones=[...new Set([ADMIN2_PHONE,...byRole(allRoleCodes),...vendorExtraPhones])];
     // Match staff records by the same role codes so we can show WHO got the message
     const matchedStaff=(staffList||[]).filter(s=>s.phone&&allRoleCodes.some(r=>(s.role||"").toLowerCase().includes(r)));
-    const namedRecipients=[...new Map(matchedStaff.map(s=>[s.phone,{name:s.name,role:hubDisplayRole(s.role)}])).values()];
+    const matchedVendors=includesVendors?(vendorContacts||[]).map(v=>({name:v.name,role:"Vendor",phone:v.phone})):[];
+    const namedRecipients=[...new Map([...matchedStaff.map(s=>[s.phone,{name:s.name,role:hubDisplayRole(s.role)}]),...matchedVendors.map(v=>[v.phone,{name:v.name,role:v.role}])]).values()];
     const unmatchedCount=bcastPhones.length-namedRecipients.length; // e.g. Admin 2 hardcoded number w/ no staff record
 
     if(bcastPhones.length===0){

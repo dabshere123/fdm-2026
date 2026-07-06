@@ -3,65 +3,36 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0"/>
-<title>Fête de Marquette Operations</title>
+<title>Fête de Marquette — Vendor Sign-Up</title>
 <meta name="theme-color" content="#0a0a14"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh;padding:20px 16px 80px;}
+body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh;padding:20px 16px 100px;}
 .wrap{max-width:480px;margin:0 auto;}
-.header{text-align:center;margin-bottom:24px;padding-top:8px;}
+.header{text-align:center;margin-bottom:26px;padding-top:8px;}
 .logo{font-size:34px;margin-bottom:10px;}
 .title{font-size:20px;font-weight:900;color:#f1f5f9;}
-.subtitle{font-size:13px;color:#475569;margin-top:4px;}
-.greeting{background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:14px;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;gap:14px;}
-.avatar{width:50px;height:50px;border-radius:12px;background:rgba(14,165,233,0.2);border:1px solid rgba(14,165,233,0.35);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#38bdf8;flex-shrink:0;}
-.greeting-name{font-size:18px;font-weight:800;color:#f1f5f9;}
-.greeting-sub{font-size:12px;color:#64748b;margin-top:3px;}
-.section{margin-bottom:22px;}
-.section-label{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
-.group-label{font-size:11px;font-weight:900;color:#374151;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px;}
-.roles{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
-.role-btn{padding:14px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);color:#94a3b8;font-size:15px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;justify-content:space-between;transition:all 0.1s;}
-.role-btn.selected{border:2px solid #0ea5e9;background:rgba(14,165,233,0.12);color:#f1f5f9;font-weight:700;}
-.role-btn.selected::after{content:"✓";color:#38bdf8;font-weight:900;}
+.subtitle{font-size:13px;color:#64748b;margin-top:4px;}
+.field{margin-bottom:18px;}
+.label{font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;display:block;}
+.label .req{color:#f59e0b;margin-left:2px;}
+input,select{width:100%;padding:14px 16px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
+input:focus,select:focus{border-color:#f59e0b;}
+select{appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>');background-repeat:no-repeat;background-position:right 14px center;background-size:20px;}
+option{background:#11182c;color:#f1f5f9;}
 
-/* Schedule */
-.day-card{border-radius:12px;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);overflow:hidden;margin-bottom:8px;transition:border-color 0.15s,background 0.15s;}
-.day-card.active{border-color:#f59e0b;background:rgba(245,158,11,0.05);}
-.day-toggle{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;width:100%;background:none;border:none;font-family:inherit;text-align:left;}
-.day-check{width:22px;height:22px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.1s;}
-.day-card.active .day-check{border-color:#f59e0b;background:#f59e0b;}
-.day-check-inner{font-size:13px;color:#1a1000;font-weight:900;display:none;}
-.day-card.active .day-check-inner{display:block;}
-.day-name{font-size:15px;font-weight:700;color:#f1f5f9;}
-.day-date{font-size:12px;color:#64748b;margin-top:1px;}
-.day-times{padding:0 16px 14px;display:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.day-card.active .day-times{display:grid;}
-.time-label{font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;}
-.time-select{width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#f1f5f9;font-size:14px;font-family:inherit;outline:none;cursor:pointer;}
-
-/* Sticky confirm */
-.confirm-wrap{position:fixed;bottom:0;left:0;right:0;padding:12px 16px 20px;background:linear-gradient(to top,#0a0a14 60%,rgba(10,10,20,0) 100%);}
-.confirm-btn{width:100%;max-width:480px;display:block;margin:0 auto;padding:17px;border-radius:14px;border:none;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 24px rgba(14,165,233,0.3);opacity:0.35;}
+.confirm-wrap{position:fixed;bottom:0;left:0;right:0;padding:14px 16px 22px;background:linear-gradient(to top,#0a0a14 60%,rgba(10,10,20,0) 100%);}
+.confirm-btn{width:100%;max-width:480px;display:block;margin:0 auto;padding:17px;border-radius:14px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1000;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 24px rgba(245,158,11,0.3);opacity:0.4;}
 .confirm-btn.ready{opacity:1;}
+.hint{text-align:center;font-size:12px;color:#64748b;margin-top:10px;min-height:16px;}
 
-.not-you{font-size:12px;color:#374151;text-align:center;margin-top:14px;}
-.not-you a{color:#38bdf8;cursor:pointer;}
-#manual-name{display:none;margin-bottom:18px;}
-#manual-name input{width:100%;padding:13px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;}
-
-/* Success */
-.success{text-align:center;padding:48px 16px;}
+.success{text-align:center;padding:60px 16px;}
 .success .icon{font-size:56px;margin-bottom:16px;}
-.success .msg{font-size:22px;font-weight:900;margin-bottom:6px;}
-.success .tag{display:inline-block;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:8px;padding:5px 14px;font-size:13px;color:#38bdf8;font-weight:700;margin:4px 3px;}
-.links{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;margin-top:20px;text-align:left;}
-.link-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
-.link-row:last-child{border:none;padding-bottom:0;}
-.link-icon{font-size:20px;}
-.link-text{font-size:14px;font-weight:700;color:#38bdf8;text-decoration:none;}
-.link-sub{font-size:12px;color:#64748b;margin-top:1px;}
+.success .msg{font-size:22px;font-weight:900;margin-bottom:8px;}
+.success .sub{font-size:14px;color:#94a3b8;line-height:1.6;max-width:340px;margin:0 auto;}
+
+.error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px 14px;font-size:13px;color:#fca5a5;margin-bottom:16px;display:none;}
 </style>
 </head>
 <body>
@@ -69,273 +40,108 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
   <div id="form-view">
     <div class="header">
       <div class="logo">🎶</div>
-      <div class="title">Fête de Marquette Operations</div>
-      <div class="subtitle">July 9–12 · McPike Park · Madison, WI</div>
+      <div class="title">Vendor Sign-Up</div>
+      <div class="subtitle">Fête de Marquette 2026 · July 9–12 · McPike Park</div>
     </div>
 
-    <div class="greeting">
-      <div class="avatar" id="avatar">👋</div>
-      <div>
-        <div class="greeting-name" id="display-name">Welcome!</div>
-        <div class="greeting-sub">Confirm your role and schedule below</div>
-      </div>
+    <div class="error" id="error-box"></div>
+
+    <div class="field">
+      <label class="label">Vendor / Business Name<span class="req">*</span></label>
+      <input id="business-name" type="text" placeholder="e.g. Joe's Tacos" oninput="updateBtn()"/>
     </div>
 
-    <div id="manual-name">
-      <input id="name-input" type="text" placeholder="Enter your full name" autocomplete="name"/>
+    <div class="field">
+      <label class="label">Festival Contact Person<span class="req">*</span></label>
+      <input id="contact-name" type="text" placeholder="Who we should call/text" oninput="updateBtn()"/>
     </div>
 
-    <!-- ROLE -->
-    <div class="section">
-      <div class="section-label" style="margin-bottom:8px;">Your Phone Number <span style="color:#ef4444">*</span></div>
-    <input id="phone-input" type="tel" placeholder="608-555-1234" autocomplete="tel" required style="width:100%;padding:13px 14px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#f1f5f9;font-size:16px;font-family:inherit;outline:none;margin-bottom:18px;" oninput="updateBtn()"/>
-
-    <div class="section-label">Your Role at the Festival</div>
-      <div class="group-label">🍺 Bars</div>
-      <div class="roles">
-        <button class="role-btn" data-role="Bar Manager – Moon Bar">Moon Bar</button>
-        <button class="role-btn" data-role="Bar Manager – Sun Bar Left">Sun Bar – Left</button>
-        <button class="role-btn" data-role="Bar Manager – Sun Bar Right">Sun Bar – Right</button>
-        <button class="role-btn" data-role="Bar Manager – Lafayette Bar">Lafayette Bar</button>
-        <button class="role-btn" data-role="Bar Manager – Lagniappe Bar">Lagniappe Bar</button>
-        <button class="role-btn" data-role="Bar Manager – Family Fete Bar">Family Fete Bar</button>
-        <button class="role-btn" data-role="Bar Manager – Cabaret Bar">Cabaret Bar</button>
-        <button class="role-btn" data-role="Bar Manager – Everything Else Cafe">Everything Else Cafe</button>
-      </div>
-      <div class="group-label">🎤 Stages</div>
-      <div class="roles">
-        <button class="role-btn" data-role="Stage Manager – Moon Stage">Moon Stage</button>
-        <button class="role-btn" data-role="Stage Manager – Sun Stage">Sun Stage</button>
-        <button class="role-btn" data-role="Stage Manager – Lafayette Stage">Lafayette Stage</button>
-        <button class="role-btn" data-role="Stage Manager – Family Fete Stage">Family Fete Stage</button>
-        <button class="role-btn" data-role="Stage Manager – Cabaret Stage">Cabaret Stage</button>
-        <button class="role-btn" data-role="Stage Manager – Lagniappe Stage">Lagniappe Stage</button>
-      </div>
-      <div class="group-label">🏥 Medical</div>
-      <div class="roles">
-        <button class="role-btn" data-role="Med Unit">Med Unit</button>
-      </div>
-      <div class="group-label">⚡ Admin</div>
-      <div class="roles">
-        <button class="role-btn" data-role="Admin">Admin</button>
-        <button class="role-btn" data-role="Admin Marketing">Admin Marketing</button>
-        <button class="role-btn" data-role="Financial">Financial</button>
-      </div>
-      <div class="group-label">📋 Other</div>
-      <div class="roles">
-        <button class="role-btn" data-role="Greeter – Main Entrance Left">Greeter – Main Entrance Left</button>
-        <button class="role-btn" data-role="Greeter – Main Entrance Right">Greeter – Main Entrance Right</button>
-        <button class="role-btn" data-role="Greeter – Few Street Entrance">Greeter – Few Street Entrance</button>
-        <button class="role-btn" data-role="Prize Wheel">Prize Wheel</button>
-        <button class="role-btn" data-role="Overnight Team">Overnight Team</button>
-        <button class="role-btn" data-role="Hospitality">Hospitality</button>
-      </div>
-      <div class="group-label">✏️ Not Listed?</div>
-      <div style="margin-bottom:14px;">
-        <input id="custom-role" type="text" placeholder="Type your role here..." style="width:100%;padding:13px 14px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#f1f5f9;font-size:15px;font-family:inherit;outline:none;" oninput="setCustomRole(this.value)"/>
-      </div>
+    <div class="field">
+      <label class="label">Phone Number<span class="req">*</span></label>
+      <input id="phone" type="tel" placeholder="608-555-1234" autocomplete="tel" oninput="updateBtn()"/>
     </div>
 
-    <!-- SCHEDULE -->
-    <div class="section">
-      <div class="section-label">Days & Times You're Working</div>
-
-      <div class="day-card" id="card-thu">
-        <button class="day-toggle" onclick="toggleDay('thu')">
-          <div class="day-check"><span class="day-check-inner">✓</span></div>
-          <div>
-            <div class="day-name">🔵 Thursday, July 9</div>
-            <div class="day-date">Tap to add this day</div>
-          </div>
-        </button>
-        <div class="day-times">
-          <div><div class="time-label">Start Time</div><select class="time-select" id="thu-start" onchange="updateBtn()"><option value="">Select</option></select></div>
-          <div><div class="time-label">End Time</div><select class="time-select" id="thu-end" onchange="updateBtn()"><option value="">Select</option></select></div>
-        </div>
-      </div>
-
-      <div class="day-card" id="card-fri">
-        <button class="day-toggle" onclick="toggleDay('fri')">
-          <div class="day-check"><span class="day-check-inner">✓</span></div>
-          <div>
-            <div class="day-name">🟠 Friday, July 10</div>
-            <div class="day-date">Tap to add this day</div>
-          </div>
-        </button>
-        <div class="day-times">
-          <div><div class="time-label">Start Time</div><select class="time-select" id="fri-start" onchange="updateBtn()"><option value="">Select</option></select></div>
-          <div><div class="time-label">End Time</div><select class="time-select" id="fri-end" onchange="updateBtn()"><option value="">Select</option></select></div>
-        </div>
-      </div>
-
-      <div class="day-card" id="card-sat">
-        <button class="day-toggle" onclick="toggleDay('sat')">
-          <div class="day-check"><span class="day-check-inner">✓</span></div>
-          <div>
-            <div class="day-name">🟢 Saturday, July 11</div>
-            <div class="day-date">Tap to add this day</div>
-          </div>
-        </button>
-        <div class="day-times">
-          <div><div class="time-label">Start Time</div><select class="time-select" id="sat-start" onchange="updateBtn()"><option value="">Select</option></select></div>
-          <div><div class="time-label">End Time</div><select class="time-select" id="sat-end" onchange="updateBtn()"><option value="">Select</option></select></div>
-        </div>
-      </div>
-
-      <div class="day-card" id="card-sun">
-        <button class="day-toggle" onclick="toggleDay('sun')">
-          <div class="day-check"><span class="day-check-inner">✓</span></div>
-          <div>
-            <div class="day-name">🟣 Sunday, July 12</div>
-            <div class="day-date">Tap to add this day</div>
-          </div>
-        </button>
-        <div class="day-times">
-          <div><div class="time-label">Start Time</div><select class="time-select" id="sun-start" onchange="updateBtn()"><option value="">Select</option></select></div>
-          <div><div class="time-label">End Time</div><select class="time-select" id="sun-end" onchange="updateBtn()"><option value="">Select</option></select></div>
-        </div>
-      </div>
+    <div class="field">
+      <label class="label">Your Location<span class="req">*</span></label>
+      <select id="location" onchange="updateBtn()">
+        <option value="">Select your location...</option>
+        <option value="Brearly">Brearly</option>
+        <option value="Moon Stage">Moon Stage</option>
+        <option value="Family Fete">Family Fete</option>
+        <option value="Sun Stage">Sun Stage</option>
+      </select>
     </div>
 
-    <div class="not-you">Not you? <a onclick="showNameField()">Tap here to enter your name</a></div>
-    <div style="height:80px"></div>
+    <div style="height:70px"></div>
   </div>
 
   <div id="success-view" class="success" style="display:none">
-    <div class="icon">🎶</div>
-    <div class="msg" id="success-name"></div>
-    <div id="success-tags"></div>
-    <div style="font-size:14px;color:#64748b;margin:12px 0 0;">Confirmed! Devin has been notified, and a text with these links is on its way to your phone.</div>
-    <div class="links">
-      <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;">Before Tuesday's meeting</div>
-      <div class="link-row"><div class="link-icon">📱</div><div><a class="link-text" href="https://fdm2026.netlify.app/field">Open the Worker App</a><div class="link-sub">Sign in with your last name</div></div></div>
-      <div class="link-row"><div class="link-icon">🎓</div><div><a class="link-text" href="https://fdm2026.netlify.app/demo">Staff Guide &amp; Demo</a><div class="link-sub">Learn how every button works</div></div></div>
-      <div class="link-row"><div class="link-icon">📖</div><div><a class="link-text" href="https://fdm2026.netlify.app/guide">Read the Staff Guide</a><div class="link-sub">5 min — covers everything</div></div></div>
-      <div class="link-row"><div class="link-icon">✅</div><div><a class="link-text" href="https://fdm2026.netlify.app/quiz">Take the Quiz</a><div class="link-sub">Optional · quick check</div></div></div>
-    </div>
+    <div class="icon">✅</div>
+    <div class="msg">You're all set!</div>
+    <div class="sub">You'll receive festival broadcasts and emergency alerts — by text and phone call — at this number throughout the weekend. A confirmation text is on its way.</div>
   </div>
 </div>
 
-<!-- Sticky confirm -->
-<div class="confirm-wrap" id="confirm-wrap" style="display:none">
-  <button class="confirm-btn" id="confirm-btn" onclick="submitForm()">Confirm →</button>
+<div class="confirm-wrap" id="confirm-wrap">
+  <button class="confirm-btn" id="confirm-btn" onclick="submitForm()">Sign Up →</button>
+  <div class="hint" id="hint"></div>
 </div>
 
 <script>
-// ── Time options
-const TIMES=[];
-for(let h=6;h<=27;h++){
-  const disp=h<24?`${h<13?h:h-12}:00 ${h<12||h===24?'AM':'PM'}`:`${h-12}:00 AM (next day)`;
-  const val=h<24?`${String(h).padStart(2,'0')}:00`:`${String(h-24).padStart(2,'0')}:00+1`;
-  TIMES.push({disp,val});
-}
-['thu','fri','sat','sun'].forEach(d=>{
-  ['start','end'].forEach(t=>{
-    const sel=document.getElementById(`${d}-${t}`);
-    TIMES.forEach(({disp,val})=>sel.add(new Option(disp,val)));
-  });
-});
-
-// ── Name from URL
-const params=new URLSearchParams(window.location.search);
-let staffName=decodeURIComponent(params.get('name')||'').trim();
-let selectedRole='';
-const activeDays={thu:false,fri:false,sat:false,sun:false};
-
-function init(){
-  if(staffName){setName(staffName);}
-  else{showNameField();}
-}
-
-function setName(n){
-  staffName=n;
-  const ini=n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('avatar').textContent=ini||'👋';
-  document.getElementById('display-name').textContent=n;
-}
-
-function showNameField(){
-  document.getElementById('manual-name').style.display='block';
-  const inp=document.getElementById('name-input');
-  inp.value=staffName;
-  inp.oninput=()=>{setName(inp.value.trim());updateBtn();};
-  window.scrollTo({top:0,behavior:'smooth'});
-  setTimeout(()=>inp.focus(),400);
-}
-
-// ── Role selection
-document.querySelectorAll('.role-btn').forEach(btn=>{
-  btn.addEventListener('click',function(){
-    document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
-    this.classList.add('selected');
-    selectedRole=this.dataset.role;
-    updateBtn();
-  });
-});
-
-// ── Day toggle
-function toggleDay(d){
-  activeDays[d]=!activeDays[d];
-  const card=document.getElementById(`card-${d}`);
-  if(activeDays[d]) card.classList.add('active');
-  else card.classList.remove('active');
-  updateBtn();
-}
-
 function updateBtn(){
-  const anyDay=Object.values(activeDays).some(Boolean);
-  const ready=staffName&&selectedRole&&anyDay;
+  const businessName=document.getElementById('business-name').value.trim();
+  const contactName=document.getElementById('contact-name').value.trim();
+  const phone=document.getElementById('phone').value.trim();
+  const location=document.getElementById('location').value;
+  const ready=businessName&&contactName&&phone&&location;
   const btn=document.getElementById('confirm-btn');
-  const wrap=document.getElementById('confirm-wrap');
-  const hint=document.getElementById('confirm-hint');
-  wrap.style.display='block';
   btn.className='confirm-btn'+(ready?' ready':'');
-  btn.disabled=!ready;
-  if(ready){
-    hint.textContent='';
-  } else {
+  const hint=document.getElementById('hint');
+  if(ready){hint.textContent='';}
+  else{
     const missing=[];
-    if(!staffName) missing.push('enter your name');
-    if(!selectedRole) missing.push('select a role');
-    if(!anyDay) missing.push('select at least one day');
-    hint.textContent='Still needed: '+missing.join(' · ');
+    if(!businessName)missing.push('business name');
+    if(!contactName)missing.push('contact person');
+    if(!phone)missing.push('phone number');
+    if(!location)missing.push('location');
+    hint.textContent='Still needed: '+missing.join(', ');
   }
 }
 
-// ── Submit
 async function submitForm(){
-  if(!staffName||!selectedRole) return;
-  const schedule=[];
-  ['thu','fri','sat','sun'].forEach(d=>{
-    if(!activeDays[d]) return;
-    const s=document.getElementById(`${d}-start`).value;
-    const e=document.getElementById(`${d}-end`).value;
-    const labels={thu:'Thu Jul 9',fri:'Fri Jul 10',sat:'Sat Jul 11',sun:'Sun Jul 12'};
-    schedule.push(`${labels[d]}: ${s||'TBD'}–${e||'TBD'}`);
-  });
+  const businessName=document.getElementById('business-name').value.trim();
+  const contactName=document.getElementById('contact-name').value.trim();
+  const phone=document.getElementById('phone').value.trim();
+  const location=document.getElementById('location').value;
+  if(!businessName||!contactName||!phone||!location) return;
 
   const btn=document.getElementById('confirm-btn');
-  btn.textContent='Sending...';btn.disabled=true;
+  const errorBox=document.getElementById('error-box');
+  errorBox.style.display='none';
+  btn.textContent='Signing up...';btn.disabled=true;
 
   try{
-    await fetch('/.netlify/functions/send-rsvp',{
+    const res=await fetch('/.netlify/functions/submit-vendor',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:staffName,role:selectedRole,schedule:schedule.join(' | '),phone:document.getElementById('phone-input').value})
+      body:JSON.stringify({businessName,contactName,phone,location})
     });
+    const data=await res.json();
+    if(!res.ok||data.error){
+      throw new Error(data.error||'Something went wrong. Please try again.');
+    }
     document.getElementById('form-view').style.display='none';
     document.getElementById('confirm-wrap').style.display='none';
     document.getElementById('success-view').style.display='block';
-    document.getElementById('success-name').textContent=staffName;
-    const tags=document.getElementById('success-tags');
-    tags.innerHTML=`<span class="tag">${selectedRole}</span>`+schedule.map(s=>`<span class="tag">${s}</span>`).join('');
     window.scrollTo(0,0);
   }catch(e){
-    btn.textContent='Confirm →';btn.disabled=false;
-    alert('Something went wrong. Please try again.');
+    btn.textContent='Sign Up →';btn.disabled=false;
+    errorBox.textContent='⚠️ '+e.message;
+    errorBox.style.display='block';
+    window.scrollTo(0,0);
   }
 }
 
-init();
+updateBtn();
 </script>
 </body>
 </html>

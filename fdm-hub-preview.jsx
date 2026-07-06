@@ -4126,6 +4126,18 @@ Reply YES to acknowledge.`
               REPORT LOST CHILD
               {activeCalls.filter(c=>c.type==="lost_child").length>0&&<div style={{position:"absolute",top:4,right:6,background:"#ef4444",color:"#fff",fontSize:10,fontWeight:900,borderRadius:20,padding:"1px 6px"}}>{activeCalls.filter(c=>c.type==="lost_child").length}</div>}
             </button>
+
+            {/* MPD — bottom of Safety section */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:2}}>
+              <button style={{background:"rgba(37,99,235,0.1)",borderRadius:10,border:"1px solid rgba(37,99,235,0.35)",padding:"9px 8px",display:"flex",flexDirection:"column",gap:2,cursor:"pointer",textAlign:"left"}} onClick={()=>setMpdRequestView(true)}>
+                <div style={{fontSize:12,fontWeight:800,color:"#93c5fd"}}>🚔 Request MPD</div>
+                <div style={{fontSize:9,color:"#64748b"}}>Dispatch to a location</div>
+              </button>
+              <button style={{background:"rgba(37,99,235,0.06)",borderRadius:10,border:"1px solid rgba(37,99,235,0.25)",padding:"9px 8px",display:"flex",flexDirection:"column",gap:2,cursor:"pointer",textAlign:"left"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#60a5fa"}}>👮 Manage Officers</div>
+                <div style={{fontSize:9,color:"#64748b"}}>Add / toggle on-off</div>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -4154,27 +4166,15 @@ Reply YES to acknowledge.`
         </div>
       </div>
 
-    {/* ===== SUPPLIES + MAINTENANCE ===== */}
+    {/* ===== MAINTENANCE + SUPPLIES ===== */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        <button style={{background:"rgba(245,158,11,0.06)",borderRadius:14,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>{setResourceType("supplies");setResourceView(true);}}>
-          <div style={{fontSize:15,fontWeight:800,color:"#fbbf24"}}>📦 Supplies</div>
-          <div style={{fontSize:11,color:"#64748b"}}>Log a restock request</div>
-        </button>
         <button style={{background:"rgba(16,185,129,0.06)",borderRadius:14,border:"1px solid rgba(16,185,129,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>{setResourceType("maintenance");setResourceView(true);}}>
           <div style={{fontSize:15,fontWeight:800,color:"#6ee7b7"}}>🔧 Maintenance</div>
           <div style={{fontSize:11,color:"#64748b"}}>Log a maintenance issue</div>
         </button>
-      </div>
-
-    {/* ===== MPD ===== */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        <button style={{background:"rgba(37,99,235,0.08)",borderRadius:14,border:"1px solid rgba(37,99,235,0.3)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>setMpdRequestView(true)}>
-          <div style={{fontSize:15,fontWeight:800,color:"#93c5fd"}}>🚔 Request MPD</div>
-          <div style={{fontSize:11,color:"#64748b"}}>Dispatch officers to a location</div>
-        </button>
-        <button style={{background:"rgba(37,99,235,0.04)",borderRadius:14,border:"1px solid rgba(37,99,235,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
-          <div style={{fontSize:15,fontWeight:800,color:"#60a5fa"}}>👮 Manage Officers</div>
-          <div style={{fontSize:11,color:"#64748b"}}>Add or toggle on/off duty</div>
+        <button style={{background:"rgba(245,158,11,0.06)",borderRadius:14,border:"1px solid rgba(245,158,11,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",textAlign:"left"}} onClick={()=>{setResourceType("supplies");setResourceView(true);}}>
+          <div style={{fontSize:15,fontWeight:800,color:"#fbbf24"}}>📦 Supplies</div>
+          <div style={{fontSize:11,color:"#64748b"}}>Log a restock request</div>
         </button>
       </div>
 

@@ -12153,7 +12153,65 @@ Reply YES to acknowledge.`
       borderRadius: 20,
       padding: "1px 6px"
     }
-  }, activeCalls.filter(c => c.type === "lost_child").length)))), /*#__PURE__*/React.createElement("div", {
+  }, activeCalls.filter(c => c.type === "lost_child").length)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 6,
+      marginTop: 2
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "rgba(37,99,235,0.1)",
+      borderRadius: 10,
+      border: "1px solid rgba(37,99,235,0.35)",
+      padding: "9px 8px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+      cursor: "pointer",
+      textAlign: "left"
+    },
+    onClick: () => setMpdRequestView(true)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 800,
+      color: "#93c5fd"
+    }
+  }, "\uD83D\uDE94 Request MPD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: "#64748b"
+    }
+  }, "Dispatch to a location")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "rgba(37,99,235,0.06)",
+      borderRadius: 10,
+      border: "1px solid rgba(37,99,235,0.25)",
+      padding: "9px 8px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+      cursor: "pointer",
+      textAlign: "left"
+    },
+    onClick: () => {
+      fetchMPD();
+      setMpdManageOpen(true);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 800,
+      color: "#60a5fa"
+    }
+  }, "\uD83D\uDC6E Manage Officers"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: "#64748b"
+    }
+  }, "Add / toggle on-off"))))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(236,72,153,0.1)",
       borderRadius: 14,
@@ -12221,33 +12279,6 @@ Reply YES to acknowledge.`
     }
   }, /*#__PURE__*/React.createElement("button", {
     style: {
-      background: "rgba(245,158,11,0.06)",
-      borderRadius: 14,
-      border: "1px solid rgba(245,158,11,0.2)",
-      padding: "14px 16px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
-      cursor: "pointer",
-      textAlign: "left"
-    },
-    onClick: () => {
-      setResourceType("supplies");
-      setResourceView(true);
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 800,
-      color: "#fbbf24"
-    }
-  }, "\uD83D\uDCE6 Supplies"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#64748b"
-    }
-  }, "Log a restock request")), /*#__PURE__*/React.createElement("button", {
-    style: {
       background: "rgba(16,185,129,0.06)",
       borderRadius: 14,
       border: "1px solid rgba(16,185,129,0.2)",
@@ -12273,41 +12304,11 @@ Reply YES to acknowledge.`
       fontSize: 11,
       color: "#64748b"
     }
-  }, "Log a maintenance issue"))), /*#__PURE__*/React.createElement("div", {
+  }, "Log a maintenance issue")), /*#__PURE__*/React.createElement("button", {
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: "rgba(37,99,235,0.08)",
+      background: "rgba(245,158,11,0.06)",
       borderRadius: 14,
-      border: "1px solid rgba(37,99,235,0.3)",
-      padding: "14px 16px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
-      cursor: "pointer",
-      textAlign: "left"
-    },
-    onClick: () => setMpdRequestView(true)
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 800,
-      color: "#93c5fd"
-    }
-  }, "\uD83D\uDE94 Request MPD"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#64748b"
-    }
-  }, "Dispatch officers to a location")), /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: "rgba(37,99,235,0.04)",
-      borderRadius: 14,
-      border: "1px solid rgba(37,99,235,0.2)",
+      border: "1px solid rgba(245,158,11,0.2)",
       padding: "14px 16px",
       display: "flex",
       flexDirection: "column",
@@ -12316,21 +12317,21 @@ Reply YES to acknowledge.`
       textAlign: "left"
     },
     onClick: () => {
-      fetchMPD();
-      setMpdManageOpen(true);
+      setResourceType("supplies");
+      setResourceView(true);
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       fontWeight: 800,
-      color: "#60a5fa"
+      color: "#fbbf24"
     }
-  }, "\uD83D\uDC6E Manage Officers"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCE6 Supplies"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#64748b"
     }
-  }, "Add or toggle on/off duty"))), /*#__PURE__*/React.createElement("div", {
+  }, "Log a restock request"))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(234,179,8,0.06)",
       borderRadius: 14,

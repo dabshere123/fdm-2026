@@ -39,7 +39,7 @@ exports.handler = async (event) => {
 
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
-  const { action, itemId, type, label, location, checkedOutBy, checkedInBy, serial } = JSON.parse(event.body || '{}');
+  const { action, itemId, type, label, location, checkedOutBy, checkedInBy, serial, items } = JSON.parse(event.body || '{}');
 
   // Find record by ItemID
   async function findRecord(id) {
@@ -91,6 +91,22 @@ exports.handler = async (event) => {
 
     if (action === 'serial') {
       await upsert(itemId, { Serial: serial });
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    if (action === 'location') {
+      await upsert(itemId, { Location: location });
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    if (action === 'seed') {
+      // Bulk-create/update baseline records — used once to populate a fresh table
+      for (const it of (items || [])) {
+        await upsert(it.itemId, {
+          Status: it.status || 'available',
+          Serial: it.serial || '',
+        });
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 

@@ -126,6 +126,38 @@ export default function EquipmentTracker(){
     post30SMS:"Hi [Name], this is Fête de Marquette Operations. We still have your equipment on record. Please return your radio and/or credit card reader to the festival office as soon as possible. Thank you!",
   });
   const [notifDirty,setNotifDirty] = useState(false);
+  const [syncStatus,setSyncStatus] = useState("loading"); // loading | synced | offline
+  const [lastSynced,setLastSynced] = useState(null);
+
+  // ── SERVER SYNC — pulls the shared Airtable-backed state so multiple devices agree ──
+  async function pullFromServer(silent){
+    try{
+      const res = await fetch("/.netlify/functions/equipment-action");
+      const data = await res.json();
+      const items = data.items || [];
+      if(items.length === 0){
+        // Fresh table — seed it with our current local state so it has a baseline
+        const seedItems = [...radios, ...readers].map(it=>({itemId:it.id, status:it.status, serial:it.serial}));
+        fetch("/.netlify/functions/equipment-action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"seed",items:seedItems})}).catch(()=>{});
+        setSyncStatus("synced");setLastSynced(new Date());
+        return;
+      }
+      const byId = Object.fromEntries(items.map(it=>[it.itemId,it]));
+      setRadios(p=>p.map(r=>byId[r.id]?{...r,location:byId[r.id].location||r.location,serial:byId[r.id].serial||r.serial,status:byId[r.id].status||r.status,checkedOutBy:byId[r.id].checkedOutBy||"",checkedOutAt:byId[r.id].checkedOutAt||null,checkedInBy:byId[r.id].checkedInBy||"",checkedInAt:byId[r.id].checkedInAt||null}:r));
+      setReaders(p=>p.map(r=>byId[r.id]?{...r,location:byId[r.id].location!==undefined?byId[r.id].location:r.location,serial:byId[r.id].serial||r.serial,status:byId[r.id].status||r.status,checkedOutBy:byId[r.id].checkedOutBy||"",checkedOutAt:byId[r.id].checkedOutAt||null,checkedInBy:byId[r.id].checkedInBy||"",checkedInAt:byId[r.id].checkedInAt||null}:r));
+      setSyncStatus("synced");setLastSynced(new Date());
+    }catch(e){
+      setSyncStatus("offline");
+    }
+  }
+  useEffect(()=>{
+    pullFromServer();
+    const interval=setInterval(()=>pullFromServer(true),20000); // pick up other devices' changes every 20s
+    return ()=>clearInterval(interval);
+  },[]);
+  function pushToServer(action,itemId,extra){
+    fetch("/.netlify/functions/equipment-action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,itemId,...extra})}).catch(()=>setSyncStatus("offline"));
+  }
 
   // Persist
   useEffect(()=>{save({radios,readers,log,notifSettings});},[radios,readers,log,notifSettings]);
@@ -142,11 +174,19 @@ export default function EquipmentTracker(){
   const available = allItems.filter(i=>i.status==="available").length;
   const returned = allItems.filter(i=>i.status==="returned").length;
 
+  function syncFields(id,fields){
+    if(fields.location!==undefined) pushToServer("location",id,{location:fields.location});
+    if(fields.serial!==undefined) pushToServer("serial",id,{serial:fields.serial});
+    if(fields.status==="out") pushToServer("checkout",id,{checkedOutBy:fields.checkedOutBy});
+    if(fields.status==="returned") pushToServer("checkin",id,{checkedInBy:fields.checkedInBy});
+  }
   function updateRadio(id,fields){
     setRadios(p=>p.map(r=>r.id===id?{...r,...fields}:r));
+    syncFields(id,fields);
   }
   function updateReader(id,fields){
     setReaders(p=>p.map(r=>r.id===id?{...r,...fields}:r));
+    syncFields(id,fields);
   }
   function updateItem(type,id,fields){
     type==="radio"?updateRadio(id,fields):updateReader(id,fields);
@@ -167,6 +207,7 @@ export default function EquipmentTracker(){
     if(!window.confirm("Reset all equipment to Available? This clears all check-out data.")) return;
     setRadios(p=>p.map(r=>({...r,status:"available",checkedOutBy:"",checkedOutAt:null,checkedInBy:"",checkedInAt:null})));
     setReaders(p=>p.map(r=>({...r,status:"available",checkedOutBy:"",checkedOutAt:null,checkedInBy:"",checkedInAt:null})));
+    [...radios,...readers].forEach(it=>pushToServer("reset",it.id));
     addLog("Full reset by Admin");
   }
 
@@ -496,7 +537,15 @@ export default function EquipmentTracker(){
               <div style={{fontSize:11,color:"#64748b"}}>Fête de Marquette 2026</div>
             </div>
           </div>
-          <button style={{...S.btn,background:"rgba(245,158,11,0.15)",color:"#fbbf24",border:"1px solid rgba(245,158,11,0.3)",fontSize:12}} onClick={()=>setTab("notifications")}>🔔 Notifications</button>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <button title="Refresh from other devices" style={{background:"none",border:"none",color:syncStatus==="offline"?"#ef4444":"#4ade80",fontSize:16,cursor:"pointer",padding:4}} onClick={()=>{setSyncStatus("loading");pullFromServer();}}>
+              {syncStatus==="loading"?"⏳":syncStatus==="offline"?"⚠️":"🔄"}
+            </button>
+            <button style={{...S.btn,background:"rgba(245,158,11,0.15)",color:"#fbbf24",border:"1px solid rgba(245,158,11,0.3)",fontSize:12}} onClick={()=>setTab("notifications")}>🔔 Notifications</button>
+          </div>
+        </div>
+        <div style={{textAlign:"center",fontSize:10,color:syncStatus==="offline"?"#ef4444":"#64748b",padding:"4px 0 8px",background:"#0a0f1e"}}>
+          {syncStatus==="offline"?"⚠️ Offline — showing this device's last known data":syncStatus==="loading"?"Syncing...":lastSynced?`Synced across devices · ${lastSynced.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:""}
         </div>
 
         <div style={{padding:"16px"}}>

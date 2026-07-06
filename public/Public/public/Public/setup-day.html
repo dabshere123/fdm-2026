@@ -51,21 +51,21 @@
   <div class="hdr">
     <div class="eyebrow">Fête de Marquette 2026</div>
     <h1>Setup Day</h1>
-    <div class="sub">Find your team below to see your task and where things go</div>
+    <div class="sub">Tap your area below to see the setup and where things go</div>
   </div>
 
   <div class="content">
 
     <!-- TEAM LIST -->
     <div id="listView" class="team-list-view">
-      <input class="search" id="search" placeholder="Search your team or name..." oninput="renderList()"/>
+      <input class="search" id="search" placeholder="Search by area name..." oninput="renderList()"/>
       <div class="team-list" id="teamList"></div>
-      <div class="empty" id="emptyState" style="display:none;">No team matches that search.</div>
+      <div class="empty" id="emptyState" style="display:none;">No area matches that search.</div>
     </div>
 
     <!-- DETAIL VIEW -->
     <div id="detailView" class="detail">
-      <button class="back-btn" onclick="showList()">← All Teams</button>
+      <button class="back-btn" onclick="showList()">← All Areas</button>
       <div class="detail-header">
         <div class="detail-dot" id="detailDot"></div>
         <div>
@@ -96,48 +96,169 @@
 // "reportTo" and "notes" are optional — leave as "" to hide them.
 const TEAMS = [
   {
-    id: "g1",
-    name: "G1 — Operation Fresh Start",
-    emoji: "🌱",
+    id: "bank-bars",
+    name: "Left & Right Bank Bars",
+    emoji: "🍺",
     color: "#f59e0b",
-    oneliner: "Setup crew",
-    reportTo: "",
-    task: "To be assigned",
-    location: "To be assigned",
+    oneliner: "4 bar sections + tables, each side",
+    reportTo: "Assigned Group: TBD",
+    task: "4 Bar Sections each side\n4 6' Tables each side\n1 4' Table each side",
+    location: "Total: 10 bar-sections, (8) 6' tables & (2) 4' tables",
     notes: ""
   },
   {
-    id: "g2",
-    name: "G2 — Rob, Bruce J, Zach",
-    emoji: "🔨",
+    id: "cabaret-bar",
+    name: "Cabaret Bar",
+    emoji: "🍸",
+    color: "#f59e0b",
+    oneliner: "4 bar sections + 1 6' table",
+    reportTo: "Assigned Group: TBD",
+    task: "4 bar sections\n1 6' table",
+    location: "Total: 4 bar-sections & (1) 6' table",
+    notes: ""
+  },
+  {
+    id: "family-fete-bar",
+    name: "Family Fete Bar",
+    emoji: "🎪",
+    color: "#f59e0b",
+    oneliner: "4 bar sections + 8' tables",
+    reportTo: "Assigned Group: TBD",
+    task: "4 Bar Sections\n2 8' Tables",
+    location: "Total: 4 bar-sections, (3) 8' & (1) 6' tables",
+    notes: ""
+  },
+  {
+    id: "moon-bar",
+    name: "Moon Stage Bar",
+    emoji: "🌙",
+    color: "#f59e0b",
+    oneliner: "8 bar sections — biggest bar",
+    reportTo: "Assigned Group: TBD",
+    task: "8 Bar Sections\n2 8' Tables\n1 6' and 1 4' Table\nFollow the Moon Stage Bar Set diagram for layout (bar sections form a U-shape with 6' table in center, 2 caddies at the open end).",
+    location: "Total: 8 bar-sections, (2) 8' & (1) 6' tables",
+    notes: ""
+  },
+  {
+    id: "lafayette-bar",
+    name: "Lafayette Stage Bar",
+    emoji: "🎷",
+    color: "#f59e0b",
+    oneliner: "4 bar sections + cabaret tables",
+    reportTo: "Assigned Group: TBD",
+    task: "4 Bar Sections\n3 8' Tables\n1 6' Table\n4 Cabaret Tables",
+    location: "Total: 4 bar-sections, (3) 8', (1) 6' & 2 cabaret tables",
+    notes: ""
+  },
+  {
+    id: "cabaret-tent",
+    name: "Cabaret Tent",
+    emoji: "🎪",
     color: "#6366f1",
-    oneliner: "Setup crew",
-    reportTo: "",
-    task: "To be assigned",
-    location: "To be assigned",
-    notes: "Bruce J's wife is helping coordinate this group."
+    oneliner: "20 round tables, 100 chairs",
+    reportTo: "Assigned Group: TBD",
+    task: "20 Round Tables, 5 Chairs per Table\nSet 4 rows (centered to stage) of 4 tables each",
+    location: "Total: 20 round tables and 100 chairs",
+    notes: ""
   },
   {
-    id: "g3",
-    name: "G3 — Wardell, Austin, Philip, Steve",
-    emoji: "🛠️",
+    id: "family-fete-tent",
+    name: "Family Fete Tent",
+    emoji: "🎪",
+    color: "#6366f1",
+    oneliner: "6 round tables, 50 chairs",
+    reportTo: "Assigned Group: TBD",
+    task: "6 Round Tables / 5 Chairs per Table\nSet 2 rows (centered to stage) of 3 tables each",
+    location: "Total: 6 round tables & 50 chairs",
+    notes: ""
+  },
+  {
+    id: "lafayette-tents",
+    name: "Lafayette Shade Tents",
+    emoji: "⛺",
+    color: "#6366f1",
+    oneliner: "40 round tables, 200 chairs total",
+    reportTo: "Assigned Group: TBD",
+    task: "20 Round tables / 5 Chairs per Table, 100 Chairs\nSET: 8 round in each 20x40 tent, and 4 in the 20x20 tent. Equalize spacing of tables.\nSub-Total: 20 round and 100 chairs\n\nGENERAL SEATING: 20 round tables & 100 chairs, spread out at 15 feet from stage",
+    location: "Total: 40 round tables & 200 chairs",
+    notes: ""
+  },
+  {
+    id: "moon-patio-tent",
+    name: "Moon Stage Patio + Tent",
+    emoji: "🌙",
     color: "#10b981",
-    oneliner: "Setup crew",
-    reportTo: "",
-    task: "To be assigned",
-    location: "To be assigned",
+    oneliner: "Patio seating + cabaret tent",
+    reportTo: "Assigned Group: TBD",
+    task: "PATIO: 10 round & 50 chairs. Set up against building on grassy area.\n\nTENT: 20 cabaret tables. Set up against building on grassy area.",
+    location: "Total: 10 round tables, 100 chairs & 20 cabaret tables",
     notes: ""
   },
   {
-    id: "g4",
-    name: "G4 — Fips and Mousa",
-    emoji: "📦",
-    color: "#ec4899",
-    oneliner: "Setup crew",
-    reportTo: "",
-    task: "To be assigned",
-    location: "To be assigned",
+    id: "sun-shade-tents",
+    name: "Sun Stage Shade Tents (4)",
+    emoji: "☀️",
+    color: "#10b981",
+    oneliner: "32 round tables, 160 chairs",
+    reportTo: "Assigned Group: TBD",
+    task: "8 Round Tables each tent / 5 Chairs per Table\nSet 4 rows (along the 40' side) of 5 tables each. Equalize space between tables.",
+    location: "Total: 32 round tables & 160 chairs",
     notes: ""
+  },
+  {
+    id: "sun-seating",
+    name: "Sun Stage General Seating",
+    emoji: "☀️",
+    color: "#10b981",
+    oneliner: "16-18 round tables, 400+ chairs",
+    reportTo: "Assigned Group: TBD",
+    task: "18 round tables and 90 chairs as a base, 400+ chairs total.\nSet chairs in an arc beginning at the concrete end. Set tables behind the chairs, also in an arc.",
+    location: "Total: 16 to 18 round tables and north of 400 chairs",
+    notes: "Gary will distribute many of the leftover chairs."
+  },
+  {
+    id: "lagniappe-seating",
+    name: "Lagniappe Stage Seating",
+    emoji: "🎭",
+    color: "#10b981",
+    oneliner: "20 round + 8 cabaret tables",
+    reportTo: "Assigned Group: TBD",
+    task: "20 round and 8 cabaret tables, 100 chairs.\nSet up against the building.",
+    location: "Total: 20 round, 8 cabaret tables & 100 chairs",
+    notes: ""
+  },
+  {
+    id: "eec",
+    name: "Everything Else Cafe",
+    emoji: "☕",
+    color: "#ec4899",
+    oneliner: "4 8' tables + 6 cabaret tables",
+    reportTo: "Assigned Group: TBD",
+    task: "4 8-foot tables, 6 cabaret tables.\nSet 8' tables on the sides to create 2 bars. Set 6 cabaret tables along the back, between the table bars.",
+    location: "Total: (4) 8' tables and 6 cabaret tables",
+    notes: ""
+  },
+  {
+    id: "prize-wheel",
+    name: "Prize Wheel",
+    emoji: "🎡",
+    color: "#ec4899",
+    oneliner: "6 6' tables + 1 4' table",
+    reportTo: "Assigned Group: TBD",
+    task: "(6) 6' tables\n(1) 4' table\nGrab needed chairs from the pile.",
+    location: "Prize Wheel area — see site map",
+    notes: ""
+  },
+  {
+    id: "hospitality-grounds",
+    name: "Hospitality / Grounds",
+    emoji: "🏕️",
+    color: "#ec4899",
+    oneliner: "Distribute tables across the grounds",
+    reportTo: "Assigned Group: TBD",
+    task: "(4) 8' and (2) 4' tables → Moon\n(4) 8' and (2) 4' tables → Sun Stage\n(2) 8' tables → Cabaret\n(4) 8' tables → Grounds",
+    location: "Deliver to each area listed above",
+    notes: "Grab needed chairs from the 345 pile."
   },
 ];
 // ─────────────────────────────────────────────────────────────────────────────

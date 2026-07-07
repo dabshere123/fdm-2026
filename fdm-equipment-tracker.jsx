@@ -39,7 +39,7 @@ const RADIO_LOCATIONS = [
   "Lafayette Bar",       // 15
   "Prize Wheel",         // 16
   "MPD",                 // 17
-  "MPD",                 // 18
+  "Devin's Cart",        // 18
 ];
 
 // Readers go to bars only, NOT Lagniappe, plus Prize Wheel = 8 spots

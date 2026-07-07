@@ -12,469 +12,84 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   body{margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100vh;}
-  .wrap{max-width:640px; margin:0 auto; padding:0 0 60px;}
-  .hdr{padding:28px 20px 20px; text-align:center; border-bottom:1px solid var(--border); background:linear-gradient(180deg, rgba(245,158,11,0.08), transparent);}
+  .wrap{max-width:520px; margin:0 auto; padding:0 0 60px;}
+  .back-btn{display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:none; color:var(--text); font-size:13px; font-weight:700; padding:9px 14px; border-radius:10px; cursor:pointer; margin:16px 16px 0;}
+  .hdr{padding:16px 20px 20px; text-align:center;}
   .hdr .eyebrow{font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:var(--amber); margin-bottom:6px;}
-  .hdr h1{margin:0; font-size:24px; font-weight:900; letter-spacing:-0.01em;}
+  .hdr h1{margin:0; font-size:26px; font-weight:900; letter-spacing:-0.01em;}
   .hdr .sub{margin-top:6px; font-size:14px; color:var(--sub);}
-  .content{padding:18px 16px;}
-  .search{width:100%; background:rgba(255,255,255,0.06); border:1.5px solid var(--border); border-radius:12px; padding:14px 16px; color:var(--text); font-size:16px; margin-bottom:16px; outline:none;}
-  .search:focus{border-color:var(--amber);}
-  .team-list{display:flex; flex-direction:column; gap:10px;}
-  .team-card{display:flex; align-items:center; gap:14px; padding:16px; border-radius:14px; border:1.5px solid var(--border); background:var(--card); cursor:pointer; text-align:left; width:100%;}
-  .team-card:active{transform:scale(0.98);}
-  .team-dot{width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;}
-  .team-info{flex:1; min-width:0;}
-  .team-name{font-size:16px; font-weight:800; color:var(--text);}
-  .team-oneliner{font-size:13px; color:var(--sub); margin-top:2px;}
-  .team-arrow{color:var(--faint); font-size:18px; flex-shrink:0;}
-  .empty{text-align:center; padding:40px 20px; color:var(--faint); font-size:14px;}
+  .content{padding:8px 16px 16px;}
 
-  /* Detail view */
-  .detail{display:none;}
-  .detail.active{display:block;}
-  .team-list-view.hidden{display:none;}
-  .back-btn{display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:none; color:var(--text); font-size:14px; font-weight:700; padding:10px 16px; border-radius:10px; cursor:pointer; margin-bottom:16px;}
-  .detail-header{display:flex; align-items:center; gap:14px; margin-bottom:20px;}
-  .detail-dot{width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0;}
-  .detail-title{font-size:22px; font-weight:900;}
-  .detail-report{font-size:13px; color:var(--sub); margin-top:2px;}
-  .section{background:var(--card); border:1.5px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:12px;}
-  .section-label{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--amber); margin-bottom:8px;}
-  .section-body{font-size:15px; line-height:1.7; color:var(--text); white-space:pre-wrap;}
-  .section.location .section-label{color:#6ee7b7;}
-  .section.location{border-color:rgba(16,185,129,0.25);}
+  .group-list{display:flex; flex-direction:column; gap:10px;}
+  .group-card{display:flex; align-items:center; justify-content:space-between; padding:20px; border-radius:16px; border:1.5px solid var(--border); background:var(--card); cursor:pointer; text-align:left; width:100%; font-size:18px; font-weight:800; color:var(--text);}
+  .group-card:active{transform:scale(0.98);}
+  .group-arrow{color:var(--faint); font-size:20px;}
 
-  .phase-banner{display:flex; flex-direction:column; gap:12px; background:var(--card); border:1.5px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:18px;}
-  .phase-step{display:flex; align-items:flex-start; gap:12px;}
-  .phase-num{width:26px; height:26px; border-radius:50%; background:var(--amber-dim); color:var(--amber); font-weight:900; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;}
-  .phase-title{font-size:14px; font-weight:800; color:var(--text);}
-  .phase-desc{font-size:12.5px; color:var(--sub); margin-top:2px; line-height:1.5;}
+  .group-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+  .group-name{font-size:24px; font-weight:900;}
+  .switch-link{font-size:12px; color:var(--faint); text-decoration:underline; cursor:pointer;}
 
-  .phase-tag{display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; padding:3px 8px; border-radius:6px; margin-top:4px;}
-  .phase-tag.setup{background:rgba(99,102,241,0.15); color:#a5b4fc;}
-  .phase-tag.delivery{background:rgba(236,72,153,0.15); color:#f9a8d4;}
+  .task-card{background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:18px 20px; margin-bottom:12px;}
+  .task-card.done{opacity:0.45;}
+  .task-text{font-size:18px; font-weight:800; color:var(--text); margin-bottom:14px; line-height:1.4;}
+  .task-btn{width:100%; padding:14px; border-radius:12px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a1000; font-weight:900; font-size:15px; cursor:pointer;}
+  .task-done-label{font-size:14px; color:#6ee7b7; font-weight:800;}
 
-  .hidden{display:none !important;}
-  .mode-tabs{display:flex; gap:8px; margin-bottom:6px;}
-  .mode-tab{flex:1; padding:11px; border-radius:10px; border:1.5px solid var(--border); background:var(--card); color:var(--sub); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;}
-  .mode-tab.active{background:var(--amber-dim); border-color:var(--amber); color:var(--amber);}
+  .empty-msg{text-align:center; padding:50px 20px; color:var(--sub); font-size:14px; line-height:1.6;}
 
-  .admin-group-card{background:var(--card); border:1.5px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px;}
-  .admin-group-name{font-size:15px; font-weight:800; color:var(--text); margin-bottom:6px;}
-  .admin-group-task{font-size:13px; color:var(--sub); margin-bottom:10px;}
-  .admin-status-pill{display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; padding:2px 8px; border-radius:6px; margin-left:8px;}
-  .admin-status-pill.assigned{background:rgba(99,102,241,0.15); color:#a5b4fc;}
-  .admin-status-pill.complete{background:rgba(16,185,129,0.15); color:#6ee7b7;}
-  .admin-status-pill.idle{background:rgba(100,116,139,0.15); color:#94a3b8;}
-  .admin-select{width:100%; margin-bottom:8px;}
-  .task-item{background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:12px;}
-  .task-item.complete{opacity:0.5;}
-  .task-item-text{flex:1; font-size:15px; font-weight:700; color:var(--text);}
-  .task-item-btn{padding:9px 14px; border-radius:9px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a1000; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap;}
-  .task-item.complete .task-item-btn{display:none;}
-  .task-item-done{font-size:12px; color:#6ee7b7; font-weight:800;}
+  .all-complete-banner{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.1)); border:2px solid rgba(16,185,129,0.4); border-radius:18px; padding:36px 24px; text-align:center;}
+  .all-complete-banner .big{font-size:26px; font-weight:900; color:#6ee7b7; margin-bottom:8px;}
+  .all-complete-banner .small{font-size:14px; color:var(--sub);}
 
-  .checklist-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05);}
-  .checklist-row:last-child{border-bottom:none;}
-  .checklist-status{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
-  .checklist-status.done{background:#6ee7b7;}
-  .checklist-status.progress{background:#fbbf24;}
-  .checklist-status.pending{background:#475569;}
-  .checklist-text{flex:1; font-size:13px; color:var(--text);}
-  .checklist-sub{font-size:11px; color:var(--faint);}
-
-  .all-complete-banner{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.1)); border:2px solid rgba(16,185,129,0.4); border-radius:16px; padding:24px; text-align:center; margin-bottom:18px;}
-  .all-complete-banner .big{font-size:22px; font-weight:900; color:#6ee7b7; margin-bottom:6px;}
-  .all-complete-banner .small{font-size:13px; color:var(--sub);}
+  .admin-link{display:block; text-align:center; margin-top:36px; font-size:11px; color:var(--faint); text-decoration:underline;}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <button class="back-btn" onclick="window.location.href='/hub';">← Back to Hub</button>
   <div class="hdr">
-    <button class="back-btn" style="margin-bottom:14px;" onclick="window.location.href='/hub';">← Back to Hub</button>
     <div class="eyebrow">Fête de Marquette 2026</div>
     <h1>Setup Day</h1>
-    <div class="sub" id="pageSub">Tap your area below to see the setup and where things go</div>
+    <div class="sub" id="pageSub">Which group are you with?</div>
   </div>
 
   <div class="content">
 
-    <div class="phase-banner">
-      <div class="phase-step">
-        <div class="phase-num">1</div>
-        <div>
-          <div class="phase-title">Unload &amp; Stage</div>
-          <div class="phase-desc">Everyone helps unload the rental trucks and places equipment into its labeled section below.</div>
-        </div>
-      </div>
-      <div class="phase-step">
-        <div class="phase-num">2</div>
-        <div>
-          <div class="phase-title">Set Up or Deliver</div>
-          <div class="phase-desc">Assigned groups either build their area right there, or deliver staged equipment onward to where it's needed.</div>
-        </div>
-      </div>
+    <!-- GROUP PICKER -->
+    <div id="groupPicker">
+      <div class="group-list" id="groupPickerList"></div>
     </div>
 
-    <div class="mode-tabs">
-      <button class="mode-tab active" id="modeTabAreas" onclick="switchMode('areas')">📍 Browse Areas</button>
-      <button class="mode-tab" id="modeTabGroup" onclick="switchMode('group')">👥 My Group</button>
-    </div>
-    <div style="text-align:right;margin-bottom:10px;">
-      <a href="#" onclick="switchMode('admin');return false;" style="font-size:11px;color:var(--faint);text-decoration:underline;">Admin</a>
-    </div>
-
-    <!-- TEAM LIST -->
-    <div id="listView" class="team-list-view">
-      <input class="search" id="search" placeholder="Search by area name..." oninput="renderList()"/>
-      <div class="team-list" id="teamList"></div>
-      <div class="empty" id="emptyState" style="display:none;">No area matches that search.</div>
-    </div>
-
-    <!-- MY GROUP VIEW -->
-    <div id="groupView" class="hidden">
-      <div id="groupPicker">
-        <div style="font-size:13px;color:var(--sub);margin-bottom:12px;">Which group are you with?</div>
-        <div class="team-list" id="groupPickerList"></div>
+    <!-- GROUP STATUS -->
+    <div id="groupStatus" style="display:none;">
+      <div class="group-header">
+        <div class="group-name" id="myGroupName"></div>
+        <span class="switch-link" onclick="clearMyGroup()">Switch group</span>
       </div>
-      <div id="groupStatus" class="hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div style="font-size:20px;font-weight:900;" id="myGroupName"></div>
-          <a href="#" onclick="clearMyGroup();return false;" style="font-size:11px;color:var(--faint);text-decoration:underline;">Switch group</a>
-        </div>
-        <div id="allCompleteBanner" class="hidden all-complete-banner">
-          <div class="big">🎉 Setup Complete!</div>
-          <div class="small">Great work today — you can head back now.</div>
-        </div>
-        <div id="myTaskList"></div>
-        <div id="noTasksMsg" class="hidden" style="text-align:center;margin-top:16px;color:var(--sub);font-size:13px;">No tasks assigned yet — check back soon. This page checks automatically every 10 seconds.</div>
+      <div id="allCompleteBanner" style="display:none;" class="all-complete-banner">
+        <div class="big">🎉 Setup Complete!</div>
+        <div class="small">Great work today — you can head back now.</div>
       </div>
+      <div id="myTaskList"></div>
+      <div id="noTasksMsg" style="display:none;" class="empty-msg">No tasks assigned yet.<br/>This checks automatically every 10 seconds.</div>
     </div>
 
-    <!-- ADMIN VIEW -->
-    <div id="adminView" class="hidden">
-      <div class="section" id="allCompleteSection" style="margin-bottom:16px;">
-        <div class="section-label">Whole Day</div>
-        <div id="allCompleteControls"></div>
-      </div>
-
-      <div class="section" style="margin-bottom:16px;">
-        <div class="section-label">All Tasks — What's Left vs. Done</div>
-        <div id="masterChecklist"></div>
-      </div>
-
-      <div style="font-size:13px;color:var(--sub);margin-bottom:12px;">Add a task to any group — groups can have more than one task at once.</div>
-      <div id="adminGroupList"></div>
-    </div>
-
-    <!-- DETAIL VIEW -->
-    <div id="detailView" class="detail">
-      <button class="back-btn" onclick="showList()">← All Areas</button>
-      <div class="detail-header">
-        <div class="detail-dot" id="detailDot"></div>
-        <div>
-          <div class="detail-title" id="detailName"></div>
-          <div class="phase-tag" id="detailPhaseTag" style="margin-top:6px;"></div>
-          <div class="detail-report" id="detailReport"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-label">What You're Doing</div>
-        <div class="section-body" id="detailTask"></div>
-      </div>
-      <div class="section location">
-        <div class="section-label">Where Your Stuff Goes</div>
-        <div class="section-body" id="detailLocation"></div>
-      </div>
-      <div class="section" id="notesSection" style="display:none;">
-        <div class="section-label">Notes</div>
-        <div class="section-body" id="detailNotes"></div>
-      </div>
-    </div>
-
+    <a class="admin-link" href="/setup-day-admin">Admin →</a>
   </div>
 </div>
 
 <script>
-// ── EDIT THIS LIST ──────────────────────────────────────────────────────────
-// One entry per team. "color" is a hex used for the icon background.
-// "reportTo" and "notes" are optional — leave as "" to hide them.
-const TEAMS = [
-  {
-    id: "bank-bars",
-    phase: "setup",
-    name: "Left & Right Bank Bars",
-    emoji: "🍺",
-    color: "#f59e0b",
-    oneliner: "4 bar sections + tables, each side",
-    reportTo: "Assigned Group: TBD",
-    task: "4 Bar Sections each side\n4 6' Tables each side\n1 4' Table each side",
-    location: "Total: 10 bar-sections, (8) 6' tables & (2) 4' tables",
-    notes: ""
-  },
-  {
-    id: "cabaret-bar",
-    phase: "setup",
-    name: "Cabaret Bar",
-    emoji: "🍸",
-    color: "#f59e0b",
-    oneliner: "4 bar sections + 1 6' table",
-    reportTo: "Assigned Group: TBD",
-    task: "4 bar sections\n1 6' table",
-    location: "Total: 4 bar-sections & (1) 6' table",
-    notes: ""
-  },
-  {
-    id: "family-fete-bar",
-    phase: "setup",
-    name: "Family Fete Bar",
-    emoji: "🎪",
-    color: "#f59e0b",
-    oneliner: "4 bar sections + 8' tables",
-    reportTo: "Assigned Group: TBD",
-    task: "4 Bar Sections\n2 8' Tables",
-    location: "Total: 4 bar-sections, (3) 8' & (1) 6' tables",
-    notes: ""
-  },
-  {
-    id: "moon-bar",
-    phase: "setup",
-    name: "Moon Stage Bar",
-    emoji: "🌙",
-    color: "#f59e0b",
-    oneliner: "8 bar sections — biggest bar",
-    reportTo: "Assigned Group: TBD",
-    task: "8 Bar Sections\n2 8' Tables\n1 6' and 1 4' Table\nFollow the Moon Stage Bar Set diagram for layout (bar sections form a U-shape with 6' table in center, 2 caddies at the open end).",
-    location: "Total: 8 bar-sections, (2) 8' & (1) 6' tables",
-    notes: ""
-  },
-  {
-    id: "lafayette-bar",
-    phase: "setup",
-    name: "Lafayette Stage Bar",
-    emoji: "🎷",
-    color: "#f59e0b",
-    oneliner: "4 bar sections + cabaret tables",
-    reportTo: "Assigned Group: TBD",
-    task: "4 Bar Sections\n3 8' Tables\n1 6' Table\n4 Cabaret Tables",
-    location: "Total: 4 bar-sections, (3) 8', (1) 6' & 2 cabaret tables",
-    notes: ""
-  },
-  {
-    id: "cabaret-tent",
-    phase: "setup",
-    name: "Cabaret Tent",
-    emoji: "🎪",
-    color: "#6366f1",
-    oneliner: "20 round tables, 100 chairs",
-    reportTo: "Assigned Group: TBD",
-    task: "20 Round Tables, 5 Chairs per Table\nSet 4 rows (centered to stage) of 4 tables each",
-    location: "Total: 20 round tables and 100 chairs",
-    notes: ""
-  },
-  {
-    id: "family-fete-tent",
-    phase: "setup",
-    name: "Family Fete Tent",
-    emoji: "🎪",
-    color: "#6366f1",
-    oneliner: "6 round tables, 50 chairs",
-    reportTo: "Assigned Group: TBD",
-    task: "6 Round Tables / 5 Chairs per Table\nSet 2 rows (centered to stage) of 3 tables each",
-    location: "Total: 6 round tables & 50 chairs",
-    notes: ""
-  },
-  {
-    id: "lafayette-tents",
-    phase: "setup",
-    name: "Lafayette Shade Tents",
-    emoji: "⛺",
-    color: "#6366f1",
-    oneliner: "40 round tables, 200 chairs total",
-    reportTo: "Assigned Group: TBD",
-    task: "20 Round tables / 5 Chairs per Table, 100 Chairs\nSET: 8 round in each 20x40 tent, and 4 in the 20x20 tent. Equalize spacing of tables.\nSub-Total: 20 round and 100 chairs\n\nGENERAL SEATING: 20 round tables & 100 chairs, spread out at 15 feet from stage",
-    location: "Total: 40 round tables & 200 chairs",
-    notes: ""
-  },
-  {
-    id: "moon-patio-tent",
-    phase: "setup",
-    name: "Moon Stage Patio + Tent",
-    emoji: "🌙",
-    color: "#10b981",
-    oneliner: "Patio seating + cabaret tent",
-    reportTo: "Assigned Group: TBD",
-    task: "PATIO: 10 round & 50 chairs. Set up against building on grassy area.\n\nTENT: 20 cabaret tables. Set up against building on grassy area.",
-    location: "Total: 10 round tables, 100 chairs & 20 cabaret tables",
-    notes: ""
-  },
-  {
-    id: "sun-shade-tents",
-    phase: "setup",
-    name: "Sun Stage Shade Tents (4)",
-    emoji: "☀️",
-    color: "#10b981",
-    oneliner: "32 round tables, 160 chairs",
-    reportTo: "Assigned Group: TBD",
-    task: "8 Round Tables each tent / 5 Chairs per Table\nSet 4 rows (along the 40' side) of 5 tables each. Equalize space between tables.",
-    location: "Total: 32 round tables & 160 chairs",
-    notes: ""
-  },
-  {
-    id: "sun-seating",
-    phase: "setup",
-    name: "Sun Stage General Seating",
-    emoji: "☀️",
-    color: "#10b981",
-    oneliner: "16-18 round tables, 400+ chairs",
-    reportTo: "Assigned Group: TBD",
-    task: "18 round tables and 90 chairs as a base, 400+ chairs total.\nSet chairs in an arc beginning at the concrete end. Set tables behind the chairs, also in an arc.",
-    location: "Total: 16 to 18 round tables and north of 400 chairs",
-    notes: "Gary will distribute many of the leftover chairs."
-  },
-  {
-    id: "lagniappe-seating",
-    phase: "setup",
-    name: "Lagniappe Stage Seating",
-    emoji: "🎭",
-    color: "#10b981",
-    oneliner: "20 round + 8 cabaret tables",
-    reportTo: "Assigned Group: TBD",
-    task: "20 round and 8 cabaret tables, 100 chairs.\nSet up against the building.",
-    location: "Total: 20 round, 8 cabaret tables & 100 chairs",
-    notes: ""
-  },
-  {
-    id: "eec",
-    phase: "setup",
-    name: "Everything Else Cafe",
-    emoji: "☕",
-    color: "#ec4899",
-    oneliner: "4 8' tables + 6 cabaret tables",
-    reportTo: "Assigned Group: TBD",
-    task: "4 8-foot tables, 6 cabaret tables.\nSet 8' tables on the sides to create 2 bars. Set 6 cabaret tables along the back, between the table bars.",
-    location: "Total: (4) 8' tables and 6 cabaret tables",
-    notes: ""
-  },
-  {
-    id: "prize-wheel",
-    phase: "setup",
-    name: "Prize Wheel",
-    emoji: "🎡",
-    color: "#ec4899",
-    oneliner: "6 6' tables + 1 4' table",
-    reportTo: "Assigned Group: TBD",
-    task: "(6) 6' tables\n(1) 4' table\nGrab needed chairs from the pile.",
-    location: "Prize Wheel area — see site map",
-    notes: ""
-  },
-  {
-    id: "hospitality-grounds",
-    phase: "delivery",
-    name: "Hospitality / Grounds",
-    emoji: "🏕️",
-    color: "#ec4899",
-    oneliner: "Distribute tables across the grounds",
-    reportTo: "Assigned Group: TBD",
-    task: "(4) 8' and (2) 4' tables → Moon\n(4) 8' and (2) 4' tables → Sun Stage\n(2) 8' tables → Cabaret\n(4) 8' tables → Grounds",
-    location: "Deliver to each area listed above",
-    notes: "Grab needed chairs from the 345 pile."
-  },
-];
-// ─────────────────────────────────────────────────────────────────────────────
-
-function renderList(){
-  const q = (document.getElementById('search').value || '').toLowerCase();
-  const list = document.getElementById('teamList');
-  const filtered = TEAMS.filter(t => !q || t.name.toLowerCase().includes(q) || t.oneliner.toLowerCase().includes(q));
-  list.innerHTML = filtered.map(t => `
-    <button class="team-card" onclick="showDetail('${t.id}')">
-      <div class="team-dot" style="background:${t.color}22;color:${t.color};">${t.emoji}</div>
-      <div class="team-info">
-        <div class="team-name">${t.name}</div>
-        <div class="team-oneliner">${t.oneliner}</div>
-        <div class="phase-tag ${t.phase}">${t.phase === 'delivery' ? '🚚 Deliver' : '🔨 Set Up'}</div>
-      </div>
-      <div class="team-arrow">→</div>
-    </button>
-  `).join('');
-  document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
-}
-
-function showDetail(id){
-  const t = TEAMS.find(x => x.id === id);
-  if(!t) return;
-  document.getElementById('detailDot').style.background = t.color + '22';
-  document.getElementById('detailDot').style.color = t.color;
-  document.getElementById('detailDot').textContent = t.emoji;
-  document.getElementById('detailName').textContent = t.name;
-  const tagEl = document.getElementById('detailPhaseTag');
-  tagEl.className = 'phase-tag ' + t.phase;
-  tagEl.textContent = t.phase === 'delivery' ? '🚚 Deliver' : '🔨 Set Up';
-  document.getElementById('detailReport').textContent = t.reportTo || '';
-  document.getElementById('detailTask').textContent = t.task;
-  document.getElementById('detailLocation').textContent = t.location;
-  const notesEl = document.getElementById('notesSection');
-  if(t.notes){ notesEl.style.display='block'; document.getElementById('detailNotes').textContent = t.notes; }
-  else { notesEl.style.display='none'; }
-
-  document.getElementById('listView').classList.add('hidden');
-  document.getElementById('detailView').classList.add('active');
-  window.scrollTo(0,0);
-}
-
-function showList(){
-  document.getElementById('detailView').classList.remove('active');
-  document.getElementById('listView').classList.remove('hidden');
-  window.scrollTo(0,0);
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-// GROUP TASK WORKFLOW — My Group + Admin assignment (multiple tasks per group)
-// ══════════════════════════════════════════════════════════════════════════
 const GROUPS = ["G1", "G2", "G3", "G4", "Electrical", "Garbage Cans", "Truck 1", "Truck 2"];
-const TASK_OPTIONS = [...TEAMS.map(t => t.name), "Electrical — Hang Lights", "Garbage Cans — Set Out Cans"];
-
-let myGroupPollInterval = null;
-
-function switchMode(mode){
-  document.getElementById('modeTabAreas').classList.toggle('active', mode === 'areas');
-  document.getElementById('modeTabGroup').classList.toggle('active', mode === 'group');
-
-  document.getElementById('listView').classList.toggle('hidden', mode !== 'areas');
-  document.getElementById('detailView').classList.remove('active');
-  document.getElementById('groupView').classList.toggle('hidden', mode !== 'group');
-  document.getElementById('adminView').classList.toggle('hidden', mode !== 'admin');
-  document.querySelector('.phase-banner').style.display = mode === 'areas' ? 'flex' : 'none';
-
-  const subs = {
-    areas: "Tap your area below to see the setup and where things go",
-    group: "Check your group's tasks and mark each one done when finished",
-    admin: "Add tasks to any group — they can have more than one at a time",
-  };
-  document.getElementById('pageSub').textContent = subs[mode] || subs.areas;
-
-  if(myGroupPollInterval){ clearInterval(myGroupPollInterval); myGroupPollInterval = null; }
-
-  if(mode === 'group'){
-    const saved = localStorage.getItem('fdm-setup-mygroup');
-    if(saved) showMyGroupStatus(saved);
-    else renderGroupPicker();
-  }
-  if(mode === 'admin'){
-    renderAdminPanel();
-  }
-  window.scrollTo(0,0);
-}
+let pollInterval = null;
 
 function renderGroupPicker(){
-  document.getElementById('groupPicker').classList.remove('hidden');
-  document.getElementById('groupStatus').classList.add('hidden');
+  document.getElementById('groupPicker').style.display = 'block';
+  document.getElementById('groupStatus').style.display = 'none';
+  document.getElementById('pageSub').textContent = 'Which group are you with?';
   document.getElementById('groupPickerList').innerHTML = GROUPS.map(g => `
-    <button class="team-card" onclick="selectMyGroup('${g}')">
-      <div class="team-info"><div class="team-name">${g}</div></div>
-      <div class="team-arrow">→</div>
+    <button class="group-card" onclick="selectMyGroup('${g}')">
+      ${g}
+      <span class="group-arrow">→</span>
     </button>
   `).join('');
 }
@@ -486,63 +101,56 @@ function selectMyGroup(name){
 
 function clearMyGroup(){
   localStorage.removeItem('fdm-setup-mygroup');
+  if(pollInterval){ clearInterval(pollInterval); pollInterval = null; }
   renderGroupPicker();
-  if(myGroupPollInterval){ clearInterval(myGroupPollInterval); myGroupPollInterval = null; }
 }
 
 async function showMyGroupStatus(name){
-  document.getElementById('groupPicker').classList.add('hidden');
-  document.getElementById('groupStatus').classList.remove('hidden');
+  document.getElementById('groupPicker').style.display = 'none';
+  document.getElementById('groupStatus').style.display = 'block';
+  document.getElementById('pageSub').textContent = 'Your current tasks';
   document.getElementById('myGroupName').textContent = name;
   await pollMyGroupStatus(name);
-  if(myGroupPollInterval) clearInterval(myGroupPollInterval);
-  myGroupPollInterval = setInterval(() => pollMyGroupStatus(name), 10000);
-}
-
-async function fetchAssignments(){
-  try{
-    const res = await fetch('/.netlify/functions/setup-task-status');
-    const data = await res.json();
-    return { assignments: data.assignments || [], phones: data.phones || [] };
-  }catch(e){ return null; }
+  if(pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(() => pollMyGroupStatus(name), 10000);
 }
 
 async function pollMyGroupStatus(name){
-  const result = await fetchAssignments();
-  if(result === null) return; // network hiccup — keep showing last known state
-  const all = result.assignments;
+  let assignments;
+  try{
+    const res = await fetch('/.netlify/functions/setup-task-status');
+    const data = await res.json();
+    assignments = data.assignments || [];
+  }catch(e){ return; } // network hiccup — keep showing last known state
 
-  const dayComplete = all.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
-  document.getElementById('allCompleteBanner').classList.toggle('hidden', !dayComplete);
+  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
+  document.getElementById('allCompleteBanner').style.display = dayComplete ? 'block' : 'none';
 
-  const mine = all.filter(a => a.groupName === name);
+  const mine = assignments.filter(a => a.groupName === name);
   const listEl = document.getElementById('myTaskList');
   const noTasksMsg = document.getElementById('noTasksMsg');
 
   if(mine.length === 0){
     listEl.innerHTML = '';
-    noTasksMsg.classList.toggle('hidden', dayComplete);
+    noTasksMsg.style.display = dayComplete ? 'none' : 'block';
     return;
   }
-  noTasksMsg.classList.add('hidden');
+  noTasksMsg.style.display = 'none';
 
-  // Active tasks first, completed ones below (kept visible so the group can see what they've finished)
   const active = mine.filter(a => a.status !== 'complete');
   const done = mine.filter(a => a.status === 'complete');
-  const ordered = [...active, ...done];
 
-  listEl.innerHTML = ordered.map(a => `
-    <div class="task-item ${a.status === 'complete' ? 'complete' : ''}">
-      <div class="task-item-text">${a.task}</div>
+  listEl.innerHTML = [...active, ...done].map(a => `
+    <div class="task-card ${a.status === 'complete' ? 'done' : ''}">
+      <div class="task-text">${a.task}</div>
       ${a.status === 'complete'
-        ? '<div class="task-item-done">✓ Done</div>'
-        : `<button class="task-item-btn" onclick="markComplete('${a.id}')">Mark Done</button>`}
+        ? '<div class="task-done-label">✓ Marked Done</div>'
+        : `<button class="task-btn" onclick="markComplete('${a.id}', '${name}')">✅ Mark Task Complete</button>`}
     </div>
   `).join('');
 }
 
-async function markComplete(id){
-  const name = localStorage.getItem('fdm-setup-mygroup');
+async function markComplete(id, name){
   try{
     await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -552,137 +160,10 @@ async function markComplete(id){
   pollMyGroupStatus(name);
 }
 
-// ── ADMIN (no PIN — open access) ──
-async function renderAdminPanel(){
-  const listEl = document.getElementById('adminGroupList');
-  listEl.innerHTML = '<div style="color:var(--faint);font-size:13px;">Loading...</div>';
-  const result = await fetchAssignments();
-  const assignments = result ? result.assignments : [];
-  const phonesByGroup = Object.fromEntries((result ? result.phones : []).map(p => [p.groupName, p.phone]));
-
-  // ── Whole-day complete controls ──
-  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
-  const acEl = document.getElementById('allCompleteControls');
-  if(dayComplete){
-    acEl.innerHTML = `
-      <div style="font-size:13px;color:#6ee7b7;font-weight:800;margin-bottom:10px;">🎉 Marked complete — every group's app is showing the "head back" message, and anyone with a phone on file was texted.</div>
-      <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;background:linear-gradient(135deg,#475569,#334155);" onclick="clearAllComplete()">↩ Undo — Day Is NOT Actually Done</button>
-    `;
-  } else {
-    acEl.innerHTML = `
-      <div style="font-size:12.5px;color:var(--sub);margin-bottom:10px;">Once every task below is done, tap this to tell every group's app they can head back — and text anyone with a phone number on file.</div>
-      <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;" onclick="markAllComplete()">📢 Mark Whole Day Complete</button>
-    `;
-  }
-
-  // ── Master checklist across all possible tasks ──
-  const checklistEl = document.getElementById('masterChecklist');
-  checklistEl.innerHTML = TASK_OPTIONS.map(taskName => {
-    const matches = assignments.filter(a => a.task === taskName);
-    const isDone = matches.some(a => a.status === 'complete');
-    const isActive = !isDone && matches.some(a => a.status !== 'complete');
-    const statusClass = isDone ? 'done' : isActive ? 'progress' : 'pending';
-    const groupsOnIt = [...new Set(matches.map(a => a.groupName))].join(', ');
-    return `
-      <div class="checklist-row">
-        <div class="checklist-status ${statusClass}"></div>
-        <div class="checklist-text">${taskName}${groupsOnIt ? `<div class="checklist-sub">${isDone ? 'Done by' : 'Assigned to'}: ${groupsOnIt}</div>` : ''}</div>
-      </div>
-    `;
-  }).join('');
-
-  listEl.innerHTML = GROUPS.map(g => {
-    const mine = assignments.filter(a => a.groupName === g);
-    const active = mine.filter(a => a.status !== 'complete');
-    const done = mine.filter(a => a.status === 'complete');
-    const currentPhone = phonesByGroup[g] || '';
-
-    const taskRows = [...active, ...done].map(a => `
-      <div class="task-item ${a.status === 'complete' ? 'complete' : ''}" style="padding:10px 12px;">
-        <div class="task-item-text" style="font-size:13px;">${a.task}</div>
-        ${a.status === 'complete'
-          ? '<div class="task-item-done">✓ Done</div>'
-          : `<button class="task-item-btn" style="background:rgba(239,68,68,0.15);color:#fca5a5;" onclick="removeTask('${a.id}')">Remove</button>`}
-      </div>
-    `).join('') || '<div style="font-size:12px;color:var(--faint);margin-bottom:8px;">No tasks assigned yet.</div>';
-
-    const options = TASK_OPTIONS.map(t => `<option value="${t}">${t}</option>`).join('');
-    return `
-      <div class="admin-group-card">
-        <div class="admin-group-name">${g} <span class="admin-status-pill ${active.length ? 'assigned' : 'idle'}">${active.length} active</span></div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input class="search" style="margin-bottom:0;padding:9px 12px;font-size:13px;" id="phone-${g.replace(/\s+/g,'')}" type="tel" placeholder="Phone number (optional)" value="${currentPhone}"/>
-          <button class="task-item-btn" style="flex-shrink:0;" onclick="savePhone('${g}')">Save</button>
-        </div>
-        <div style="margin-bottom:10px;">${taskRows}</div>
-        <select class="search admin-select" id="assign-${g.replace(/\s+/g,'')}">
-          <option value="">— Choose a task to add —</option>
-          ${options}
-        </select>
-        <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;padding:11px;font-size:13px;" onclick="assignTask('${g}')">+ Add This Task</button>
-      </div>
-    `;
-  }).join('');
-}
-
-async function savePhone(groupName){
-  const input = document.getElementById('phone-' + groupName.replace(/\s+/g,''));
-  const phone = input.value.trim();
-  try{
-    await fetch('/.netlify/functions/setup-task-status', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'setPhone', groupName, phone })
-    });
-  }catch(e){}
-  input.style.borderColor = '#6ee7b7';
-  setTimeout(() => { input.style.borderColor = ''; }, 1200);
-}
-
-async function assignTask(groupName){
-  const sel = document.getElementById('assign-' + groupName.replace(/\s+/g,''));
-  const task = sel.value;
-  if(!task){ alert('Pick a task first.'); return; }
-  try{
-    await fetch('/.netlify/functions/setup-task-status', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'assign', groupName, task })
-    });
-  }catch(e){}
-  renderAdminPanel();
-}
-
-async function removeTask(id){
-  try{
-    await fetch('/.netlify/functions/setup-task-status', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'remove', id })
-    });
-  }catch(e){}
-  renderAdminPanel();
-}
-
-async function markAllComplete(){
-  if(!confirm('Tell every group they can head back? This shows a "Setup Complete" banner on everyone\'s phone.')) return;
-  try{
-    await fetch('/.netlify/functions/setup-task-status', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'markAllComplete' })
-    });
-  }catch(e){}
-  renderAdminPanel();
-}
-
-async function clearAllComplete(){
-  try{
-    await fetch('/.netlify/functions/setup-task-status', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'clearAllComplete' })
-    });
-  }catch(e){}
-  renderAdminPanel();
-}
-
-renderList();
+// Init
+const savedGroup = localStorage.getItem('fdm-setup-mygroup');
+if(savedGroup) showMyGroupStatus(savedGroup);
+else renderGroupPicker();
 </script>
 </body>
 </html>

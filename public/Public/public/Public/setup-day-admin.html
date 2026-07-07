@@ -105,7 +105,7 @@ const TASK_OPTIONS = [
   "Cabaret Tent", "Family Fete Tent", "Lafayette Shade Tents", "Moon Stage Patio + Tent",
   "Sun Stage Shade Tents (4)", "Sun Stage General Seating", "Lagniappe Stage Seating",
   "Everything Else Cafe", "Prize Wheel", "Hospitality / Grounds",
-  "Electrical — Hang Lights", "Trash Cans — Set Out Cans", "Bike Racks"
+  "Electrical — Hang Lights", "Trash Cans — Set Out Cans", "Bike Racks", "Bar Sections"
 ];
 
 const TASK_DETAILS = {
@@ -127,6 +127,7 @@ const TASK_DETAILS = {
   "Electrical — Hang Lights": "Hang string lights per the site map.",
   "Trash Cans — Set Out Cans": "Set out garbage cans at each location per the site map.",
   "Bike Racks": "Set out bike racks per the site map.",
+  "Bar Sections": "Set out bar sections per the site map.",
 };
 
 async function fetchAll(){
@@ -291,6 +292,7 @@ async function assignTask(groupName){
   const task = sel.value === '__custom__' ? customInput.value.trim() : sel.value;
   const notes = noteInput ? noteInput.value.trim() : '';
   if(!task){ alert(sel.value === '__custom__' ? 'Type the custom task name first.' : 'Pick a task first.'); return; }
+  if(!confirm(`Assign "${task}" to ${groupName}?${notes ? '\n\nNote: ' + notes : ''}`)) return;
   try{
     const res = await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},

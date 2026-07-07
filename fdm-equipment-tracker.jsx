@@ -47,9 +47,9 @@ const READER_LOCATIONS = [...BAR_LOCATIONS.filter(b=>b!=="Lagniappe Bar"), "Priz
 
 // 18 radios — each pre-assigned to its specific role/location per the handwritten list
 const INIT_RADIOS = Array.from({length:18},(_,i)=>({
-  id:`R${String(i+1).padStart(2,"0")}`,
-  num:i+1,
-  label:`Radio ${i+1}`,
+  id:`R${String(i+1).padStart(2,"0")}`, // internal key, kept stable so sync doesn't create duplicates
+  num:1001+i,
+  label:`Radio ${1001+i}`, // matches the physical number printed on the radio
   serial:"",
   location: RADIO_LOCATIONS[i],
   paired: false,
@@ -110,7 +110,9 @@ export default function EquipmentTracker(){
     const validNames = new Set(RADIO_LOCATIONS);
     return trimmed.map((r,i) => {
       const isValid = validNames.has(r.location) || /^Spare \d+$/.test(r.location||"");
-      return isValid ? r : { ...r, location: INIT_RADIOS[i]?.location || r.location };
+      const fixedLocation = isValid ? r.location : (INIT_RADIOS[i]?.location || r.location);
+      const fixedLabel = r.num !== 1001+i ? INIT_RADIOS[i]?.label || r.label : r.label;
+      return { ...r, location: fixedLocation, label: fixedLabel, num: 1001+i };
     });
   })();
   const migratedReaders = (() => {

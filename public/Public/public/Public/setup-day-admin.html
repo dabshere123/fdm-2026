@@ -391,7 +391,12 @@ async function clearAllComplete(){
 }
 
 renderAll();
-setInterval(renderAll, 15000);
+setInterval(() => {
+  const active = document.activeElement;
+  const isTyping = active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.tagName === 'SELECT');
+  if (isTyping) return; // don't wipe out whatever they're mid-typing
+  renderAll();
+}, 15000);
 </script>
 </body>
 </html>

@@ -28,8 +28,8 @@
   .btn.small{width:auto; padding:8px 14px; font-size:12px;}
   .btn.danger{background:rgba(239,68,68,0.15); color:#fca5a5;}
 
-  input, select{width:100%; padding:11px 14px; background:rgba(255,255,255,0.06); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-size:14px; font-family:inherit; outline:none; margin-bottom:8px;}
-  input:focus, select:focus{border-color:var(--amber);}
+  input, select, textarea{width:100%; padding:11px 14px; background:rgba(255,255,255,0.06); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-size:14px; font-family:inherit; outline:none; margin-bottom:8px;}
+  input:focus, select:focus, textarea:focus{border-color:var(--amber);}
   option{background:#11182c;}
 
   .checklist-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05);}
@@ -178,7 +178,7 @@ async function renderAll(){
           <span class="name">${a.task}</span>${a.status === 'DONE' ? ' — ✓ Done' : ''}
           ${a.notes ? `<div style="color:var(--amber);font-size:12px;margin-top:2px;">📌 ${a.notes}</div>` : ''}
           ${a.status !== 'DONE' ? `<div style="display:flex;gap:6px;margin-top:6px;">
-            <input type="text" placeholder="Add to this task, texts the group..." id="addon-${a.id}" style="flex:1;font-size:12px;padding:7px 10px;margin-bottom:0;"/>
+            <textarea placeholder="Add to this task, texts the group..." id="addon-${a.id}" style="flex:1;font-size:12px;padding:7px 10px;margin-bottom:0;min-height:44px;resize:vertical;"></textarea>
             <button class="btn small" style="flex-shrink:0;" onclick="addToTask('${a.id}')">📲 Send</button>
           </div>` : ''}
         </div>
@@ -229,7 +229,7 @@ async function renderAll(){
           <div class="checklist-detail" style="margin-top:3px;">${TASK_DETAILS[a.task] || ''}</div>
           ${a.notes ? `<div class="task-notes-display">📌 ${a.notes}</div>` : ''}
           ${a.status !== 'DONE' ? `<div style="display:flex;gap:6px;margin-top:6px;">
-            <input type="text" placeholder="Add/edit note for this task..." id="note-${a.id}" value="${a.notes || ''}" style="flex:1;font-size:12px;padding:7px 10px;margin-bottom:0;"/>
+            <textarea placeholder="Add/edit note for this task..." id="note-${a.id}" style="flex:1;font-size:12px;padding:7px 10px;margin-bottom:0;min-height:44px;resize:vertical;">${a.notes || ''}</textarea>
             <button class="btn small" style="flex-shrink:0;" onclick="saveNotes('${a.id}')">Save</button>
           </div>` : ''}
         </div>
@@ -254,7 +254,7 @@ async function renderAll(){
           <option value="__custom__">✏️ Custom Task (type your own)</option>
         </select>
         <input type="text" placeholder="Type the custom task name..." id="customtask-${g.replace(/\s+/g,'')}" style="display:none;"/>
-        <input type="text" placeholder="Extra note for this assignment (optional)" id="assignnote-${g.replace(/\s+/g,'')}"/>
+        <textarea placeholder="Extra note for this assignment (optional)" id="assignnote-${g.replace(/\s+/g,'')}" style="min-height:44px;resize:vertical;"></textarea>
         <button class="btn" onclick="assignTask('${g}')">+ Add This Task</button>
       </div>
     `;

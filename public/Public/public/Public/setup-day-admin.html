@@ -236,7 +236,7 @@ async function renderAll(){
         </div>
         ${a.status === 'DONE'
           ? '<div class="task-row-done">✓ Done</div>'
-          : `<button class="btn danger small" onclick="removeTask('${a.id}')">Remove</button>`}
+          : `<button class="btn danger small" onclick="removeTask('${a.id}')">Cancel</button>`}
       </div>
     `).join('') || '<div style="font-size:12px;color:var(--faint);margin-bottom:8px;">No tasks assigned yet.</div>';
 
@@ -351,12 +351,19 @@ async function saveNotes(id){
 }
 
 async function removeTask(id){
+  if(!confirm('Cancel this task? If they have a phone on file, they\'ll get a text letting them know.')) return;
   try{
-    await fetch('/.netlify/functions/setup-task-status', {
+    const res = await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ action: 'remove', id })
     });
-  }catch(e){}
+    const data = await res.json();
+    if(!data.success){
+      alert('⚠️ Could not cancel this task:\n\n' + (data.error || 'Unknown error'));
+    }
+  }catch(e){
+    alert('⚠️ Network error: ' + e.message);
+  }
   renderAll();
 }
 

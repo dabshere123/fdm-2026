@@ -178,11 +178,29 @@ exports.handler = async (event) => {
 
     if (action === 'remove') {
       if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
-      await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+      // Look up the record first so we know who to notify
+      const getRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
+      });
+      const rec = await getRes.json();
+      const delRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
       });
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+      if (!delRes.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: 'Failed to cancel this task.' }) };
+      }
+      const taskGroup = rec?.fields?.GroupName;
+      const taskName = rec?.fields?.Task;
+      let texted = false;
+      if (taskGroup && taskGroup !== 'ALL') {
+        const groupPhone = await getGroupPhone(taskGroup);
+        if (groupPhone) {
+          sendSMS(groupPhone, `❌ Your task "${taskName}" was cancelled. Check the Setup Day app -- you may be assigned something else shortly.`);
+          texted = true;
+        }
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, texted }) };
     }
 
     if (action === 'setPhone') {

@@ -20,19 +20,38 @@ const STAGE_LOCATIONS = [
   "Lagniappe Stage","Moon Stage","Family Stage"
 ];
 
-// Radios go to all 8 bars + 6 stages + Prize Wheel = 15 named spots, rest are spares
-const RADIO_LOCATIONS = [...BAR_LOCATIONS, ...STAGE_LOCATIONS, "Prize Wheel"];
+// Radios 1-18 go to these specific roles/locations in this exact order (per handwritten list)
+const RADIO_LOCATIONS = [
+  "Devin/Admin",         // 1
+  "Med 1",               // 2
+  "Med 2",               // 3
+  "Sun Left",            // 4
+  "Sun Right",           // 5
+  "Cabaret",             // 6
+  "Carrin",              // 7 — specific person's radio
+  "Sun Stage Manager",   // 8
+  "Family Fete Bar",     // 9
+  "Family Fete Stage",   // 10
+  "Moon Bar",            // 11
+  "Moon Stage",          // 12
+  "Lagniappe",           // 13
+  "Lagniappe Stage",     // 14
+  "Lafayette Bar",       // 15
+  "Prize Wheel",         // 16
+  "MPD",                 // 17
+  "MPD Extra",           // 18
+];
 
 // Readers go to bars only, NOT Lagniappe, plus Prize Wheel = 8 spots
 const READER_LOCATIONS = [...BAR_LOCATIONS.filter(b=>b!=="Lagniappe Bar"), "Prize Wheel"];
 
-// 18 radios — first 15 pre-assigned to bars/stages/prize wheel, rest are spares
+// 18 radios — each pre-assigned to its specific role/location per the handwritten list
 const INIT_RADIOS = Array.from({length:18},(_,i)=>({
   id:`R${String(i+1).padStart(2,"0")}`,
   num:i+1,
   label:`Radio ${i+1}`,
   serial:"",
-  location: i<RADIO_LOCATIONS.length ? RADIO_LOCATIONS[i] : `Spare ${i-RADIO_LOCATIONS.length+1}`,
+  location: RADIO_LOCATIONS[i],
   paired: false,
   status:"available", // available | out | returned
   checkedOutBy:"",checkedOutAt:null,
@@ -429,12 +448,12 @@ export default function EquipmentTracker(){
             <div style={{...S.card,border:"1px solid rgba(245,158,11,0.3)"}}>
               <div style={{background:"rgba(245,158,11,0.12)",padding:"10px 14px",fontSize:13,fontWeight:900,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.06em"}}>📟 Serial # &amp; Location</div>
               <div style={{padding:"10px",display:"flex",flexDirection:"column",gap:0}}>
-                <div style={{fontSize:11,color:"#64748b",padding:"0 4px 8px"}}>📻 Radios (18) — bars, stages, prize wheel + spares</div>
+                <div style={{fontSize:11,color:"#64748b",padding:"0 4px 8px"}}>📻 Radios (18) — assigned by role/location, see list</div>
                 {radios.map(r=>(
                   <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)",flexWrap:"wrap"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",minWidth:70}}>{r.label}</div>
                     <select style={{...S.inp,width:150,fontSize:12,padding:"6px 8px"}} value={r.location} onChange={e=>updateRadio(r.id,{location:e.target.value})}>
-                      <option value="">— Spare / Unassigned —</option>
+                      <option value="">— Unassigned —</option>
                       {RADIO_LOCATIONS.map(loc=><option key={loc} value={loc}>{loc}</option>)}
                       {!RADIO_LOCATIONS.includes(r.location)&&r.location&&<option value={r.location}>{r.location}</option>}
                     </select>

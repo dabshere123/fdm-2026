@@ -29,9 +29,9 @@ var RADIO_LOCATIONS = [...BAR_LOCATIONS, ...STAGE_LOCATIONS, "Prize Wheel"];
 // Readers go to bars only, NOT Lagniappe, plus Prize Wheel = 8 spots
 var READER_LOCATIONS = [...BAR_LOCATIONS.filter(b => b !== "Lagniappe Bar"), "Prize Wheel"];
 
-// 25 radios — first 15 pre-assigned to bars/stages/prize wheel, rest are spares
+// 18 radios — first 15 pre-assigned to bars/stages/prize wheel, rest are spares
 var INIT_RADIOS = Array.from({
-  length: 25
+  length: 18
 }, (_, i) => ({
   id: `R${String(i + 1).padStart(2, "0")}`,
   num: i + 1,
@@ -169,8 +169,9 @@ function EquipmentTracker() {
   const migratedRadios = (() => {
     const existing = saved === null || saved === void 0 ? void 0 : saved.radios;
     if (!existing) return INIT_RADIOS;
+    const trimmed = existing.length > 18 ? existing.slice(0, 18) : existing;
     const validNames = new Set(RADIO_LOCATIONS);
-    return existing.map((r, i) => {
+    return trimmed.map((r, i) => {
       var _INIT_RADIOS$i;
       const isValid = validNames.has(r.location) || /^Spare \d+$/.test(r.location || "");
       return isValid ? r : {
@@ -1276,7 +1277,7 @@ function EquipmentTracker() {
         color: "#64748b",
         padding: "0 4px 8px"
       }
-    }, "\uD83D\uDCFB Radios (25) \u2014 bars, stages, prize wheel + spares"), radios.map(r => /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCFB Radios (18) \u2014 bars, stages, prize wheel + spares"), radios.map(r => /*#__PURE__*/React.createElement("div", {
       key: r.id,
       style: {
         display: "flex",

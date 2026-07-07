@@ -26,8 +26,8 @@ const RADIO_LOCATIONS = [...BAR_LOCATIONS, ...STAGE_LOCATIONS, "Prize Wheel"];
 // Readers go to bars only, NOT Lagniappe, plus Prize Wheel = 8 spots
 const READER_LOCATIONS = [...BAR_LOCATIONS.filter(b=>b!=="Lagniappe Bar"), "Prize Wheel"];
 
-// 25 radios — first 15 pre-assigned to bars/stages/prize wheel, rest are spares
-const INIT_RADIOS = Array.from({length:25},(_,i)=>({
+// 18 radios — first 15 pre-assigned to bars/stages/prize wheel, rest are spares
+const INIT_RADIOS = Array.from({length:18},(_,i)=>({
   id:`R${String(i+1).padStart(2,"0")}`,
   num:i+1,
   label:`Radio ${i+1}`,
@@ -87,8 +87,9 @@ export default function EquipmentTracker(){
   const migratedRadios = (() => {
     const existing = saved?.radios;
     if (!existing) return INIT_RADIOS;
+    const trimmed = existing.length > 18 ? existing.slice(0, 18) : existing;
     const validNames = new Set(RADIO_LOCATIONS);
-    return existing.map((r,i) => {
+    return trimmed.map((r,i) => {
       const isValid = validNames.has(r.location) || /^Spare \d+$/.test(r.location||"");
       return isValid ? r : { ...r, location: INIT_RADIOS[i]?.location || r.location };
     });
@@ -428,7 +429,7 @@ export default function EquipmentTracker(){
             <div style={{...S.card,border:"1px solid rgba(245,158,11,0.3)"}}>
               <div style={{background:"rgba(245,158,11,0.12)",padding:"10px 14px",fontSize:13,fontWeight:900,color:"#fbbf24",textTransform:"uppercase",letterSpacing:"0.06em"}}>📟 Serial # &amp; Location</div>
               <div style={{padding:"10px",display:"flex",flexDirection:"column",gap:0}}>
-                <div style={{fontSize:11,color:"#64748b",padding:"0 4px 8px"}}>📻 Radios (25) — bars, stages, prize wheel + spares</div>
+                <div style={{fontSize:11,color:"#64748b",padding:"0 4px 8px"}}>📻 Radios (18) — bars, stages, prize wheel + spares</div>
                 {radios.map(r=>(
                   <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",borderBottom:"1px solid rgba(255,255,255,0.04)",flexWrap:"wrap"}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",minWidth:70}}>{r.label}</div>

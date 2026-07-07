@@ -76,7 +76,7 @@ exports.handler = async (event) => {
         id: r.id,
         groupName: r.fields.GroupName || '',
         task: r.fields.Task || '',
-        status: r.fields.Status || 'assigned',
+        status: r.fields.Status || 'In Progress',
         assignedAt: r.fields.AssignedAt || '',
       }));
       const phones = (phoneData.records || []).map(r => ({
@@ -99,7 +99,7 @@ exports.handler = async (event) => {
       const assignRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: { GroupName: groupName, Task: task, Status: 'assigned', AssignedAt: new Date().toISOString() } })
+        body: JSON.stringify({ typecast: true, fields: { GroupName: groupName, Task: task, Status: 'In Progress', AssignedAt: new Date().toISOString() } })
       });
       const assignData = await assignRes.json();
       if (!assignRes.ok) {
@@ -119,7 +119,7 @@ exports.handler = async (event) => {
       const patchRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: { Status: 'complete' } })
+        body: JSON.stringify({ typecast: true, fields: { Status: 'DONE' } })
       });
       const patchData = await patchRes.json();
       if (!patchRes.ok) {
@@ -174,13 +174,13 @@ exports.handler = async (event) => {
         await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${existing.id}`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { Status: 'complete' } })
+          body: JSON.stringify({ typecast: true, fields: { Status: 'DONE' } })
         });
       } else {
         await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { GroupName: 'ALL', Task: 'DAY_COMPLETE', Status: 'complete', AssignedAt: new Date().toISOString() } })
+          body: JSON.stringify({ typecast: true, fields: { GroupName: 'ALL', Task: 'DAY_COMPLETE', Status: 'DONE', AssignedAt: new Date().toISOString() } })
         });
       }
       // Text every group that has a phone on file

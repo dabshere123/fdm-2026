@@ -123,7 +123,7 @@ async function pollMyGroupStatus(name){
     assignments = data.assignments || [];
   }catch(e){ return; } // network hiccup — keep showing last known state
 
-  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
+  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'DONE');
   document.getElementById('allCompleteBanner').style.display = dayComplete ? 'block' : 'none';
 
   const mine = assignments.filter(a => a.groupName === name);
@@ -137,13 +137,13 @@ async function pollMyGroupStatus(name){
   }
   noTasksMsg.style.display = 'none';
 
-  const active = mine.filter(a => a.status !== 'complete');
-  const done = mine.filter(a => a.status === 'complete');
+  const active = mine.filter(a => a.status !== 'DONE');
+  const done = mine.filter(a => a.status === 'DONE');
 
   listEl.innerHTML = [...active, ...done].map(a => `
-    <div class="task-card ${a.status === 'complete' ? 'done' : ''}">
+    <div class="task-card ${a.status === 'DONE' ? 'done' : ''}">
       <div class="task-text">${a.task}</div>
-      ${a.status === 'complete'
+      ${a.status === 'DONE'
         ? '<div class="task-done-label">✓ Marked Done</div>'
         : `<button class="task-btn" onclick="markComplete('${a.id}', '${name}')">✅ Mark Task Complete</button>`}
     </div>

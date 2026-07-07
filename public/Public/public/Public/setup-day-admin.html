@@ -110,7 +110,7 @@ async function renderAll(){
   }
 
   // Whole-day controls
-  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
+  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'DONE');
   const acEl = document.getElementById('allCompleteControls');
   if(dayComplete){
     acEl.innerHTML = `
@@ -128,8 +128,8 @@ async function renderAll(){
   const checklistEl = document.getElementById('masterChecklist');
   checklistEl.innerHTML = TASK_OPTIONS.map(taskName => {
     const matches = assignments.filter(a => a.task === taskName);
-    const isDone = matches.some(a => a.status === 'complete');
-    const isActive = !isDone && matches.some(a => a.status !== 'complete');
+    const isDone = matches.some(a => a.status === 'DONE');
+    const isActive = !isDone && matches.some(a => a.status !== 'DONE');
     const statusClass = isDone ? 'done' : isActive ? 'progress' : 'pending';
     const groupsOnIt = [...new Set(matches.map(a => a.groupName))].join(', ');
     return `
@@ -144,14 +144,14 @@ async function renderAll(){
   const listEl = document.getElementById('adminGroupList');
   listEl.innerHTML = GROUPS.map(g => {
     const mine = assignments.filter(a => a.groupName === g);
-    const active = mine.filter(a => a.status !== 'complete');
-    const done = mine.filter(a => a.status === 'complete');
+    const active = mine.filter(a => a.status !== 'DONE');
+    const done = mine.filter(a => a.status === 'DONE');
     const currentPhone = phonesByGroup[g] || '';
 
     const taskRows = [...active, ...done].map(a => `
-      <div class="task-row ${a.status === 'complete' ? 'complete' : ''}">
+      <div class="task-row ${a.status === 'DONE' ? 'complete' : ''}">
         <div class="task-row-text">${a.task}</div>
-        ${a.status === 'complete'
+        ${a.status === 'DONE'
           ? '<div class="task-row-done">✓ Done</div>'
           : `<button class="btn danger small" onclick="removeTask('${a.id}')">Remove</button>`}
       </div>

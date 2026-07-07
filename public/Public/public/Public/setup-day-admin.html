@@ -51,6 +51,7 @@
   .task-row.complete{opacity:0.5;}
   .task-row-text{flex:1; font-size:13px;}
   .task-row-done{font-size:11px; color:#6ee7b7; font-weight:800;}
+  .task-notes-display{font-size:12px; color:var(--amber); background:rgba(245,158,11,0.08); border-left:2px solid var(--amber); padding:5px 8px; border-radius:5px; margin-top:6px;}
   .phone-row{display:flex; gap:8px;}
   .phone-row input{margin-bottom:0;}
 </style>
@@ -177,6 +178,11 @@ async function renderAll(){
         <div style="flex:1;">
           <div class="task-row-text">${a.task}</div>
           <div class="checklist-detail" style="margin-top:3px;">${TASK_DETAILS[a.task] || ''}</div>
+          ${a.notes ? `<div class="task-notes-display">📌 ${a.notes}</div>` : ''}
+          ${a.status !== 'DONE' ? `<div style="display:flex;gap:6px;margin-top:6px;">
+            <input type="text" placeholder="Add/edit note for this task..." id="note-${a.id}" value="${a.notes || ''}" style="flex:1;font-size:12px;padding:7px 10px;margin-bottom:0;"/>
+            <button class="btn small" style="flex-shrink:0;" onclick="saveNotes('${a.id}')">Save</button>
+          </div>` : ''}
         </div>
         ${a.status === 'DONE'
           ? '<div class="task-row-done">✓ Done</div>'
@@ -197,6 +203,7 @@ async function renderAll(){
           <option value="">— Choose a task to add —</option>
           ${options}
         </select>
+        <input type="text" placeholder="Extra note for this assignment (optional)" id="assignnote-${g.replace(/\s+/g,'')}"/>
         <button class="btn" onclick="assignTask('${g}')">+ Add This Task</button>
       </div>
     `;
@@ -218,12 +225,14 @@ async function savePhone(groupName){
 
 async function assignTask(groupName){
   const sel = document.getElementById('assign-' + groupName.replace(/\s+/g,''));
+  const noteInput = document.getElementById('assignnote-' + groupName.replace(/\s+/g,''));
   const task = sel.value;
+  const notes = noteInput ? noteInput.value.trim() : '';
   if(!task){ alert('Pick a task first.'); return; }
   try{
     const res = await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'assign', groupName, task })
+      body: JSON.stringify({ action: 'assign', groupName, task, notes })
     });
     const data = await res.json();
     if(!data.success){
@@ -231,6 +240,26 @@ async function assignTask(groupName){
     }
   }catch(e){
     alert('⚠️ Network error: ' + e.message);
+  }
+  renderAll();
+}
+
+async function saveNotes(id){
+  const input = document.getElementById('note-' + id);
+  const notes = input.value.trim();
+  try{
+    const res = await fetch('/.netlify/functions/setup-task-status', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'updateNotes', id, notes })
+    });
+    const data = await res.json();
+    if(!data.success){
+      alert('⚠️ Could not save note:\n\n' + (data.error || 'Unknown error'));
+      return;
+    }
+  }catch(e){
+    alert('⚠️ Network error: ' + e.message);
+    return;
   }
   renderAll();
 }

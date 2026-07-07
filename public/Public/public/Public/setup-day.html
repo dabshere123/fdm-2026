@@ -31,7 +31,9 @@
 
   .task-card{background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:18px 20px; margin-bottom:12px;}
   .task-card.done{opacity:0.45;}
-  .task-text{font-size:18px; font-weight:800; color:var(--text); margin-bottom:14px; line-height:1.4;}
+  .task-text{font-size:18px; font-weight:800; color:var(--text); margin-bottom:6px; line-height:1.4;}
+  .task-detail{font-size:13.5px; color:var(--sub); margin-bottom:6px; line-height:1.5;}
+  .task-notes{font-size:13.5px; color:var(--amber); background:rgba(245,158,11,0.08); border-left:3px solid var(--amber); padding:8px 10px; border-radius:6px; margin-bottom:14px; line-height:1.5;}
   .task-btn{width:100%; padding:14px; border-radius:12px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a1000; font-weight:900; font-size:15px; cursor:pointer;}
   .task-done-label{font-size:14px; color:#6ee7b7; font-weight:800;}
 
@@ -80,6 +82,26 @@
 
 <script>
 const GROUPS = ["G1", "G2", "G3", "G4", "Electrical", "Garbage Cans", "Truck 1", "Truck 2"];
+
+const TASK_DETAILS = {
+  "Left & Right Bank Bars": "10 Bar Sections, 8 6' Tables, 2 4' Tables — 4 bar sections, 4 6' tables, 1 4' table on EACH side (Left and Right).",
+  "Cabaret Bar": "4 Bar Sections, 1 6' Table.",
+  "Family Fete Bar": "4 Bar Sections, 3 8' Tables, 1 6' Table.",
+  "Moon Stage Bar": "8 Bar Sections, 2 8' Tables, 1 6' Table, 1 4' Table. Follow the Moon Stage Bar Set diagram — U-shape with 6' table centered, 2 caddies at the open end.",
+  "Lafayette Stage Bar": "4 Bar Sections, 3 8' Tables, 1 6' Table, 4 Cabaret Tables.",
+  "Cabaret Tent": "20 Round Tables, 100 Chairs. Set 4 rows (centered to stage) of 4 tables each. 5 chairs per table.",
+  "Family Fete Tent": "6 Round Tables, 50 Chairs. Set 2 rows (centered to stage) of 3 tables each. 5 chairs per table.",
+  "Lafayette Shade Tents": "40 Round Tables, 200 Chairs. 8 round in each 20x40 tent, 4 in the 20x20 tent (20 tables/100 chairs). Plus 20 more round tables & 100 chairs for general seating, spread 15 ft from stage.",
+  "Moon Stage Patio + Tent": "10 Round Tables, 100 Chairs, 20 Cabaret Tables. Set up against the building on the grassy area.",
+  "Sun Stage Shade Tents (4)": "32 Round Tables, 160 Chairs. Set 4 rows (along the 40' side) of 5 tables each. Equalize space between tables.",
+  "Sun Stage General Seating": "16-18 Round Tables, 400+ Chairs. Set chairs in an arc beginning at the concrete end. Tables behind the chairs, also in an arc. Gary will distribute many leftover chairs.",
+  "Lagniappe Stage Seating": "20 Round Tables, 8 Cabaret Tables, 100 Chairs. Set up against the building.",
+  "Everything Else Cafe": "4 8' Tables, 6 Cabaret Tables. 8' tables on the sides create 2 bars. 6 cabaret tables along the back, between the table bars.",
+  "Prize Wheel": "6 6' Tables, 1 4' Table. Grab needed chairs from the pile.",
+  "Hospitality / Grounds": "4 8' + 2 4' Tables → Moon. 4 8' + 2 4' Tables → Sun Stage. 2 8' Tables → Cabaret. 4 8' Tables → Grounds. Grab needed chairs from the 345 pile.",
+  "Electrical — Hang Lights": "Hang string lights per the site map.",
+  "Garbage Cans — Set Out Cans": "Set out garbage cans at each location per the site map.",
+};
 let pollInterval = null;
 
 function renderGroupPicker(){
@@ -143,6 +165,8 @@ async function pollMyGroupStatus(name){
   listEl.innerHTML = [...active, ...done].map(a => `
     <div class="task-card ${a.status === 'DONE' ? 'done' : ''}">
       <div class="task-text">${a.task}</div>
+      ${TASK_DETAILS[a.task] ? `<div class="task-detail">${TASK_DETAILS[a.task]}</div>` : ''}
+      ${a.notes ? `<div class="task-notes">📌 ${a.notes}</div>` : ''}
       ${a.status === 'DONE'
         ? '<div class="task-done-label">✓ Marked Done</div>'
         : `<button class="task-btn" onclick="markComplete('${a.id}', '${name}')">✅ Mark Task Complete</button>`}

@@ -78,6 +78,7 @@ exports.handler = async (event) => {
         task: r.fields.Task || '',
         status: r.fields.Status || 'In Progress',
         assignedAt: r.fields.AssignedAt || '',
+        notes: r.fields.Notes || '',
       }));
       const phones = (phoneData.records || []).map(r => ({
         groupName: r.fields.GroupName || '',
@@ -92,21 +93,21 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
   try {
-    const { action, id, groupName, task, phone } = JSON.parse(event.body || '{}');
+    const { action, id, groupName, task, phone, notes } = JSON.parse(event.body || '{}');
 
     if (action === 'assign') {
       if (!groupName || !task) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName or task' }) };
       const assignRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ typecast: true, fields: { GroupName: groupName, Task: task, Status: 'In Progress', AssignedAt: new Date().toISOString() } })
+        body: JSON.stringify({ typecast: true, fields: { GroupName: groupName, Task: task, Status: 'In Progress', AssignedAt: new Date().toISOString(), Notes: notes || '' } })
       });
       const assignData = await assignRes.json();
       if (!assignRes.ok) {
-        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: `Airtable rejected the write: ${assignData.error?.message || assignRes.status}. Make sure a table named exactly "${TABLE}" exists with fields GroupName, Task, Status, AssignedAt (all single line text).` }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: `Airtable rejected the write: ${assignData.error?.message || assignRes.status}. Make sure a table named exactly "${TABLE}" exists with fields GroupName, Task, Status, AssignedAt, Notes (all single line text, except Status which is a select).` }) };
       }
       const groupPhone = await getGroupPhone(groupName);
-      if (groupPhone) sendSMS(groupPhone, `📋 New task for ${groupName}: ${task}. Check the Setup Day app for details.`);
+      if (groupPhone) sendSMS(groupPhone, `📋 New task for ${groupName}: ${task}${notes ? ' — ' + notes : ''}. Check the Setup Day app for details.`);
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
@@ -126,6 +127,20 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: patchData.error?.message || 'Failed to mark complete' }) };
       }
       sendSMS(ADMIN_PHONE, `✅ Setup Day: ${rec?.fields?.GroupName || 'A group'} finished "${rec?.fields?.Task || 'a task'}". Assign their next task if needed.`);
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    if (action === 'updateNotes') {
+      if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
+      const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { Notes: notes || '' } })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: data.error?.message || 'Failed to save notes. Make sure a "Notes" field (single line text) exists on the SetupGroups table.' }) };
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 

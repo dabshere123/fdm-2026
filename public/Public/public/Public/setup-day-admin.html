@@ -92,13 +92,20 @@
 </div>
 
 <script>
-const GROUPS = ["G1", "G2", "G3", "G4", "Electrical", "Garbage Cans", "Truck 1", "Truck 2"];
+const GROUPS = [
+  "G1 — Operation Fresh Start (8, Truck 1)",
+  "G2 — Wardell + 2 FIPs (Uhaul)",
+  "G3 — Steve, Oscar, 1 FIP",
+  "G4 — 3 FIPs",
+  "Electrical — Rob, Bruce J, 1 FIP",
+  "Trash Cans — Mousa",
+];
 const TASK_OPTIONS = [
   "Left & Right Bank Bars", "Cabaret Bar", "Family Fete Bar", "Moon Stage Bar", "Lafayette Stage Bar",
   "Cabaret Tent", "Family Fete Tent", "Lafayette Shade Tents", "Moon Stage Patio + Tent",
   "Sun Stage Shade Tents (4)", "Sun Stage General Seating", "Lagniappe Stage Seating",
   "Everything Else Cafe", "Prize Wheel", "Hospitality / Grounds",
-  "Electrical — Hang Lights", "Garbage Cans — Set Out Cans"
+  "Electrical — Hang Lights", "Trash Cans — Set Out Cans"
 ];
 
 const TASK_DETAILS = {
@@ -118,7 +125,7 @@ const TASK_DETAILS = {
   "Prize Wheel": "6 6' Tables, 1 4' Table. Grab needed chairs from the pile.",
   "Hospitality / Grounds": "4 8' + 2 4' Tables → Moon. 4 8' + 2 4' Tables → Sun Stage. 2 8' Tables → Cabaret. 4 8' Tables → Grounds. Grab needed chairs from the 345 pile.",
   "Electrical — Hang Lights": "Hang string lights per the site map.",
-  "Garbage Cans — Set Out Cans": "Set out garbage cans at each location per the site map.",
+  "Trash Cans — Set Out Cans": "Set out garbage cans at each location per the site map.",
 };
 
 async function fetchAll(){

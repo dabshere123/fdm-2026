@@ -40,6 +40,7 @@
   .checklist-status.pending{background:#475569;}
   .checklist-text{flex:1; font-size:13px; color:var(--text);}
   .checklist-sub{font-size:11px; color:var(--faint);}
+  .checklist-detail{font-size:11.5px; color:var(--sub); margin-top:4px; line-height:1.5;}
 
   .group-card-name{font-size:16px; font-weight:800; color:var(--text); margin-bottom:10px;}
   .status-pill{display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; padding:2px 8px; border-radius:6px; margin-left:8px;}
@@ -89,6 +90,26 @@ const TASK_OPTIONS = [
   "Electrical — Hang Lights", "Garbage Cans — Set Out Cans"
 ];
 
+const TASK_DETAILS = {
+  "Left & Right Bank Bars": "10 Bar Sections, 8 6' Tables, 2 4' Tables — 4 bar sections, 4 6' tables, 1 4' table on EACH side (Left and Right).",
+  "Cabaret Bar": "4 Bar Sections, 1 6' Table.",
+  "Family Fete Bar": "4 Bar Sections, 3 8' Tables, 1 6' Table.",
+  "Moon Stage Bar": "8 Bar Sections, 2 8' Tables, 1 6' Table, 1 4' Table. Follow the Moon Stage Bar Set diagram — U-shape with 6' table centered, 2 caddies at the open end.",
+  "Lafayette Stage Bar": "4 Bar Sections, 3 8' Tables, 1 6' Table, 4 Cabaret Tables.",
+  "Cabaret Tent": "20 Round Tables, 100 Chairs. Set 4 rows (centered to stage) of 4 tables each. 5 chairs per table.",
+  "Family Fete Tent": "6 Round Tables, 50 Chairs. Set 2 rows (centered to stage) of 3 tables each. 5 chairs per table.",
+  "Lafayette Shade Tents": "40 Round Tables, 200 Chairs. 8 round in each 20x40 tent, 4 in the 20x20 tent (20 tables/100 chairs). Plus 20 more round tables & 100 chairs for general seating, spread 15 ft from stage.",
+  "Moon Stage Patio + Tent": "10 Round Tables, 100 Chairs, 20 Cabaret Tables. Set up against the building on the grassy area.",
+  "Sun Stage Shade Tents (4)": "32 Round Tables, 160 Chairs. Set 4 rows (along the 40' side) of 5 tables each. Equalize space between tables.",
+  "Sun Stage General Seating": "16-18 Round Tables, 400+ Chairs. Set chairs in an arc beginning at the concrete end. Tables behind the chairs, also in an arc. Gary will distribute many leftover chairs.",
+  "Lagniappe Stage Seating": "20 Round Tables, 8 Cabaret Tables, 100 Chairs. Set up against the building.",
+  "Everything Else Cafe": "4 8' Tables, 6 Cabaret Tables. 8' tables on the sides create 2 bars. 6 cabaret tables along the back, between the table bars.",
+  "Prize Wheel": "6 6' Tables, 1 4' Table. Grab needed chairs from the pile.",
+  "Hospitality / Grounds": "4 8' + 2 4' Tables → Moon. 4 8' + 2 4' Tables → Sun Stage. 2 8' Tables → Cabaret. 4 8' Tables → Grounds. Grab needed chairs from the 345 pile.",
+  "Electrical — Hang Lights": "Hang string lights per the site map.",
+  "Garbage Cans — Set Out Cans": "Set out garbage cans at each location per the site map.",
+};
+
 async function fetchAll(){
   try{
     const res = await fetch('/.netlify/functions/setup-task-status');
@@ -133,9 +154,12 @@ async function renderAll(){
     const statusClass = isDone ? 'done' : isActive ? 'progress' : 'pending';
     const groupsOnIt = [...new Set(matches.map(a => a.groupName))].join(', ');
     return `
-      <div class="checklist-row">
-        <div class="checklist-status ${statusClass}"></div>
-        <div class="checklist-text">${taskName}${groupsOnIt ? `<div class="checklist-sub">${isDone ? 'Done by' : 'Assigned to'}: ${groupsOnIt}</div>` : ''}</div>
+      <div class="checklist-row" style="align-items:flex-start;">
+        <div class="checklist-status ${statusClass}" style="margin-top:5px;"></div>
+        <div class="checklist-text">
+          ${taskName}${groupsOnIt ? `<div class="checklist-sub">${isDone ? 'Done by' : 'Assigned to'}: ${groupsOnIt}</div>` : ''}
+          <div class="checklist-detail">${TASK_DETAILS[taskName] || ''}</div>
+        </div>
       </div>
     `;
   }).join('');
@@ -149,8 +173,11 @@ async function renderAll(){
     const currentPhone = phonesByGroup[g] || '';
 
     const taskRows = [...active, ...done].map(a => `
-      <div class="task-row ${a.status === 'DONE' ? 'complete' : ''}">
-        <div class="task-row-text">${a.task}</div>
+      <div class="task-row ${a.status === 'DONE' ? 'complete' : ''}" style="align-items:flex-start;">
+        <div style="flex:1;">
+          <div class="task-row-text">${a.task}</div>
+          <div class="checklist-detail" style="margin-top:3px;">${TASK_DETAILS[a.task] || ''}</div>
+        </div>
         ${a.status === 'DONE'
           ? '<div class="task-row-done">✓ Done</div>'
           : `<button class="btn danger small" onclick="removeTask('${a.id}')">Remove</button>`}

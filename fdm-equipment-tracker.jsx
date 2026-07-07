@@ -107,13 +107,15 @@ export default function EquipmentTracker(){
     const existing = saved?.radios;
     if (!existing) return INIT_RADIOS;
     const trimmed = existing.length > 18 ? existing.slice(0, 18) : existing;
-    const validNames = new Set(RADIO_LOCATIONS);
-    return trimmed.map((r,i) => {
-      const isValid = validNames.has(r.location) || /^Spare \d+$/.test(r.location||"");
-      const fixedLocation = isValid ? r.location : (INIT_RADIOS[i]?.location || r.location);
-      const fixedLabel = r.num !== 1001+i ? INIT_RADIOS[i]?.label || r.label : r.label;
-      return { ...r, location: fixedLocation, label: fixedLabel, num: 1001+i };
-    });
+    // Radios are tied to a fixed role by their physical number now (1001=Devin/Admin, 1005=Sun Right, etc.)
+    // so always force location/label/num to match that position -- no partial "still valid" leniency,
+    // since a location being valid *somewhere* in the list isn't the same as being correct *here*.
+    return trimmed.map((r,i) => ({
+      ...r,
+      location: INIT_RADIOS[i]?.location ?? r.location,
+      label: INIT_RADIOS[i]?.label ?? r.label,
+      num: INIT_RADIOS[i]?.num ?? r.num,
+    }));
   })();
   const migratedReaders = (() => {
     const existing = saved?.readers || [];

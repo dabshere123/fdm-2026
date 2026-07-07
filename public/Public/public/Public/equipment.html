@@ -207,17 +207,16 @@ function EquipmentTracker() {
     const existing = saved === null || saved === void 0 ? void 0 : saved.radios;
     if (!existing) return INIT_RADIOS;
     const trimmed = existing.length > 18 ? existing.slice(0, 18) : existing;
-    const validNames = new Set(RADIO_LOCATIONS);
+    // Radios are tied to a fixed role by their physical number now (1001=Devin/Admin, 1005=Sun Right, etc.)
+    // so always force location/label/num to match that position -- no partial "still valid" leniency,
+    // since a location being valid *somewhere* in the list isn't the same as being correct *here*.
     return trimmed.map((r, i) => {
-      var _INIT_RADIOS$i, _INIT_RADIOS$i2;
-      const isValid = validNames.has(r.location) || /^Spare \d+$/.test(r.location || "");
-      const fixedLocation = isValid ? r.location : ((_INIT_RADIOS$i = INIT_RADIOS[i]) === null || _INIT_RADIOS$i === void 0 ? void 0 : _INIT_RADIOS$i.location) || r.location;
-      const fixedLabel = r.num !== 1001 + i ? ((_INIT_RADIOS$i2 = INIT_RADIOS[i]) === null || _INIT_RADIOS$i2 === void 0 ? void 0 : _INIT_RADIOS$i2.label) || r.label : r.label;
+      var _INIT_RADIOS$i$locati, _INIT_RADIOS$i, _INIT_RADIOS$i$label, _INIT_RADIOS$i2, _INIT_RADIOS$i$num, _INIT_RADIOS$i3;
       return {
         ...r,
-        location: fixedLocation,
-        label: fixedLabel,
-        num: 1001 + i
+        location: (_INIT_RADIOS$i$locati = (_INIT_RADIOS$i = INIT_RADIOS[i]) === null || _INIT_RADIOS$i === void 0 ? void 0 : _INIT_RADIOS$i.location) !== null && _INIT_RADIOS$i$locati !== void 0 ? _INIT_RADIOS$i$locati : r.location,
+        label: (_INIT_RADIOS$i$label = (_INIT_RADIOS$i2 = INIT_RADIOS[i]) === null || _INIT_RADIOS$i2 === void 0 ? void 0 : _INIT_RADIOS$i2.label) !== null && _INIT_RADIOS$i$label !== void 0 ? _INIT_RADIOS$i$label : r.label,
+        num: (_INIT_RADIOS$i$num = (_INIT_RADIOS$i3 = INIT_RADIOS[i]) === null || _INIT_RADIOS$i3 === void 0 ? void 0 : _INIT_RADIOS$i3.num) !== null && _INIT_RADIOS$i$num !== void 0 ? _INIT_RADIOS$i$num : r.num
       };
     });
   })();

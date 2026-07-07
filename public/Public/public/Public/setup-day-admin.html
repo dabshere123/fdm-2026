@@ -253,7 +253,7 @@ async function renderAll(){
           ${options}
           <option value="__custom__">✏️ Custom Task (type your own)</option>
         </select>
-        <input type="text" placeholder="Type the custom task name..." id="customtask-${g.replace(/\s+/g,'')}" style="display:none;"/>
+        <textarea placeholder="Type the custom task name..." id="customtask-${g.replace(/\s+/g,'')}" style="display:none;min-height:44px;resize:vertical;"></textarea>
         <textarea placeholder="Extra note for this assignment (optional)" id="assignnote-${g.replace(/\s+/g,'')}" style="min-height:44px;resize:vertical;"></textarea>
         <button class="btn" onclick="assignTask('${g}')">+ Add This Task</button>
       </div>

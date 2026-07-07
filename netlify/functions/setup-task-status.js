@@ -96,6 +96,46 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
+    // Sentinel record (GroupName="ALL") used to broadcast "the whole day is done" to every group's app
+    if (action === 'markAllComplete') {
+      const res = await fetch(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?filterByFormula=AND({GroupName}="ALL",{Task}="DAY_COMPLETE")`,
+        { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+      );
+      const data = await res.json();
+      const existing = (data.records || [])[0];
+      if (existing) {
+        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${existing.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { Status: 'complete' } })
+        });
+      } else {
+        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { GroupName: 'ALL', Task: 'DAY_COMPLETE', Status: 'complete', AssignedAt: new Date().toISOString() } })
+        });
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    if (action === 'clearAllComplete') {
+      const res = await fetch(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?filterByFormula=AND({GroupName}="ALL",{Task}="DAY_COMPLETE")`,
+        { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+      );
+      const data = await res.json();
+      const existing = (data.records || [])[0];
+      if (existing) {
+        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${existing.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
+        });
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action' }) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

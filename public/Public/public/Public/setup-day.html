@@ -74,6 +74,19 @@
   .task-item-btn{padding:9px 14px; border-radius:9px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a1000; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap;}
   .task-item.complete .task-item-btn{display:none;}
   .task-item-done{font-size:12px; color:#6ee7b7; font-weight:800;}
+
+  .checklist-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05);}
+  .checklist-row:last-child{border-bottom:none;}
+  .checklist-status{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .checklist-status.done{background:#6ee7b7;}
+  .checklist-status.progress{background:#fbbf24;}
+  .checklist-status.pending{background:#475569;}
+  .checklist-text{flex:1; font-size:13px; color:var(--text);}
+  .checklist-sub{font-size:11px; color:var(--faint);}
+
+  .all-complete-banner{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.1)); border:2px solid rgba(16,185,129,0.4); border-radius:16px; padding:24px; text-align:center; margin-bottom:18px;}
+  .all-complete-banner .big{font-size:22px; font-weight:900; color:#6ee7b7; margin-bottom:6px;}
+  .all-complete-banner .small{font-size:13px; color:var(--sub);}
 </style>
 </head>
 <body>
@@ -129,6 +142,10 @@
           <div style="font-size:20px;font-weight:900;" id="myGroupName"></div>
           <a href="#" onclick="clearMyGroup();return false;" style="font-size:11px;color:var(--faint);text-decoration:underline;">Switch group</a>
         </div>
+        <div id="allCompleteBanner" class="hidden all-complete-banner">
+          <div class="big">🎉 Setup Complete!</div>
+          <div class="small">Great work today — you can head back now.</div>
+        </div>
         <div id="myTaskList"></div>
         <div id="noTasksMsg" class="hidden" style="text-align:center;margin-top:16px;color:var(--sub);font-size:13px;">No tasks assigned yet — check back soon. This page checks automatically every 10 seconds.</div>
       </div>
@@ -136,6 +153,16 @@
 
     <!-- ADMIN VIEW -->
     <div id="adminView" class="hidden">
+      <div class="section" id="allCompleteSection" style="margin-bottom:16px;">
+        <div class="section-label">Whole Day</div>
+        <div id="allCompleteControls"></div>
+      </div>
+
+      <div class="section" style="margin-bottom:16px;">
+        <div class="section-label">All Tasks — What's Left vs. Done</div>
+        <div id="masterChecklist"></div>
+      </div>
+
       <div style="font-size:13px;color:var(--sub);margin-bottom:12px;">Add a task to any group — groups can have more than one task at once.</div>
       <div id="adminGroupList"></div>
     </div>
@@ -482,13 +509,17 @@ async function fetchAssignments(){
 async function pollMyGroupStatus(name){
   const all = await fetchAssignments();
   if(all === null) return; // network hiccup — keep showing last known state
+
+  const dayComplete = all.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
+  document.getElementById('allCompleteBanner').classList.toggle('hidden', !dayComplete);
+
   const mine = all.filter(a => a.groupName === name);
   const listEl = document.getElementById('myTaskList');
   const noTasksMsg = document.getElementById('noTasksMsg');
 
   if(mine.length === 0){
     listEl.innerHTML = '';
-    noTasksMsg.classList.remove('hidden');
+    noTasksMsg.classList.toggle('hidden', dayComplete);
     return;
   }
   noTasksMsg.classList.add('hidden');
@@ -525,6 +556,37 @@ async function renderAdminPanel(){
   listEl.innerHTML = '<div style="color:var(--faint);font-size:13px;">Loading...</div>';
   const all = await fetchAssignments();
   const assignments = all || [];
+
+  // ── Whole-day complete controls ──
+  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
+  const acEl = document.getElementById('allCompleteControls');
+  if(dayComplete){
+    acEl.innerHTML = `
+      <div style="font-size:13px;color:#6ee7b7;font-weight:800;margin-bottom:10px;">🎉 Marked complete — every group's app is showing the "head back" message.</div>
+      <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;background:linear-gradient(135deg,#475569,#334155);" onclick="clearAllComplete()">↩ Undo — Day Is NOT Actually Done</button>
+    `;
+  } else {
+    acEl.innerHTML = `
+      <div style="font-size:12.5px;color:var(--sub);margin-bottom:10px;">Once every task below is done, tap this to tell every group's app they can head back.</div>
+      <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;" onclick="markAllComplete()">📢 Mark Whole Day Complete</button>
+    `;
+  }
+
+  // ── Master checklist across all possible tasks ──
+  const checklistEl = document.getElementById('masterChecklist');
+  checklistEl.innerHTML = TASK_OPTIONS.map(taskName => {
+    const matches = assignments.filter(a => a.task === taskName);
+    const isDone = matches.some(a => a.status === 'complete');
+    const isActive = !isDone && matches.some(a => a.status !== 'complete');
+    const statusClass = isDone ? 'done' : isActive ? 'progress' : 'pending';
+    const groupsOnIt = [...new Set(matches.map(a => a.groupName))].join(', ');
+    return `
+      <div class="checklist-row">
+        <div class="checklist-status ${statusClass}"></div>
+        <div class="checklist-text">${taskName}${groupsOnIt ? `<div class="checklist-sub">${isDone ? 'Done by' : 'Assigned to'}: ${groupsOnIt}</div>` : ''}</div>
+      </div>
+    `;
+  }).join('');
 
   listEl.innerHTML = GROUPS.map(g => {
     const mine = assignments.filter(a => a.groupName === g);
@@ -573,6 +635,27 @@ async function removeTask(id){
     await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ action: 'remove', id })
+    });
+  }catch(e){}
+  renderAdminPanel();
+}
+
+async function markAllComplete(){
+  if(!confirm('Tell every group they can head back? This shows a "Setup Complete" banner on everyone\'s phone.')) return;
+  try{
+    await fetch('/.netlify/functions/setup-task-status', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'markAllComplete' })
+    });
+  }catch(e){}
+  renderAdminPanel();
+}
+
+async function clearAllComplete(){
+  try{
+    await fetch('/.netlify/functions/setup-task-status', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'clearAllComplete' })
     });
   }catch(e){}
   renderAdminPanel();

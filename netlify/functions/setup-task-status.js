@@ -68,6 +68,9 @@ exports.handler = async (event) => {
         fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?maxRecords=50`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }),
       ]);
       const assignData = await assignRes.json();
+      if (!assignRes.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ assignments: [], phones: [], error: `Airtable error reading "${TABLE}": ${assignData.error?.message || assignRes.status}. Make sure a table named exactly "${TABLE}" exists with fields GroupName, Task, Status, AssignedAt.` }) };
+      }
       const phoneData = await phoneRes.json().catch(() => ({ records: [] }));
       const assignments = (assignData.records || []).map(r => ({
         id: r.id,
@@ -93,11 +96,15 @@ exports.handler = async (event) => {
 
     if (action === 'assign') {
       if (!groupName || !task) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName or task' }) };
-      await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
+      const assignRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { GroupName: groupName, Task: task, Status: 'assigned', AssignedAt: new Date().toISOString() } })
       });
+      const assignData = await assignRes.json();
+      if (!assignRes.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: `Airtable rejected the write: ${assignData.error?.message || assignRes.status}. Make sure a table named exactly "${TABLE}" exists with fields GroupName, Task, Status, AssignedAt (all single line text).` }) };
+      }
       const groupPhone = await getGroupPhone(groupName);
       if (groupPhone) sendSMS(groupPhone, `📋 New task for ${groupName}: ${task}. Check the Setup Day app for details.`);
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
@@ -109,11 +116,15 @@ exports.handler = async (event) => {
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
       });
       const rec = await getRes.json();
-      await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+      const patchRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { Status: 'complete' } })
       });
+      const patchData = await patchRes.json();
+      if (!patchRes.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: patchData.error?.message || 'Failed to mark complete' }) };
+      }
       sendSMS(ADMIN_PHONE, `✅ Setup Day: ${rec?.fields?.GroupName || 'A group'} finished "${rec?.fields?.Task || 'a task'}". Assign their next task if needed.`);
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }

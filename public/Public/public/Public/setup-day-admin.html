@@ -65,6 +65,8 @@
 
   <div class="content">
 
+    <div id="errorBanner" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:10px;padding:12px 14px;font-size:12.5px;color:#fca5a5;margin-bottom:16px;line-height:1.5;"></div>
+
     <div class="section-title">Whole Day</div>
     <div class="card" id="allCompleteControls"></div>
 
@@ -91,13 +93,21 @@ async function fetchAll(){
   try{
     const res = await fetch('/.netlify/functions/setup-task-status');
     const data = await res.json();
-    return { assignments: data.assignments || [], phones: data.phones || [] };
-  }catch(e){ return { assignments: [], phones: [] }; }
+    return { assignments: data.assignments || [], phones: data.phones || [], error: data.error || null };
+  }catch(e){ return { assignments: [], phones: [], error: e.message }; }
 }
 
 async function renderAll(){
-  const { assignments, phones } = await fetchAll();
+  const { assignments, phones, error } = await fetchAll();
   const phonesByGroup = Object.fromEntries(phones.map(p => [p.groupName, p.phone]));
+
+  const errEl = document.getElementById('errorBanner');
+  if(error){
+    errEl.style.display = 'block';
+    errEl.textContent = '⚠️ ' + error;
+  } else {
+    errEl.style.display = 'none';
+  }
 
   // Whole-day controls
   const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
@@ -184,11 +194,17 @@ async function assignTask(groupName){
   const task = sel.value;
   if(!task){ alert('Pick a task first.'); return; }
   try{
-    await fetch('/.netlify/functions/setup-task-status', {
+    const res = await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ action: 'assign', groupName, task })
     });
-  }catch(e){}
+    const data = await res.json();
+    if(!data.success){
+      alert('⚠️ Could not save this assignment:\n\n' + (data.error || 'Unknown error'));
+    }
+  }catch(e){
+    alert('⚠️ Network error: ' + e.message);
+  }
   renderAll();
 }
 

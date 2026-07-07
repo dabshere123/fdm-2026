@@ -44,19 +44,19 @@ var RADIO_LOCATIONS = ["Devin/Admin",
 // 9
 "Family Fete Bar",
 // 10
-"Family Fete Stage",
-// 11
 "Moon Bar",
-// 12
+// 11
 "Moon Stage",
-// 13
+// 12
 "Lagniappe",
-// 14
+// 13
 "Lagniappe Stage",
-// 15
+// 14
 "Lafayette Bar",
-// 16
+// 15
 "Prize Wheel",
+// 16
+"MPD",
 // 17
 "MPD" // 18
 ];
@@ -1347,8 +1347,8 @@ function EquipmentTracker() {
       })
     }, /*#__PURE__*/React.createElement("option", {
       value: ""
-    }, "\u2014 Unassigned \u2014"), RADIO_LOCATIONS.map(loc => /*#__PURE__*/React.createElement("option", {
-      key: loc,
+    }, "\u2014 Unassigned \u2014"), RADIO_LOCATIONS.map((loc, i) => /*#__PURE__*/React.createElement("option", {
+      key: loc + i,
       value: loc
     }, loc)), !RADIO_LOCATIONS.includes(r.location) && r.location && /*#__PURE__*/React.createElement("option", {
       value: r.location

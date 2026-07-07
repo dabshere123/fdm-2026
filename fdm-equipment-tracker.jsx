@@ -32,13 +32,13 @@ const RADIO_LOCATIONS = [
   "Carrin",              // 8 — specific person's radio
   "Sun Stage Manager",   // 9
   "Family Fete Bar",     // 10
-  "Family Fete Stage",   // 11
-  "Moon Bar",            // 12
-  "Moon Stage",          // 13
-  "Lagniappe",           // 14
-  "Lagniappe Stage",     // 15
-  "Lafayette Bar",       // 16
-  "Prize Wheel",         // 17
+  "Moon Bar",            // 11
+  "Moon Stage",          // 12
+  "Lagniappe",           // 13
+  "Lagniappe Stage",     // 14
+  "Lafayette Bar",       // 15
+  "Prize Wheel",         // 16
+  "MPD",                 // 17
   "MPD",                 // 18
 ];
 
@@ -458,7 +458,7 @@ export default function EquipmentTracker(){
                     <div style={{fontSize:13,fontWeight:700,color:"#f1f5f9",minWidth:70}}>{r.label}</div>
                     <select style={{...S.inp,width:150,fontSize:12,padding:"6px 8px"}} value={r.location} onChange={e=>updateRadio(r.id,{location:e.target.value})}>
                       <option value="">— Unassigned —</option>
-                      {RADIO_LOCATIONS.map(loc=><option key={loc} value={loc}>{loc}</option>)}
+                      {RADIO_LOCATIONS.map((loc,i)=><option key={loc+i} value={loc}>{loc}</option>)}
                       {!RADIO_LOCATIONS.includes(r.location)&&r.location&&<option value={r.location}>{r.location}</option>}
                     </select>
                     <input style={{...S.inp,width:100,fontSize:12,padding:"6px 8px"}} placeholder="Serial #" value={editSerial[r.id]!==undefined?editSerial[r.id]:r.serial} onChange={e=>setEditSerial(p=>({...p,[r.id]:e.target.value}))}

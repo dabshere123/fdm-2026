@@ -28,18 +28,18 @@ const RADIO_LOCATIONS = [
   "Sun Left",            // 4
   "Sun Right",           // 5
   "Cabaret",             // 6
-  "Carrin",              // 7 — specific person's radio
-  "Sun Stage Manager",   // 8
-  "Family Fete Bar",     // 9
-  "Family Fete Stage",   // 10
-  "Moon Bar",            // 11
-  "Moon Stage",          // 12
-  "Lagniappe",           // 13
-  "Lagniappe Stage",     // 14
-  "Lafayette Bar",       // 15
-  "Prize Wheel",         // 16
-  "MPD",                 // 17
-  "MPD Extra",           // 18
+  "Cabaret Stage",       // 7
+  "Carrin",              // 8 — specific person's radio
+  "Sun Stage Manager",   // 9
+  "Family Fete Bar",     // 10
+  "Family Fete Stage",   // 11
+  "Moon Bar",            // 12
+  "Moon Stage",          // 13
+  "Lagniappe",           // 14
+  "Lagniappe Stage",     // 15
+  "Lafayette Bar",       // 16
+  "Prize Wheel",         // 17
+  "MPD",                 // 18
 ];
 
 // Readers go to bars only, NOT Lagniappe, plus Prize Wheel = 8 spots

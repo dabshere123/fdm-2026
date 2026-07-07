@@ -144,6 +144,38 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
+    // Adds an update to a task ALREADY in progress -- appends to existing notes (doesn't overwrite)
+    // and always texts the group about it (that's the whole point of this action).
+    if (action === 'addToTask') {
+      if (!id || !notes) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id or add-on text' }) };
+      const getRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
+      });
+      const rec = await getRes.json();
+      const existingNotes = rec?.fields?.Notes || '';
+      const combinedNotes = existingNotes ? `${existingNotes} | ${notes}` : notes;
+      const patchRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { Notes: combinedNotes } })
+      });
+      const patchData = await patchRes.json();
+      if (!patchRes.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: patchData.error?.message || 'Failed to save the add-on.' }) };
+      }
+      const taskGroup = rec?.fields?.GroupName;
+      const taskName = rec?.fields?.Task;
+      let texted = false;
+      if (taskGroup) {
+        const groupPhone = await getGroupPhone(taskGroup);
+        if (groupPhone) {
+          sendSMS(groupPhone, `📌 Update on your task "${taskName}": ${notes}`);
+          texted = true;
+        }
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, texted }) };
+    }
+
     if (action === 'remove') {
       if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
       await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {

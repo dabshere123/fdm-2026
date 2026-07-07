@@ -170,6 +170,10 @@ async function renderAll(){
         <div class="overview-task">
           <span class="name">${a.task}</span>${a.status === 'DONE' ? ' — ✓ Done' : ''}
           ${a.notes ? `<div style="color:var(--amber);font-size:12px;margin-top:2px;">📌 ${a.notes}</div>` : ''}
+          ${a.status !== 'DONE' ? `<div style="display:flex;gap:6px;margin-top:6px;">
+            <input type="text" placeholder="Add to this task, texts the group..." id="addon-${a.id}" style="flex:1;font-size:12px;padding:7px 10px;margin-bottom:0;"/>
+            <button class="btn small" style="flex-shrink:0;" onclick="addToTask('${a.id}')">📲 Send</button>
+          </div>` : ''}
         </div>
       `).join('');
       return `
@@ -275,6 +279,30 @@ async function assignTask(groupName){
     }
   }catch(e){
     alert('⚠️ Network error: ' + e.message);
+  }
+  renderAll();
+}
+
+async function addToTask(id){
+  const input = document.getElementById('addon-' + id);
+  const addon = input.value.trim();
+  if(!addon){ alert('Type something to add first.'); return; }
+  try{
+    const res = await fetch('/.netlify/functions/setup-task-status', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'addToTask', id, notes: addon })
+    });
+    const data = await res.json();
+    if(!data.success){
+      alert('⚠️ Could not send this update:\n\n' + (data.error || 'Unknown error'));
+      return;
+    }
+    if(!data.texted){
+      alert('Saved — but this group has no phone number on file yet, so no text went out. It\'ll show in the app next time they check.');
+    }
+  }catch(e){
+    alert('⚠️ Network error: ' + e.message);
+    return;
   }
   renderAll();
 }

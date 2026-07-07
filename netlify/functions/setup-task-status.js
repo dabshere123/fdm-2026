@@ -1,15 +1,21 @@
 // setup-task-status.js
-// Tracks setup-day task assignments. Each row is ONE task assigned to ONE group --
-// a group can have several tasks assigned at the same time, each completed independently.
+// Tracks setup-day task assignments AND each group's phone number (for SMS alerts).
+// Each row in SetupGroups is ONE task assigned to ONE group -- a group can have
+// several tasks assigned at the same time, each completed independently.
+// Phone numbers live in a separate table, SetupGroupPhones (GroupName, Phone).
 //
-// GET  -> { assignments: [{ id, groupName, task, status, assignedAt }] }
-// POST { action: "assign", groupName, task }      -> creates a new assignment row
-// POST { action: "complete", id }                  -> marks that specific assignment done
-// POST { action: "remove", id }                    -> deletes an assignment (mis-assigned, etc.)
+// GET  -> { assignments: [{ id, groupName, task, status, assignedAt }], phones: [{groupName, phone}] }
+// POST { action: "assign", groupName, task }      -> creates a new assignment row, texts the group if phone on file
+// POST { action: "complete", id }                  -> marks that specific assignment done, texts Devin
+// POST { action: "remove", id }                    -> deletes an assignment
+// POST { action: "setPhone", groupName, phone }     -> saves/updates a group's phone number
+// POST { action: "markAllComplete" }                -> sets the day-complete flag, texts every group with a phone on file
+// POST { action: "clearAllComplete" }               -> undoes the above
 
 const AIRTABLE_BASE  = 'appUVEp7kO9NeeJh0';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const TABLE = 'SetupGroups';
+const PHONE_TABLE = 'SetupGroupPhones';
 const ADMIN_PHONE = '+16082289692'; // Devin
 
 const TWILIO_SID  = process.env.TWILIO_ACCOUNT_SID;
@@ -17,20 +23,38 @@ const TWILIO_AUTH = process.env.TWILIO_AUTH_TOKEN;
 const MSG_SID     = process.env.TWILIO_MESSAGING_SERVICE_SID;
 const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
 
-async function notifyAdmin(groupName, task) {
+function fmtPhone(p) {
+  if (!p) return null;
+  const d = String(p).replace(/\D/g, '');
+  if (d.length === 10) return `+1${d}`;
+  if (d.length === 11 && d[0] === '1') return `+${d}`;
+  if (String(p).startsWith('+')) return String(p);
+  return null;
+}
+
+async function sendSMS(to, body) {
   if (!TWILIO_SID || !TWILIO_AUTH) return;
+  const formatted = fmtPhone(to);
+  if (!formatted) return;
   try {
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
     await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
       method: 'POST',
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        To: ADMIN_PHONE,
-        MessagingServiceSid: MSG_SID || TWILIO_FROM,
-        Body: `✅ Setup Day: ${groupName} finished "${task}". Assign their next task if needed.`,
-      }).toString()
+      body: new URLSearchParams({ To: formatted, MessagingServiceSid: MSG_SID || TWILIO_FROM, Body: body }).toString()
     });
   } catch (e) { /* non-fatal */ }
+}
+
+async function getGroupPhone(groupName) {
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={GroupName}="${groupName}"`,
+      { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+    );
+    const data = await res.json();
+    return data.records?.[0]?.fields?.Phone || null;
+  } catch (e) { return null; }
 }
 
 exports.handler = async (event) => {
@@ -39,28 +63,33 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'GET') {
     try {
-      const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?maxRecords=200`,
-        { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
-      );
-      const data = await res.json();
-      const assignments = (data.records || []).map(r => ({
+      const [assignRes, phoneRes] = await Promise.all([
+        fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?maxRecords=200`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }),
+        fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?maxRecords=50`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }),
+      ]);
+      const assignData = await assignRes.json();
+      const phoneData = await phoneRes.json().catch(() => ({ records: [] }));
+      const assignments = (assignData.records || []).map(r => ({
         id: r.id,
         groupName: r.fields.GroupName || '',
         task: r.fields.Task || '',
         status: r.fields.Status || 'assigned',
         assignedAt: r.fields.AssignedAt || '',
       }));
-      return { statusCode: 200, headers, body: JSON.stringify({ assignments }) };
+      const phones = (phoneData.records || []).map(r => ({
+        groupName: r.fields.GroupName || '',
+        phone: r.fields.Phone || '',
+      }));
+      return { statusCode: 200, headers, body: JSON.stringify({ assignments, phones }) };
     } catch (e) {
-      return { statusCode: 200, headers, body: JSON.stringify({ assignments: [], error: e.message }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ assignments: [], phones: [], error: e.message }) };
     }
   }
 
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
   try {
-    const { action, id, groupName, task } = JSON.parse(event.body || '{}');
+    const { action, id, groupName, task, phone } = JSON.parse(event.body || '{}');
 
     if (action === 'assign') {
       if (!groupName || !task) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName or task' }) };
@@ -69,6 +98,8 @@ exports.handler = async (event) => {
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { GroupName: groupName, Task: task, Status: 'assigned', AssignedAt: new Date().toISOString() } })
       });
+      const groupPhone = await getGroupPhone(groupName);
+      if (groupPhone) sendSMS(groupPhone, `📋 New task for ${groupName}: ${task}. Check the Setup Day app for details.`);
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
@@ -83,7 +114,7 @@ exports.handler = async (event) => {
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { Status: 'complete' } })
       });
-      notifyAdmin(rec?.fields?.GroupName || 'A group', rec?.fields?.Task || 'a task');
+      sendSMS(ADMIN_PHONE, `✅ Setup Day: ${rec?.fields?.GroupName || 'A group'} finished "${rec?.fields?.Task || 'a task'}". Assign their next task if needed.`);
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
@@ -93,6 +124,30 @@ exports.handler = async (event) => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
       });
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    if (action === 'setPhone') {
+      if (!groupName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName' }) };
+      const res = await fetch(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={GroupName}="${groupName}"`,
+        { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+      );
+      const data = await res.json();
+      const existing = (data.records || [])[0];
+      if (existing) {
+        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}/${existing.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { Phone: phone || '' } })
+        });
+      } else {
+        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { GroupName: groupName, Phone: phone || '' } })
+        });
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
@@ -117,6 +172,14 @@ exports.handler = async (event) => {
           body: JSON.stringify({ fields: { GroupName: 'ALL', Task: 'DAY_COMPLETE', Status: 'complete', AssignedAt: new Date().toISOString() } })
         });
       }
+      // Text every group that has a phone on file
+      try {
+        const phoneRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?maxRecords=50`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } });
+        const phoneData = await phoneRes.json();
+        for (const r of (phoneData.records || [])) {
+          if (r.fields.Phone) sendSMS(r.fields.Phone, `🎉 Fête de Marquette Setup Day: everything is complete! Great work today — you can head back now.`);
+        }
+      } catch (e) { /* non-fatal */ }
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 

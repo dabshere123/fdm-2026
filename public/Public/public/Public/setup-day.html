@@ -502,13 +502,14 @@ async function fetchAssignments(){
   try{
     const res = await fetch('/.netlify/functions/setup-task-status');
     const data = await res.json();
-    return data.assignments || [];
+    return { assignments: data.assignments || [], phones: data.phones || [] };
   }catch(e){ return null; }
 }
 
 async function pollMyGroupStatus(name){
-  const all = await fetchAssignments();
-  if(all === null) return; // network hiccup — keep showing last known state
+  const result = await fetchAssignments();
+  if(result === null) return; // network hiccup — keep showing last known state
+  const all = result.assignments;
 
   const dayComplete = all.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
   document.getElementById('allCompleteBanner').classList.toggle('hidden', !dayComplete);
@@ -554,20 +555,21 @@ async function markComplete(id){
 async function renderAdminPanel(){
   const listEl = document.getElementById('adminGroupList');
   listEl.innerHTML = '<div style="color:var(--faint);font-size:13px;">Loading...</div>';
-  const all = await fetchAssignments();
-  const assignments = all || [];
+  const result = await fetchAssignments();
+  const assignments = result ? result.assignments : [];
+  const phonesByGroup = Object.fromEntries((result ? result.phones : []).map(p => [p.groupName, p.phone]));
 
   // ── Whole-day complete controls ──
   const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'complete');
   const acEl = document.getElementById('allCompleteControls');
   if(dayComplete){
     acEl.innerHTML = `
-      <div style="font-size:13px;color:#6ee7b7;font-weight:800;margin-bottom:10px;">🎉 Marked complete — every group's app is showing the "head back" message.</div>
+      <div style="font-size:13px;color:#6ee7b7;font-weight:800;margin-bottom:10px;">🎉 Marked complete — every group's app is showing the "head back" message, and anyone with a phone on file was texted.</div>
       <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;background:linear-gradient(135deg,#475569,#334155);" onclick="clearAllComplete()">↩ Undo — Day Is NOT Actually Done</button>
     `;
   } else {
     acEl.innerHTML = `
-      <div style="font-size:12.5px;color:var(--sub);margin-bottom:10px;">Once every task below is done, tap this to tell every group's app they can head back.</div>
+      <div style="font-size:12.5px;color:var(--sub);margin-bottom:10px;">Once every task below is done, tap this to tell every group's app they can head back — and text anyone with a phone number on file.</div>
       <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;" onclick="markAllComplete()">📢 Mark Whole Day Complete</button>
     `;
   }
@@ -592,6 +594,7 @@ async function renderAdminPanel(){
     const mine = assignments.filter(a => a.groupName === g);
     const active = mine.filter(a => a.status !== 'complete');
     const done = mine.filter(a => a.status === 'complete');
+    const currentPhone = phonesByGroup[g] || '';
 
     const taskRows = [...active, ...done].map(a => `
       <div class="task-item ${a.status === 'complete' ? 'complete' : ''}" style="padding:10px 12px;">
@@ -606,6 +609,10 @@ async function renderAdminPanel(){
     return `
       <div class="admin-group-card">
         <div class="admin-group-name">${g} <span class="admin-status-pill ${active.length ? 'assigned' : 'idle'}">${active.length} active</span></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input class="search" style="margin-bottom:0;padding:9px 12px;font-size:13px;" id="phone-${g.replace(/\s+/g,'')}" type="tel" placeholder="Phone number (optional)" value="${currentPhone}"/>
+          <button class="task-item-btn" style="flex-shrink:0;" onclick="savePhone('${g}')">Save</button>
+        </div>
         <div style="margin-bottom:10px;">${taskRows}</div>
         <select class="search admin-select" id="assign-${g.replace(/\s+/g,'')}">
           <option value="">— Choose a task to add —</option>
@@ -615,6 +622,19 @@ async function renderAdminPanel(){
       </div>
     `;
   }).join('');
+}
+
+async function savePhone(groupName){
+  const input = document.getElementById('phone-' + groupName.replace(/\s+/g,''));
+  const phone = input.value.trim();
+  try{
+    await fetch('/.netlify/functions/setup-task-status', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'setPhone', groupName, phone })
+    });
+  }catch(e){}
+  input.style.borderColor = '#6ee7b7';
+  setTimeout(() => { input.style.borderColor = ''; }, 1200);
 }
 
 async function assignTask(groupName){

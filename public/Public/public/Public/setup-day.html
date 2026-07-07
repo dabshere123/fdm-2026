@@ -68,6 +68,12 @@
   .admin-status-pill.complete{background:rgba(16,185,129,0.15); color:#6ee7b7;}
   .admin-status-pill.idle{background:rgba(100,116,139,0.15); color:#94a3b8;}
   .admin-select{width:100%; margin-bottom:8px;}
+  .task-item{background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:12px;}
+  .task-item.complete{opacity:0.5;}
+  .task-item-text{flex:1; font-size:15px; font-weight:700; color:var(--text);}
+  .task-item-btn{padding:9px 14px; border-radius:9px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a1000; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap;}
+  .task-item.complete .task-item-btn{display:none;}
+  .task-item-done{font-size:12px; color:#6ee7b7; font-weight:800;}
 </style>
 </head>
 <body>
@@ -123,27 +129,15 @@
           <div style="font-size:20px;font-weight:900;" id="myGroupName"></div>
           <a href="#" onclick="clearMyGroup();return false;" style="font-size:11px;color:var(--faint);text-decoration:underline;">Switch group</a>
         </div>
-        <div class="section" id="taskCard">
-          <div class="section-label">Your Current Task</div>
-          <div class="section-body" id="myTaskText" style="font-size:18px;font-weight:800;"></div>
-        </div>
-        <button class="confirm-btn ready" id="completeBtn" style="position:static;width:100%;margin-top:16px;box-shadow:none;" onclick="markComplete()">✅ Mark Task Complete</button>
-        <div id="waitingMsg" class="hidden" style="text-align:center;margin-top:16px;color:var(--sub);font-size:13px;">✅ Marked complete — waiting for your next assignment. This page checks automatically every 10 seconds.</div>
+        <div id="myTaskList"></div>
+        <div id="noTasksMsg" class="hidden" style="text-align:center;margin-top:16px;color:var(--sub);font-size:13px;">No tasks assigned yet — check back soon. This page checks automatically every 10 seconds.</div>
       </div>
     </div>
 
     <!-- ADMIN VIEW -->
     <div id="adminView" class="hidden">
-      <div id="adminPinGate">
-        <div style="font-size:13px;color:var(--sub);margin-bottom:12px;">Enter admin PIN</div>
-        <input class="search" id="adminPinInput" type="password" inputmode="numeric" placeholder="PIN" style="margin-bottom:10px;"/>
-        <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;" onclick="checkAdminPin()">Unlock</button>
-        <div id="adminPinError" style="color:#f87171;font-size:12px;margin-top:8px;"></div>
-      </div>
-      <div id="adminPanel" class="hidden">
-        <div style="font-size:13px;color:var(--sub);margin-bottom:12px;">Tap a group to assign or reassign their task.</div>
-        <div id="adminGroupList"></div>
-      </div>
+      <div style="font-size:13px;color:var(--sub);margin-bottom:12px;">Add a task to any group — groups can have more than one task at once.</div>
+      <div id="adminGroupList"></div>
     </div>
 
     <!-- DETAIL VIEW -->
@@ -409,10 +403,9 @@ function showList(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// GROUP TASK WORKFLOW — My Group + Admin assignment
+// GROUP TASK WORKFLOW — My Group + Admin assignment (multiple tasks per group)
 // ══════════════════════════════════════════════════════════════════════════
 const GROUPS = ["G1", "G2", "G3", "G4", "Electrical", "Garbage Cans"];
-const ADMIN_PIN = "8510";
 const TASK_OPTIONS = [...TEAMS.map(t => t.name), "Electrical — Hang Lights", "Garbage Cans — Set Out Cans"];
 
 let myGroupPollInterval = null;
@@ -429,8 +422,8 @@ function switchMode(mode){
 
   const subs = {
     areas: "Tap your area below to see the setup and where things go",
-    group: "Check your group's current task and mark it done when finished",
-    admin: "Assign tasks to each group",
+    group: "Check your group's tasks and mark each one done when finished",
+    admin: "Add tasks to any group — they can have more than one at a time",
   };
   document.getElementById('pageSub').textContent = subs[mode] || subs.areas;
 
@@ -441,7 +434,7 @@ function switchMode(mode){
     if(saved) showMyGroupStatus(saved);
     else renderGroupPicker();
   }
-  if(mode === 'admin' && document.getElementById('adminPanel') && !document.getElementById('adminPanel').classList.contains('hidden')){
+  if(mode === 'admin'){
     renderAdminPanel();
   }
   window.scrollTo(0,0);
@@ -478,82 +471,85 @@ async function showMyGroupStatus(name){
   myGroupPollInterval = setInterval(() => pollMyGroupStatus(name), 10000);
 }
 
-async function pollMyGroupStatus(name){
+async function fetchAssignments(){
   try{
     const res = await fetch('/.netlify/functions/setup-task-status');
     const data = await res.json();
-    const mine = (data.groups || []).find(g => g.groupName === name);
-    const task = mine?.currentTask || '';
-    const status = mine?.status || 'idle';
-
-    document.getElementById('myTaskText').textContent = task || "No task assigned yet — check back soon.";
-    const completeBtn = document.getElementById('completeBtn');
-    const waitingMsg = document.getElementById('waitingMsg');
-    if(status === 'complete' || !task){
-      completeBtn.classList.add('hidden');
-      waitingMsg.classList.toggle('hidden', !task);
-    } else {
-      completeBtn.classList.remove('hidden');
-      waitingMsg.classList.add('hidden');
-    }
-  }catch(e){ /* keep showing last known state */ }
+    return data.assignments || [];
+  }catch(e){ return null; }
 }
 
-async function markComplete(){
+async function pollMyGroupStatus(name){
+  const all = await fetchAssignments();
+  if(all === null) return; // network hiccup — keep showing last known state
+  const mine = all.filter(a => a.groupName === name);
+  const listEl = document.getElementById('myTaskList');
+  const noTasksMsg = document.getElementById('noTasksMsg');
+
+  if(mine.length === 0){
+    listEl.innerHTML = '';
+    noTasksMsg.classList.remove('hidden');
+    return;
+  }
+  noTasksMsg.classList.add('hidden');
+
+  // Active tasks first, completed ones below (kept visible so the group can see what they've finished)
+  const active = mine.filter(a => a.status !== 'complete');
+  const done = mine.filter(a => a.status === 'complete');
+  const ordered = [...active, ...done];
+
+  listEl.innerHTML = ordered.map(a => `
+    <div class="task-item ${a.status === 'complete' ? 'complete' : ''}">
+      <div class="task-item-text">${a.task}</div>
+      ${a.status === 'complete'
+        ? '<div class="task-item-done">✓ Done</div>'
+        : `<button class="task-item-btn" onclick="markComplete('${a.id}')">Mark Done</button>`}
+    </div>
+  `).join('');
+}
+
+async function markComplete(id){
   const name = localStorage.getItem('fdm-setup-mygroup');
-  if(!name) return;
-  const btn = document.getElementById('completeBtn');
-  btn.textContent = 'Marking...'; btn.disabled = true;
   try{
     await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'complete', groupName: name })
+      body: JSON.stringify({ action: 'complete', id })
     });
   }catch(e){}
-  btn.textContent = '✅ Mark Task Complete'; btn.disabled = false;
   pollMyGroupStatus(name);
 }
 
-// ── ADMIN ──
-function checkAdminPin(){
-  const val = document.getElementById('adminPinInput').value.trim();
-  const errEl = document.getElementById('adminPinError');
-  if(val === ADMIN_PIN){
-    errEl.textContent = '';
-    document.getElementById('adminPinGate').classList.add('hidden');
-    document.getElementById('adminPanel').classList.remove('hidden');
-    renderAdminPanel();
-  } else {
-    errEl.textContent = 'Incorrect PIN.';
-  }
-}
-
+// ── ADMIN (no PIN — open access) ──
 async function renderAdminPanel(){
   const listEl = document.getElementById('adminGroupList');
   listEl.innerHTML = '<div style="color:var(--faint);font-size:13px;">Loading...</div>';
-  let groups = [];
-  try{
-    const res = await fetch('/.netlify/functions/setup-task-status');
-    const data = await res.json();
-    groups = data.groups || [];
-  }catch(e){}
-
-  const byName = Object.fromEntries(groups.map(g => [g.groupName, g]));
+  const all = await fetchAssignments();
+  const assignments = all || [];
 
   listEl.innerHTML = GROUPS.map(g => {
-    const info = byName[g] || {};
-    const status = info.status || 'idle';
-    const task = info.currentTask || '';
-    const options = TASK_OPTIONS.map(t => `<option value="${t}" ${t===task?'selected':''}>${t}</option>`).join('');
+    const mine = assignments.filter(a => a.groupName === g);
+    const active = mine.filter(a => a.status !== 'complete');
+    const done = mine.filter(a => a.status === 'complete');
+
+    const taskRows = [...active, ...done].map(a => `
+      <div class="task-item ${a.status === 'complete' ? 'complete' : ''}" style="padding:10px 12px;">
+        <div class="task-item-text" style="font-size:13px;">${a.task}</div>
+        ${a.status === 'complete'
+          ? '<div class="task-item-done">✓ Done</div>'
+          : `<button class="task-item-btn" style="background:rgba(239,68,68,0.15);color:#fca5a5;" onclick="removeTask('${a.id}')">Remove</button>`}
+      </div>
+    `).join('') || '<div style="font-size:12px;color:var(--faint);margin-bottom:8px;">No tasks assigned yet.</div>';
+
+    const options = TASK_OPTIONS.map(t => `<option value="${t}">${t}</option>`).join('');
     return `
       <div class="admin-group-card">
-        <div class="admin-group-name">${g} <span class="admin-status-pill ${status}">${status}</span></div>
-        <div class="admin-group-task">${task ? 'Current: ' + task : 'No task assigned'}</div>
+        <div class="admin-group-name">${g} <span class="admin-status-pill ${active.length ? 'assigned' : 'idle'}">${active.length} active</span></div>
+        <div style="margin-bottom:10px;">${taskRows}</div>
         <select class="search admin-select" id="assign-${g.replace(/\s+/g,'')}">
-          <option value="">— Choose a task —</option>
+          <option value="">— Choose a task to add —</option>
           ${options}
         </select>
-        <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;padding:11px;font-size:13px;" onclick="assignTask('${g}')">Assign This Task</button>
+        <button class="confirm-btn ready" style="position:static;width:100%;box-shadow:none;padding:11px;font-size:13px;" onclick="assignTask('${g}')">+ Add This Task</button>
       </div>
     `;
   }).join('');
@@ -567,6 +563,16 @@ async function assignTask(groupName){
     await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ action: 'assign', groupName, task })
+    });
+  }catch(e){}
+  renderAdminPanel();
+}
+
+async function removeTask(id){
+  try{
+    await fetch('/.netlify/functions/setup-task-status', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'remove', id })
     });
   }catch(e){}
   renderAdminPanel();

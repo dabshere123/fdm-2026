@@ -1,11 +1,11 @@
 // setup-task-status.js
-// Tracks each setup-day group's current task and completion status, synced via Airtable
-// so it works across everyone's phones at once.
+// Tracks setup-day task assignments. Each row is ONE task assigned to ONE group --
+// a group can have several tasks assigned at the same time, each completed independently.
 //
-// GET  -> { groups: [{ groupName, currentTask, status, updatedAt }] }
-// POST { action: "complete", groupName }
-// POST { action: "assign", groupName, task }
-// POST { action: "reset", groupName }
+// GET  -> { assignments: [{ id, groupName, task, status, assignedAt }] }
+// POST { action: "assign", groupName, task }      -> creates a new assignment row
+// POST { action: "complete", id }                  -> marks that specific assignment done
+// POST { action: "remove", id }                    -> deletes an assignment (mis-assigned, etc.)
 
 const AIRTABLE_BASE  = 'appUVEp7kO9NeeJh0';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
@@ -27,7 +27,7 @@ async function notifyAdmin(groupName, task) {
       body: new URLSearchParams({
         To: ADMIN_PHONE,
         MessagingServiceSid: MSG_SID || TWILIO_FROM,
-        Body: `✅ Setup Day: ${groupName} finished "${task}". Ready for next assignment.`,
+        Body: `✅ Setup Day: ${groupName} finished "${task}". Assign their next task if needed.`,
       }).toString()
     });
   } catch (e) { /* non-fatal */ }
@@ -40,69 +40,59 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'GET') {
     try {
       const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`,
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?maxRecords=200`,
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();
-      const groups = (data.records || []).map(r => ({
+      const assignments = (data.records || []).map(r => ({
+        id: r.id,
         groupName: r.fields.GroupName || '',
-        currentTask: r.fields.CurrentTask || '',
-        status: r.fields.Status || 'idle',
-        updatedAt: r.fields.UpdatedAt || '',
+        task: r.fields.Task || '',
+        status: r.fields.Status || 'assigned',
+        assignedAt: r.fields.AssignedAt || '',
       }));
-      return { statusCode: 200, headers, body: JSON.stringify({ groups }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ assignments }) };
     } catch (e) {
-      return { statusCode: 200, headers, body: JSON.stringify({ groups: [], error: e.message }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ assignments: [], error: e.message }) };
     }
   }
 
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method not allowed' };
 
   try {
-    const { action, groupName, task } = JSON.parse(event.body || '{}');
-    if (!groupName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName' }) };
+    const { action, id, groupName, task } = JSON.parse(event.body || '{}');
 
-    async function findRecord(name) {
-      const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?filterByFormula={GroupName}="${name}"`,
-        { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
-      );
-      const data = await res.json();
-      return (data.records || [])[0];
-    }
-
-    async function upsert(name, fields) {
-      const existing = await findRecord(name);
-      if (existing) {
-        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${existing.id}`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields })
-        });
-      } else {
-        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { GroupName: name, ...fields } })
-        });
-      }
+    if (action === 'assign') {
+      if (!groupName || !task) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName or task' }) };
+      await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { GroupName: groupName, Task: task, Status: 'assigned', AssignedAt: new Date().toISOString() } })
+      });
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
     if (action === 'complete') {
-      const existing = await findRecord(groupName);
-      const finishedTask = existing?.fields?.CurrentTask || '';
-      await upsert(groupName, { Status: 'complete', UpdatedAt: new Date().toISOString() });
-      notifyAdmin(groupName, finishedTask); // fire and forget
+      if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
+      const getRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
+      });
+      const rec = await getRes.json();
+      await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { Status: 'complete' } })
+      });
+      notifyAdmin(rec?.fields?.GroupName || 'A group', rec?.fields?.Task || 'a task');
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 
-    if (action === 'assign') {
-      await upsert(groupName, { CurrentTask: task || '', Status: 'assigned', UpdatedAt: new Date().toISOString() });
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
-    }
-
-    if (action === 'reset') {
-      await upsert(groupName, { CurrentTask: '', Status: 'idle', UpdatedAt: new Date().toISOString() });
+    if (action === 'remove') {
+      if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
+      await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
+      });
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }
 

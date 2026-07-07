@@ -44,6 +44,16 @@
   .section-body{font-size:15px; line-height:1.7; color:var(--text); white-space:pre-wrap;}
   .section.location .section-label{color:#6ee7b7;}
   .section.location{border-color:rgba(16,185,129,0.25);}
+
+  .phase-banner{display:flex; flex-direction:column; gap:12px; background:var(--card); border:1.5px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:18px;}
+  .phase-step{display:flex; align-items:flex-start; gap:12px;}
+  .phase-num{width:26px; height:26px; border-radius:50%; background:var(--amber-dim); color:var(--amber); font-weight:900; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;}
+  .phase-title{font-size:14px; font-weight:800; color:var(--text);}
+  .phase-desc{font-size:12.5px; color:var(--sub); margin-top:2px; line-height:1.5;}
+
+  .phase-tag{display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; padding:3px 8px; border-radius:6px; margin-top:4px;}
+  .phase-tag.setup{background:rgba(99,102,241,0.15); color:#a5b4fc;}
+  .phase-tag.delivery{background:rgba(236,72,153,0.15); color:#f9a8d4;}
 </style>
 </head>
 <body>
@@ -55,6 +65,23 @@
   </div>
 
   <div class="content">
+
+    <div class="phase-banner">
+      <div class="phase-step">
+        <div class="phase-num">1</div>
+        <div>
+          <div class="phase-title">Unload &amp; Stage</div>
+          <div class="phase-desc">Everyone helps unload the rental trucks and places equipment into its labeled section below.</div>
+        </div>
+      </div>
+      <div class="phase-step">
+        <div class="phase-num">2</div>
+        <div>
+          <div class="phase-title">Set Up or Deliver</div>
+          <div class="phase-desc">Assigned groups either build their area right there, or deliver staged equipment onward to where it's needed.</div>
+        </div>
+      </div>
+    </div>
 
     <!-- TEAM LIST -->
     <div id="listView" class="team-list-view">
@@ -70,6 +97,7 @@
         <div class="detail-dot" id="detailDot"></div>
         <div>
           <div class="detail-title" id="detailName"></div>
+          <div class="phase-tag" id="detailPhaseTag" style="margin-top:6px;"></div>
           <div class="detail-report" id="detailReport"></div>
         </div>
       </div>
@@ -97,6 +125,7 @@
 const TEAMS = [
   {
     id: "bank-bars",
+    phase: "setup",
     name: "Left & Right Bank Bars",
     emoji: "🍺",
     color: "#f59e0b",
@@ -108,6 +137,7 @@ const TEAMS = [
   },
   {
     id: "cabaret-bar",
+    phase: "setup",
     name: "Cabaret Bar",
     emoji: "🍸",
     color: "#f59e0b",
@@ -119,6 +149,7 @@ const TEAMS = [
   },
   {
     id: "family-fete-bar",
+    phase: "setup",
     name: "Family Fete Bar",
     emoji: "🎪",
     color: "#f59e0b",
@@ -130,6 +161,7 @@ const TEAMS = [
   },
   {
     id: "moon-bar",
+    phase: "setup",
     name: "Moon Stage Bar",
     emoji: "🌙",
     color: "#f59e0b",
@@ -141,6 +173,7 @@ const TEAMS = [
   },
   {
     id: "lafayette-bar",
+    phase: "setup",
     name: "Lafayette Stage Bar",
     emoji: "🎷",
     color: "#f59e0b",
@@ -152,6 +185,7 @@ const TEAMS = [
   },
   {
     id: "cabaret-tent",
+    phase: "setup",
     name: "Cabaret Tent",
     emoji: "🎪",
     color: "#6366f1",
@@ -163,6 +197,7 @@ const TEAMS = [
   },
   {
     id: "family-fete-tent",
+    phase: "setup",
     name: "Family Fete Tent",
     emoji: "🎪",
     color: "#6366f1",
@@ -174,6 +209,7 @@ const TEAMS = [
   },
   {
     id: "lafayette-tents",
+    phase: "setup",
     name: "Lafayette Shade Tents",
     emoji: "⛺",
     color: "#6366f1",
@@ -185,6 +221,7 @@ const TEAMS = [
   },
   {
     id: "moon-patio-tent",
+    phase: "setup",
     name: "Moon Stage Patio + Tent",
     emoji: "🌙",
     color: "#10b981",
@@ -196,6 +233,7 @@ const TEAMS = [
   },
   {
     id: "sun-shade-tents",
+    phase: "setup",
     name: "Sun Stage Shade Tents (4)",
     emoji: "☀️",
     color: "#10b981",
@@ -207,6 +245,7 @@ const TEAMS = [
   },
   {
     id: "sun-seating",
+    phase: "setup",
     name: "Sun Stage General Seating",
     emoji: "☀️",
     color: "#10b981",
@@ -218,6 +257,7 @@ const TEAMS = [
   },
   {
     id: "lagniappe-seating",
+    phase: "setup",
     name: "Lagniappe Stage Seating",
     emoji: "🎭",
     color: "#10b981",
@@ -229,6 +269,7 @@ const TEAMS = [
   },
   {
     id: "eec",
+    phase: "setup",
     name: "Everything Else Cafe",
     emoji: "☕",
     color: "#ec4899",
@@ -240,6 +281,7 @@ const TEAMS = [
   },
   {
     id: "prize-wheel",
+    phase: "setup",
     name: "Prize Wheel",
     emoji: "🎡",
     color: "#ec4899",
@@ -251,6 +293,7 @@ const TEAMS = [
   },
   {
     id: "hospitality-grounds",
+    phase: "delivery",
     name: "Hospitality / Grounds",
     emoji: "🏕️",
     color: "#ec4899",
@@ -273,6 +316,7 @@ function renderList(){
       <div class="team-info">
         <div class="team-name">${t.name}</div>
         <div class="team-oneliner">${t.oneliner}</div>
+        <div class="phase-tag ${t.phase}">${t.phase === 'delivery' ? '🚚 Deliver' : '🔨 Set Up'}</div>
       </div>
       <div class="team-arrow">→</div>
     </button>
@@ -287,6 +331,9 @@ function showDetail(id){
   document.getElementById('detailDot').style.color = t.color;
   document.getElementById('detailDot').textContent = t.emoji;
   document.getElementById('detailName').textContent = t.name;
+  const tagEl = document.getElementById('detailPhaseTag');
+  tagEl.className = 'phase-tag ' + t.phase;
+  tagEl.textContent = t.phase === 'delivery' ? '🚚 Deliver' : '🔨 Set Up';
   document.getElementById('detailReport').textContent = t.reportTo || '';
   document.getElementById('detailTask').textContent = t.task;
   document.getElementById('detailLocation').textContent = t.location;

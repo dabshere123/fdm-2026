@@ -192,19 +192,22 @@ async function renderAll(){
     }).join('');
   }
 
-  // Master checklist
+  // Master checklist — predefined tasks, plus any custom ones that have actually been assigned
   const checklistEl = document.getElementById('masterChecklist');
-  checklistEl.innerHTML = TASK_OPTIONS.map(taskName => {
+  const customTaskNames = [...new Set(assignments.map(a => a.task))].filter(t => t && !TASK_OPTIONS.includes(t) && t !== 'DAY_COMPLETE');
+  const allChecklistTasks = [...TASK_OPTIONS, ...customTaskNames];
+  checklistEl.innerHTML = allChecklistTasks.map(taskName => {
     const matches = assignments.filter(a => a.task === taskName);
     const isDone = matches.some(a => a.status === 'DONE');
     const isActive = !isDone && matches.some(a => a.status !== 'DONE');
     const statusClass = isDone ? 'done' : isActive ? 'progress' : 'pending';
     const groupsOnIt = [...new Set(matches.map(a => a.groupName))].join(', ');
+    const isCustom = customTaskNames.includes(taskName);
     return `
       <div class="checklist-row" style="align-items:flex-start;">
         <div class="checklist-status ${statusClass}" style="margin-top:5px;"></div>
         <div class="checklist-text">
-          ${taskName}${groupsOnIt ? `<div class="checklist-sub">${isDone ? 'Done by' : 'Assigned to'}: ${groupsOnIt}</div>` : ''}
+          ${taskName}${isCustom ? ' <span style="font-size:10px;color:var(--faint);">(custom)</span>' : ''}${groupsOnIt ? `<div class="checklist-sub">${isDone ? 'Done by' : 'Assigned to'}: ${groupsOnIt}</div>` : ''}
           <div class="checklist-detail">${TASK_DETAILS[taskName] || ''}</div>
         </div>
       </div>
@@ -245,10 +248,12 @@ async function renderAll(){
           <button class="btn small" style="flex-shrink:0;" onclick="savePhone('${g}')">Save</button>
         </div>
         <div style="margin:12px 0 10px;">${taskRows}</div>
-        <select id="assign-${g.replace(/\s+/g,'')}">
+        <select id="assign-${g.replace(/\s+/g,'')}" onchange="toggleCustomTask('${g}')">
           <option value="">— Choose a task to add —</option>
           ${options}
+          <option value="__custom__">✏️ Custom Task (type your own)</option>
         </select>
+        <input type="text" placeholder="Type the custom task name..." id="customtask-${g.replace(/\s+/g,'')}" style="display:none;"/>
         <input type="text" placeholder="Extra note for this assignment (optional)" id="assignnote-${g.replace(/\s+/g,'')}"/>
         <button class="btn" onclick="assignTask('${g}')">+ Add This Task</button>
       </div>
@@ -269,12 +274,22 @@ async function savePhone(groupName){
   setTimeout(() => { input.style.borderColor = ''; }, 1200);
 }
 
+function toggleCustomTask(groupName){
+  const key = groupName.replace(/\s+/g,'');
+  const sel = document.getElementById('assign-' + key);
+  const customInput = document.getElementById('customtask-' + key);
+  customInput.style.display = sel.value === '__custom__' ? 'block' : 'none';
+  if(sel.value === '__custom__') customInput.focus();
+}
+
 async function assignTask(groupName){
-  const sel = document.getElementById('assign-' + groupName.replace(/\s+/g,''));
-  const noteInput = document.getElementById('assignnote-' + groupName.replace(/\s+/g,''));
-  const task = sel.value;
+  const key = groupName.replace(/\s+/g,'');
+  const sel = document.getElementById('assign-' + key);
+  const customInput = document.getElementById('customtask-' + key);
+  const noteInput = document.getElementById('assignnote-' + key);
+  const task = sel.value === '__custom__' ? customInput.value.trim() : sel.value;
   const notes = noteInput ? noteInput.value.trim() : '';
-  if(!task){ alert('Pick a task first.'); return; }
+  if(!task){ alert(sel.value === '__custom__' ? 'Type the custom task name first.' : 'Pick a task first.'); return; }
   try{
     const res = await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},

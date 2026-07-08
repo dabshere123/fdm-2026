@@ -142,6 +142,7 @@ async function fetchAll(){
 async function renderAll(){
   const { assignments, phones, error } = await fetchAll();
   const phonesByGroup = Object.fromEntries(phones.map(p => [p.groupName, p.phone]));
+  const membersByGroup = Object.fromEntries(phones.map(p => [p.groupName, p.members]));
 
   const errEl = document.getElementById('errorBanner');
   if(error){
@@ -224,6 +225,7 @@ async function renderAll(){
     const active = mine.filter(a => a.status !== 'DONE');
     const done = mine.filter(a => a.status === 'DONE');
     const currentPhone = phonesByGroup[g] || '';
+    const currentMembers = membersByGroup[g] || '';
 
     const taskRows = [...active, ...done].map(a => `
       <div class="task-row ${a.status === 'DONE' ? 'complete' : ''}" style="align-items:flex-start;">
@@ -246,6 +248,11 @@ async function renderAll(){
     return `
       <div class="card">
         <div class="group-card-name">${g} <span class="status-pill ${active.length ? 'assigned' : 'idle'}">${active.length} active</span></div>
+        ${currentMembers ? `<div style="font-size:12.5px;color:var(--amber);margin-bottom:8px;">👤 Added: ${currentMembers}</div>` : ''}
+        <div class="phone-row" style="margin-bottom:8px;">
+          <input type="text" placeholder="Add a person to this group..." id="member-${g.replace(/\s+/g,'')}"/>
+          <button class="btn small" style="flex-shrink:0;" onclick="addMember('${g}')">+ Add</button>
+        </div>
         <div class="phone-row">
           <input type="tel" placeholder="Phone number (optional)" id="phone-${g.replace(/\s+/g,'')}" value="${currentPhone}"/>
           <button class="btn small" style="flex-shrink:0;" onclick="savePhone('${g}')">Save</button>
@@ -262,6 +269,28 @@ async function renderAll(){
       </div>
     `;
   }).join('');
+}
+
+async function addMember(groupName){
+  const input = document.getElementById('member-' + groupName.replace(/\s+/g,''));
+  const name = input.value.trim();
+  if(!name){ alert('Type a name first.'); return; }
+  try{
+    const res = await fetch('/.netlify/functions/setup-task-status', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'addMember', groupName, notes: name })
+    });
+    const data = await res.json();
+    if(!data.success){
+      alert('⚠️ Could not add this person:\n\n' + (data.error || 'Unknown error'));
+      return;
+    }
+    input.value = '';
+  }catch(e){
+    alert('⚠️ Network error: ' + e.message);
+    return;
+  }
+  renderAll();
 }
 
 async function savePhone(groupName){

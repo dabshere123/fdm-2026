@@ -83,6 +83,7 @@ exports.handler = async (event) => {
       const phones = (phoneData.records || []).map(r => ({
         groupName: r.fields.GroupName || '',
         phone: r.fields.Phone || '',
+        members: r.fields.Members || '',
       }));
       return { statusCode: 200, headers, body: JSON.stringify({ assignments, phones }) };
     } catch (e) {
@@ -223,6 +224,42 @@ exports.handler = async (event) => {
           headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ fields: { GroupName: groupName, Phone: phone || '' } })
         });
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    // Adds a name to a group's editable extra-members roster (separate from the fixed group label,
+    // so this can be updated freely without touching whatever tasks are already assigned to that group)
+    if (action === 'addMember') {
+      if (!groupName || !notes) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName or name' }) };
+      const res = await fetch(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={GroupName}="${groupName}"`,
+        { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+      );
+      const data = await res.json();
+      const existing = (data.records || [])[0];
+      const currentMembers = existing?.fields?.Members || '';
+      const updatedMembers = currentMembers ? `${currentMembers}, ${notes}` : notes;
+      if (existing) {
+        const patchRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}/${existing.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { Members: updatedMembers } })
+        });
+        const patchData = await patchRes.json();
+        if (!patchRes.ok) {
+          return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: patchData.error?.message || 'Failed to save. Make sure a "Members" field (single line text) exists on the SetupGroupPhones table.' }) };
+        }
+      } else {
+        const postRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { GroupName: groupName, Members: updatedMembers } })
+        });
+        const postData = await postRes.json();
+        if (!postRes.ok) {
+          return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: postData.error?.message || 'Failed to save. Make sure a "Members" field (single line text) exists on the SetupGroupPhones table.' }) };
+        }
       }
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }

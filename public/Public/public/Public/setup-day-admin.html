@@ -76,6 +76,8 @@
 
     <div id="errorBanner" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:10px;padding:12px 14px;font-size:12.5px;color:#fca5a5;margin-bottom:16px;line-height:1.5;"></div>
 
+    <button class="btn secondary" style="margin-bottom:18px;" onclick="printReport()">🖨️ Print / Save Report (All Tasks)</button>
+
     <div class="section-title">Whole Day</div>
     <div class="card" id="allCompleteControls"></div>
 
@@ -388,6 +390,60 @@ async function clearAllComplete(){
     });
   }catch(e){}
   renderAll();
+}
+
+async function printReport(){
+  const { assignments, phones } = await fetchAll();
+  const now = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+
+  const dayComplete = assignments.some(a => a.groupName === 'ALL' && a.task === 'DAY_COMPLETE' && a.status === 'DONE');
+
+  let groupSections = GROUPS.map(g => {
+    const mine = assignments.filter(a => a.groupName === g);
+    if(mine.length === 0) return '';
+    const active = mine.filter(a => a.status !== 'DONE');
+    const done = mine.filter(a => a.status === 'DONE');
+    const rows = [...active, ...done].map(a => `
+      <div style="padding:8px 0;border-bottom:1px solid #ddd;">
+        <div style="font-weight:700;">${a.task} ${a.status === 'DONE' ? '— ✓ DONE' : '— IN PROGRESS'}</div>
+        ${TASK_DETAILS[a.task] ? `<div style="font-size:12px;color:#555;margin-top:2px;">${TASK_DETAILS[a.task]}</div>` : ''}
+        ${a.notes ? `<div style="font-size:12px;color:#b45309;margin-top:2px;">📌 ${a.notes}</div>` : ''}
+      </div>
+    `).join('');
+    return `
+      <div style="margin-bottom:20px;page-break-inside:avoid;">
+        <div style="font-size:16px;font-weight:900;background:#f1f5f9;padding:8px 12px;border-radius:6px;margin-bottom:4px;">${g}${active.length ? ` — ${active.length} active` : ''}${done.length ? `, ${done.length} done` : ''}</div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
+
+  if(!groupSections.trim()){
+    groupSections = '<div style="color:#888;">No tasks have been assigned yet.</div>';
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html><head><meta charset="UTF-8"/><title>Setup Day — Task Report</title>
+    <style>
+      body{font-family:-apple-system,Arial,sans-serif;color:#111;padding:24px;max-width:800px;margin:0 auto;}
+      h1{font-size:22px;margin-bottom:2px;}
+      .sub{color:#666;font-size:13px;margin-bottom:18px;}
+      .banner{background:#d1fae5;border:1px solid #10b981;border-radius:8px;padding:10px 14px;margin-bottom:18px;font-weight:700;color:#065f46;}
+      @media print{ button{display:none;} }
+    </style></head>
+    <body>
+      <h1>Fête de Marquette 2026 — Setup Day Task Report</h1>
+      <div class="sub">Printed ${now}</div>
+      ${dayComplete ? '<div class="banner">🎉 Whole day marked complete</div>' : ''}
+      <button onclick="window.print()" style="margin-bottom:16px;padding:10px 18px;font-weight:700;">🖨️ Print this page</button>
+      ${groupSections}
+    </body></html>
+  `;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 renderAll();

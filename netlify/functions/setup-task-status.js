@@ -15,7 +15,8 @@
 const AIRTABLE_BASE  = 'appUVEp7kO9NeeJh0';
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const TABLE = 'SetupGroups';
-const PHONE_TABLE = 'SetupGroupPhones';
+const PHONE_TABLE = 'SetupGroups'; // consolidated into the same table (no separate SetupGroupPhones needed)
+const PROFILE_TASK = 'GROUP_PROFILE'; // sentinel Task value marking a phone/members record, not a real task
 const ADMIN_PHONE = '+16082289692'; // Devin
 
 const TWILIO_SID  = process.env.TWILIO_ACCOUNT_SID;
@@ -49,7 +50,7 @@ async function sendSMS(to, body) {
 async function getGroupPhone(groupName) {
   try {
     const res = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={GroupName}="${groupName}"`,
+      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula=AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`,
       { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
     );
     const data = await res.json();
@@ -63,28 +64,31 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'GET') {
     try {
-      const [assignRes, phoneRes] = await Promise.all([
-        fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?maxRecords=200`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }),
-        fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?maxRecords=50`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }),
-      ]);
-      const assignData = await assignRes.json();
-      if (!assignRes.ok) {
-        return { statusCode: 200, headers, body: JSON.stringify({ assignments: [], phones: [], error: `Airtable error reading "${TABLE}": ${assignData.error?.message || assignRes.status}. Make sure a table named exactly "${TABLE}" exists with fields GroupName, Task, Status, AssignedAt.` }) };
+      const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?maxRecords=200`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } });
+      const data = await res.json();
+      if (!res.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ assignments: [], phones: [], error: `Airtable error reading "${TABLE}": ${data.error?.message || res.status}. Make sure a table named exactly "${TABLE}" exists with fields GroupName, Task, Status, AssignedAt.` }) };
       }
-      const phoneData = await phoneRes.json().catch(() => ({ records: [] }));
-      const assignments = (assignData.records || []).map(r => ({
-        id: r.id,
-        groupName: r.fields.GroupName || '',
-        task: r.fields.Task || '',
-        status: r.fields.Status || 'In Progress',
-        assignedAt: r.fields.AssignedAt || '',
-        notes: r.fields.Notes || '',
-      }));
-      const phones = (phoneData.records || []).map(r => ({
-        groupName: r.fields.GroupName || '',
-        phone: r.fields.Phone || '',
-        members: r.fields.Members || '',
-      }));
+      const records = data.records || [];
+      // Real task assignments -- everything except the profile (phone/members) sentinel rows
+      const assignments = records
+        .filter(r => r.fields.Task !== PROFILE_TASK)
+        .map(r => ({
+          id: r.id,
+          groupName: r.fields.GroupName || '',
+          task: r.fields.Task || '',
+          status: r.fields.Status || 'In Progress',
+          assignedAt: r.fields.AssignedAt || '',
+          notes: r.fields.Notes || '',
+        }));
+      // Phone/members profile rows -- same table, tagged with the sentinel Task value
+      const phones = records
+        .filter(r => r.fields.Task === PROFILE_TASK)
+        .map(r => ({
+          groupName: r.fields.GroupName || '',
+          phone: r.fields.Phone || '',
+          members: r.fields.Members || '',
+        }));
       return { statusCode: 200, headers, body: JSON.stringify({ assignments, phones }) };
     } catch (e) {
       return { statusCode: 200, headers, body: JSON.stringify({ assignments: [], phones: [], error: e.message }) };
@@ -207,7 +211,7 @@ exports.handler = async (event) => {
     if (action === 'setPhone') {
       if (!groupName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName' }) };
       const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={GroupName}="${groupName}"`,
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula=AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`,
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();
@@ -222,7 +226,7 @@ exports.handler = async (event) => {
         await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { GroupName: groupName, Phone: phone || '' } })
+          body: JSON.stringify({ typecast: true, fields: { GroupName: groupName, Phone: phone || '', Task: PROFILE_TASK, Status: 'DONE' } })
         });
       }
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
@@ -233,7 +237,7 @@ exports.handler = async (event) => {
     if (action === 'addMember') {
       if (!groupName || !notes) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName or name' }) };
       const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={GroupName}="${groupName}"`,
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula=AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`,
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();
@@ -254,7 +258,7 @@ exports.handler = async (event) => {
         const postRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { GroupName: groupName, Members: updatedMembers } })
+          body: JSON.stringify({ typecast: true, fields: { GroupName: groupName, Members: updatedMembers, Task: PROFILE_TASK, Status: 'DONE' } })
         });
         const postData = await postRes.json();
         if (!postRes.ok) {
@@ -287,7 +291,7 @@ exports.handler = async (event) => {
       }
       // Text every group that has a phone on file
       try {
-        const phoneRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?maxRecords=50`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } });
+        const phoneRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={Task}="${PROFILE_TASK}"&maxRecords=50`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } });
         const phoneData = await phoneRes.json();
         for (const r of (phoneData.records || [])) {
           if (r.fields.Phone) sendSMS(r.fields.Phone, `🎉 Fête de Marquette Setup Day: everything is complete! Great work today — you can head back now.`);

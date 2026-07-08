@@ -215,19 +215,27 @@ exports.handler = async (event) => {
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();
+      if (!res.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: `Couldn't read the table: ${data.error?.message || res.status}` }) };
+      }
       const existing = (data.records || [])[0];
+      let writeRes, writeData;
       if (existing) {
-        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}/${existing.id}`, {
+        writeRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}/${existing.id}`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ fields: { Phone: phone || '' } })
         });
       } else {
-        await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}`, {
+        writeRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ typecast: true, fields: { GroupName: groupName, Phone: phone || '', Task: PROFILE_TASK, Status: 'DONE' } })
         });
+      }
+      writeData = await writeRes.json();
+      if (!writeRes.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: `Airtable rejected the save: ${writeData.error?.message || writeRes.status}. Make sure a "Phone" field (single line text) exists on the SetupGroups table.` }) };
       }
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     }

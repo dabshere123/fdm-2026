@@ -297,11 +297,19 @@ async function savePhone(groupName){
   const input = document.getElementById('phone-' + groupName.replace(/\s+/g,''));
   const phone = input.value.trim();
   try{
-    await fetch('/.netlify/functions/setup-task-status', {
+    const res = await fetch('/.netlify/functions/setup-task-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ action: 'setPhone', groupName, phone })
     });
-  }catch(e){}
+    const data = await res.json();
+    if(!data.success){
+      alert('⚠️ Could not save this phone number:\n\n' + (data.error || 'Unknown error'));
+      return;
+    }
+  }catch(e){
+    alert('⚠️ Network error: ' + e.message);
+    return;
+  }
   input.style.borderColor = '#6ee7b7';
   setTimeout(() => { input.style.borderColor = ''; }, 1200);
 }

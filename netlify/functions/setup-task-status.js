@@ -17,6 +17,14 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const TABLE = 'SetupGroups';
 const PHONE_TABLE = 'SetupGroups'; // consolidated into the same table (no separate SetupGroupPhones needed)
 const PROFILE_TASK = 'GROUP_PROFILE'; // sentinel Task value marking a phone/members record, not a real task
+
+function airtableFormulaUrl(base, table, formula, extra) {
+  const params = new URLSearchParams();
+  params.set('filterByFormula', formula);
+  if (extra) for (const [k, v] of Object.entries(extra)) params.set(k, v);
+  return `https://api.airtable.com/v0/${base}/${table}?${params.toString()}`;
+}
+
 const ADMIN_PHONE = '+16082289692'; // Devin
 
 const TWILIO_SID  = process.env.TWILIO_ACCOUNT_SID;
@@ -50,7 +58,7 @@ async function sendSMS(to, body) {
 async function getGroupPhone(groupName) {
   try {
     const res = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula=AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`,
+      airtableFormulaUrl(AIRTABLE_BASE, PHONE_TABLE, `AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`),
       { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
     );
     const data = await res.json();
@@ -211,7 +219,7 @@ exports.handler = async (event) => {
     if (action === 'setPhone') {
       if (!groupName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName' }) };
       const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula=AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`,
+        airtableFormulaUrl(AIRTABLE_BASE, PHONE_TABLE, `AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`),
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();
@@ -245,7 +253,7 @@ exports.handler = async (event) => {
     if (action === 'addMember') {
       if (!groupName || !notes) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing groupName or name' }) };
       const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula=AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`,
+        airtableFormulaUrl(AIRTABLE_BASE, PHONE_TABLE, `AND({GroupName}="${groupName}",{Task}="${PROFILE_TASK}")`),
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();
@@ -279,7 +287,7 @@ exports.handler = async (event) => {
     // Sentinel record (GroupName="ALL") used to broadcast "the whole day is done" to every group's app
     if (action === 'markAllComplete') {
       const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?filterByFormula=AND({GroupName}="ALL",{Task}="DAY_COMPLETE")`,
+        airtableFormulaUrl(AIRTABLE_BASE, TABLE, `AND({GroupName}="ALL",{Task}="DAY_COMPLETE")`),
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();
@@ -299,7 +307,7 @@ exports.handler = async (event) => {
       }
       // Text every group that has a phone on file
       try {
-        const phoneRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${PHONE_TABLE}?filterByFormula={Task}="${PROFILE_TASK}"&maxRecords=50`, { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } });
+        const phoneRes = await fetch(airtableFormulaUrl(AIRTABLE_BASE, PHONE_TABLE, `{Task}="${PROFILE_TASK}"`, {maxRecords: "50"}), { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } });
         const phoneData = await phoneRes.json();
         for (const r of (phoneData.records || [])) {
           if (r.fields.Phone) sendSMS(r.fields.Phone, `🎉 Fête de Marquette Setup Day: everything is complete! Great work today — you can head back now.`);
@@ -310,7 +318,7 @@ exports.handler = async (event) => {
 
     if (action === 'clearAllComplete') {
       const res = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}?filterByFormula=AND({GroupName}="ALL",{Task}="DAY_COMPLETE")`,
+        airtableFormulaUrl(AIRTABLE_BASE, TABLE, `AND({GroupName}="ALL",{Task}="DAY_COMPLETE")`),
         { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
       );
       const data = await res.json();

@@ -1241,6 +1241,8 @@ function HubApp({onBack}){
   const [clearIncView,setClearIncView]=useState(null);
   const [medActiveCall,setMedActiveCall]=useState(null); // call detail view for Med
   const [lcFoundForm,setLcFoundForm]=useState(null); // {id} when marking child found
+  const [ackMsgModal,setAckMsgModal]=useState(null); // {id, by} when open
+  const [ackMsgText,setAckMsgText]=useState("");
   const [maintNarrativeForm,setMaintNarrativeForm]=useState(null); // {call} for maintenance clear narrative
   const [stagingLocation,setStagingLocation]=useState("Staging #1 — Ingersoll & Wilson"); // EMS staging pre-select
   const [activeBroadcastId,setActiveBroadcastId]=useState(null);
@@ -1660,7 +1662,7 @@ function HubApp({onBack}){
     return()=>clearInterval(blinkRef.current);
   },[lostChildCalls.length]);
 
-  const ackCall=(id,by)=>{ playAlert("ack");
+  const ackCall=(id,by,customMsg)=>{ playAlert("ack");
     if(liveMode){ 
       fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Acknowledged",unit:by})}).catch(e=>console.log(e));
       // Immediately update liveCalls so Med unit sees the call right away
@@ -1790,8 +1792,9 @@ function HubApp({onBack}){
     const ackedCall=activeCalls.find(c=>c.id===id)||calls.find(c=>c.id===id);
     if(ackedCall?.phone){
       const fmtP=(p)=>{const d=String(p).replace(/\D/g,"");return d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;};
-      const ackMsg=`✅ FDM 2026 — Your ${(ackedCall.type||"").replace(/_/g," ").toUpperCase()} request at ${ackedCall.location} has been acknowledged by ${by}. Help is on the way.`;
+      const ackMsg=`✅ FDM 2026 — Your ${(ackedCall.type||"").replace(/_/g," ").toUpperCase()} request at ${ackedCall.location} has been acknowledged by ${by}. Help is on the way.${customMsg?.trim()?`\n\n${customMsg.trim()}`:""}`;
       fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmtP(ackedCall.phone),message:ackMsg})}).catch(()=>{});
+      if(customMsg?.trim()) showHubToast(`✅ Acknowledged with custom message sent`);
     }
   };
   const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
@@ -1943,7 +1946,10 @@ function HubApp({onBack}){
               <button style={{...S.bigAckBtn,background:"linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.6))",border:"2px solid rgba(16,185,129,0.9)",fontSize:16}} onClick={()=>clearCall(alertCall.id,role||"Admin")}>🧒 CHILD LOCATED — Close</button>
             </div>
           ):(
+            <>
             <button style={S.bigAckBtn} onClick={()=>ackCall(alertCall.id,role||"Admin")}>✅ ACKNOWLEDGE</button>
+            <button style={{width:"100%",padding:"10px",marginTop:6,borderRadius:8,border:"1px solid rgba(255,255,255,0.15)",background:"none",color:"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setAckMsgText("");setAckMsgModal({id:alertCall.id,by:role||"Admin"});}}>✏️ Acknowledge with a Message</button>
+            </>
           )}
         </div>
       </div>);
@@ -2813,6 +2819,7 @@ DATE/TIME: ${now()}`;
                   <span style={{fontSize:11,color:isEsc?"#fca5a5":"rgba(255,255,255,0.7)",fontWeight:700,whiteSpace:"nowrap"}}>{isEsc?"⚠ RESENT":remaining>0?`${remaining}s`:"⚠"}</span>
                 </div>
                 <button style={{border:"2px solid rgba(255,255,255,0.6)",borderRadius:10,padding:"14px",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",background:"rgba(255,255,255,0.04)"}} onClick={()=>ackCall(c.id,"Admin")}>✅ ACKNOWLEDGE</button>
+                <button style={{border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"10px",color:"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer",background:"none",width:"100%"}} onClick={()=>{setAckMsgText("");setAckMsgModal({id:c.id,by:"Admin"});}}>✏️ Acknowledge with a Message</button>
               </div>);
             })}
           </div>}
@@ -4042,6 +4049,15 @@ Reply YES to acknowledge.`
   const pendingAcks=broadcastAlerts.filter(a=>a.requiresAck).reduce((s,a)=>s+ALL_LOCS.filter(l=>!(a.acks&&a.acks[l])).length,0);
   return(<div style={S.root}><Bg/>
     {hubToast&&<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontWeight:800,fontSize:14,padding:"14px 22px",borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,0.3)",zIndex:9999,maxWidth:"90%",textAlign:"center"}}>{hubToast}</div>}
+    {ackMsgModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"24px"}}>
+      <div style={{background:"#11182c",border:"1px solid rgba(255,255,255,0.1)",borderRadius:16,padding:"22px",width:"100%",maxWidth:380,display:"flex",flexDirection:"column",gap:12}}>
+        <div style={{fontSize:16,fontWeight:900,color:"#f1f5f9"}}>✏️ Message to Requester</div>
+        <div style={{fontSize:12,color:"#94a3b8"}}>Optional — this gets added to the standard acknowledgment text. Leave blank and tap Acknowledge to skip.</div>
+        <textarea autoFocus value={ackMsgText} onChange={e=>setAckMsgText(e.target.value)} placeholder="e.g. On our way, ETA 5 minutes..." style={{width:"100%",minHeight:80,padding:"12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.05)",color:"#f1f5f9",fontSize:14,fontFamily:"inherit",resize:"vertical"}}/>
+        <button style={{padding:"13px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}} onClick={()=>{ackCall(ackMsgModal.id,ackMsgModal.by,ackMsgText);setAckMsgModal(null);setAckMsgText("");}}>✅ Acknowledge{ackMsgText.trim()?" & Send Message":""}</button>
+        <button style={{padding:"11px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"none",color:"#94a3b8",fontWeight:700,fontSize:13,cursor:"pointer"}} onClick={()=>{setAckMsgModal(null);setAckMsgText("");}}>Cancel</button>
+      </div>
+    </div>}
     <div style={S.panel}>
     {/* HEADER */}
     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",padding:"20px 16px 4px"}}>

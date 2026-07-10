@@ -2512,12 +2512,6 @@ DATE/TIME: ${now()}`;
             problem:mc2.problem,
             acknowledgedBy:clearBy2,
           })}).catch(()=>{});
-          // Email report
-          fetch("/.netlify/functions/send-incident-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-            incidentNumber:`MAINT-${Date.now().toString().slice(-6)}`,type:"maintenance",location:mc2.location,problem:mc2.problem,
-            requestedBy:mc2.requestedBy,respondingUnit:clearBy2,
-            disposition:urgencyLabel,narrative:incFields.maintNarrative||"Priority set by admin",openedAt:new Date().toISOString(),
-          })}).catch(()=>{});
           playAlert("clear");removeAckedBanner(mc2.id);
           if(liveMode)fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:mc2.id,status:`Acknowledged — ${urgencyLabel}`,unit:clearBy2})}).catch(()=>{});
           setCompleted(p=>[{...mc2,status:"acknowledged",priority:incFields._maintUrgency,clearedBy:clearBy2,clearedAt:tShort()},...p]);

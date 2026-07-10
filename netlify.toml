@@ -8,3 +8,7 @@
 [[scheduled-functions]]
   name = "auto-clear-staff"
   cron = "*/30 * * * *"
+
+[[scheduled-functions]]
+  name = "send-scheduled-messages"
+  cron = "*/5 * * * *"

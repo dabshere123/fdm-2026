@@ -1175,6 +1175,10 @@ function HubApp({onBack}){
 
   const [scheduledMsgs,setScheduledMsgs]=useState([]);
   const [showScheduler,setShowScheduler]=useState(false);
+  const [scheduleDateTime,setScheduleDateTime]=useState("");
+  const [schedulingSending,setSchedulingSending]=useState(false);
+  const [scheduleError,setScheduleError]=useState(null);
+  const [scheduleSuccess,setScheduleSuccess]=useState(null);
   const [broadcastSending,setBroadcastSending]=useState(false);
   const [broadcastError,setBroadcastError]=useState(null);
   const [hubToast,setHubToast]=useState(null);
@@ -2303,6 +2307,83 @@ DATE/TIME: ${now()}`;
 }}>
   {broadcastSending?"⏳ Sending...":"🚀 SEND NOW"}
 </button>
+
+{t.id==="custom"&&<div style={{marginTop:10}}>
+  {!showScheduler?
+    <button style={{width:"100%",padding:"12px",borderRadius:10,border:"1px solid rgba(124,58,237,0.4)",background:"rgba(124,58,237,0.08)",color:"#c4b5fd",fontSize:13,fontWeight:800,cursor:"pointer"}} onClick={()=>{setShowScheduler(true);setScheduleError(null);}}>📅 Schedule for Later</button>
+  :
+    <div style={{background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.3)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{fontSize:12,fontWeight:800,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:"0.06em"}}>Send At</div>
+      <input type="datetime-local" style={{...S.inp,colorScheme:"dark"}} value={scheduleDateTime} onChange={e=>setScheduleDateTime(e.target.value)} min={new Date(Date.now()+5*60000).toISOString().slice(0,16)}/>
+      {scheduleError&&<div style={{fontSize:12,color:"#fca5a5"}}>{scheduleError}</div>}
+      <div style={{display:"flex",gap:8}}>
+        <button style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:"rgba(255,255,255,0.06)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setShowScheduler(false);setScheduleDateTime("");setScheduleError(null);}}>Cancel</button>
+        <button disabled={schedulingSending} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:schedulingSending?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",fontSize:13,fontWeight:800,cursor:schedulingSending?"not-allowed":"pointer"}} onClick={async()=>{
+          if(!scheduleDateTime){ setScheduleError("Pick a date and time first."); return; }
+          const sendAtDate=new Date(scheduleDateTime);
+          if(sendAtDate.getTime()<=Date.now()){ setScheduleError("That time is in the past — pick a future time."); return; }
+          const recipMode0=alertFields._recipMode||"groups";
+          if(recipMode0==="groups"&&(alertFields._recipGroups||[]).length===0){ setScheduleError("Please select at least one group before scheduling."); return; }
+          if(recipMode0==="locations"&&(alertFields._recipLocs||[]).length===0){ setScheduleError("Please select at least one location before scheduling."); return; }
+          setScheduleError(null);
+          setSchedulingSending(true);
+          try{
+            const recipMode=alertFields._recipMode||"groups";
+            const recipGroups=alertFields._recipGroups||[];
+            const recipLocs=alertFields._recipLocs||[];
+            let allRoleCodes=[];
+            let allChatChannels=[];
+            if(recipMode==="groups"){
+              recipGroups.forEach(g=>{
+                allRoleCodes=[...allRoleCodes,...(BCAST_GROUP_ROLES[g]||[])];
+                allChatChannels=[...allChatChannels,...(BCAST_GROUP_CHANNELS[g]||["AllStaff"])];
+              });
+            } else {
+              recipLocs.forEach(loc=>{
+                allRoleCodes=[...allRoleCodes,...(BCAST_LOC_ROLES[loc]||[])];
+                const ch=BCAST_LOC_CHANNELS[loc];
+                if(ch) allChatChannels=[...allChatChannels,ch];
+              });
+            }
+            allRoleCodes=[...new Set(allRoleCodes.map(r=>r.toLowerCase()))];
+            allChatChannels=[...new Set(allChatChannels)];
+            const includesVendors=recipMode==="groups"&&recipGroups.includes("vendors");
+            const vendorExtraPhones=includesVendors?vendorPhonesList:[];
+            const schedPhones=[...new Set([ADMIN2_PHONE,...byRole(allRoleCodes),...vendorExtraPhones])];
+            if(schedPhones.length===0){ setScheduleError("No recipients found for the selected group(s)/location(s)."); setSchedulingSending(false); return; }
+
+            const res=await fetch("/.netlify/functions/schedule-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+              action:"create", message:preview, phones:schedPhones, channels:allChatChannels,
+              sendAt:sendAtDate.toISOString(), createdBy:role||"Admin",
+            })});
+            const data=await res.json();
+            if(!data.success){
+              setScheduleError(data.error||"Could not schedule this message.");
+              setSchedulingSending(false);
+              return;
+            }
+            setSchedulingSending(false);
+            setShowScheduler(false);
+            setScheduleDateTime("");
+            setScheduleSuccess({count:schedPhones.length, sendAt:sendAtDate});
+          }catch(err){
+            setScheduleError(err?.message||"Network error — please try again.");
+            setSchedulingSending(false);
+          }
+        }}>{schedulingSending?"⏳ Scheduling...":"✓ Confirm Schedule"}</button>
+      </div>
+    </div>
+  }
+</div>}
+
+{scheduleSuccess&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:"32px"}}>
+  <div style={{fontSize:56}}>📅</div>
+  <div style={{fontSize:22,fontWeight:900,color:"#c4b5fd",textAlign:"center"}}>Message Scheduled!</div>
+  <div style={{background:"rgba(124,58,237,0.12)",border:"2px solid rgba(124,58,237,0.4)",borderRadius:14,padding:"18px 20px",textAlign:"center",maxWidth:360,width:"100%"}}>
+    <div style={{fontSize:14,color:"#e9d5ff",lineHeight:1.6}}>Will send to {scheduleSuccess.count} people at<br/><strong>{scheduleSuccess.sendAt.toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</strong></div>
+  </div>
+  <button style={{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}} onClick={()=>{setScheduleSuccess(null);setView("home");setAlertView(null);setAlertFields({});setEditedMsg("");setEditedMsgTouched(false);}}>Done</button>
+</div>}
         {broadcastError&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:"32px"}}>
           <div style={{fontSize:56}}>⚠️</div>
           <div style={{fontSize:22,fontWeight:900,color:"#ef4444",textAlign:"center"}}>Broadcast Not Sent</div>

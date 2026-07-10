@@ -1412,7 +1412,7 @@ function HubApp({onBack}){
   };
 
   // DEMO/LIVE MODE
-  const [liveMode,setLiveMode]=useState(false);
+  const [liveMode,setLiveMode]=useState(true); // demo mode removed — app is always live now
   const [liveCalls,setLiveCalls]=useState([]);
 
   // Poll Airtable every 5 seconds in Live Mode
@@ -1795,11 +1795,23 @@ function HubApp({onBack}){
     }
   };
   const updCall=(id,status,unit=null)=>setCalls(p=>p.map(c=>c.id!==id?c:{...c,status,unit:unit||c.unit,history:[...c.history,{status,ts:tShort(),unit}]}));
-  const submitAndClearCall=(c,by,incidentData)=>{
+  const submitAndClearCall=async(c,by,incidentData,skipReport)=>{
     playAlert("clear"); removeAckedBanner(c.id);
-    if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:by})}).catch(()=>{}); }
-    // Send incident report with provided data
-    if(["medical","walk_in","fire","security"].includes(c.type)){
+    if(liveMode){
+      try{
+        const res=await fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:c.id,status:"Cleared",unit:by})});
+        const d=await res.json();
+        if(!res.ok||d.error){
+          alert("⚠️ Could not clear this call — the server rejected it. It will stay on the active list. Please try again.\n\n"+(d.error?.message||d.error||"Unknown error"));
+          return;
+        }
+      }catch(e){
+        alert("⚠️ Network error clearing this call. It will stay on the active list. Please try again.\n\n"+e.message);
+        return;
+      }
+    }
+    // Send incident report with provided data (unless explicitly skipped -- "no report needed")
+    if(!skipReport&&["medical","walk_in","fire","security"].includes(c.type)){
       const incNum=`FDM-${new Date().toLocaleDateString("en-US",{month:"2-digit",day:"2-digit"}).replace("/","")}${c.id.toString().slice(-4)}`;
       fetch("/.netlify/functions/send-incident-report",{
         method:"POST",headers:{"Content-Type":"application/json"},
@@ -1821,6 +1833,7 @@ function HubApp({onBack}){
     }
     setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
     setCalls(p=>p.filter(x=>x.id!==c.id));
+    setLiveCalls(p=>p.filter(x=>x.id!==c.id));
     setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"clear",label:`Cleared by ${by}`,msg:c.problem||""},...p]);
     setClearIncView(null);
     setView("home");
@@ -1837,11 +1850,26 @@ function HubApp({onBack}){
     } else {
       // Non-medical/security — just clear immediately
       playAlert("clear"); removeAckedBanner(id);
-      if(liveMode){ fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Cleared",unit:by})}).catch(()=>{}); }
-      setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
-      setCalls(p=>p.filter(x=>x.id!==id));
-      setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"clear",label:`Cleared by ${by}`,msg:c.problem||""},...p]);
-      setView("home");
+      (async()=>{
+        if(liveMode){
+          try{
+            const res=await fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"Cleared",unit:by})});
+            const d=await res.json();
+            if(!res.ok||d.error){
+              alert("⚠️ Could not clear this call — the server rejected it. It will stay on the active list. Please try again.\n\n"+(d.error?.message||d.error||"Unknown error"));
+              return;
+            }
+          }catch(e){
+            alert("⚠️ Network error clearing this call. It will stay on the active list. Please try again.\n\n"+e.message);
+            return;
+          }
+        }
+        setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
+        setCalls(p=>p.filter(x=>x.id!==id));
+        setLiveCalls(p=>p.filter(x=>x.id!==id));
+        setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"clear",label:`Cleared by ${by}`,msg:c.problem||""},...p]);
+        setView("home");
+      })();
     }
   };
 
@@ -1947,7 +1975,7 @@ function HubApp({onBack}){
         ))}
       </div>
       <div style={{margin:"0 16px",borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:16}}>
-        <div style={{fontSize:11,color:"#475569",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Demo: default PIN is 0000</div>
+        <div style={{fontSize:11,color:"#475569",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Select Your Role</div>
         <div style={{fontSize:11,color:"#334155",lineHeight:1.7}}>
           Admin → full hub · Med 1/2 → medical unit view
         </div>
@@ -2663,6 +2691,9 @@ DATE/TIME: ${now()}`;
         </button>
         <button style={{...S.sendBtn,background:"rgba(255,255,255,0.06)",color:"#94a3b8",border:"1px solid rgba(255,255,255,0.1)",fontSize:13}} onClick={()=>submitAndClearCall(cc,clearBy,{respondingUnit:clearBy})}>
           ⏭ Skip — Auto Report
+        </button>
+        <button style={{...S.sendBtn,background:"none",color:"#f87171",fontSize:13,border:"1px solid rgba(239,68,68,0.25)"}} onClick={()=>{if(window.confirm("Clear this call with NO incident report generated? Use this only when a report genuinely isn't needed.")) submitAndClearCall(cc,clearBy,{respondingUnit:clearBy},true);}}>
+          ✓ Clear — No Report Needed
         </button>
         <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}} onClick={()=>{setClearIncView(null);setIncFields({});}}>
           ← Back to Call
@@ -4004,30 +4035,19 @@ Reply YES to acknowledge.`
 
     <div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 16px 24px"}}>
 
-      {/* LIVE/DEMO MODE INDICATOR */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:liveMode?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)",border:`1px solid ${liveMode?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.3)"}`,borderRadius:10,padding:"10px 14px"}}>
+      {/* LIVE STATUS — demo mode removed, app is always live */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:10,padding:"10px 14px"}}>
         <div style={{flex:1}}>
-          <div style={{fontSize:13,fontWeight:700,color:liveMode?"#10b981":"#f59e0b"}}>{liveMode?"⚡ LIVE MODE — Real calls from staff":"🎭 DEMO MODE — Showing sample data"}</div>
-          {!liveMode&&<div style={{fontSize:10,color:"#e2e8f0",marginTop:2}}>Switching to Live clears all demo calls</div>}
+          <div style={{fontSize:13,fontWeight:700,color:"#10b981"}}>⚡ LIVE — Real calls from staff</div>
         </div>
-        {liveMode&&<button style={{background:"none",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"4px 10px",color:"#fca5a5",fontSize:11,cursor:"pointer",fontWeight:600,marginRight:4}} onClick={async()=>{
-          if(!window.confirm("Clear ALL active calls from Airtable? Use before going live.")) return;
+        <button style={{background:"none",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"4px 10px",color:"#fca5a5",fontSize:11,cursor:"pointer",fontWeight:600}} onClick={async()=>{
+          if(!window.confirm("Clear ALL active calls from Airtable? This cannot be undone.")) return;
           try{
             await fetch("/.netlify/functions/clear-test-calls",{method:"POST"});
             setLiveCalls([]);
-            alert("All test calls cleared from Airtable.");
+            alert("All calls cleared from Airtable.");
           }catch(e){alert("Error: "+e.message);}
-        }}>🗑 Clear Test Calls</button>}
-        <button style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px",color:"#64748b",fontSize:11,cursor:"pointer",fontWeight:600}} onClick={()=>{
-          setLiveMode(p=>{
-            if(!p){
-              // Switching TO live — clear demo calls so they don't bleed in
-              setCalls([]);
-              setLiveCalls([]);
-            }
-            return !p;
-          });
-        }}>Switch</button>
+        }}>🗑 Clear Test Calls</button>
       </div>
 
       {/* 911 INBOUND BANNER — Admin home — shows full info when acknowledged, stays until incident closed */}

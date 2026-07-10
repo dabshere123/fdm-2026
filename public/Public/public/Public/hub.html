@@ -3472,7 +3472,7 @@ function HubApp({
   };
 
   // DEMO/LIVE MODE
-  const [liveMode, setLiveMode] = useState(false);
+  const [liveMode, setLiveMode] = useState(true); // demo mode removed — app is always live now
   const [liveCalls, setLiveCalls] = useState([]);
 
   // Poll Airtable every 5 seconds in Live Mode
@@ -3989,24 +3989,35 @@ function HubApp({
       unit
     }]
   }));
-  const submitAndClearCall = (c, by, incidentData) => {
+  const submitAndClearCall = async (c, by, incidentData, skipReport) => {
     playAlert("clear");
     removeAckedBanner(c.id);
     if (liveMode) {
-      fetch("/.netlify/functions/update-call", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          id: c.id,
-          status: "Cleared",
-          unit: by
-        })
-      }).catch(() => {});
+      try {
+        const res = await fetch("/.netlify/functions/update-call", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id: c.id,
+            status: "Cleared",
+            unit: by
+          })
+        });
+        const d = await res.json();
+        if (!res.ok || d.error) {
+          var _d$error;
+          alert("⚠️ Could not clear this call — the server rejected it. It will stay on the active list. Please try again.\n\n" + (((_d$error = d.error) === null || _d$error === void 0 ? void 0 : _d$error.message) || d.error || "Unknown error"));
+          return;
+        }
+      } catch (e) {
+        alert("⚠️ Network error clearing this call. It will stay on the active list. Please try again.\n\n" + e.message);
+        return;
+      }
     }
-    // Send incident report with provided data
-    if (["medical", "walk_in", "fire", "security"].includes(c.type)) {
+    // Send incident report with provided data (unless explicitly skipped -- "no report needed")
+    if (!skipReport && ["medical", "walk_in", "fire", "security"].includes(c.type)) {
       const incNum = `FDM-${new Date().toLocaleDateString("en-US", {
         month: "2-digit",
         day: "2-digit"
@@ -4039,6 +4050,7 @@ function HubApp({
       clearedAt: tShort()
     }, ...p]);
     setCalls(p => p.filter(x => x.id !== c.id));
+    setLiveCalls(p => p.filter(x => x.id !== c.id));
     setActivityLog(p => [{
       id: Date.now(),
       ts: tShort(),
@@ -4069,35 +4081,49 @@ function HubApp({
       // Non-medical/security — just clear immediately
       playAlert("clear");
       removeAckedBanner(id);
-      if (liveMode) {
-        fetch("/.netlify/functions/update-call", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            id,
-            status: "Cleared",
-            unit: by
-          })
-        }).catch(() => {});
-      }
-      setCompleted(p => [{
-        ...c,
-        status: "cleared",
-        clearedBy: by,
-        clearedAt: tShort()
-      }, ...p]);
-      setCalls(p => p.filter(x => x.id !== id));
-      setActivityLog(p => [{
-        id: Date.now(),
-        ts: tShort(),
-        date: now(),
-        type: "clear",
-        label: `Cleared by ${by}`,
-        msg: c.problem || ""
-      }, ...p]);
-      setView("home");
+      (async () => {
+        if (liveMode) {
+          try {
+            const res = await fetch("/.netlify/functions/update-call", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                id,
+                status: "Cleared",
+                unit: by
+              })
+            });
+            const d = await res.json();
+            if (!res.ok || d.error) {
+              var _d$error2;
+              alert("⚠️ Could not clear this call — the server rejected it. It will stay on the active list. Please try again.\n\n" + (((_d$error2 = d.error) === null || _d$error2 === void 0 ? void 0 : _d$error2.message) || d.error || "Unknown error"));
+              return;
+            }
+          } catch (e) {
+            alert("⚠️ Network error clearing this call. It will stay on the active list. Please try again.\n\n" + e.message);
+            return;
+          }
+        }
+        setCompleted(p => [{
+          ...c,
+          status: "cleared",
+          clearedBy: by,
+          clearedAt: tShort()
+        }, ...p]);
+        setCalls(p => p.filter(x => x.id !== id));
+        setLiveCalls(p => p.filter(x => x.id !== id));
+        setActivityLog(p => [{
+          id: Date.now(),
+          ts: tShort(),
+          date: now(),
+          type: "clear",
+          label: `Cleared by ${by}`,
+          msg: c.problem || ""
+        }, ...p]);
+        setView("home");
+      })();
     }
   };
 
@@ -4548,7 +4574,7 @@ function HubApp({
       letterSpacing: "0.08em",
       marginBottom: 10
     }
-  }, "Demo: default PIN is 0000"), /*#__PURE__*/React.createElement("div", {
+  }, "Select Your Role"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#334155",
@@ -6873,6 +6899,19 @@ DATE/TIME: ${now()}`;
         respondingUnit: clearBy
       })
     }, "\u23ED Skip \u2014 Auto Report"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...S.sendBtn,
+        background: "none",
+        color: "#f87171",
+        fontSize: 13,
+        border: "1px solid rgba(239,68,68,0.25)"
+      },
+      onClick: () => {
+        if (window.confirm("Clear this call with NO incident report generated? Use this only when a report genuinely isn't needed.")) submitAndClearCall(cc, clearBy, {
+          respondingUnit: clearBy
+        }, true);
+      }
+    }, "\u2713 Clear \u2014 No Report Needed"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...S.sendBtn,
         background: "none",
@@ -11620,8 +11659,8 @@ Reply YES to acknowledge.`
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      background: liveMode ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
-      border: `1px solid ${liveMode ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)"}`,
+      background: "rgba(16,185,129,0.08)",
+      border: "1px solid rgba(16,185,129,0.3)",
       borderRadius: 10,
       padding: "10px 14px"
     }
@@ -11633,15 +11672,9 @@ Reply YES to acknowledge.`
     style: {
       fontSize: 13,
       fontWeight: 700,
-      color: liveMode ? "#10b981" : "#f59e0b"
+      color: "#10b981"
     }
-  }, liveMode ? "⚡ LIVE MODE — Real calls from staff" : "🎭 DEMO MODE — Showing sample data"), !liveMode && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: "#e2e8f0",
-      marginTop: 2
-    }
-  }, "Switching to Live clears all demo calls")), liveMode && /*#__PURE__*/React.createElement("button", {
+  }, "\u26A1 LIVE \u2014 Real calls from staff")), /*#__PURE__*/React.createElement("button", {
     style: {
       background: "none",
       border: "1px solid rgba(239,68,68,0.3)",
@@ -11650,43 +11683,21 @@ Reply YES to acknowledge.`
       color: "#fca5a5",
       fontSize: 11,
       cursor: "pointer",
-      fontWeight: 600,
-      marginRight: 4
+      fontWeight: 600
     },
     onClick: async () => {
-      if (!window.confirm("Clear ALL active calls from Airtable? Use before going live.")) return;
+      if (!window.confirm("Clear ALL active calls from Airtable? This cannot be undone.")) return;
       try {
         await fetch("/.netlify/functions/clear-test-calls", {
           method: "POST"
         });
         setLiveCalls([]);
-        alert("All test calls cleared from Airtable.");
+        alert("All calls cleared from Airtable.");
       } catch (e) {
         alert("Error: " + e.message);
       }
     }
-  }, "\uD83D\uDDD1 Clear Test Calls"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: "none",
-      border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: 6,
-      padding: "4px 10px",
-      color: "#64748b",
-      fontSize: 11,
-      cursor: "pointer",
-      fontWeight: 600
-    },
-    onClick: () => {
-      setLiveMode(p => {
-        if (!p) {
-          // Switching TO live — clear demo calls so they don't bleed in
-          setCalls([]);
-          setLiveCalls([]);
-        }
-        return !p;
-      });
-    }
-  }, "Switch")), (nineOneOne === null || nineOneOne === void 0 ? void 0 : nineOneOne.active) && emsAcked && /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDDD1 Clear Test Calls")), (nineOneOne === null || nineOneOne === void 0 ? void 0 : nineOneOne.active) && emsAcked && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       border: "2px solid rgba(239,68,68,0.8)",

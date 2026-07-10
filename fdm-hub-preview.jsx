@@ -1177,6 +1177,21 @@ function HubApp({onBack}){
   const [showScheduler,setShowScheduler]=useState(false);
   const [broadcastSending,setBroadcastSending]=useState(false);
   const [broadcastError,setBroadcastError]=useState(null);
+  const [hubToast,setHubToast]=useState(null);
+  const hubToastTimer=React.useRef(null);
+  const showHubToast=(msg)=>{
+    setHubToast(msg);
+    if(hubToastTimer.current) clearTimeout(hubToastTimer.current);
+    hubToastTimer.current=setTimeout(()=>setHubToast(null),3500);
+  };
+  const reportSendResult=(promise,label)=>{
+    promise.then(results=>{
+      const ok=results.filter(r=>r.status==="fulfilled").length;
+      const fail=results.filter(r=>r.status==="rejected").length;
+      if(fail===0) showHubToast(`✅ ${label} sent to ${ok} ${ok===1?"person":"people"}`);
+      else showHubToast(`⚠️ ${label}: sent to ${ok}, ${fail} failed`);
+    }).catch(()=>{ showHubToast(`⚠️ ${label}: send failed`); });
+  };
   const [weatherAckChecking,setWeatherAckChecking]=useState(false);
   const [weatherAckResult,setWeatherAckResult]=useState(null);
   const [weatherReminderSending,setWeatherReminderSending]=useState(false);
@@ -1673,7 +1688,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const medPhones=getNotifyList(call.type==="walk_in"?"walk_in":"medical");
           const medPhonesFinal=[...new Set([ADMIN2_PHONE,...medPhones])];
-          sendSMSList(medPhonesFinal,msg);
+          reportSendResult(sendSMSList(medPhonesFinal,msg),"Medical alert");
           sendVoice(medPhonesFinal,`Medical alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond immediately.`);
         },100);
       } else if(call.type==="fire"){
@@ -1690,7 +1705,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const firePhones=getNotifyList("fire");
           const firePhonesFinal=[...new Set([ADMIN2_PHONE,...firePhones])];
-          sendSMSList(firePhonesFinal,msg);
+          reportSendResult(sendSMSList(firePhonesFinal,msg),"Life safety alert");
           sendVoice(firePhonesFinal,`Life safety alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond immediately.`);
         },100);
       } else if(call.type==="security"){
@@ -1707,7 +1722,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const secPhones=getNotifyList("security");
           const secPhonesFinal=[...new Set([ADMIN2_PHONE,...secPhones])];
-          sendSMSList(secPhonesFinal,msg);
+          reportSendResult(sendSMSList(secPhonesFinal,msg),"Security alert");
           sendVoice(secPhonesFinal,`Security alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond.`);
         },100);
       } else if(call.type==="supplies"){
@@ -1724,7 +1739,7 @@ function HubApp({onBack}){
         sendGroupMe(suppliesGmMsg,["admin","restock"]);
         setTimeout(()=>{
           const phones=getNotifyList("supplies");
-          sendSMSList(phones,msg);
+          reportSendResult(sendSMSList(phones,msg),"Supplies request");
           // No voice for supplies
         },100);
         msg=null;
@@ -1739,7 +1754,7 @@ function HubApp({onBack}){
         ].filter(Boolean).join("\n");
         setTimeout(()=>{
           const phones=getNotifyList("maintenance");
-          sendSMSList(phones,msg);
+          reportSendResult(sendSMSList(phones,msg),"Maintenance request");
           // No voice for maintenance — SMS only for everyone, including Tony
         },100);
       } else if(call.type==="lost_child"){
@@ -1756,7 +1771,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const lcPhones=getNotifyList("lost_child");
           const lcPhonesFinal=lcPhones.length>0?lcPhones:[ADMIN2_PHONE];
-          sendSMSList(lcPhonesFinal,msg);
+          reportSendResult(sendSMSList(lcPhonesFinal,msg),"Lost Child alert");
           sendVoice(lcPhonesFinal,`Urgent. Lost child at Fete de Marquette. ${voiceSafeLostChild(call.problem)}. Location: ${call.location}. All staff please be on alert immediately.`);
         },100);
         fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},
@@ -1994,7 +2009,7 @@ DATE/TIME: ${now()}`;
               const call={id:Date.now(),type:"supplies",location:adminReqLoc,problem:prob,requestedBy:"Admin",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:tShort()},{status:"acknowledged",ts:tShort(),unit:"Admin"}],unit:"Admin",firedAt:Date.now()};
               setCalls(p=>[call,...p]);
               sendGroupMe(msg,["admin","restock"]);
-              setTimeout(()=>{const phones=getNotifyList("supplies");sendSMSList(phones,msg);},100);
+              setTimeout(()=>{const phones=getNotifyList("supplies");reportSendResult(sendSMSList(phones,msg),"Supplies request");},100);
               setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"supplies",label:`Supplies: ${prob}`,msg:adminReqLoc},...p]);
               setAdminSupplyItem("");setAdminSupplyQty("");setAdminReqLoc("");setAdminReqProblem("");
               setResourceView(false);setResourceType(null);setResourceFields({});
@@ -2024,7 +2039,7 @@ DATE/TIME: ${now()}`;
               const call={id:Date.now(),type:"maintenance",location:adminMaintLoc,problem:prob,requestedBy:"Admin",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:tShort()},{status:"acknowledged",ts:tShort(),unit:"Admin"}],unit:"Admin",firedAt:Date.now()};
               setCalls(p=>[call,...p]);
               sendGroupMe("MAINTENANCE CONCERN 🔧\n"+msg,["admin","maintenance"]);
-              setTimeout(()=>{const phones=getNotifyList("maintenance");sendSMSList(phones,msg);},100);
+              setTimeout(()=>{const phones=getNotifyList("maintenance");reportSendResult(sendSMSList(phones,msg),"Maintenance request");},100);
               setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"maintenance",label:`Maintenance: ${prob}`,msg:adminMaintLoc},...p]);
               setAdminMaintProblem("");setAdminMaintLoc("");setAdminReqDetails("");setAdminReqProblem("");
               setResourceView(false);setResourceType(null);setResourceFields({});
@@ -3070,6 +3085,8 @@ Reply YES to acknowledge.`
                 const voiceFailed=voiceResults.filter(r=>r.status==="rejected").length;
                 if(smsFailed>0||voiceFailed>0){
                   setLcSendError(`Festival Chat sent. But SMS failed for ${smsFailed} of ${lcPhones.length}, Voice failed for ${voiceFailed} of ${lcPhones.length}. Confirm staff were notified another way.`);
+                } else {
+                  showHubToast(`✅ Missing Child alert sent to ${lcPhones.length} people`);
                 }
               }catch(err){
                 setLcSendError((err?.message||"SMS/Voice failed to send.")+" Festival Chat message still went out — confirm staff by another method.");
@@ -3897,7 +3914,9 @@ Reply YES to acknowledge.`
 
   // ADMIN HOME
   const pendingAcks=broadcastAlerts.filter(a=>a.requiresAck).reduce((s,a)=>s+ALL_LOCS.filter(l=>!(a.acks&&a.acks[l])).length,0);
-  return(<div style={S.root}><Bg/><div style={S.panel}>
+  return(<div style={S.root}><Bg/>
+    {hubToast&&<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontWeight:800,fontSize:14,padding:"14px 22px",borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,0.3)",zIndex:9999,maxWidth:"90%",textAlign:"center"}}>{hubToast}</div>}
+    <div style={S.panel}>
     {/* HEADER */}
     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",padding:"20px 16px 4px"}}>
       <div><div style={{fontSize:20,fontWeight:900,color:"#fff"}}>Fête de Marquette</div><div style={{fontSize:10,color:"#475569",textTransform:"uppercase",letterSpacing:"0.06em"}}>2026 Operations Hub</div></div>

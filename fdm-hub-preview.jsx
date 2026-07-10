@@ -2627,6 +2627,27 @@ DATE/TIME: ${now()}`;
           setCalls(p=>p.filter(c=>c.id!==mc2.id));
           setMaintNarrativeForm(null);setIncFields({});setView("home");
         }}>✅ Acknowledge &amp; Notify Reporter</button>
+        <button style={{...S.sendBtn,background:"none",color:"#f87171",fontSize:13,border:"1px solid rgba(239,68,68,0.25)"}} onClick={async()=>{
+          if(!window.confirm("Clear this maintenance call with no priority set and no reporter notification? Use only when nothing further is needed.")) return;
+          playAlert("clear");removeAckedBanner(mc2.id);
+          if(liveMode){
+            try{
+              const res=await fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:mc2.id,status:"Cleared",unit:clearBy2})});
+              const d=await res.json();
+              if(!res.ok||d.error){
+                alert("⚠️ Could not clear this call — the server rejected it. It will stay on the active list. Please try again.\n\n"+(d.error?.message||d.error||"Unknown error"));
+                return;
+              }
+            }catch(e){
+              alert("⚠️ Network error clearing this call. It will stay on the active list. Please try again.\n\n"+e.message);
+              return;
+            }
+          }
+          setCompleted(p=>[{...mc2,status:"cleared",clearedBy:clearBy2,clearedAt:tShort()},...p]);
+          setLiveCalls(p=>p.filter(c=>c.id!==mc2.id));
+          setCalls(p=>p.filter(c=>c.id!==mc2.id));
+          setMaintNarrativeForm(null);setIncFields({});setView("home");
+        }}>✓ Clear — No Report Needed</button>
         <button style={{...S.sendBtn,background:"none",color:"#475569",fontSize:13}} onClick={()=>setMaintNarrativeForm(null)}>← Back to Call</button>
       </div>
     </div></div>);
@@ -2845,7 +2866,7 @@ DATE/TIME: ${now()}`;
                 <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
 
                   {c.status!=="on_scene"&&<button style={{...S.actBtn,background:"#ef4444",flex:1}} onClick={()=>updCall(c.id,"on_scene",c.unit||"Admin")}>🔴 On Scene</button>}
-                  {c.type==="supplies"&&c.status==="acknowledged"&&<button style={{...S.actBtn,background:"#10b981",flex:1}} onClick={()=>updCall(c.id,"delivered","Admin")}>✅ Delivered</button>}
+                  {c.type==="supplies"&&c.status==="acknowledged"&&<button style={{...S.actBtn,background:"#10b981",flex:1}} onClick={()=>clearCall(c.id,"Admin")}>✅ Delivered</button>}
                   {/* SECURITY — Admin only clear */}
                   {c.type==="security"&&isAdmin&&<button style={{...S.actBtn,background:"rgba(100,100,100,0.4)",flex:1}} onClick={()=>clearCall(c.id,"Admin")}>✅ Clear — Admin</button>}
                   {c.type==="security"&&isAdmin&&<button style={{...S.actBtn,background:"rgba(37,99,235,0.3)",border:"1px solid rgba(37,99,235,0.5)",flex:1}} onClick={()=>{

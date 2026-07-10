@@ -111,6 +111,25 @@ body{background:#0a0a14;color:#f1f5f9;font-family:'DM Sans',sans-serif;min-heigh
   </div>
 </div>
 
+<!-- Replace Photo Modal -->
+<div id="replacePhotoModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h2>📷 Replace Photo</h2>
+    <p style="font-size:13px;color:#64748b;">Take or upload a new photo for this item. Enter admin PIN to confirm.</p>
+    <div id="replacePhotoPreview" style="display:none;margin:10px 0;">
+      <img id="replacePhotoPreviewImg" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;"/>
+    </div>
+    <button id="replacePhotoPickBtn" style="width:100%;padding:14px;border-radius:10px;border:2px dashed #f97316;background:rgba(249,115,22,0.06);color:#fb923c;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:10px;">📷 Choose New Photo</button>
+    <input type="file" id="replacePhotoInput" accept="image/*" capture="environment" style="display:none;"/>
+    <input type="password" id="replacePhotoPinInput" placeholder="Admin PIN" inputmode="numeric" />
+    <div id="replacePhotoError" style="color:#dc2626;font-size:12px;display:none;margin-top:6px;"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeReplacePhoto()">Cancel</button>
+      <button class="btn-confirm" id="replacePhotoConfirmBtn" style="background:linear-gradient(135deg,#f97316,#ea580c);" onclick="confirmReplacePhoto()">Save New Photo</button>
+    </div>
+  </div>
+</div>
+
 <!-- Claim Modal -->
 <div id="claimModal" class="modal-overlay" style="display:none;">
   <div class="modal">
@@ -222,6 +241,7 @@ function renderCard(i){
       <div class="card-actions">
         ${!isClaimed&&!isOffice?`<button class="btn btn-office" onclick="markOffice('${i.id}')">📦 At Fest Office</button>`:''}
         ${!isClaimed?`<button class="btn btn-claim" onclick="openClaim('${i.id}')">✅ Mark Claimed</button>`:''}
+        <button class="btn" style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);color:#fb923c;" onclick="openReplacePhoto('${i.id}')">📷 Replace Photo</button>
         <button class="btn" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;" onclick="openDeleteItem('${i.id}')">🗑</button>
       </div>
     </div>
@@ -307,6 +327,100 @@ async function confirmDeleteItem(){
     render();
   }catch(e){
     alert('Error: '+e.message);
+  }
+}
+
+let replacingPhotoId = null;
+let replacingPhotoData = null;
+
+function compressLFReplacePhoto(file,cb){
+  const SAFE_LIMIT=70000;
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const tryEncode=(maxDim,quality)=>{
+        let w=img.width,h=img.height;
+        if(w>maxDim||h>maxDim){if(w>h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;}}
+        const c=document.createElement("canvas");
+        c.width=w;c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        return c.toDataURL("image/jpeg",quality);
+      };
+      const attempts=[[700,0.65],[600,0.5],[500,0.4],[400,0.35],[320,0.3]];
+      let result=tryEncode(attempts[0][0],attempts[0][1]);
+      for(let i=1;i<attempts.length&&result.length>SAFE_LIMIT;i++){
+        result=tryEncode(attempts[i][0],attempts[i][1]);
+      }
+      cb(result.length>SAFE_LIMIT?null:result);
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+function openReplacePhoto(id){
+  replacingPhotoId = id;
+  replacingPhotoData = null;
+  document.getElementById('replacePhotoPinInput').value = '';
+  document.getElementById('replacePhotoPreview').style.display = 'none';
+  document.getElementById('replacePhotoError').style.display = 'none';
+  document.getElementById('replacePhotoModal').style.display = 'flex';
+}
+
+function closeReplacePhoto(){
+  document.getElementById('replacePhotoModal').style.display = 'none';
+  replacingPhotoId = null;
+  replacingPhotoData = null;
+}
+
+document.getElementById('replacePhotoPickBtn').addEventListener('click', () => {
+  document.getElementById('replacePhotoInput').click();
+});
+
+document.getElementById('replacePhotoInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const errEl = document.getElementById('replacePhotoError');
+  errEl.style.display = 'none';
+  compressLFReplacePhoto(file, (dataUrl) => {
+    if(!dataUrl){
+      errEl.textContent = 'That photo could not be compressed small enough to save. Please try a different photo.';
+      errEl.style.display = 'block';
+      return;
+    }
+    replacingPhotoData = dataUrl;
+    document.getElementById('replacePhotoPreviewImg').src = dataUrl;
+    document.getElementById('replacePhotoPreview').style.display = 'block';
+  });
+});
+
+async function confirmReplacePhoto(){
+  const pin = document.getElementById('replacePhotoPinInput').value.trim();
+  const errEl = document.getElementById('replacePhotoError');
+  errEl.style.display = 'none';
+  if(!pin){ errEl.textContent = 'Please enter the admin PIN.'; errEl.style.display = 'block'; return; }
+  if(!replacingPhotoData){ errEl.textContent = 'Please choose a photo first.'; errEl.style.display = 'block'; return; }
+  const btn = document.getElementById('replacePhotoConfirmBtn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+  try{
+    const r = await fetch('/.netlify/functions/update-lost-found',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:replacingPhotoId,photoData:replacingPhotoData,pin})});
+    const d = await r.json();
+    if(!r.ok || d.error){
+      errEl.textContent = d.error === 'Incorrect PIN' ? 'Incorrect PIN.' : 'Error: '+(d.error||'Unknown error');
+      errEl.style.display = 'block';
+      btn.textContent = 'Save New Photo'; btn.disabled = false;
+      return;
+    }
+    const item = allItems.find(i => i.id === replacingPhotoId);
+    if(item) item.photoData = replacingPhotoData;
+    btn.textContent = 'Save New Photo'; btn.disabled = false;
+    closeReplacePhoto();
+    render();
+  }catch(e){
+    errEl.textContent = 'Error: '+e.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Save New Photo'; btn.disabled = false;
   }
 }
 

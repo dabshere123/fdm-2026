@@ -40,9 +40,7 @@ const BROADCAST_ALERTS=[
   {id:"all_clear",label:"☀ All Clear",color:"#059669",
    defaultMsg:"Attention all staff and vendors — all dangerous weather has passed and Fête de Marquette will be resuming shortly. Further information will be provided via the festival app and messaging.",
    fields:[]},
-  {id:"custom",label:"✏ Custom Message",color:"#475569",fields:[
-    {key:"message",label:"Message",ph:"Type your message..."}
-  ]},
+  {id:"custom",label:"✏ Custom Message",color:"#475569",fields:[]},
 ];
 
 // ── BROADCAST RECIPIENT MAPPINGS ─────────────────────────────────────────

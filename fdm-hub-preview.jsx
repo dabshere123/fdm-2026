@@ -385,7 +385,7 @@ function MedHome({role,calls,setCalls,completed,setCompleted,medSt,setMedSt,myAc
     };
     const msg=msgs[type];
     sendGroupMe(msg,["admin","medical"]);
-    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg})}).catch(()=>{});
+    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:msg,context:"med_status_notification"})}).catch(()=>{});
   }
 
   const CALL_COLORS={
@@ -434,12 +434,12 @@ Time: ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",t
 Madison Fire/EMS INBOUND — McPike Park`;
         const voiceMsg=`911 has been activated at Fête de Marquette by ${role}. Location: ${pc.location}. Meet EMS at ${meetupLoc||"the main entrance"}. EMS is now inbound to McPike Park.`;
         const adminPhones=["+16082289692","+16082352925"];
-        adminPhones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg})}).catch(()=>{});});
+        adminPhones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg,context:"911_activation"})}).catch(()=>{});});
         adminPhones.forEach(p=>{fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:voiceMsg})}).catch(()=>{});});
         const otherMedR=(role||"").toLowerCase().includes("1")?"m2":"m1";
         (staffList||[]).filter(s=>(s.role||"").toLowerCase()===otherMedR&&s.phone).forEach(s=>{
           const d=String(s.phone).replace(/[^0-9]/g,"");const fmt=d.length===10?`+1${d}`:`+${d}`;
-          fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg})}).catch(()=>{});
+          fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg,context:"911_activation"})}).catch(()=>{});
           fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:voiceMsg})}).catch(()=>{});
         });
         set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:pc.id,info:{location:pc.location,nature:pc.problem}});
@@ -1249,7 +1249,7 @@ function HubApp({onBack}){
   const fetchDeliveryStatus=async()=>{
     setDeliveryLoading(true);setDeliveryError(null);
     try{
-      const r=await fetch("/.netlify/functions/get-delivery-status?context=vendor_broadcast&sinceMinutes=1440");
+      const r=await fetch("/.netlify/functions/get-delivery-status?sinceMinutes=1440");
       const d=await r.json();
       if(d.error) setDeliveryError(d.error);
       setDeliveryEntries(d.entries||[]);
@@ -1555,7 +1555,7 @@ function HubApp({onBack}){
           for(const ph of ADMIN_PHONES){
             fetch("/.netlify/functions/send-sms",{
               method:"POST",headers:{"Content-Type":"application/json"},
-              body:JSON.stringify({to:ph,message:smsMsg})
+              body:JSON.stringify({to:ph,message:smsMsg,context:"admin_call_notification"})
             }).catch(()=>{});
           }
 
@@ -1708,7 +1708,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const medPhones=getNotifyList(call.type==="walk_in"?"walk_in":"medical");
           const medPhonesFinal=[...new Set([ADMIN2_PHONE,...medPhones])];
-          reportSendResult(sendSMSList(medPhonesFinal,msg),"Medical alert");
+          reportSendResult(sendSMSList(medPhonesFinal,msg,"medical_alert"),"Medical alert");
           sendVoice(medPhonesFinal,`Medical alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond immediately.`);
         },100);
       } else if(call.type==="fire"){
@@ -1725,7 +1725,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const firePhones=getNotifyList("fire");
           const firePhonesFinal=[...new Set([ADMIN2_PHONE,...firePhones])];
-          reportSendResult(sendSMSList(firePhonesFinal,msg),"Life safety alert");
+          reportSendResult(sendSMSList(firePhonesFinal,msg,"fire_alert"),"Life safety alert");
           sendVoice(firePhonesFinal,`Life safety alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond immediately.`);
         },100);
       } else if(call.type==="security"){
@@ -1742,7 +1742,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const secPhones=getNotifyList("security");
           const secPhonesFinal=[...new Set([ADMIN2_PHONE,...secPhones])];
-          reportSendResult(sendSMSList(secPhonesFinal,msg),"Security alert");
+          reportSendResult(sendSMSList(secPhonesFinal,msg,"security_alert"),"Security alert");
           sendVoice(secPhonesFinal,`Security alert at Fete de Marquette. ${call.problem||""}. Location: ${call.location}. Please respond.`);
         },100);
       } else if(call.type==="supplies"){
@@ -1759,7 +1759,7 @@ function HubApp({onBack}){
         sendGroupMe(suppliesGmMsg,["admin","restock"]);
         setTimeout(()=>{
           const phones=getNotifyList("supplies");
-          reportSendResult(sendSMSList(phones,msg),"Supplies request");
+          reportSendResult(sendSMSList(phones,msg,"supplies_request"),"Supplies request");
           // No voice for supplies
         },100);
         msg=null;
@@ -1774,7 +1774,7 @@ function HubApp({onBack}){
         ].filter(Boolean).join("\n");
         setTimeout(()=>{
           const phones=getNotifyList("maintenance");
-          reportSendResult(sendSMSList(phones,msg),"Maintenance request");
+          reportSendResult(sendSMSList(phones,msg,"maintenance_request"),"Maintenance request");
           // No voice for maintenance — SMS only for everyone, including Tony
         },100);
       } else if(call.type==="lost_child"){
@@ -1791,7 +1791,7 @@ function HubApp({onBack}){
         setTimeout(()=>{
           const lcPhones=getNotifyList("lost_child");
           const lcPhonesFinal=lcPhones.length>0?lcPhones:[ADMIN2_PHONE];
-          reportSendResult(sendSMSList(lcPhonesFinal,msg),"Lost Child alert");
+          reportSendResult(sendSMSList(lcPhonesFinal,msg,"lost_child_alert"),"Lost Child alert");
           sendVoice(lcPhonesFinal,`Urgent. Lost child at Fete de Marquette. ${voiceSafeLostChild(call.problem)}. Location: ${call.location}. All staff please be on alert immediately.`);
         },100);
         fetch("/.netlify/functions/send-mpd",{method:"POST",headers:{"Content-Type":"application/json"},
@@ -1809,7 +1809,7 @@ function HubApp({onBack}){
     if(ackedCall?.phone){
       const fmtP=(p)=>{const d=String(p).replace(/\D/g,"");return d.length===10?`+1${d}`:d.length===11&&d[0]==="1"?`+${d}`:p;};
       const ackMsg=`✅ FDM 2026 — Your ${(ackedCall.type||"").replace(/_/g," ").toUpperCase()} request at ${ackedCall.location} has been acknowledged by ${by}. Help is on the way.${customMsg?.trim()?`\n\n${customMsg.trim()}`:""}`;
-      fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmtP(ackedCall.phone),message:ackMsg})}).catch(()=>{});
+      fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmtP(ackedCall.phone),message:ackMsg,context:"requester_ack"})}).catch(()=>{});
       if(customMsg?.trim()) showHubToast(`✅ Acknowledged with custom message sent`);
     }
   };
@@ -1937,7 +1937,7 @@ function HubApp({onBack}){
                   // SMS + Voice to Devin + Gary (admin)
                   const adminPhones=["+16082289692","+16082352925"];
                   adminPhones.forEach(p=>{
-                    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});
+                    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911,context:"911_activation"})}).catch(()=>{});
                     fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Meet EMS at ${alertCall.location}. EMS is now inbound to McPike Park.`})}).catch(()=>{});
                   });
                   // SMS + Voice to OTHER med unit (not the one activating 911)
@@ -1945,7 +1945,7 @@ function HubApp({onBack}){
                   const otherMed=(staffList||[]).filter(s=>(s.role||"").toLowerCase()===otherMedRole&&s.phone);
                   otherMed.forEach(s=>{
                     const d=String(s.phone).replace(/[^0-9]/g,"");const fmt=d.length===10?`+1${d}`:`+${d}`;
-                    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911})}).catch(()=>{});
+                    fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:msg911,context:"911_activation"})}).catch(()=>{});
                     fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:fmt,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${alertCall.location}. Meet EMS at ${alertCall.location}. EMS is now inbound to McPike Park.`})}).catch(()=>{});
                   });
                 }}>🚨 Activate 911 from This Call</button>}
@@ -2061,7 +2061,7 @@ DATE/TIME: ${now()}`;
               const call={id:Date.now(),type:"supplies",location:adminReqLoc,problem:prob,requestedBy:"Admin",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:tShort()},{status:"acknowledged",ts:tShort(),unit:"Admin"}],unit:"Admin",firedAt:Date.now()};
               setCalls(p=>[call,...p]);
               sendGroupMe(msg,["admin","restock"]);
-              setTimeout(()=>{const phones=getNotifyList("supplies");reportSendResult(sendSMSList(phones,msg),"Supplies request");},100);
+              setTimeout(()=>{const phones=getNotifyList("supplies");reportSendResult(sendSMSList(phones,msg,"supplies_request"),"Supplies request");},100);
               setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"supplies",label:`Supplies: ${prob}`,msg:adminReqLoc},...p]);
               setAdminSupplyItem("");setAdminSupplyQty("");setAdminReqLoc("");setAdminReqProblem("");
               setResourceView(false);setResourceType(null);setResourceFields({});
@@ -2091,7 +2091,7 @@ DATE/TIME: ${now()}`;
               const call={id:Date.now(),type:"maintenance",location:adminMaintLoc,problem:prob,requestedBy:"Admin",status:"acknowledged",acknowledged:true,history:[{status:"new_call",ts:tShort()},{status:"acknowledged",ts:tShort(),unit:"Admin"}],unit:"Admin",firedAt:Date.now()};
               setCalls(p=>[call,...p]);
               sendGroupMe("MAINTENANCE CONCERN 🔧\n"+msg,["admin","maintenance"]);
-              setTimeout(()=>{const phones=getNotifyList("maintenance");reportSendResult(sendSMSList(phones,msg),"Maintenance request");},100);
+              setTimeout(()=>{const phones=getNotifyList("maintenance");reportSendResult(sendSMSList(phones,msg,"maintenance_request"),"Maintenance request");},100);
               setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"maintenance",label:`Maintenance: ${prob}`,msg:adminMaintLoc},...p]);
               setAdminMaintProblem("");setAdminMaintLoc("");setAdminReqDetails("");setAdminReqProblem("");
               setResourceView(false);setResourceType(null);setResourceFields({});
@@ -2332,7 +2332,7 @@ DATE/TIME: ${now()}`;
     const timeoutMs=20000;
     const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Send timed out after 20 seconds — check your internet connection and try again.")),timeoutMs));
     const [smsResults,voiceResults]=await Promise.race([
-      Promise.all([sendSMSList(bcastPhones,bcastMsg2,includesVendors?"vendor_broadcast":undefined),sendVoice(bcastPhones,`Fete de Marquette announcement. ${finalMsg.replace(/\n/g," ")}`)]),
+      Promise.all([sendSMSList(bcastPhones,bcastMsg2,includesVendors?"vendor_broadcast":"broadcast_alert"),sendVoice(bcastPhones,`Fete de Marquette announcement. ${finalMsg.replace(/\n/g," ")}`)]),
       timeout,
     ]);
 
@@ -2493,7 +2493,7 @@ DATE/TIME: ${now()}`;
                   setWeatherReminderSending(true);
                   const phones=weatherAckResult.notResponded.map(rp=>(staffList||[]).find(s=>(s.name||"").toLowerCase().trim()===(rp.name||"").toLowerCase().trim())?.phone).filter(Boolean);
                   const reminderMsg=`⛈ REMINDER — Fête de Marquette: Please reply AWA now to acknowledge the weather alert, then confirm on the two-way radio with your location.`;
-                  try{ await sendSMSList(phones, reminderMsg); }catch(e){}
+                  try{ await sendSMSList(phones, reminderMsg, "weather_reminder"); }catch(e){}
                   setWeatherReminderSending(false);
                   setWeatherReminderSent(phones.length);
                 }}>{weatherReminderSending?"⏳ Sending...":"📲 Text Reminder to Non-Responders"}</button>}
@@ -3227,7 +3227,7 @@ Reply YES to acknowledge.`
                   throw new Error("No staff phone numbers found to notify.");
                 }
                 const [smsResults,voiceResults]=await Promise.race([
-                  Promise.all([sendSMSList(lcPhones,alertMsg),sendVoice(lcPhones,buildMissingVoiceMsg(lcFields))]),
+                  Promise.all([sendSMSList(lcPhones,alertMsg,"missing_child_alert"),sendVoice(lcPhones,buildMissingVoiceMsg(lcFields))]),
                   new Promise((_,reject)=>setTimeout(()=>reject(new Error("SMS/Voice timed out after 20 seconds — check your connection.")),20000)),
                 ]);
                 const smsFailed=smsResults.filter(r=>r.status==="rejected").length;
@@ -3369,7 +3369,7 @@ Reply YES to acknowledge.`
               const sentNames=staffList.filter(s=>fmtPhone(s.phone)).map(s=>({name:s.name,role:hubDisplayRole(s.role)}));
               setBulkObSending(true);
               setBulkObResult(null);
-              sendSMSList(validPhones,message);
+              sendSMSList(validPhones,message,"bulk_onboarding");
               setTimeout(()=>{
                 setBulkObSending(false);
                 setBulkObResult({sent:validPhones.length,total:staffList.length,failed:failedCount,recipients:sentNames});
@@ -3443,9 +3443,9 @@ Reply YES to acknowledge.`
     const failed=deliveryEntries.filter(e=>["failed","undelivered"].includes(e.status)).length;
     const pending=deliveryEntries.length-delivered-failed;
     return(<div style={S.root}><Bg/><div style={S.panel}>
-      <div style={S.panelHd}><button style={S.backBtn} onClick={()=>setView("home")}>← Back</button><span style={S.panelTitle}>📊 Vendor Delivery Status</span></div>
+      <div style={S.panelHd}><button style={S.backBtn} onClick={()=>setView("home")}>← Back</button><span style={S.panelTitle}>📊 Message Delivery Status</span></div>
       <div style={S.cWrap}>
-        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Real delivery confirmation from Twilio — not just "we sent it," but whether the vendor's phone actually received it. Covers the last 24 hours of vendor broadcasts. Check back anytime; no popup needed.</div>
+        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Real delivery confirmation from Twilio for every text the app sends — not just "we sent it," but whether the recipient's phone actually received it. Covers the last 24 hours. Check back anytime; no popup needed.</div>
         <button style={{padding:"12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontWeight:700,fontSize:13,cursor:"pointer"}} onClick={fetchDeliveryStatus} disabled={deliveryLoading}>{deliveryLoading?"⏳ Checking...":"🔄 Refresh Status"}</button>
         {deliveryError&&<div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#fca5a5"}}>⚠️ {deliveryError}</div>}
         {deliveryEntries.length>0&&<div style={{display:"flex",gap:8}}>
@@ -3454,12 +3454,15 @@ Reply YES to acknowledge.`
           <div style={{flex:1,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:"#fca5a5"}}>{failed}</div><div style={{fontSize:10,color:"#94a3b8"}}>Failed</div></div>
         </div>}
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {deliveryEntries.length===0&&!deliveryLoading&&<div style={{fontSize:13,color:"#64748b",textAlign:"center",padding:"20px 0"}}>No vendor messages sent in the last 24 hours yet. Send a broadcast to Vendors, then check back here.</div>}
+          {deliveryEntries.length===0&&!deliveryLoading&&<div style={{fontSize:13,color:"#64748b",textAlign:"center",padding:"20px 0"}}>No tracked messages in the last 24 hours yet. Send an alert or broadcast, then check back here.</div>}
           {deliveryEntries.map((e,i)=>{
             const meta=statusMeta[e.status]||{icon:"❔",label:e.status||"Unknown",color:"#94a3b8"};
             return(
               <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontSize:13,color:"#f1f5f9",fontWeight:600}}>{e.to}</div>
+                <div>
+                  <div style={{fontSize:13,color:"#f1f5f9",fontWeight:600}}>{e.to}</div>
+                  {e.context&&<div style={{fontSize:10,color:"#64748b",marginTop:2,textTransform:"uppercase",letterSpacing:"0.04em"}}>{e.context.replace(/_/g," ")}</div>}
+                </div>
                 <div style={{fontSize:12,fontWeight:700,color:meta.color}}>{meta.icon} {meta.label}</div>
               </div>
             );
@@ -4007,7 +4010,7 @@ Reply YES to acknowledge.`
               const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${mc.location}\nCALL: ${mc.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
               sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
               const phones=[...new Set([ADMIN2_PHONE,...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
-              phones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${mc.location}. Meet EMS at ${mc.location}. EMS is now inbound to McPike Park.`})}).catch(()=>{});});
+              phones.forEach(p=>{fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911,context:"911_activation"})}).catch(()=>{});fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${mc.location}. Meet EMS at ${mc.location}. EMS is now inbound to McPike Park.`})}).catch(()=>{});});
             }}>🚨 Activate 911 — EMS to This Call</button>}
           {nineOneOne.active&&<div style={{background:"rgba(180,0,0,0.15)",border:"2px solid rgba(180,0,0,0.5)",borderRadius:12,padding:"14px",textAlign:"center",color:"#f87171",fontWeight:900}}>🚨 911 ACTIVE — EMS INBOUND</div>}
           {/* On Scene button */}
@@ -4065,7 +4068,7 @@ Reply YES to acknowledge.`
                 set911({active:true,by:role,at:now(),info:{}});
                 setView("911");
                 sendGroupMe(`🚨 ADDITIONAL 911 INCIDENT by ${role}\nNew MFD / EMS activation — separate incident.`,["admin","medical"]);
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 ADDITIONAL 911 INCIDENT by ${role} at Fete de Marquette. New separate incident.`})}).catch(e=>console.log(e));
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:"+16082289692",message:`🚨 ADDITIONAL 911 INCIDENT by ${role} at Fete de Marquette. New separate incident.`,context:"911_activation"})}).catch(e=>console.log(e));
               }}>
               ➕ New Separate 911 Incident
             </button>
@@ -4087,7 +4090,7 @@ Reply YES to acknowledge.`
               sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
               const phones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
               phones.forEach(p=>{
-                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911})}).catch(()=>{});
+                fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:msg911,context:"911_activation"})}).catch(()=>{});
                 fetch("/.netlify/functions/send-voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:p,message:`911 has been activated at Fête de Marquette by ${role}. Location: ${callLoc}. Meet EMS at ${callLoc}. EMS is now inbound to McPike Park.`})}).catch(()=>{});
               });
               // No setView("911") — stay on call, form comes when call is cleared
@@ -4375,7 +4378,7 @@ Reply YES to acknowledge.`
                 );})}
               </div>
             ))}
-            <button style={{marginTop:6,padding:"9px 6px",borderRadius:8,border:"1px solid rgba(148,163,184,0.3)",background:"rgba(148,163,184,0.08)",color:"#cbd5e1",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setView("vendordelivery");fetchDeliveryStatus();}}>📊 Vendor Delivery Status</button>
+            <button style={{marginTop:6,padding:"9px 6px",borderRadius:8,border:"1px solid rgba(148,163,184,0.3)",background:"rgba(148,163,184,0.08)",color:"#cbd5e1",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setView("vendordelivery");fetchDeliveryStatus();}}>📊 Message Delivery Status</button>
           </div>
         </div>
       </div>

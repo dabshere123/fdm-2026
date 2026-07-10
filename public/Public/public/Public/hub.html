@@ -5690,6 +5690,10 @@ DATE/TIME: ${now()}`;
           setScheduleError("Pick a date and time first.");
           return;
         }
+        if (!preview || !preview.trim()) {
+          setScheduleError("Please type a message first — it's blank right now.");
+          return;
+        }
         const sendAtDate = new Date(scheduleDateTime);
         if (sendAtDate.getTime() <= Date.now()) {
           setScheduleError("That time is in the past — pick a future time.");

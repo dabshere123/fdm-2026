@@ -2320,6 +2320,7 @@ DATE/TIME: ${now()}`;
         <button style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:"rgba(255,255,255,0.06)",color:"#94a3b8",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{setShowScheduler(false);setScheduleDateTime("");setScheduleError(null);}}>Cancel</button>
         <button disabled={schedulingSending} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:schedulingSending?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",fontSize:13,fontWeight:800,cursor:schedulingSending?"not-allowed":"pointer"}} onClick={async()=>{
           if(!scheduleDateTime){ setScheduleError("Pick a date and time first."); return; }
+          if(!preview||!preview.trim()){ setScheduleError("Please type a message first — it's blank right now."); return; }
           const sendAtDate=new Date(scheduleDateTime);
           if(sendAtDate.getTime()<=Date.now()){ setScheduleError("That time is in the past — pick a future time."); return; }
           const recipMode0=alertFields._recipMode||"groups";

@@ -1155,11 +1155,11 @@ function HubApp({onBack}){
     if(p.startsWith("+")) return p;
     return null;
   };
-  const sendSMSList = (phones, message) => {
+  const sendSMSList = (phones, message, context) => {
     return Promise.allSettled(phones.map(phone => {
       const formatted = fmtPhone(phone);
       if(!formatted) return Promise.reject(new Error("Invalid phone number on file"));
-      return fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:formatted,message})})
+      return fetch("/.netlify/functions/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:formatted,message,context})})
         .then(async r=>{
           const d=await r.json().catch(()=>({}));
           if(!r.ok||d.error) throw new Error(d.error||("SMS failed ("+r.status+")"));
@@ -1243,6 +1243,22 @@ function HubApp({onBack}){
   const [lcFoundForm,setLcFoundForm]=useState(null); // {id} when marking child found
   const [ackMsgModal,setAckMsgModal]=useState(null); // {id, by} when open
   const [ackMsgText,setAckMsgText]=useState("");
+  const [deliveryEntries,setDeliveryEntries]=useState([]);
+  const [deliveryLoading,setDeliveryLoading]=useState(false);
+  const [deliveryError,setDeliveryError]=useState(null);
+  const fetchDeliveryStatus=async()=>{
+    setDeliveryLoading(true);setDeliveryError(null);
+    try{
+      const r=await fetch("/.netlify/functions/get-delivery-status?context=vendor_broadcast&sinceMinutes=1440");
+      const d=await r.json();
+      if(d.error) setDeliveryError(d.error);
+      setDeliveryEntries(d.entries||[]);
+    }catch(e){
+      setDeliveryError(e.message);
+    }
+    setDeliveryLoading(false);
+  };
+
   const [maintNarrativeForm,setMaintNarrativeForm]=useState(null); // {call} for maintenance clear narrative
   const [stagingLocation,setStagingLocation]=useState("Staging #1 — Ingersoll & Wilson"); // EMS staging pre-select
   const [activeBroadcastId,setActiveBroadcastId]=useState(null);
@@ -2316,7 +2332,7 @@ DATE/TIME: ${now()}`;
     const timeoutMs=20000;
     const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Send timed out after 20 seconds — check your internet connection and try again.")),timeoutMs));
     const [smsResults,voiceResults]=await Promise.race([
-      Promise.all([sendSMSList(bcastPhones,bcastMsg2),sendVoice(bcastPhones,`Fete de Marquette announcement. ${finalMsg.replace(/\n/g," ")}`)]),
+      Promise.all([sendSMSList(bcastPhones,bcastMsg2,includesVendors?"vendor_broadcast":undefined),sendVoice(bcastPhones,`Fete de Marquette announcement. ${finalMsg.replace(/\n/g," ")}`)]),
       timeout,
     ]);
 
@@ -3414,6 +3430,45 @@ Reply YES to acknowledge.`
     />
   );
 
+  if(view==="vendordelivery"){
+    const statusMeta={
+      delivered:{icon:"✅",label:"Delivered",color:"#6ee7b7"},
+      sent:{icon:"📤",label:"Sent (not yet confirmed)",color:"#93c5fd"},
+      queued:{icon:"⏳",label:"Queued",color:"#94a3b8"},
+      sending:{icon:"⏳",label:"Sending",color:"#94a3b8"},
+      undelivered:{icon:"❌",label:"Undelivered",color:"#fca5a5"},
+      failed:{icon:"❌",label:"Failed",color:"#fca5a5"},
+    };
+    const delivered=deliveryEntries.filter(e=>e.status==="delivered").length;
+    const failed=deliveryEntries.filter(e=>["failed","undelivered"].includes(e.status)).length;
+    const pending=deliveryEntries.length-delivered-failed;
+    return(<div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><button style={S.backBtn} onClick={()=>setView("home")}>← Back</button><span style={S.panelTitle}>📊 Vendor Delivery Status</span></div>
+      <div style={S.cWrap}>
+        <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6}}>Real delivery confirmation from Twilio — not just "we sent it," but whether the vendor's phone actually received it. Covers the last 24 hours of vendor broadcasts. Check back anytime; no popup needed.</div>
+        <button style={{padding:"12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontWeight:700,fontSize:13,cursor:"pointer"}} onClick={fetchDeliveryStatus} disabled={deliveryLoading}>{deliveryLoading?"⏳ Checking...":"🔄 Refresh Status"}</button>
+        {deliveryError&&<div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#fca5a5"}}>⚠️ {deliveryError}</div>}
+        {deliveryEntries.length>0&&<div style={{display:"flex",gap:8}}>
+          <div style={{flex:1,background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:"#6ee7b7"}}>{delivered}</div><div style={{fontSize:10,color:"#94a3b8"}}>Delivered</div></div>
+          <div style={{flex:1,background:"rgba(148,163,184,0.1)",border:"1px solid rgba(148,163,184,0.3)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:"#cbd5e1"}}>{pending}</div><div style={{fontSize:10,color:"#94a3b8"}}>Pending</div></div>
+          <div style={{flex:1,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:"#fca5a5"}}>{failed}</div><div style={{fontSize:10,color:"#94a3b8"}}>Failed</div></div>
+        </div>}
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {deliveryEntries.length===0&&!deliveryLoading&&<div style={{fontSize:13,color:"#64748b",textAlign:"center",padding:"20px 0"}}>No vendor messages sent in the last 24 hours yet. Send a broadcast to Vendors, then check back here.</div>}
+          {deliveryEntries.map((e,i)=>{
+            const meta=statusMeta[e.status]||{icon:"❔",label:e.status||"Unknown",color:"#94a3b8"};
+            return(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:8,padding:"10px 12px"}}>
+                <div style={{fontSize:13,color:"#f1f5f9",fontWeight:600}}>{e.to}</div>
+                <div style={{fontSize:12,fontWeight:700,color:meta.color}}>{meta.icon} {meta.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div></div>);
+  }
+
   if(view==="lostfound") return(
     <div style={{...S.root,position:"relative"}}><Bg/><div style={{...S.panel,overflowY:"auto"}}>
       <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 16px",position:"sticky",top:0,zIndex:20,background:"rgba(13,13,26,0.96)",backdropFilter:"blur(8px)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
@@ -4320,6 +4375,7 @@ Reply YES to acknowledge.`
                 );})}
               </div>
             ))}
+            <button style={{marginTop:6,padding:"9px 6px",borderRadius:8,border:"1px solid rgba(148,163,184,0.3)",background:"rgba(148,163,184,0.08)",color:"#cbd5e1",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setView("vendordelivery");fetchDeliveryStatus();}}>📊 Vendor Delivery Status</button>
           </div>
         </div>
       </div>

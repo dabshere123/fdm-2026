@@ -157,7 +157,7 @@ function BB({onClick,label="← Back"}){return(
 }
 function Fld({label,value,onChange,ph,multi,required,large}){return(<div style={{display:"flex",flexDirection:"column",gap:6}}><label style={{...S.lbl,color:"#94a3b8"}}>{label}{required&&<span style={{color:"#ef4444",marginLeft:4}}>*</span>}</label>{multi?<textarea style={S.ta} rows={3} placeholder={ph} value={value} onChange={onChange}/>:<input style={{...S.inp,fontSize:large?18:14,padding:large?"14px":"10px 12px",fontWeight:large?700:400}} placeholder={ph} value={value} onChange={onChange}/>}</div>);}
 function MPDScheduleEditor({schedTimes,setSchedTimes}){
-  const days=[['Thu','Thu 7/9'],['Fri','Fri 7/10'],['Sat','Sat 7/11'],['Sun','Sun 7/12']];
+  const days=[['Sat','Sat 7/11'],['Sun','Sun 7/12']];
   return (
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={{fontSize:12,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>Shift Schedule (enables auto-offline when shift ends)</div>
@@ -177,7 +177,7 @@ function MPDScheduleEditor({schedTimes,setSchedTimes}){
 }
 function schedTimesToFields(schedTimes){
   const out={};
-  ['Thu','Fri','Sat','Sun'].forEach(d=>{
+  ['Sat','Sun'].forEach(d=>{
     const {start,end,endNext}=schedTimes[d];
     out[d+'Start']=timeToDecimal(start,false);
     out[d+'End']=timeToDecimal(end,endNext);
@@ -186,7 +186,7 @@ function schedTimesToFields(schedTimes){
 }
 function schedFieldsToTimes(sched){
   const out={};
-  ['Thu','Fri','Sat','Sun'].forEach(d=>{
+  ['Sat','Sun'].forEach(d=>{
     const s=decToTimeParts(sched?.[d+'Start']);
     const e=decToTimeParts(sched?.[d+'End']);
     out[d]={start:s.time,end:e.time,endNext:e.afterMidnight};
@@ -1060,9 +1060,9 @@ function HubApp({onBack}){
   const [mpdResult,setMpdResult]=useState(null);
   const [mpdAddName,setMpdAddName]=useState('');
   const [mpdAddPhone,setMpdAddPhone]=useState('');
-  const [mpdAddSchedTimes,setMpdAddSchedTimes]=useState({Thu:{start:'',end:'',endNext:false},Fri:{start:'',end:'',endNext:false},Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
+  const [mpdAddSchedTimes,setMpdAddSchedTimes]=useState({Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
   const [mpdEditingSchedId,setMpdEditingSchedId]=useState(null);
-  const [mpdEditSchedTimes,setMpdEditSchedTimes]=useState({Thu:{start:'',end:'',endNext:false},Fri:{start:'',end:'',endNext:false},Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
+  const [mpdEditSchedTimes,setMpdEditSchedTimes]=useState({Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
   const [mpdAddSending,setMpdAddSending]=useState(false);
   const [mpdAddDone,setMpdAddDone]=useState('');
   const [mpdAddOpen,setMpdAddOpen]=useState(false);
@@ -3102,7 +3102,7 @@ Reply YES to acknowledge.`
                   if(d.success){
                     setMpdAddDone(`✅ ${mpdAddName} added — confirmation text sent to ${mpdAddPhone}`);
                     setMpdAddName('');setMpdAddPhone('');
-                    setMpdAddSchedTimes({Thu:{start:'',end:'',endNext:false},Fri:{start:'',end:'',endNext:false},Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
+                    setMpdAddSchedTimes({Sat:{start:'',end:'',endNext:false},Sun:{start:'',end:'',endNext:false}});
                     fetchMPD();
                   } else {
                     setMpdAddDone('❌ Error: '+d.error);

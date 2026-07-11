@@ -124,12 +124,12 @@ exports.handler = async (event) => {
 
 // ── MPD OFFICER AUTO ON/OFF BY SCHEDULE ──
 // Also runs as part of the same scheduled function (every 30 min)
-// MPDOfficers table needs: ThuStart, ThuEnd, FriStart, FriEnd, SatStart, SatEnd, SunStart, SunEnd
+// MPDOfficers table needs: SatStart, SatEnd, SunStart, SunEnd (Thu/Fri fields removed)
 async function autoOfflineMPD(token, base) {
   const dayMap = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
   const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
   const dayName = dayMap[today.getDay()];
-  const festDays = ['Thu','Fri','Sat','Sun'];
+  const festDays = ['Sat','Sun']; // Thu/Fri MPD shift fields were removed from the table
   if (!festDays.includes(dayName)) return 0;
 
   const hourNow = today.getHours() + today.getMinutes() / 60;

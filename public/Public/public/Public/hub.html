@@ -424,7 +424,7 @@ function MPDScheduleEditor({
   schedTimes,
   setSchedTimes
 }) {
-  const days = [['Thu', 'Thu 7/9'], ['Fri', 'Fri 7/10'], ['Sat', 'Sat 7/11'], ['Sun', 'Sun 7/12']];
+  const days = [['Sat', 'Sat 7/11'], ['Sun', 'Sun 7/12']];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -531,7 +531,7 @@ function MPDScheduleEditor({
 }
 function schedTimesToFields(schedTimes) {
   const out = {};
-  ['Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+  ['Sat', 'Sun'].forEach(d => {
     const {
       start,
       end,
@@ -544,7 +544,7 @@ function schedTimesToFields(schedTimes) {
 }
 function schedFieldsToTimes(sched) {
   const out = {};
-  ['Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+  ['Sat', 'Sun'].forEach(d => {
     const s = decToTimeParts(sched === null || sched === void 0 ? void 0 : sched[d + 'Start']);
     const e = decToTimeParts(sched === null || sched === void 0 ? void 0 : sched[d + 'End']);
     out[d] = {
@@ -2933,16 +2933,6 @@ function HubApp({
   const [mpdAddName, setMpdAddName] = useState('');
   const [mpdAddPhone, setMpdAddPhone] = useState('');
   const [mpdAddSchedTimes, setMpdAddSchedTimes] = useState({
-    Thu: {
-      start: '',
-      end: '',
-      endNext: false
-    },
-    Fri: {
-      start: '',
-      end: '',
-      endNext: false
-    },
     Sat: {
       start: '',
       end: '',
@@ -2956,16 +2946,6 @@ function HubApp({
   });
   const [mpdEditingSchedId, setMpdEditingSchedId] = useState(null);
   const [mpdEditSchedTimes, setMpdEditSchedTimes] = useState({
-    Thu: {
-      start: '',
-      end: '',
-      endNext: false
-    },
-    Fri: {
-      start: '',
-      end: '',
-      endNext: false
-    },
     Sat: {
       start: '',
       end: '',
@@ -8209,16 +8189,6 @@ Reply YES to acknowledge.`
           setMpdAddName('');
           setMpdAddPhone('');
           setMpdAddSchedTimes({
-            Thu: {
-              start: '',
-              end: '',
-              endNext: false
-            },
-            Fri: {
-              start: '',
-              end: '',
-              endNext: false
-            },
             Sat: {
               start: '',
               end: '',

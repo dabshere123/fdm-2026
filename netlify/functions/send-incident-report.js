@@ -124,11 +124,12 @@ exports.handler = async (event) => {
   const subject = `[FDM 2026] ${label} Report — ${data.incidentNumber || ''} — ${data.location || ''}`;
 
   // Save to Airtable first
+  let airtableError = null;
   try {
-    await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/IncidentReports`, {
+    const airtableRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/IncidentReports`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: {
+      body: JSON.stringify({ typecast: true, fields: {
         IncidentNumber: data.incidentNumber || '',
         Type: data.type || '',
         Location: data.location || '',
@@ -144,7 +145,21 @@ exports.handler = async (event) => {
         GeneratedAt: new Date().toISOString(),
       }})
     });
-  } catch(e) { console.log('Airtable error:', e.message); }
+    const airtableData = await airtableRes.json();
+    if (!airtableRes.ok) {
+      airtableError = airtableData.error?.message || `Airtable rejected the save (${airtableRes.status})`;
+      console.log('Airtable error:', airtableError);
+    }
+  } catch(e) { airtableError = e.message; console.log('Airtable error:', e.message); }
+
+  // If the save itself failed, stop here and report it clearly rather than
+  // silently continuing on to Google Doc / email as if everything worked
+  if (airtableError) {
+    return { statusCode: 200, headers, body: JSON.stringify({
+      success: false,
+      error: `Report was NOT saved: ${airtableError}. Make sure a table named exactly "IncidentReports" exists with fields IncidentNumber, Type, Location, Problem, IndividualDescription, RespondingUnit, Interventions, Disposition, Narrative, Notes, OpenedAt, ReportedBy, GeneratedAt (all single line text except Narrative/Notes/IndividualDescription/Interventions/Disposition which should be Long Text).`
+    }) };
+  }
 
   // Create Google Doc in Drive folder
   if (GDRIVE_TOKEN) {

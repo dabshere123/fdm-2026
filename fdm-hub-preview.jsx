@@ -1884,7 +1884,16 @@ function HubApp({onBack}){
           notes:incidentData?.notes||"",
           openedAt:c.firedAt?new Date(c.firedAt).toISOString():new Date().toISOString(),
         })
-      }).catch(()=>{});
+      }).then(async r=>{
+        const d=await r.json().catch(()=>({}));
+        if(!d.success){
+          alert("⚠️ The call was cleared, but the incident report was NOT saved:\n\n"+(d.error||"Unknown error")+"\n\nLet Devin know so this can be fixed — the call itself is fine, just the report.");
+        } else {
+          showHubToast(`✅ Incident report ${incNum} saved`);
+        }
+      }).catch(e=>{
+        alert("⚠️ The call was cleared, but couldn't reach the report server: "+e.message);
+      });
     }
     setCompleted(p=>[{...c,status:"cleared",clearedBy:by,clearedAt:tShort()},...p]);
     setCalls(p=>p.filter(x=>x.id!==c.id));

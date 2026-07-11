@@ -1097,6 +1097,20 @@ function HubApp({onBack}){
   // END OF NIGHT
   const [endOfNightNotes,setEndOfNightNotes]=useState("");
   const [endOfNightSent,setEndOfNightSent]=useState(false);
+  const [eodSelectedDay,setEodSelectedDay]=useState("Jul 11"); // defaults to today; pick a festival day to report on
+  const [eodCalls,setEodCalls]=useState(null); // null = not yet fetched from Airtable for the selected day
+  const [eodLoading,setEodLoading]=useState(false);
+  const fetchEodCalls=async(dateMatch)=>{
+    setEodLoading(true);
+    try{
+      const r=await fetch(`/.netlify/functions/get-calls-by-date?dateMatch=${encodeURIComponent(dateMatch)}`);
+      const d=await r.json();
+      setEodCalls(d.calls||[]);
+    }catch(e){
+      setEodCalls([]);
+    }
+    setEodLoading(false);
+  };
 
   // ADMIN REQUEST FORM
   const [adminReqView,setAdminReqView]=useState(false);
@@ -3749,35 +3763,53 @@ Reply YES to acknowledge.`
 
   // MED HOME
   // END OF NIGHT REPORT VIEW
-  if(view==="endofnight") return(
+  if(view==="endofnight"){
+    const FESTIVAL_DAYS=[["Jul 9","Thu 7/9"],["Jul 10","Fri 7/10"],["Jul 11","Sat 7/11"],["Jul 12","Sun 7/12"]];
+    const dayLabel=FESTIVAL_DAYS.find(d=>d[0]===eodSelectedDay)?.[1]||eodSelectedDay;
+    const eodCallsList=eodCalls||[];
+    const eodClearedCount=eodCallsList.filter(c=>c.status==="Cleared").length;
+    return(
     <div style={S.root}><Bg/><div style={S.panel}>
       <div style={S.panelHd}>
         <BB onClick={()=>setView("home")}/>
         <span style={S.panelTitle}>🌙 End of Night Report</span>
       </div>
       <div style={S.cWrap}>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase"}}>Which day?</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}}>
+            {FESTIVAL_DAYS.map(([val,label])=>(
+              <button key={val} style={{padding:"9px 4px",borderRadius:8,border:`1.5px solid ${eodSelectedDay===val?"rgba(99,102,241,0.8)":"rgba(255,255,255,0.1)"}`,background:eodSelectedDay===val?"rgba(99,102,241,0.2)":"rgba(255,255,255,0.03)",color:eodSelectedDay===val?"#a5b4fc":"#94a3b8",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{setEodSelectedDay(val);setEodCalls(null);fetchEodCalls(val);}}>{label}</button>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:"#64748b",lineHeight:1.5}}>Pulled directly from Airtable (not just what's loaded in this browser), so this works correctly even for a previous day.</div>
+        </div>
+
+        {eodLoading&&<div style={{textAlign:"center",padding:"30px 0",color:"#94a3b8",fontSize:13}}>⏳ Loading {dayLabel}'s calls from Airtable...</div>}
+
+        {!eodLoading&&eodCalls!==null&&<>
         <div style={{background:"rgba(99,102,241,0.08)",borderRadius:12,border:"1px solid rgba(99,102,241,0.2)",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:14,fontWeight:800,color:"#a5b4fc"}}>Tonight's Summary</div>
-          <div style={{fontSize:13,color:"#e2e8f0"}}>Date: {new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
+          <div style={{fontSize:14,fontWeight:800,color:"#a5b4fc"}}>{dayLabel} Summary</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{[...calls,...completed].length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Total Calls</div></div>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{lfItems.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>L&F Items</div></div>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{broadcastAlerts.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Broadcasts</div></div>
-            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{activityLog.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Log Entries</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{eodCallsList.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Total Calls</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{eodClearedCount}</div><div style={{fontSize:11,color:"#94a3b8"}}>Cleared</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{lfItems.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>L&F Items (current)</div></div>
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:900,color:"#f1f5f9"}}>{broadcastAlerts.length}</div><div style={{fontSize:11,color:"#94a3b8"}}>Broadcasts (this session)</div></div>
           </div>
         </div>
 
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase"}}>Call Breakdown</div>
-          {[["medical","🩺 Medical"],["fire","🔥 Fire/Safety"],["security","🛡 Security"],["supplies","📦 Supplies"],["maintenance","🔧 Maintenance"],["lost_child","🧒 Lost Child"]].map(([type,label])=>{
-            const count=[...calls,...completed].filter(c=>c.type===type).length;
+          <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase"}}>Call Breakdown — {dayLabel}</div>
+          {[["medical","🩺 Medical"],["walk_in","🩺 Walk-In"],["fire","🔥 Fire/Safety"],["security","🛡 Security"],["supplies","📦 Supplies"],["maintenance","🔧 Maintenance"],["lost_child","🧒 Lost Child"]].map(([type,label])=>{
+            const count=eodCallsList.filter(c=>c.type===type).length;
             return count>0?(<div key={type} style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:"rgba(255,255,255,0.03)",borderRadius:8}}><span style={{fontSize:13,color:"#f1f5f9"}}>{label}</span><span style={{fontSize:13,fontWeight:700,color:"#a5b4fc"}}>{count}</span></div>):null;
           })}
+          {eodCallsList.length===0&&<div style={{fontSize:12,color:"#64748b",textAlign:"center",padding:"12px 0"}}>No calls found for {dayLabel}.</div>}
         </div>
 
         {lfItems.length>0&&(
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Lost & Found</div>
+            <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Lost & Found (current, not day-specific)</div>
             {lfItems.map(item=>(
               <div key={item.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:"rgba(255,255,255,0.03)",borderRadius:8}}>
                 <span style={{fontSize:12,color:"#f1f5f9"}}>#{item.itemNumber} — {item.description}</span>
@@ -3798,15 +3830,15 @@ Reply YES to acknowledge.`
         {!endOfNightSent&&<button style={{...S.sendBtn,background:"linear-gradient(135deg,#6366f1,#4f46e5)"}}
           onClick={async()=>{
             const report={
-              date:new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}),
-              totalCalls:[...calls,...completed].length,
+              date:dayLabel,
+              totalCalls:eodCallsList.length,
               callBreakdown:{
-                medical:[...calls,...completed].filter(c=>c.type==="medical"||c.type==="walk_in").length,
-                fire:[...calls,...completed].filter(c=>c.type==="fire").length,
-                security:[...calls,...completed].filter(c=>c.type==="security").length,
-                supplies:[...calls,...completed].filter(c=>c.type==="supplies").length,
-                maintenance:[...calls,...completed].filter(c=>c.type==="maintenance").length,
-                lostChild:[...calls,...completed].filter(c=>c.type==="lost_child").length,
+                medical:eodCallsList.filter(c=>c.type==="medical"||c.type==="walk_in").length,
+                fire:eodCallsList.filter(c=>c.type==="fire").length,
+                security:eodCallsList.filter(c=>c.type==="security").length,
+                supplies:eodCallsList.filter(c=>c.type==="supplies").length,
+                maintenance:eodCallsList.filter(c=>c.type==="maintenance").length,
+                lostChild:eodCallsList.filter(c=>c.type==="lost_child").length,
               },
               lostFound:lfItems.map(i=>`#${i.itemNumber}: ${i.description} (${i.status})`).join("\n"),
               broadcasts:broadcastAlerts.map(b=>`${b.label}: ${b.msg?.slice(0,80)}`).join("\n"),
@@ -3814,11 +3846,6 @@ Reply YES to acknowledge.`
               generatedBy:role,
               generatedAt:new Date().toLocaleString(),
             };
-            // Send SMS summary to Admin
-            const summary=`🌙 END OF NIGHT REPORT\n${report.date}\n\nCalls: ${report.totalCalls}\nMedical: ${report.callBreakdown.medical}\nSecurity: ${report.callBreakdown.security}\nL&F Items: ${lfItems.length}\nBroadcasts: ${broadcastAlerts.length}\n\nGenerated by ${role}`;
-            // Send email to Admin
-            const emailBody=`END OF NIGHT REPORT — ${report.date}\n\nTOTAL CALLS: ${report.totalCalls}\nMedical: ${report.callBreakdown.medical}\nFire/Safety: ${report.callBreakdown.fire}\nSecurity: ${report.callBreakdown.security}\nSupplies: ${report.callBreakdown.supplies}\nMaintenance: ${report.callBreakdown.maintenance}\nLost Child: ${report.callBreakdown.lostChild}\n\nLOST & FOUND (${lfItems.length} items):\n${lfItems.map(i=>`#${i.itemNumber}: ${i.description} (${i.status})`).join("\n")||"None"}\n\nBROADCASTS (${broadcastAlerts.length}):\n${broadcastAlerts.map(b=>b.label).join("\n")||"None"}\n\nNOTES:\n${endOfNightNotes||"None"}\n\nGenerated by ${role} at ${new Date().toLocaleString()}`;
-            // Save to Airtable + SMS via dedicated function
             fetch("/.netlify/functions/send-eod-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:report.date,totalCalls:report.totalCalls,callBreakdown:report.callBreakdown,lostFound:report.lostFound,broadcasts:report.broadcasts,notes:report.notes,generatedBy:role})}).catch(()=>{});
             fetch("/.netlify/functions/send-eod-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
               date:report.date,
@@ -3830,14 +3857,16 @@ Reply YES to acknowledge.`
               generatedBy:role,
               generatedAt:report.generatedAt,
             })}).catch(e=>console.log(e));
-            setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"report",label:"End of Night Report Generated",msg:`${report.totalCalls} calls · ${lfItems.length} L&F items`},...p]);
+            setActivityLog(p=>[{id:Date.now(),ts:tShort(),date:now(),type:"report",label:`End of Night Report Generated — ${dayLabel}`,msg:`${report.totalCalls} calls · ${lfItems.length} L&F items`},...p]);
             setEndOfNightSent(true);
           }}>
-          📧 Generate & Send Report
+          📧 Generate &amp; Send Report for {dayLabel}
         </button>}
+        </>}
       </div>
     </div></div>
-  );
+    );
+  }
 
   if(view==="911") return(
     <div style={S.root}><Bg/><div style={S.panel}>
@@ -4445,7 +4474,7 @@ Reply YES to acknowledge.`
 
         {/* EOD REPORT */}
         <div style={{background:"rgba(99,102,241,0.06)",borderRadius:14,border:"1px solid rgba(99,102,241,0.2)",overflow:"hidden"}}>
-          <div style={{background:"rgba(99,102,241,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#a5b4fc",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>setView("endofnight")}>
+          <div style={{background:"rgba(99,102,241,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#a5b4fc",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>{setView("endofnight");if(eodCalls===null)fetchEodCalls(eodSelectedDay);}}>
             <span>🌙 EOD</span>
             <span style={{fontSize:11,color:"#a5b4fc",fontWeight:400}}>Generate →</span>
           </div>

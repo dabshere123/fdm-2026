@@ -57,6 +57,21 @@ exports.handler = async (event) => {
     const data = await res.json();
     if (!res.ok) return { statusCode: 500, headers, body: JSON.stringify({ error: 'Airtable save failed' }) };
 
+    // Immediate confirmation to whoever submitted this — separate from the later
+    // "acknowledged" reply, which only fires once an admin actually taps Acknowledge
+    if (phone) {
+      const fmtReq = (p) => {
+        const d = String(p).replace(/\D/g, '');
+        return d.length === 10 ? `+1${d}` : d.length === 11 && d[0] === '1' ? `+${d}` : p;
+      };
+      const typeLabelPlain = {
+        medical: 'MEDICAL', walk_in: 'MEDICAL', fire: 'FIRE / LIFE SAFETY',
+        security: 'SECURITY', maintenance: 'MAINTENANCE', supplies: 'SUPPLIES',
+      }[(type || '').toLowerCase()] || (type || '').toUpperCase();
+      const confirmMsg = `✅ FDM 2026 — We received your ${typeLabelPlain} request at ${location || 'your location'}. Staff have been notified and will respond shortly.`;
+      sendSMS(fmtReq(phone), confirmMsg); // fire and forget, don't block the rest of the response on this
+    }
+
     // Lookup helper — same role-code matching used elsewhere in the app, needed here
     // since Maintenance/Supplies notify a role-based roster, not just the two admin phones
     async function getRolePhones(roleCodes) {

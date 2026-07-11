@@ -19,7 +19,7 @@ async function sendSMS(to, message) {
 
 async function sendVoice(phones, message) {
   if (!TWILIO_SID || !TWILIO_AUTH) return;
-  await fetch(`/.netlify/functions/send-voice`, {
+  await fetch(`https://fdm2026.netlify.app/.netlify/functions/send-voice`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phones, message })
@@ -56,6 +56,24 @@ exports.handler = async (event) => {
     });
     const data = await res.json();
     if (!res.ok) return { statusCode: 500, headers, body: JSON.stringify({ error: 'Airtable save failed' }) };
+
+    // Lookup helper — same role-code matching used elsewhere in the app, needed here
+    // since Maintenance/Supplies notify a role-based roster, not just the two admin phones
+    async function getRolePhones(roleCodes) {
+      try {
+        const staffRes = await fetch(
+          `https://api.airtable.com/v0/${AIRTABLE_BASE}/Staff?filterByFormula={Status}="Approved"&maxRecords=200`,
+          { headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` } }
+        );
+        const staffData = await staffRes.json();
+        return (staffData.records || [])
+          .filter(r => roleCodes.some(rc => String(r.fields['Role'] || '').toLowerCase().includes(rc)))
+          .map(r => {
+            const ph = String(r.fields['Phone'] || '').replace(/[^0-9]/g, '');
+            return ph.length === 10 ? `+1${ph}` : ph.length === 11 ? `+${ph}` : null;
+          }).filter(Boolean);
+      } catch (e) { return []; }
+    }
 
     // SMS + Voice for Medical, Fire/Life Safety, Security
     const urgentTypes = ['medical', 'walk_in', 'fire', 'security'];
@@ -116,6 +134,29 @@ exports.handler = async (event) => {
           ));
         }
       }
+    }
+
+    // SMS for Maintenance and Supplies — SMS only, no voice, same roster used at acknowledgment time
+    if ((type || '').toLowerCase() === 'maintenance' || (type || '').toLowerCase() === 'supplies') {
+      const isMaint = (type || '').toLowerCase() === 'maintenance';
+      const label = isMaint ? '🔧 MAINTENANCE' : '📦 RESTOCK REQUEST';
+      const problemLabel = isMaint ? "WHAT'S THE PROBLEM" : "WHAT'S NEEDED";
+      const sms = [
+        `${label} ${label}`,
+        ``,
+        `LOCATION: ${location}`,
+        `${problemLabel}: ${problem || ''}`,
+        details ? `DESCRIPTION: ${details}` : '',
+        `REQUESTING PARTY: ${requestedBy || 'Staff'}`,
+      ].filter(Boolean).join('\n');
+
+      // Same role codes used by getNotifyList() on the frontend for these types
+      const roleCodes = isMaint
+        ? ['admin', 'a1', 'a2', 'oc1', 'oc2', 'oc3', 'oc4', 'slb', 'ssm', 'sbl']
+        : ['admin', 'a1', 'a2'];
+      const rolePhones = await getRolePhones(roleCodes);
+      const targetPhones = [...new Set([ADMIN_PHONES[0], ...rolePhones])];
+      await Promise.all(targetPhones.map(ph => sendSMS(ph, sms)));
     }
 
     // Lost child: SMS + Voice ALL staff + broadcast to AllStaff chat

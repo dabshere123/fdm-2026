@@ -53,11 +53,8 @@ exports.handler = async () => {
       let phones = [];
       try { phones = JSON.parse(rec.fields.Phones || '[]'); } catch (e) {}
 
-      let sentCount = 0;
-      for (const phone of phones) {
-        const ok = await sendSMS(phone, message);
-        if (ok) sentCount++;
-      }
+      const results = await Promise.all(phones.map(phone => sendSMS(phone, message)));
+      const sentCount = results.filter(Boolean).length;
       totalSent += sentCount;
 
       await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${rec.id}`, {

@@ -89,35 +89,31 @@ exports.handler = async (event) => {
           console.error('Walk-in Med roster lookup error:', e.message);
         }
 
-        for (const ph of targetPhones) {
-          await sendSMS(ph, sms);
-        }
+        await Promise.all(targetPhones.map(ph => sendSMS(ph, sms)));
         const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
         const twiml = `<Response><Say voice="alice">${voice}</Say><Pause length="1"/><Say voice="alice">${voice}</Say></Response>`;
-        for (const ph of targetPhones) {
-          await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
+        await Promise.all(targetPhones.map(ph =>
+          fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
             method: 'POST',
             headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
-          }).catch(() => {});
-        }
+          }).catch(() => {})
+        ));
       } else {
         // MEDICAL / FIRE / SECURITY — SMS to Devin + Gary
-        for (const ph of ADMIN_PHONES) {
-          await sendSMS(ph, sms);
-        }
+        await Promise.all(ADMIN_PHONES.map(ph => sendSMS(ph, sms)));
 
         // Voice call to Devin + Gary for Medical and Fire
         if (['medical', 'fire'].includes(type.toLowerCase())) {
           const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
           const twiml = `<Response><Say voice="alice">${voice}</Say><Pause length="1"/><Say voice="alice">${voice}</Say></Response>`;
-          for (const ph of ADMIN_PHONES) {
-            await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
+          await Promise.all(ADMIN_PHONES.map(ph =>
+            fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
               method: 'POST',
               headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
               body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
-            }).catch(() => {});
-          }
+            }).catch(() => {})
+          ));
         }
       }
     }
@@ -166,24 +162,24 @@ Search your area immediately — notify admin if found.`;
         ])];
 
         const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH}`).toString('base64');
-        // SMS to everyone
-        for (const ph of allPhones) {
-          await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+        // SMS to everyone — sent in parallel so all staff get it at roughly the same time
+        await Promise.all(allPhones.map(ph =>
+          fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
             method: 'POST',
             headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ To: ph, MessagingServiceSid: MESSAGING_SID || TWILIO_FROM, Body: smsTxt }).toString()
-          }).catch(() => {});
-        }
-        // Voice call to admin + first 10 staff (to avoid too many simultaneous calls)
+          }).catch(() => {})
+        ));
+        // Voice call to admin + first 10 staff (to avoid too many simultaneous calls), also in parallel
         const voicePhones = allPhones.slice(0, 10);
-        for (const ph of voicePhones) {
-          const twiml = `<Response><Say voice="alice">${voiceTxt}</Say><Pause length="1"/><Say voice="alice">${voiceTxt}</Say></Response>`;
-          await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
+        const twiml = `<Response><Say voice="alice">${voiceTxt}</Say><Pause length="1"/><Say voice="alice">${voiceTxt}</Say></Response>`;
+        await Promise.all(voicePhones.map(ph =>
+          fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Calls.json`, {
             method: 'POST',
             headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ To: ph, From: process.env.TWILIO_PHONE_NUMBER || ADMIN_PHONES[0], Twiml: twiml }).toString()
-          }).catch(() => {});
-        }
+          }).catch(() => {})
+        ));
       } catch (e) {
         console.error('Lost child SMS error:', e.message);
       }

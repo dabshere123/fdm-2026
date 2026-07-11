@@ -144,10 +144,10 @@ exports.handler = async () => {
       const staffPhones = await getAllStaffPhones();
       const allPhones = [...new Set([ADMIN2_PHONE, ...staffPhones])];
 
-      for (const phone of allPhones) {
+      await Promise.all(allPhones.map(async phone => {
         await sendSMS(phone, msg);
         await sendVoice(phone, voiceMsg);
-      }
+      }));
 
       // Log to Airtable so we don't re-fire
       await logAlert(shortId, event, headline);

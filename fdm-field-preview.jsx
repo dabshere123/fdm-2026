@@ -198,6 +198,7 @@ function NewCallView({user,callType,onBack}){
   const [supplyItem,setSupplyItem]=useState('');
   const [maintProblemType,setMaintProblemType]=useState('');
   const [maintDescription,setMaintDescription]=useState('');
+  const submitLockRef=useRef(false); // synchronous guard -- React state updates aren't fast enough to stop a rapid double-tap on their own
 
   const TYPES=[
     {id:'medical',label:'Medical',color:'rgba(147,51,234,0.8)'},
@@ -227,8 +228,10 @@ function NewCallView({user,callType,onBack}){
   }
 
   async function submit(){
+    if(submitLockRef.current) return; // already submitting -- ignore a fast repeat tap
+    submitLockRef.current=true;
     if(isLostChild){
-      if(!location||!lcAge||!lcAssembly) return;
+      if(!location||!lcAge||!lcAssembly){ submitLockRef.current=false; return; }
       const alertMsg=buildMissingAlert();
       const script=buildMissingScript();
       setSending(true);
@@ -242,16 +245,16 @@ function NewCallView({user,callType,onBack}){
         setLcScript(script);
         setSent(true);
         setSending(false);
-      }catch(e){setSending(false);}
+      }catch(e){setSending(false);submitLockRef.current=false;}
       return;
     }
-    if(!type||!location||!problem) return;
+    if(!type||!location||!problem){ submitLockRef.current=false; return; }
     setSending(true);
     try{
       await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,location,problem,requestedBy:user.name,role:user.role,phone:user.phone||''})});
       setSent(true);
       setTimeout(onBack,2000);
-    }catch(e){setSending(false);}
+    }catch(e){setSending(false);submitLockRef.current=false;}
   }
 
   if(sent&&!isLostChild) return(

@@ -30,6 +30,7 @@ exports.handler = async (event) => {
       problem:     r.fields.Problem || '',
       details:     r.fields.Details || '',
       requestedBy: r.fields.RequestedBy || '',
+      phone:       r.fields.Phone || '',
       status:      r.fields.Status || 'Pending',
       unit:        r.fields.Unit || '',
       timestamp:   r.fields.Timestamp || '',

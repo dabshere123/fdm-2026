@@ -4348,16 +4348,14 @@ Reply YES to acknowledge.`
             </button>
 
             {/* MPD — bottom of Safety section */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:2}}>
-              <button style={{background:"rgba(37,99,235,0.1)",borderRadius:10,border:"1px solid rgba(37,99,235,0.35)",padding:"9px 8px",display:"flex",flexDirection:"column",gap:2,cursor:"pointer",textAlign:"left"}} onClick={()=>setMpdRequestView(true)}>
-                <div style={{fontSize:12,fontWeight:800,color:"#93c5fd"}}>🚔 Request MPD</div>
-                <div style={{fontSize:9,color:"#64748b"}}>Dispatch to a location</div>
-              </button>
-              <button style={{background:"rgba(37,99,235,0.06)",borderRadius:10,border:"1px solid rgba(37,99,235,0.25)",padding:"9px 8px",display:"flex",flexDirection:"column",gap:2,cursor:"pointer",textAlign:"left"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
-                <div style={{fontSize:12,fontWeight:800,color:"#60a5fa"}}>👮 Manage Officers</div>
-                <div style={{fontSize:9,color:"#64748b"}}>Add / toggle on-off</div>
-              </button>
-            </div>
+            <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(37,99,235,0.6)",background:"linear-gradient(135deg,rgba(37,99,235,0.25),rgba(29,78,216,0.15))",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:4}} onClick={()=>setMpdRequestView(true)}>
+              <span style={{fontSize:20}}>🚔</span>
+              REQUEST MPD
+            </button>
+            <button style={{width:"100%",background:"rgba(37,99,235,0.06)",borderRadius:10,border:"1px solid rgba(37,99,235,0.25)",padding:"9px 8px",display:"flex",flexDirection:"column",gap:2,cursor:"pointer",textAlign:"left"}} onClick={()=>{fetchMPD();setMpdManageOpen(true);}}>
+              <div style={{fontSize:12,fontWeight:800,color:"#60a5fa"}}>👮 Manage Officers</div>
+              <div style={{fontSize:9,color:"#64748b"}}>Add / toggle on-off</div>
+            </button>
           </div>
         </div>
 
@@ -4399,15 +4397,6 @@ Reply YES to acknowledge.`
         </button>
       </div>
 
-
-    {/* ===== ROW 2: EQUIPMENT TRACKER ===== */}
-      <div style={{background:"rgba(234,179,8,0.06)",borderRadius:14,border:"1px solid rgba(234,179,8,0.3)",overflow:"hidden"}}>
-        <div style={{background:"rgba(234,179,8,0.15)",padding:"10px 14px",fontSize:12,fontWeight:900,color:"#fcd34d",textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}} onClick={()=>window.open("https://fdm2026.netlify.app/equipment?from=hub","_blank")}>
-          <span>⚙️ Equipment Tracker</span>
-          <span style={{fontSize:11,color:"#fcd34d",fontWeight:400}}>Open →</span>
-        </div>
-        <div style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>Track radios, readers and all festival gear.</div>
-      </div>
 
     {/* ===== LOST & FOUND — SEPARATE SECTION ===== */}
       <div style={{background:"rgba(249,115,22,0.06)",borderRadius:14,border:"1px solid rgba(249,115,22,0.25)",overflow:"hidden"}}>

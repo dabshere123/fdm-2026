@@ -12839,39 +12839,31 @@ Reply YES to acknowledge.`
       borderRadius: 20,
       padding: "1px 6px"
     }
-  }, activeCalls.filter(c => c.type === "lost_child").length)), /*#__PURE__*/React.createElement("div", {
+  }, activeCalls.filter(c => c.type === "lost_child").length)), /*#__PURE__*/React.createElement("button", {
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 6,
-      marginTop: 2
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: "rgba(37,99,235,0.1)",
-      borderRadius: 10,
-      border: "1px solid rgba(37,99,235,0.35)",
-      padding: "9px 8px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 2,
+      width: "100%",
+      padding: "14px",
+      borderRadius: 12,
+      border: "2px solid rgba(37,99,235,0.6)",
+      background: "linear-gradient(135deg,rgba(37,99,235,0.25),rgba(29,78,216,0.15))",
+      color: "#fff",
+      fontSize: 15,
+      fontWeight: 900,
       cursor: "pointer",
-      textAlign: "left"
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 4
     },
     onClick: () => setMpdRequestView(true)
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 12,
-      fontWeight: 800,
-      color: "#93c5fd"
+      fontSize: 20
     }
-  }, "\uD83D\uDE94 Request MPD"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDE94"), "REQUEST MPD"), /*#__PURE__*/React.createElement("button", {
     style: {
-      fontSize: 9,
-      color: "#64748b"
-    }
-  }, "Dispatch to a location")), /*#__PURE__*/React.createElement("button", {
-    style: {
+      width: "100%",
       background: "rgba(37,99,235,0.06)",
       borderRadius: 10,
       border: "1px solid rgba(37,99,235,0.25)",
@@ -12897,7 +12889,7 @@ Reply YES to acknowledge.`
       fontSize: 9,
       color: "#64748b"
     }
-  }, "Add / toggle on-off"))))), /*#__PURE__*/React.createElement("div", {
+  }, "Add / toggle on-off")))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(236,72,153,0.1)",
       borderRadius: 14,
@@ -13034,40 +13026,6 @@ Reply YES to acknowledge.`
       color: "#64748b"
     }
   }, "Log a restock request"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "rgba(234,179,8,0.06)",
-      borderRadius: 14,
-      border: "1px solid rgba(234,179,8,0.3)",
-      overflow: "hidden"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "rgba(234,179,8,0.15)",
-      padding: "10px 14px",
-      fontSize: 12,
-      fontWeight: 900,
-      color: "#fcd34d",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between"
-    },
-    onClick: () => window.open("https://fdm2026.netlify.app/equipment?from=hub", "_blank")
-  }, /*#__PURE__*/React.createElement("span", null, "\u2699\uFE0F Equipment Tracker"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "#fcd34d",
-      fontWeight: 400
-    }
-  }, "Open \u2192")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "10px 14px",
-      fontSize: 12,
-      color: "#64748b"
-    }
-  }, "Track radios, readers and all festival gear.")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(249,115,22,0.06)",
       borderRadius: 14,

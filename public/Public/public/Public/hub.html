@@ -3948,7 +3948,7 @@ function HubApp({
         }, 100);
         msg = null;
       } else if (call.type === "maintenance") {
-        msg = [`🔧 MAINTENANCE 🔧`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
+        msg = [`🔧 MAINTENANCE 🔧`, ``, `LOCATION: ${call.location}`, `WHAT'S THE PROBLEM: ${call.problem || ""}`, call.details ? `DESCRIPTION: ${call.details}` : "", `REQUESTING PARTY: ${call.requestedBy || "Staff"}`, `DATE/TIME: ${ts}`].filter(Boolean).join("\n");
         setTimeout(() => {
           const phones = getNotifyList("maintenance");
           reportSendResult(sendSMSList(phones, msg, "maintenance_request"), "Maintenance request");

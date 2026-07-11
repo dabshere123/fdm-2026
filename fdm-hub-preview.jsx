@@ -1804,6 +1804,7 @@ function HubApp({onBack}){
           ``,
           `LOCATION: ${call.location}`,
           `WHAT'S THE PROBLEM: ${call.problem||""}`,
+          call.details?`DESCRIPTION: ${call.details}`:"",
           `REQUESTING PARTY: ${call.requestedBy||"Staff"}`,
           `DATE/TIME: ${ts}`,
         ].filter(Boolean).join("\n");

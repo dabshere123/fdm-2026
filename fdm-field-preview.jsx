@@ -236,11 +236,19 @@ function NewCallView({user,callType,onBack}){
       const script=buildMissingScript();
       setSending(true);
       try{
-        await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        const res=await fetch(`${API}/submit-call`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
           type:'lost_child',location,problem:alertMsg,
           details:`Name: ${lcChildName||'Unknown'} | Age: ${lcAge} | Gender: ${lcGender||'?'} | Hair: ${lcHair||'?'} | Top: ${lcTop||'?'} | Bottom: ${lcBottom||'?'} | Last seen time: ${lcLastSeenTime||'?'} | Assembly: ${lcAssembly} | Guardian: ${lcParentName||'?'} | Guardian Phone: ${lcParentPhone||'?'}`,
           requestedBy:user.name,role:user.role,phone:user.phone||''
         })});
+        const resData=await res.json().catch(()=>({}));
+        if(!res.ok||resData.error){
+          setSending(false);
+          submitLockRef.current=false;
+          alert('⚠️ This did NOT save to the system: '+(resData.error||'Unknown error')+'\n\nMPD is still being notified, but admin will not see this in the app. Please also report by radio immediately.');
+          fetch(`${API}/request-mpd`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location,situation:alertMsg,requestedBy:user.name,callType:'lost_child'})}).catch(()=>{});
+          return;
+        }
         fetch(`${API}/request-mpd`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location,situation:alertMsg,requestedBy:user.name,callType:'lost_child'})}).catch(()=>{});
         setLcScript(script);
         setSent(true);

@@ -1545,6 +1545,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
     },
     onClick: () => {
       if (!nineOneOne.active) {
+        if (!window.confirm("Activate 911? This immediately texts and calls Admin, Gary, and the other Med unit. Only do this for a genuine emergency.")) return;
         const loc = (myActive[0] || {}).location || "Festival Grounds";
         set911({
           active: true,
@@ -1859,19 +1860,22 @@ Madison Fire/EMS INBOUND — McPike Park`;
         fontWeight: 800,
         cursor: "pointer"
       },
-      onClick: () => set911({
-        active: true,
-        by: role,
-        at: new Date().toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit"
-        }),
-        callId: call.id,
-        info: {
-          location: call.location,
-          nature: call.problem
-        }
-      })
+      onClick: () => {
+        if (!window.confirm("Activate 911 for this call? This immediately notifies Admin. Only do this for a genuine emergency.")) return;
+        set911({
+          active: true,
+          by: role,
+          at: new Date().toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit"
+          }),
+          callId: call.id,
+          info: {
+            location: call.location,
+            nature: call.problem
+          }
+        });
+      }
     }, "\uD83D\uDEA8 911"), /*#__PURE__*/React.createElement("button", {
       style: {
         width: "100%",
@@ -4340,6 +4344,7 @@ function HubApp({
           background: "rgba(180,0,0,0.2)"
         },
         onClick: () => {
+          if (!window.confirm("Activate 911? This immediately texts and calls Admin, Gary, and the other Med unit. Only do this for a genuine emergency.")) return;
           const msg911 = `🚨 911 ACTIVATED — FDM 2026\n\nLocation: ${alertCall.location}\nCall: ${alertCall.problem}\nActivated by: ${role}\nTime: ${tShort()}\n\nMadison Fire / EMS INBOUND — McPike Park`;
           set911({
             active: true,
@@ -11486,6 +11491,7 @@ Reply YES to acknowledge.`
         cursor: "pointer"
       },
       onClick: () => {
+        if (!window.confirm("Activate 911? This immediately notifies Admin and Medical via text, voice call, and GroupMe. Only do this for a genuine emergency.")) return;
         set911({
           active: true,
           by: role,
@@ -11746,6 +11752,7 @@ Reply YES to acknowledge.`
       textAlign: "center"
     },
     onClick: () => {
+      if (!window.confirm("Start a new 911 incident? The current one will be archived.")) return;
       // Archive current incident and start new one
       setNineOneOneHistory(p => [...p, {
         ...nineOneOne,
@@ -11787,6 +11794,7 @@ Reply YES to acknowledge.`
     },
     onClick: () => {
       var _nineOneOne$info0, _nineOneOne$info1;
+      if (!window.confirm("Activate 911? This immediately notifies Admin and Medical via text, voice call, and GroupMe. Only do this for a genuine emergency.")) return;
       // Pull info directly from current active call
       const activeCall = (myActive === null || myActive === void 0 ? void 0 : myActive[0]) || (unassigned === null || unassigned === void 0 ? void 0 : unassigned[0]);
       const callLoc = (activeCall === null || activeCall === void 0 ? void 0 : activeCall.location) || ((_nineOneOne$info0 = nineOneOne.info) === null || _nineOneOne$info0 === void 0 ? void 0 : _nineOneOne$info0.location) || "Festival Grounds";
@@ -11810,7 +11818,7 @@ Reply YES to acknowledge.`
         hour: "numeric",
         minute: "2-digit"
       })}\nClear a path for emergency vehicles.`;
-      // Fire SMS + Voice + GroupMe immediately — no second tap
+      // Fire SMS + Voice + GroupMe — confirmed above, so no further friction here
       sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`, ["admin", "medical"]);
       const phones = [...new Set(["+16082289692", ...(staffList || []).filter(s => ["m1", "m2", "a1", "a2"].some(r => (s.role || "").toLowerCase().startsWith(r))).map(s => s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
       phones.forEach(p => {
@@ -12747,6 +12755,7 @@ Reply YES to acknowledge.`
     },
     onClick: () => {
       if (!nineOneOne.active) {
+        if (!window.confirm("Activate 911? This immediately texts and calls Admin, Gary, and the other Med unit. Only do this for a genuine emergency.")) return;
         const loc = (myActive[0] || {}).location || "Festival Grounds";
         set911({
           active: true,

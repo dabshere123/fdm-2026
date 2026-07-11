@@ -563,7 +563,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
           <div style={{fontSize:10,fontWeight:900,color:"#475569",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Safety</div>
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
 
-            <button style={{width:"100%",padding:"9px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});setPopup911Data({location:loc,problem:"Medical Emergency",by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"})});setShow911Popup(true);}}}>
+            <button style={{width:"100%",padding:"9px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:12,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){if(!window.confirm("Activate 911? This immediately texts and calls Admin, Gary, and the other Med unit. Only do this for a genuine emergency.")) return;const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}),info:{location:loc,nature:"Medical Emergency"}});setPopup911Data({location:loc,problem:"Medical Emergency",by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"})});setShow911Popup(true);}}}>
               {nineOneOne.active?"🚨 911 ACTIVE":"🚨 911 Activation"}
             </button>
 
@@ -641,7 +641,7 @@ Madison Fire/EMS INBOUND — McPike Park`;
                         if(liveMode) fetch("/.netlify/functions/update-call",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:call.id,status:"On Scene",unit:role})}).catch(()=>{});
                       }}>✅ On Scene</button>
                     )}
-                    <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:call.id,info:{location:call.location,nature:call.problem}})}>🚨 911</button>
+                    <button style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#fca5a5",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>{if(!window.confirm("Activate 911 for this call? This immediately notifies Admin. Only do this for a genuine emergency.")) return;set911({active:true,by:role,at:new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}),callId:call.id,info:{location:call.location,nature:call.problem}});}}>🚨 911</button>
                     <button style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(100,116,139,0.4)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>clearCall(call.id)}>Clear Call →</button>
                   </div>
                 </div>
@@ -1930,6 +1930,7 @@ function HubApp({onBack}){
               </div>
               {!nineOneOne.active&&<button style={{width:"100%",border:"2px solid rgba(220,38,38,0.7)",borderRadius:12,padding:"14px",color:"#fca5a5",fontSize:14,fontWeight:900,cursor:"pointer",background:"rgba(180,0,0,0.2)"}}
                 onClick={()=>{
+                  if(!window.confirm("Activate 911? This immediately texts and calls Admin, Gary, and the other Med unit. Only do this for a genuine emergency.")) return;
                   const msg911=`🚨 911 ACTIVATED — FDM 2026\n\nLocation: ${alertCall.location}\nCall: ${alertCall.problem}\nActivated by: ${role}\nTime: ${tShort()}\n\nMadison Fire / EMS INBOUND — McPike Park`;
                   set911({active:true,by:role,at:now(),callId:alertCall.id,info:{location:alertCall.location,nature:alertCall.problem}});
                   setPopup911Data({location:alertCall.location,problem:alertCall.problem,by:role,at:tShort()});
@@ -4006,6 +4007,7 @@ Reply YES to acknowledge.`
           {/* 911 button - auto-pulls from this call */}
           {!nineOneOne.active&&<button style={{width:"100%",padding:"16px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"rgba(180,0,0,0.1)",color:"#f87171",fontSize:16,fontWeight:900,cursor:"pointer"}}
             onClick={()=>{
+              if(!window.confirm("Activate 911? This immediately notifies Admin and Medical via text, voice call, and GroupMe. Only do this for a genuine emergency.")) return;
               set911({active:true,by:role,at:now(),callId:mc.id,info:{location:mc.location,nature:mc.problem,type:mc.type}});
               const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${mc.location}\nCALL: ${mc.problem}\nMADISON FIRE / EMS INBOUND\nTIME: ${tShort()}`;
               sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
@@ -4063,6 +4065,7 @@ Reply YES to acknowledge.`
             </div>
             <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"linear-gradient(135deg,rgba(180,0,0,0.25),rgba(120,0,0,0.1))",color:"#fff",fontSize:14,fontWeight:900,cursor:"pointer",textAlign:"center"}}
               onClick={()=>{
+                if(!window.confirm("Start a new 911 incident? The current one will be archived.")) return;
                 // Archive current incident and start new one
                 setNineOneOneHistory(p=>[...p,{...nineOneOne,closedAt:now()}]);
                 set911({active:true,by:role,at:now(),info:{}});
@@ -4076,6 +4079,7 @@ Reply YES to acknowledge.`
         ):(
           <button style={{width:"100%",padding:"18px",borderRadius:12,border:"2px solid rgba(180,0,0,0.6)",background:"rgba(180,0,0,0.08)",color:"#f87171",fontSize:16,fontWeight:900,cursor:"pointer",textAlign:"center",letterSpacing:"0.02em"}}
             onClick={()=>{
+              if(!window.confirm("Activate 911? This immediately notifies Admin and Medical via text, voice call, and GroupMe. Only do this for a genuine emergency.")) return;
               // Pull info directly from current active call
               const activeCall=myActive?.[0]||unassigned?.[0];
               const callLoc=activeCall?.location||nineOneOne.info?.location||"Festival Grounds";
@@ -4086,7 +4090,7 @@ Reply YES to acknowledge.`
               set911({active:true,by:role,at:now(),callId,info:{location:callLoc,nature:callProblem,type:callType}});
               // Build message from call data
               const msg911=`🚨 911 ACTIVATED — ${role}\nLOCATION: ${callLoc}${callProblem?"\nCALL: "+callProblem:""}\nMADISON FIRE / EMS INBOUND\nTIME: ${new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}\nClear a path for emergency vehicles.`;
-              // Fire SMS + Voice + GroupMe immediately — no second tap
+              // Fire SMS + Voice + GroupMe — confirmed above, so no further friction here
               sendGroupMe(`MEDICAL ALERT 🩺\n${msg911}`,["admin","medical"]);
               const phones=[...new Set(["+16082289692",...(staffList||[]).filter(s=>["m1","m2","a1","a2"].some(r=>(s.role||"").toLowerCase().startsWith(r))).map(s=>s.phone).filter(Boolean).map(fmtPhone).filter(Boolean)])];
               phones.forEach(p=>{
@@ -4323,7 +4327,7 @@ Reply YES to acknowledge.`
             <div style={{background:"rgba(239,68,68,0.05)",borderRadius:10,border:"1px solid rgba(239,68,68,0.2)",padding:"8px 10px",fontSize:11,color:"#fecaca",lineHeight:1.4,marginBottom:2}}>
               ⚠️ <strong style={{color:"#f87171"}}>YOU MUST CALL 911 YOURSELF.</strong> This alerts units only.
             </div>
-            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:13,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:now(),info:{location:loc,nature:"Emergency"}});setPopup911Data({location:loc,problem:"Emergency",by:role,at:tShort()});setShow911Popup(true);}}}>
+            <button style={{width:"100%",padding:"10px",borderRadius:10,border:`2px solid ${nineOneOne.active?"rgba(239,68,68,0.9)":"rgba(180,0,0,0.5)"}`,background:nineOneOne.active?"rgba(239,68,68,0.25)":"rgba(180,0,0,0.08)",color:nineOneOne.active?"#fca5a5":"#f87171",fontSize:13,fontWeight:900,cursor:"pointer"}} onClick={()=>{if(!nineOneOne.active){if(!window.confirm("Activate 911? This immediately texts and calls Admin, Gary, and the other Med unit. Only do this for a genuine emergency.")) return;const loc=(myActive[0]||{}).location||"Festival Grounds";set911({active:true,by:role,at:now(),info:{location:loc,nature:"Emergency"}});setPopup911Data({location:loc,problem:"Emergency",by:role,at:tShort()});setShow911Popup(true);}}}>
               {nineOneOne.active?"🚨 911 ACTIVE":"🚨 911 Activation"}
             </button>
 

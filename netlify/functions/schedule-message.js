@@ -69,6 +69,25 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, id: data.id }) };
     }
 
+    if (action === 'edit') {
+      if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
+      const fields = {};
+      if (message !== undefined) fields.Message = message;
+      if (phones !== undefined) fields.Phones = JSON.stringify(phones);
+      if (channels !== undefined) fields.Channels = JSON.stringify(channels);
+      if (sendAt !== undefined) fields.SendAt = sendAt;
+      const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typecast: true, fields })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: data.error?.message || 'Failed to save changes' }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
     if (action === 'cancel') {
       if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
       const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE}/${id}`, {

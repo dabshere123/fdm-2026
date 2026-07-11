@@ -1186,6 +1186,20 @@ function HubApp({onBack}){
   const [showStaffMgmt,setShowStaffMgmt]=useState(false);
 
   const [scheduledMsgs,setScheduledMsgs]=useState([]);
+  const [scheduledMsgsLoading,setScheduledMsgsLoading]=useState(false);
+  const [editingSchedId,setEditingSchedId]=useState(null);
+  const [editSchedMsg,setEditSchedMsg]=useState("");
+  const [editSchedTime,setEditSchedTime]=useState("");
+  const [schedActionError,setSchedActionError]=useState(null);
+  const fetchScheduledMsgs=async()=>{
+    setScheduledMsgsLoading(true);
+    try{
+      const r=await fetch("/.netlify/functions/schedule-message");
+      const d=await r.json();
+      setScheduledMsgs(d.messages||[]);
+    }catch(e){}
+    setScheduledMsgsLoading(false);
+  };
   const [showScheduler,setShowScheduler]=useState(false);
   const [scheduleDateTime,setScheduleDateTime]=useState("");
   const [schedulingSending,setSchedulingSending]=useState(false);
@@ -3452,6 +3466,82 @@ Reply YES to acknowledge.`
     />
   );
 
+  if(view==="scheduledmsgs"){
+    const pending=scheduledMsgs.filter(m=>m.status==="Pending");
+    const notPending=scheduledMsgs.filter(m=>m.status!=="Pending");
+    return(<div style={S.root}><Bg/><div style={S.panel}>
+      <div style={S.panelHd}><button style={S.backBtn} onClick={()=>{setView("home");setEditingSchedId(null);}}>← Back</button><span style={S.panelTitle}>📅 Scheduled Messages</span></div>
+      <div style={S.cWrap}>
+        <button style={{padding:"11px",borderRadius:10,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontWeight:700,fontSize:13,cursor:"pointer"}} onClick={fetchScheduledMsgs} disabled={scheduledMsgsLoading}>{scheduledMsgsLoading?"⏳ Loading...":"🔄 Refresh"}</button>
+        {schedActionError&&<div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#fca5a5"}}>⚠️ {schedActionError}</div>}
+
+        <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase"}}>Pending ({pending.length})</div>
+        {pending.length===0&&!scheduledMsgsLoading&&<div style={{fontSize:13,color:"#64748b",textAlign:"center",padding:"16px 0"}}>Nothing scheduled right now.</div>}
+        {pending.map(m=>{
+          const isEditing=editingSchedId===m.id;
+          let phoneCount=0; try{phoneCount=(JSON.parse(m.phones||"[]")||[]).length;}catch{}
+          return(
+            <div key={m.id} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+              {!isEditing?(<>
+                <div style={{fontSize:13,color:"#f1f5f9",whiteSpace:"pre-wrap"}}>{m.message}</div>
+                <div style={{fontSize:11,color:"#94a3b8"}}>📅 {new Date(m.sendAt).toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})} · {phoneCount} recipient{phoneCount===1?"":"s"}</div>
+                <div style={{display:"flex",gap:8}}>
+                  <button style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid rgba(99,102,241,0.4)",background:"rgba(99,102,241,0.1)",color:"#a5b4fc",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{
+                    setEditingSchedId(m.id);setEditSchedMsg(m.message);
+                    const d=new Date(m.sendAt);
+                    const pad=n=>String(n).padStart(2,"0");
+                    setEditSchedTime(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+                  }}>✏️ Edit</button>
+                  <button style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.1)",color:"#fca5a5",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={async()=>{
+                    if(!window.confirm("Cancel this scheduled message? It will not be sent.")) return;
+                    setSchedActionError(null);
+                    try{
+                      const r=await fetch("/.netlify/functions/schedule-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"cancel",id:m.id})});
+                      const d=await r.json();
+                      if(!d.success){setSchedActionError(d.error||"Could not cancel");return;}
+                      showHubToast("✅ Scheduled message cancelled");
+                    }catch(e){setSchedActionError(e.message);return;}
+                    fetchScheduledMsgs();
+                  }}>❌ Cancel</button>
+                </div>
+              </>):(<>
+                <textarea value={editSchedMsg} onChange={e=>setEditSchedMsg(e.target.value)} style={{width:"100%",minHeight:90,padding:"10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.05)",color:"#f1f5f9",fontSize:13,fontFamily:"inherit",resize:"vertical"}}/>
+                <input type="datetime-local" value={editSchedTime} onChange={e=>setEditSchedTime(e.target.value)} style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.05)",color:"#f1f5f9",fontSize:13,fontFamily:"inherit"}}/>
+                <div style={{display:"flex",gap:8}}>
+                  <button style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={async()=>{
+                    if(!editSchedMsg.trim()){setSchedActionError("Message can't be blank.");return;}
+                    if(!editSchedTime){setSchedActionError("Pick a date and time.");return;}
+                    setSchedActionError(null);
+                    try{
+                      const r=await fetch("/.netlify/functions/schedule-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"edit",id:m.id,message:editSchedMsg,sendAt:new Date(editSchedTime).toISOString()})});
+                      const d=await r.json();
+                      if(!d.success){setSchedActionError(d.error||"Could not save changes");return;}
+                      showHubToast("✅ Scheduled message updated");
+                      setEditingSchedId(null);
+                    }catch(e){setSchedActionError(e.message);return;}
+                    fetchScheduledMsgs();
+                  }}>✅ Save Changes</button>
+                  <button style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid rgba(255,255,255,0.15)",background:"none",color:"#94a3b8",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setEditingSchedId(null)}>Cancel</button>
+                </div>
+              </>)}
+            </div>
+          );
+        })}
+
+        {notPending.length>0&&<>
+          <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase",marginTop:8}}>Sent / Cancelled ({notPending.length})</div>
+          {notPending.map(m=>(
+            <div key={m.id} style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.05)",borderRadius:10,padding:"12px",opacity:0.6}}>
+              <div style={{fontSize:12,color:"#94a3b8",whiteSpace:"pre-wrap"}}>{m.message}</div>
+              <div style={{fontSize:10,color:"#64748b",marginTop:4}}>{m.status} · {new Date(m.sendAt).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</div>
+            </div>
+          ))}
+        </>}
+      </div>
+    </div></div>);
+  }
+
+
   if(view==="vendordelivery"){
     const statusMeta={
       delivered:{icon:"✅",label:"Delivered",color:"#6ee7b7"},
@@ -4450,6 +4540,7 @@ Reply YES to acknowledge.`
               </div>
             ))}
             <button style={{marginTop:6,padding:"9px 6px",borderRadius:8,border:"1px solid rgba(148,163,184,0.3)",background:"rgba(148,163,184,0.08)",color:"#cbd5e1",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setView("vendordelivery");fetchDeliveryStatus();}}>📊 Message Delivery Status</button>
+            <button style={{marginTop:6,padding:"9px 6px",borderRadius:8,border:"1px solid rgba(99,102,241,0.3)",background:"rgba(99,102,241,0.08)",color:"#a5b4fc",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setView("scheduledmsgs");fetchScheduledMsgs();}}>📅 Manage Scheduled Messages</button>
           </div>
         </div>
       </div>

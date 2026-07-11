@@ -25,7 +25,7 @@ exports.handler = async (event) => {
 
   const {
     date, totalCalls, callBreakdown, lostFound,
-    broadcasts, notes, generatedBy, generatedAt
+    broadcasts, notes, generatedBy, generatedAt, detailedCalls
   } = JSON.parse(event.body || '{}');
 
   const breakdown = callBreakdown || {};
@@ -42,6 +42,9 @@ exports.handler = async (event) => {
     `  Lost Child: ${breakdown.lostChild || 0}`,
     `  Supplies: ${breakdown.supplies || 0}`,
     `  Maintenance: ${breakdown.maintenance || 0}`,
+    ``,
+    `DETAILED CALL LOG:`,
+    detailedCalls || 'None',
     ``,
     `LOST & FOUND:`,
     lostFound || 'None',

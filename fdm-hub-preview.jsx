@@ -3814,6 +3814,27 @@ Reply YES to acknowledge.`
           {eodCallsList.length===0&&<div style={{fontSize:12,color:"#64748b",textAlign:"center",padding:"12px 0"}}>No calls found for {dayLabel}.</div>}
         </div>
 
+        {eodCallsList.length>0&&(
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{fontSize:12,color:"#94a3b8",fontWeight:700,textTransform:"uppercase"}}>Detailed Call Log — {dayLabel} ({eodCallsList.length})</div>
+            {eodCallsList.map((c,i)=>{
+              const typeLabels={medical:"🩺 Medical",walk_in:"🩺 Walk-In",fire:"🔥 Fire/Safety",security:"🛡 Security",supplies:"📦 Supplies",maintenance:"🔧 Maintenance",lost_child:"🧒 Lost Child"};
+              const statusColor=c.status==="Cleared"?"#6ee7b7":c.status==="Acknowledged"?"#93c5fd":"#fbbf24";
+              return (
+                <div key={c.id||i} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:8,padding:"10px 12px",display:"flex",flexDirection:"column",gap:3}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:12,fontWeight:800,color:"#f1f5f9"}}>{typeLabels[c.type]||c.type}</span>
+                    <span style={{fontSize:10,fontWeight:800,color:statusColor,textTransform:"uppercase"}}>{c.status||"Unknown"}</span>
+                  </div>
+                  <div style={{fontSize:12,color:"#cbd5e1"}}>📍 {c.location||"No location"}</div>
+                  {c.problem&&<div style={{fontSize:12,color:"#94a3b8"}}>{c.problem}</div>}
+                  <div style={{fontSize:10,color:"#64748b",marginTop:2}}>{c.timestamp}{c.requestedBy?` · Reported by ${c.requestedBy}`:""}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {lfItems.length>0&&(
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
             <div style={{fontSize:12,color:"#64748b",fontWeight:700,textTransform:"uppercase"}}>Lost & Found (current, not day-specific)</div>
@@ -3836,6 +3857,7 @@ Reply YES to acknowledge.`
         </div>}
         {!endOfNightSent&&<button style={{...S.sendBtn,background:"linear-gradient(135deg,#6366f1,#4f46e5)"}}
           onClick={async()=>{
+            const typeLabelsPlain={medical:"Medical",walk_in:"Walk-In",fire:"Fire/Safety",security:"Security",supplies:"Supplies",maintenance:"Maintenance",lost_child:"Lost Child"};
             const report={
               date:dayLabel,
               totalCalls:eodCallsList.length,
@@ -3847,17 +3869,19 @@ Reply YES to acknowledge.`
                 maintenance:eodCallsList.filter(c=>c.type==="maintenance").length,
                 lostChild:eodCallsList.filter(c=>c.type==="lost_child").length,
               },
+              detailedCalls:eodCallsList.map((c,i)=>`${i+1}. [${typeLabelsPlain[c.type]||c.type}] ${c.location||"No location"} — ${c.problem||"No details"} — Status: ${c.status||"Unknown"} — ${c.timestamp}${c.requestedBy?` — Reported by ${c.requestedBy}`:""}`).join("\n"),
               lostFound:lfItems.map(i=>`#${i.itemNumber}: ${i.description} (${i.status})`).join("\n"),
               broadcasts:broadcastAlerts.map(b=>`${b.label}: ${b.msg?.slice(0,80)}`).join("\n"),
               notes:endOfNightNotes||"",
               generatedBy:role,
               generatedAt:new Date().toLocaleString(),
             };
-            fetch("/.netlify/functions/send-eod-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:report.date,totalCalls:report.totalCalls,callBreakdown:report.callBreakdown,lostFound:report.lostFound,broadcasts:report.broadcasts,notes:report.notes,generatedBy:role})}).catch(()=>{});
+            fetch("/.netlify/functions/send-eod-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:report.date,totalCalls:report.totalCalls,callBreakdown:report.callBreakdown,detailedCalls:report.detailedCalls,lostFound:report.lostFound,broadcasts:report.broadcasts,notes:report.notes,generatedBy:role})}).catch(()=>{});
             fetch("/.netlify/functions/send-eod-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
               date:report.date,
               totalCalls:report.totalCalls,
               callBreakdown:report.callBreakdown,
+              detailedCalls:report.detailedCalls,
               lostFound:report.lostFound,
               broadcasts:report.broadcasts,
               notes:report.notes,

@@ -1496,6 +1496,13 @@ function HubApp({onBack}){
       .then(r=>r.json())
       .then(d=>{setVendorPhonesList(d.phones||[]);setVendorContacts(d.contacts||[]);})
       .catch(()=>{});
+    fetchMPD();
+  },[]);
+
+  // Keep MPD on-duty count fresh without needing to open Manage Officers
+  useEffect(()=>{
+    const mpdInterval=setInterval(()=>fetchMPD(),30000);
+    return ()=>clearInterval(mpdInterval);
   },[]);
 
   useEffect(()=>{
@@ -4377,7 +4384,16 @@ Reply YES to acknowledge.`
             </button>
 
             {/* MPD — bottom of Safety section */}
-            <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(37,99,235,0.6)",background:"linear-gradient(135deg,rgba(37,99,235,0.25),rgba(29,78,216,0.15))",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:4}} onClick={()=>setMpdRequestView(true)}>
+            {(() => {
+              const onDutyCount=mpdOfficers.filter(o=>o.status==="On").length;
+              const isZero=onDutyCount===0;
+              return (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"5px 8px",borderRadius:8,background:isZero?"rgba(239,68,68,0.12)":"rgba(16,185,129,0.1)",border:`1px solid ${isZero?"rgba(239,68,68,0.35)":"rgba(16,185,129,0.3)"}`,marginTop:2}}>
+                  <span style={{fontSize:11,fontWeight:800,color:isZero?"#fca5a5":"#6ee7b7"}}>{isZero?"⚠️ 0 MPD officers on duty":`🚔 ${onDutyCount} MPD officer${onDutyCount===1?"":"s"} on duty`}</span>
+                </div>
+              );
+            })()}
+            <button style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid rgba(37,99,235,0.6)",background:"linear-gradient(135deg,rgba(37,99,235,0.25),rgba(29,78,216,0.15))",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>setMpdRequestView(true)}>
               <span style={{fontSize:20}}>🚔</span>
               REQUEST MPD
             </button>

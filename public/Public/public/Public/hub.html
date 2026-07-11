@@ -3575,6 +3575,13 @@ function HubApp({
       setVendorPhonesList(d.phones || []);
       setVendorContacts(d.contacts || []);
     }).catch(() => {});
+    fetchMPD();
+  }, []);
+
+  // Keep MPD on-duty count fresh without needing to open Manage Officers
+  useEffect(() => {
+    const mpdInterval = setInterval(() => fetchMPD(), 30000);
+    return () => clearInterval(mpdInterval);
   }, []);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -12896,7 +12903,29 @@ Reply YES to acknowledge.`
       borderRadius: 20,
       padding: "1px 6px"
     }
-  }, activeCalls.filter(c => c.type === "lost_child").length)), /*#__PURE__*/React.createElement("button", {
+  }, activeCalls.filter(c => c.type === "lost_child").length)), (() => {
+    const onDutyCount = mpdOfficers.filter(o => o.status === "On").length;
+    const isZero = onDutyCount === 0;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        padding: "5px 8px",
+        borderRadius: 8,
+        background: isZero ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.1)",
+        border: `1px solid ${isZero ? "rgba(239,68,68,0.35)" : "rgba(16,185,129,0.3)"}`,
+        marginTop: 2
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: isZero ? "#fca5a5" : "#6ee7b7"
+      }
+    }, isZero ? "⚠️ 0 MPD officers on duty" : `🚔 ${onDutyCount} MPD officer${onDutyCount === 1 ? "" : "s"} on duty`));
+  })(), /*#__PURE__*/React.createElement("button", {
     style: {
       width: "100%",
       padding: "14px",
@@ -12910,8 +12939,7 @@ Reply YES to acknowledge.`
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
-      marginTop: 4
+      gap: 8
     },
     onClick: () => setMpdRequestView(true)
   }, /*#__PURE__*/React.createElement("span", {

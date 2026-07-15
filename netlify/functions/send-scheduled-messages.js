@@ -37,6 +37,10 @@ async function sendSMS(to, body) {
 }
 
 exports.handler = async () => {
+  // ═══ FDM 2026 IS OVER — set to false when reactivating for the 2027 festival ═══
+  const DORMANT = true;
+  if (DORMANT) return { statusCode: 200, body: JSON.stringify({ ok: true, dormant: true }) };
+
   try {
     const nowIso = new Date().toISOString();
     const res = await fetch(

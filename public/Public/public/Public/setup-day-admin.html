@@ -503,13 +503,24 @@ async function printReport(){
   w.document.close();
 }
 
-renderAll();
-setInterval(() => {
-  const active = document.activeElement;
-  const isTyping = active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.tagName === 'SELECT');
-  if (isTyping) return; // don't wipe out whatever they're mid-typing
+// ═══ FDM 2026 IS OVER — set to false when reactivating for the 2027 festival ═══
+const DORMANT = true;
+if (DORMANT) {
+  document.body.innerHTML = `
+    <div style="min-height:100vh;background:#0a0f1e;color:#f1f5f9;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;font-family:-apple-system,sans-serif;">
+      <div style="font-size:56px;margin-bottom:16px;">🎪</div>
+      <div style="font-size:24px;font-weight:900;margin-bottom:10px;">Fête de Marquette 2026 Has Wrapped!</div>
+      <div style="font-size:15px;color:#94a3b8;max-width:400px;line-height:1.6;">Thanks for an incredible festival. Setup Day admin is now closed for the season — see you in 2027!</div>
+    </div>`;
+} else {
   renderAll();
-}, 15000);
+  setInterval(() => {
+    const active = document.activeElement;
+    const isTyping = active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.tagName === 'SELECT');
+    if (isTyping) return; // don't wipe out whatever they're mid-typing
+    renderAll();
+  }, 15000);
+}
 </script>
 </body>
 </html>

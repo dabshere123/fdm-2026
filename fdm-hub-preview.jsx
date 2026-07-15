@@ -1013,6 +1013,17 @@ function voiceSafeLostChild(text){
 }
 
 function HubApp({onBack}){
+  // ═══ FDM 2026 IS OVER — set to false when reactivating for the 2027 festival ═══
+  const DORMANT=true;
+  if(DORMANT){
+    return (
+      <div style={{minHeight:"100vh",background:"#0a0f1e",color:"#f1f5f9",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px",textAlign:"center",fontFamily:"-apple-system,sans-serif"}}>
+        <div style={{fontSize:56,marginBottom:16}}>🎪</div>
+        <div style={{fontSize:24,fontWeight:900,marginBottom:10}}>Fête de Marquette 2026 Has Wrapped!</div>
+        <div style={{fontSize:15,color:"#94a3b8",maxWidth:400,lineHeight:1.6}}>Thanks for an incredible festival. The Operations Hub is now closed for the season — see you in 2027!</div>
+      </div>
+    );
+  }
   const [role,setRole]=useState(()=>{
     if(typeof window!=="undefined"){
       const p=new URLSearchParams(window.location.search);

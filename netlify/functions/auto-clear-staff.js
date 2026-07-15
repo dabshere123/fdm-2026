@@ -14,6 +14,10 @@ const FESTIVAL_DAYS = {
 };
 
 exports.handler = async (event) => {
+  // ═══ FDM 2026 IS OVER — set to false when reactivating for the 2027 festival ═══
+  const DORMANT = true;
+  if (DORMANT) return { statusCode: 200, body: JSON.stringify({ ok: true, dormant: true }) };
+
   const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 
   try {
